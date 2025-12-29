@@ -1,0 +1,17 @@
+Let X be a standard normal. For $k\geq 0$, 
+\[
+\mu_k(u):= \tilde{\mathbb{E}}\bigl[(Y_u)^k\bigr]
+=\mathbb{E}\bigl[(X-u)^k\mid X\ge u\bigr].
+\]
+Recall that $d(u)\coloneqq \mu_1(u)$. 
+
+\begin{lema}
+Using a standard integration by parts recursion, prove
+\begin{align}
+\mu_0(u)&=1,\quad 
+\mu_1(u)=d(u),\label{eq:moments-TOBECHECKED}\\
+\mu_2(u)&=1-u\,d(u),\nonumber\\
+\mu_3(u)&=(u^2+2)\,d(u)-u,\nonumber\\
+\mu_4(u)&=u^2+3-u(u^2+5)\,d(u).\nonumber
+\end{align}
+\end{lemma}
