@@ -17,6 +17,7 @@ Supporting material for *â€œUniqueness of RS Saddle Point for Ising Perceptronâ€
 ### Read the manuscript
 
 Open `perceptronFixed/manuscript/index.html` in your browser.
+Hosted version: https://njimamath.github.io/research_public/perceptronFixed/manuscript/index.html
 
 ### Run numerics
 
