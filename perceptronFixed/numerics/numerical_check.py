@@ -927,20 +927,91 @@ def tobechecked_lemma_B_endpoints_detail() -> Tuple[bool, str]:
 
 
 def tobechecked_eq_Bprime_detail(quad: NormalQuadrature) -> Tuple[bool, str]:
+    # Use the dedicated checker in numerics/simulate_bprime_tobechecked.py,
+    # which uses a stable inverse Mills ratio implementation and a 5-point
+    # stencil for the finite-difference derivative.
+    try:
+        import simulate_bprime_tobechecked as sim_bprime
+    except Exception as exc:  # pragma: no cover
+        # Fallback to the previous coarse 2-point finite-difference check.
+        kappa = 0.6
+        t_values = [0.3, 0.7]
+        max_err = -1.0
+        worst = None
+        for t in t_values:
+            lhs = finite_diff(lambda s: B(s, kappa, quad), t, 1e-4)
+            rhs = quad.expect(lambda z: g((kappa - math.sqrt(t) * z) / math.sqrt(1.0 - t)))
+            err = abs(lhs - rhs)
+            if err > max_err:
+                max_err = err
+                worst = (t, lhs, rhs)
+        ok = max_err <= 1e-2
+        t, lhs, rhs = worst
+        msg = (
+            f"max_err={fmt(max_err)} (t={t:.3f}, lhs={fmt(lhs)}, rhs={fmt(rhs)}); "
+            f"fallback (simulate_bprime_tobechecked import failed: {exc})"
+        )
+        return ok, msg
+
     kappa = 0.6
     t_values = [0.3, 0.7]
-    max_err = -1.0
+
+    gh_n = 260
+    raw_h = 1e-4
+    tol = 1e-7
+
+    mills_impl = "erfcx" if getattr(sim_bprime, "_HAVE_SCIPY", False) else "cf"
+    cf_terms = 120
+    cf_min = 1.0
+
+    z, w = sim_bprime._gh_nodes_weights(gh_n)
+
+    def B_expect(tt: float) -> float:
+        vals = sim_bprime.B_contrib(
+            z,
+            kappa=kappa,
+            t=tt,
+            mills_impl=mills_impl,
+            cf_terms=cf_terms,
+            cf_min=cf_min,
+        )
+        return sim_bprime._normal_expect_gh(z, w, vals)
+
+    def g_expect(tt: float) -> float:
+        vals = sim_bprime.g_contrib(
+            z,
+            kappa=kappa,
+            t=tt,
+            mills_impl=mills_impl,
+            cf_terms=cf_terms,
+            cf_min=cf_min,
+        )
+        return sim_bprime._normal_expect_gh(z, w, vals)
+
+    max_abs_diff = -1.0
     worst = None
     for t in t_values:
-        lhs = finite_diff(lambda s: B(s, kappa, quad), t, 1e-4)
-        rhs = quad.expect(lambda z: g((kappa - math.sqrt(t) * z) / math.sqrt(1.0 - t)))
-        err = abs(lhs - rhs)
-        if err > max_err:
-            max_err = err
-            worst = (t, lhs, rhs)
-    ok = max_err <= 1e-2
-    t, lhs, rhs = worst
-    msg = f"max_err={fmt(max_err)} (t={t:.3f}, lhs={fmt(lhs)}, rhs={fmt(rhs)})"
+        h = sim_bprime._safe_step(float(t), raw_h, stencil_radius=2)
+        Bm2 = B_expect(t - 2.0 * h)
+        Bm1 = B_expect(t - h)
+        B0 = B_expect(t)
+        Bp1 = B_expect(t + h)
+        Bp2 = B_expect(t + 2.0 * h)
+        fd5 = sim_bprime._fd5_from_values(Bm2, Bm1, Bp1, Bp2, h)
+        rhs = g_expect(t)
+        diff = fd5 - rhs
+        abs_diff = abs(diff)
+        if abs_diff > max_abs_diff:
+            max_abs_diff = abs_diff
+            worst = (t, h, fd5, rhs, diff, B0)
+
+    ok = max_abs_diff <= tol
+    t, h, fd5, rhs, diff, B0 = worst
+    msg = (
+        f"max_abs_diff={fmt(max_abs_diff)} (t={t:.3f}, h={h:.1e}, "
+        f"fd5={fmt(fd5)}, Eg={fmt(rhs)}, diff={fmt(diff)}, B={fmt(B0)}, "
+        f"method=gh[{gh_n}], mills={mills_impl})"
+    )
     return ok, msg
 
 

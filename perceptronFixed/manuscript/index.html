@@ -755,10 +755,13 @@ F_q(x)
 \mathrm{RS}_\star(\alpha,0)&gt;0 \quad \text{for } \alpha&lt;\alpha_\star(0),
 \qquad
 \mathrm{RS}_\star(\alpha,0)&lt;0 \quad \text{for } \alpha&gt;\alpha_\star(0).
-\]</div><p>Under the analytic hypotheses of [<a class="citation" href="#bib-dingsun2025">7</a>,<a class="citation" href="#bib-huang2024">10</a>], it holds that</p><p>\[ \lim_{N\to\infty}\mathbb P\bigl(Z^{(0)}_{N,\lfloor \alpha N\rfloor}&gt;0\bigr) =</p><pre>\begin{cases}
+\]</div><p>Under the analytic hypotheses of [<a class="citation" href="#bib-dingsun2025">7</a>,<a class="citation" href="#bib-huang2024">10</a>], it holds that</p><div class="math-block">\[
+\lim_{N\to\infty}\mathbb P\bigl(Z^{(0)}_{N,\lfloor \alpha N\rfloor}&gt;0\bigr) =
+\begin{cases}
 1, &amp; \alpha&lt;\alpha_\star(0),\\
 0, &amp; \alpha&gt;\alpha_\star(0).
-\end{cases}</pre><p>\]</p></div></div><p>Motivated by this, it is natural to view the replica-symmetric prediction as defining a candidate feasibility threshold via the point at which the predicted limiting free energy vanishes. These works show that understanding the replica-symmetric equations, and in particular the structure of the saddle point system, is important for rigorous capacity bounds.</p><h3>2.4. Main result: uniqueness of the replica-symmetric saddle point</h3><p>The replica-symmetric formula is most useful in parameter regimes where the saddle point equation \(\eqref{eq:RS-fixed-point}\) has a unique solution $(q,r)$. Uniqueness matters for several reasons. It eliminates ambiguity in selecting a branch of solutions, yields regular dependence of $(q,r)$ on the parameters $(\alpha,\kappa)$, and controls the derivatives of the replica-symmetric free energy \(\eqref{eq:RS-functional}\).</p><p>Related work of Ding and Sun [<a class="citation" href="#bib-dingsun2025">7</a>] established the uniqueness when $\kappa=0$, with one step verified via a computer-assisted numerical check.</p><p>In this paper we give a fully analytic proof of uniqueness for the half-space Ising perceptron. Concretely, when $U(x)=\mathbf{1}\{x\ge \kappa\}$ with $\kappa\ge 0$, we show that the map in \(\eqref{eq:RS-fixed-point}\) has at most one fixed point in the relevant domain. As a consequence, the replica-symmetric free energy can be written unambiguously as</p><div class="math-block">\[
+\end{cases}
+\]</div></div></div><p>Motivated by this, it is natural to view the replica-symmetric prediction as defining a candidate feasibility threshold via the point at which the predicted limiting free energy vanishes. These works show that understanding the replica-symmetric equations, and in particular the structure of the saddle point system, is important for rigorous capacity bounds.</p><h3>2.4. Main result: uniqueness of the replica-symmetric saddle point</h3><p>The replica-symmetric formula is most useful in parameter regimes where the saddle point equation \(\eqref{eq:RS-fixed-point}\) has a unique solution $(q,r)$. Uniqueness matters for several reasons. It eliminates ambiguity in selecting a branch of solutions, yields regular dependence of $(q,r)$ on the parameters $(\alpha,\kappa)$, and controls the derivatives of the replica-symmetric free energy \(\eqref{eq:RS-functional}\).</p><p>Related work of Ding and Sun [<a class="citation" href="#bib-dingsun2025">7</a>] established the uniqueness when $\kappa=0$, with one step verified via a computer-assisted numerical check.</p><p>In this paper we give a fully analytic proof of uniqueness for the half-space Ising perceptron. Concretely, when $U(x)=\mathbf{1}\{x\ge \kappa\}$ with $\kappa\ge 0$, we show that the map in \(\eqref{eq:RS-fixed-point}\) has at most one fixed point in the relevant domain. As a consequence, the replica-symmetric free energy can be written unambiguously as</p><div class="math-block">\[
 \mathrm{RS}(\alpha;U)
 =
 \mathrm{RS}(\alpha;U;q(\alpha),r(\alpha)),
@@ -789,9 +792,11 @@ L\,\mathbb P(Z_{N,M}^{(0)}=0).
 \mathbb P(\mathcal E)\le L\,\mathbb P\!\left(Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}=0\right)\le L\,e^{-c_\varepsilon N},
 \]</div><p>so whenever $\log L=o(N)$ (e.g., fixed $L$ or polynomial $L$), the probability $\mathbb P(\mathcal E)$ still decays exponentially in $N$. If $\alpha\ge \alpha_N+\varepsilon$, then</p><div class="math-block">\[
 \mathbb P(\mathcal E)\ge \mathbb P\!\left(Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}=0\right)\ge 1-e^{-c_\varepsilon N},
-\]</div><p>which converges to $1$ as $N\to \infty$.</p><p>Thus, except for a narrow window, the two models behave in the same way.</p><h3>2.6. How we use GPT-5 in this project</h3><p>We used GPT-5 as a tool for computation and reasoning throughout the project (in particular, Lemma&nbsp;<a class="xref" href="#lemma-lem-g-decreasing-positive">13</a>, <a class="xref" href="#lemma-lem-g-uniform-negative-tobechecked">15</a> below). In a typical workflow, we supplied a problem together with a proposed proof strategy, and asked GPT-5 to suggest an outline and to elaborate intermediate steps. Because the outputs contained gaps or errors, we independently verified the details and either corrected them ourselves or asked GPT-5 to address specific issues. We repeated this process iteratively until reaching the final version of each proof. All arguments in the manuscript are fully analytic and were not computer-verified. Overall, we found generative AI helpful for converting informal sketches or computer-assisted arguments into fully rigorous analytic proofs. Numerical computer-assisted proofs typically depend on approximating a large number of quantities, while an analytic proof often reduces the problem to a small set of key estimates. This type of reduction appears to match well with the strengths of generative AI.</p><h2 id="auxiliary-results-for-theoremref-thmmain">3. Auxiliary results for Theorem&nbsp;\ref{thm:main}</h2><h3>3.1. Roadmap of the proof</h3><p>The aim of this section is to reduce the fixed point equation \(\eqref{eq:system}\) to a one-dimensional equation and to isolate the main technical ingredient needed for Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a> (the strict monotonicity of $B$, proved in Section&nbsp;3).</p><p>Recall that, with $B$ defined in \(\eqref{eq:defB}\), the second equation in \(\eqref{eq:system}\) can be rewritten as \(\eqref{eq:r_in_terms_of_B}\):</p><div class="math-block">\[
+\]</div><p>which converges to $1$ as $N\to \infty$.</p><p>Thus, except for a narrow window, the two models behave in the same way.</p><h3>2.6. How we use GPT-5 in this project</h3><p>We used GPT-5 as a tool for computation and reasoning throughout the project (in particular, Lemma&nbsp;<a class="xref" href="#lemma-lem-g-decreasing-positive">13</a>, <a class="xref" href="#lemma-lem-g-uniform-negative-tobechecked">15</a> below). In a typical workflow, we supplied a problem together with a proposed proof strategy, and asked GPT-5 to suggest an outline and to elaborate intermediate steps. Because the outputs contained gaps or errors, we independently verified the details and either corrected them ourselves or asked GPT-5 to address specific issues. We repeated this process iteratively until reaching the final version of each proof. All arguments in the manuscript are fully analytic and were not computer-verified. Overall, we found generative AI helpful for converting informal sketches or computer-assisted arguments into fully rigorous analytic proofs. Numerical computer-assisted proofs typically depend on approximating a large number of quantities, while an analytic proof often reduces the problem to a small set of key estimates. This type of reduction appears to match well with the strengths of generative AI.</p><h2 id="auxiliary-results-for-theoremref-thmmain">3. Auxiliary results for Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a></h2><h3>3.1. Roadmap of the proof</h3><p>The aim of this section is to reduce the fixed point equation \(\eqref{eq:system}\) to a one-dimensional equation and to isolate the main technical ingredient needed for Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a> (the strict monotonicity of $B$, proved in Section&nbsp;3).</p><p>Recall that, with $B$ defined in \(\eqref{eq:defB}\), the second equation in \(\eqref{eq:system}\) can be rewritten as \(\eqref{eq:r_in_terms_of_B}\):</p><div class="math-block">\[
 r=\frac{\alpha}{(1-q)^2}\,B(q).
-\]</div><p>Substituting $q=P(r)$ yields</p><div class="math-block">\[
+\]
+</div><p>Substituting $q=P(r)$ yields</p>
+<div class="math-block" data-eq-label="eq:r-substituted" id="eq-eq-r-substituted">\[
 r\bigl(1-P(r)\bigr)^2=\alpha\,B\bigl(P(r)\bigr).
 \]</div><p>Define</p><div class="math-block" data-eq-label="eq:defA" id="eq-eq-defa">\begin{equation}\label{eq:defA}
 A(r):=r\bigl(1-P(r)\bigr)^2
@@ -856,7 +861,7 @@ C_{\kappa}=\int_{-\infty}^{\kappa}(\kappa-z)^2\,\phi(z)\,dz
 =\kappa^2\Phi(\kappa)-2\kappa\int_{-\infty}^{\kappa}z\phi(z)\,dz+\int_{-\infty}^{\kappa}z^2\phi(z)\,dz.
 \]</div><p>Using $\phi&#39;(z)=-z\phi(z)$ gives $\int_{-\infty}^{\kappa}z\phi(z)\,dz=-\phi(\kappa)$ and $\int_{-\infty}^{\kappa}z^2\phi(z)\,dz=\Phi(\kappa)-\kappa\phi(\kappa)$, hence</p><div class="math-block">\[
 C_{\kappa}=(\kappa^2+1)\Phi(\kappa)+\kappa\phi(\kappa).
-\]</div><div class="proof-end">∎</div></div></div><p>Recall that $\alpha_c(\kappa)=2/(\pi C_\kappa)$; this is the value at which the limiting upper range $2/\pi$ of $A$ matches the limiting size $\alpha\,C_\kappa$ of the right-hand side in \(\eqref{eq:one-dimensional}\).</p><h3>3.5. Reduction of Theorem&nbsp;\ref{thm:main}</h3><div class="env env-lemma" id="lemma-lem-main-reduction-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">11</span></div><div class="env-body"><p>Assume that $B$ is strictly decreasing on $[0,1)$. Fix $\alpha&gt;0$ and define</p><div class="math-block">\[
+\]</div><div class="proof-end">∎</div></div></div><p>Recall that $\alpha_c(\kappa)=2/(\pi C_\kappa)$; this is the value at which the limiting upper range $2/\pi$ of $A$ matches the limiting size $\alpha\,C_\kappa$ of the right-hand side in \(\eqref{eq:one-dimensional}\).</p><h3>3.5. Reduction of Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a></h3><div class="env env-lemma" id="lemma-lem-main-reduction-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">11</span></div><div class="env-body"><p>Assume that $B$ is strictly decreasing on $[0,1)$. Fix $\alpha&gt;0$ and define</p><div class="math-block">\[
 f(r):=A(r)-\alpha\,B\bigl(P(r)\bigr),\qquad r\ge 0.
 \]</div><p>Then $f$ is strictly increasing on $(0,\infty)$. In particular, the one-dimensional equation \(\eqref{eq:one-dimensional}\) has at most one solution $r\in[0,\infty)$, and the fixed point equation \(\eqref{eq:system}\) admits at most one solution $(q,r)\in[0,1)\times[0,\infty)$.</p></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>By Lemma&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, $A$ is strictly increasing on $(0,\infty)$. By Lemma&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a> and the assumed strict monotonicity of $B$, the composition $r\mapsto B(P(r))$ is strictly decreasing on $(0,\infty)$. Hence $f$ is strictly increasing on $(0,\infty)$.</p><p>Moreover, by Lemmas&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>,&thinsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
 f(0)=A(0)-\alpha B(P(0))=-\alpha B(0)=-\alpha E(\kappa)^2&lt;0,
@@ -953,14 +958,22 @@ F(x,y):=x^2+6xy+6y^2-x-4y&lt;0.
 g&#39;(u)=2\,E(u)^2\,H(u),
 \qquad
 H(u):= u^2 d + 6u d^2 + 6 d^3 - u - 4d .
-\end{equation}</div><p>Since $E(u)&gt;0$ for all $u$, the sign of $g&#39;(u)$ is the sign of $H(u)$.</p><p>Fix $u\ge 0$. Let $X\sim N(0,1)$ and let $Y_u=X-u$ under the conditional law given $\{X\ge u\}$. Then $Y_u\ge 0$ almost surely, and $\mu_k(u)=\tilde{\mathbb{E}}[Y_u^k]$ are given in \(\eqref{eq:moments-TOBECHECKED}\).</p><p>For any polynomial $P$ we have $\tilde{\mathbb{E}}[P(Y_u)^2]\ge 0$, so the (unshifted) Hankel moment matrices $\bigl(\mu_{i+j}(u)\bigr)_{i,j\ge 0}$ are positive semidefinite. Moreover, since $Y_u\ge 0$, also $\tilde{\mathbb{E}}\!\bigl[Y_u\,P(Y_u)^2\bigr]\ge 0$, so the <em>shifted</em> Hankel matrices $\bigl(\mu_{i+j+1}(u)\bigr)_{i,j\ge 0}$ are positive semidefinite. In particular,</p><p>\[ M_1(u):=</p><pre>\begin{pmatrix}
+\end{equation}</div><p>Since $E(u)&gt;0$ for all $u$, the sign of $g&#39;(u)$ is the sign of $H(u)$.</p><p>Fix $u\ge 0$. Let $X\sim N(0,1)$ and let $Y_u=X-u$ under the conditional law given $\{X\ge u\}$. Then $Y_u\ge 0$ almost surely, and $\mu_k(u)=\tilde{\mathbb{E}}[Y_u^k]$ are given in \(\eqref{eq:moments-TOBECHECKED}\).</p><p>For any polynomial $P$ we have $\tilde{\mathbb{E}}[P(Y_u)^2]\ge 0$, so the (unshifted) Hankel moment matrices $\bigl(\mu_{i+j}(u)\bigr)_{i,j\ge 0}$ are positive semidefinite. Moreover, since $Y_u\ge 0$, also $\tilde{\mathbb{E}}\!\bigl[Y_u\,P(Y_u)^2\bigr]\ge 0$, so the <em>shifted</em> Hankel matrices $\bigl(\mu_{i+j+1}(u)\bigr)_{i,j\ge 0}$ are positive semidefinite. In particular,</p><div class="math-block">\[
+M_1(u):=
+\begin{pmatrix}
 \mu_1 &amp; \mu_2\\
 \mu_2 &amp; \mu_3
-\end{pmatrix}</pre><p>\succeq 0, \qquad \widetilde M_2(u):=</p><pre>\begin{pmatrix}
+\end{pmatrix}
+\succeq 0,
+\qquad
+\widetilde M_2(u):=
+\begin{pmatrix}
 \mu_0 &amp; \mu_1 &amp; \mu_2\\
 \mu_1 &amp; \mu_2 &amp; \mu_3\\
 \mu_2 &amp; \mu_3 &amp; \mu_4
-\end{pmatrix}</pre><p>\succeq 0, \] and $\mathrm{Var}(Y_u)=\mu_2-\mu_1^2&gt;0$.</p><p>Hence $\det M_1(u)\ge 0$ and, using \(\eqref{eq:moments-TOBECHECKED}\),</p><div class="math-block" data-eq-label="eq:detM1-TOBECHECKED" id="eq-eq-detm1-tobechecked">\begin{equation}\label{eq:detM1-TOBECHECKED}
+\end{pmatrix}
+\succeq 0,
+\]</div><p>and $\mathrm{Var}(Y_u)=\mu_2-\mu_1^2&gt;0$.</p><p>Hence $\det M_1(u)\ge 0$ and, using \(\eqref{eq:moments-TOBECHECKED}\),</p><div class="math-block" data-eq-label="eq:detM1-TOBECHECKED" id="eq-eq-detm1-tobechecked">\begin{equation}\label{eq:detM1-TOBECHECKED}
 \det M_1(u)=\mu_1 \mu_3-\mu_2^2 = u d +2 d^2 -1 \ge 0.
 \end{equation}</div><p>Similarly, $\det \widetilde M_2(u)\ge 0$ yields</p><div class="math-block" data-eq-label="eq:detM2-TOBECHECKED" id="eq-eq-detm2-tobechecked">\begin{equation}\label{eq:detM2-TOBECHECKED}
 \begin{split}
@@ -1028,7 +1041,7 @@ h(x):= \frac{4(x-3)}{x^2}
 &lt; g(0)\,(1-p_t) - g(0)\,p_t
 = g(0)\,(1-2p_t)
 \leq 0,
-\]</div><p>since $g(0)&lt;0$ and $p_t\leq 1/2$. By \(\eqref{eq:Bprime-TOBECHECKED}\), $B&#39;(t)=\mathbb{E}[g(U_t)]&lt;0$ for all $t\in(0,1)$.</p><p>Therefore $B$ is strictly decreasing on $(0,1)$. Continuity of $B$ on $[0,1)$ follows directly from the definition and dominated convergence, so $B$ is strictly decreasing on $[0,1)$ as claimed.</p><div class="proof-end">∎</div></div></div><h2 id="proof-of-theoremref-thmmainref-thmndmainref-thm-bound-for-threshold">5. Proof of Theorem&nbsp;\ref{thm:main}</h2><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Theorem <a class="xref" href="#theorem-thm-main">1</a></span></div><div class="env-body"><p>By Theorem&nbsp;<a class="xref" href="#theorem-thm-b-monotone">12</a>, $B$ is strictly decreasing on $[0,1)$. Fix $\alpha&gt;0$ and define $f(r)=A(r)-\alpha\,B\bigl(P(r)\bigr)$ as in Lemma&nbsp;<a class="xref" href="#lemma-lem-main-reduction-tobechecked">11</a>. Then $f$ is strictly increasing on $(0,\infty)$.</p><p>Moreover, by Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-cont0-tobechecked">9</a>, the function $f$ is continuous on $[0,\infty)$. By Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
+\]</div><p>since $g(0)&lt;0$ and $p_t\leq 1/2$. By \(\eqref{eq:Bprime-TOBECHECKED}\), $B&#39;(t)=\mathbb{E}[g(U_t)]&lt;0$ for all $t\in(0,1)$.</p><p>Therefore $B$ is strictly decreasing on $(0,1)$. Continuity of $B$ on $[0,1)$ follows directly from the definition and dominated convergence, so $B$ is strictly decreasing on $[0,1)$ as claimed.</p><div class="proof-end">∎</div></div></div><h2 id="proof-of-theoremref-thmmainref-thmndmainref-thm-bound-for-threshold">5. Proof of Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a></h2><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Theorem <a class="xref" href="#theorem-thm-main">1</a></span></div><div class="env-body"><p>By Theorem&nbsp;<a class="xref" href="#theorem-thm-b-monotone">12</a>, $B$ is strictly decreasing on $[0,1)$. Fix $\alpha&gt;0$ and define $f(r)=A(r)-\alpha\,B\bigl(P(r)\bigr)$ as in Lemma&nbsp;<a class="xref" href="#lemma-lem-main-reduction-tobechecked">11</a>. Then $f$ is strictly increasing on $(0,\infty)$.</p><p>Moreover, by Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-cont0-tobechecked">9</a>, the function $f$ is continuous on $[0,\infty)$. By Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
 f(0)=A(0)-\alpha B(P(0))=-\alpha B(0)&lt;0.
 \]</div><p>Also, using Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
 \lim_{r\to\infty}f(r)=\lim_{r\to\infty}A(r)-\alpha\lim_{r\to\infty}B(P(r))
@@ -2063,9 +2076,30 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 values[key] =
                   (field.parse || "float") === "int" ? toInt(raw, toInt(field.value, 0)) : toFiniteNumber(raw, toFiniteNumber(field.value, 0));
               }
-              const text = await onRun(values);
+              const result = await onRun(values);
               const ms = Math.round(performance.now() - started);
-              output.textContent = `${text}\n\nElapsed: ${ms} ms`;
+              if (typeof result === "string") {
+                output.textContent = `${result}\n\nElapsed: ${ms} ms`;
+              } else {
+                output.replaceChildren();
+                const text =
+                  result && typeof result.text === "string"
+                    ? result.text
+                    : String(result);
+                const textBlock = document.createElement("div");
+                textBlock.style.whiteSpace = "pre-wrap";
+                textBlock.textContent = `${text}\n\nElapsed: ${ms} ms`;
+                output.appendChild(textBlock);
+
+                const nodes = [];
+                if (result && result.node) nodes.push(result.node);
+                if (result && Array.isArray(result.nodes)) nodes.push(...result.nodes);
+                for (const node of nodes) {
+                  if (!node || typeof node !== "object") continue;
+                  if (!("nodeType" in node)) continue;
+                  output.appendChild(node);
+                }
+              }
             } catch (err) {
               output.textContent = `Error: ${err && err.message ? err.message : String(err)}`;
             } finally {
@@ -2191,6 +2225,189 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             return value.toFixed(digits);
           }
 
+          function downsampleSeries(xs, ys, maxPoints = 1000) {
+            const n = xs.length;
+            if (n <= maxPoints) return { xs, ys };
+            const step = Math.max(1, Math.ceil(n / maxPoints));
+            const xOut = [];
+            const yOut = [];
+            for (let i = 0; i < n; i += step) {
+              xOut.push(xs[i]);
+              yOut.push(ys[i]);
+            }
+            if (xOut.length === 0 || xOut[xOut.length - 1] !== xs[n - 1]) {
+              xOut.push(xs[n - 1]);
+              yOut.push(ys[n - 1]);
+            }
+            return { xs: xOut, ys: yOut };
+          }
+
+          function createLinePlot({
+            xs,
+            ys,
+            title = "",
+            xLabel = "",
+            yLabel = "",
+            stroke = "var(--accent)",
+            heightPx = 220,
+          }) {
+            const series = downsampleSeries(xs, ys, 900);
+            const xVals = series.xs;
+            const yVals = series.ys;
+            if (!xVals.length || xVals.length !== yVals.length) return null;
+
+            let xMin = Infinity;
+            let xMax = -Infinity;
+            let yMin = Infinity;
+            let yMax = -Infinity;
+            for (let i = 0; i < xVals.length; i++) {
+              const x = xVals[i];
+              const y = yVals[i];
+              if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+              xMin = Math.min(xMin, x);
+              xMax = Math.max(xMax, x);
+              yMin = Math.min(yMin, y);
+              yMax = Math.max(yMax, y);
+            }
+            if (!Number.isFinite(xMin) || !Number.isFinite(xMax)) return null;
+            if (!Number.isFinite(yMin) || !Number.isFinite(yMax)) return null;
+
+            const xSpan = xMax - xMin || 1;
+            let ySpan = yMax - yMin;
+            if (ySpan === 0) {
+              ySpan = 1;
+              yMin -= 0.5;
+              yMax += 0.5;
+            } else {
+              const pad = 0.06 * ySpan;
+              yMin -= pad;
+              yMax += pad;
+              ySpan = yMax - yMin;
+            }
+
+            const width = 640;
+            const height = 260;
+            const padLeft = 56;
+            const padRight = 14;
+            const padTop = title ? 26 : 14;
+            const padBottom = 34;
+            const plotW = width - padLeft - padRight;
+            const plotH = height - padTop - padBottom;
+
+            const xToSvg = (x) => padLeft + (plotW * (x - xMin)) / xSpan;
+            const yToSvg = (y) => padTop + plotH * (1 - (y - yMin) / ySpan);
+
+            const points = [];
+            for (let i = 0; i < xVals.length; i++) {
+              const x = xVals[i];
+              const y = yVals[i];
+              if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+              points.push(`${xToSvg(x).toFixed(2)},${yToSvg(y).toFixed(2)}`);
+            }
+
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+            svg.style.width = "100%";
+            svg.style.height = `${heightPx}px`;
+            svg.style.display = "block";
+            svg.style.marginTop = "10px";
+            svg.style.background = "color-mix(in oklab, Canvas, var(--surface) 4%)";
+            svg.style.border = "1px solid var(--border)";
+            svg.style.borderRadius = "10px";
+
+            const add = (name, attrs) => {
+              const el = document.createElementNS("http://www.w3.org/2000/svg", name);
+              for (const [k, v] of Object.entries(attrs || {})) el.setAttribute(k, String(v));
+              svg.appendChild(el);
+              return el;
+            };
+
+            add("line", {
+              x1: padLeft,
+              y1: padTop + plotH,
+              x2: padLeft + plotW,
+              y2: padTop + plotH,
+              stroke: "var(--border)",
+              "stroke-width": 1,
+            });
+            add("line", {
+              x1: padLeft,
+              y1: padTop,
+              x2: padLeft,
+              y2: padTop + plotH,
+              stroke: "var(--border)",
+              "stroke-width": 1,
+            });
+
+            const ticks = 4;
+            for (let i = 0; i <= ticks; i++) {
+              const t = i / ticks;
+              const y = padTop + plotH * (1 - t);
+              const val = yMin + ySpan * t;
+              add("line", {
+                x1: padLeft,
+                y1: y,
+                x2: padLeft + plotW,
+                y2: y,
+                stroke: "rgba(255,255,255,0.12)",
+                "stroke-width": 1,
+              });
+              add("text", {
+                x: padLeft - 8,
+                y: y + 4,
+                "text-anchor": "end",
+                "font-size": 12,
+                fill: "var(--muted)",
+              }).textContent = formatNumber(val, 4);
+            }
+
+            add("polyline", {
+              points: points.join(" "),
+              fill: "none",
+              stroke,
+              "stroke-width": 2,
+              "stroke-linejoin": "round",
+              "stroke-linecap": "round",
+            });
+
+            if (title) {
+              add("text", {
+                x: padLeft,
+                y: 16,
+                "text-anchor": "start",
+                "font-size": 13,
+                fill: "CanvasText",
+              }).textContent = title;
+            }
+
+            if (xLabel) {
+              add("text", {
+                x: padLeft + plotW / 2,
+                y: height - 10,
+                "text-anchor": "middle",
+                "font-size": 12,
+                fill: "var(--muted)",
+              }).textContent = xLabel;
+            }
+
+            if (yLabel) {
+              const label = add("text", {
+                x: 14,
+                y: padTop + plotH / 2,
+                "text-anchor": "middle",
+                "font-size": 12,
+                fill: "var(--muted)",
+              });
+              label.setAttribute(
+                "transform",
+                `rotate(-90 14 ${padTop + plotH / 2})`
+              );
+              label.textContent = yLabel;
+            }
+
+            return svg;
+          }
+
           function makeRng(seed) {
             let state = (seed >>> 0) || 0x9e3779b9;
             if (state === 0) state = 0x9e3779b9;
@@ -2250,7 +2467,15 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             return -0.5 * x * x - Math.log(x) - LOG_SQRT_2PI + Math.log(series);
           }
 
+          function millsRatioContinuedFraction(u, terms = 40) {
+            if (u === 0) return Math.sqrt(2 / Math.PI);
+            let t = terms / u;
+            for (let k = terms - 1; k >= 1; k--) t = k / (u + t);
+            return u + t;
+          }
+
           function millsRatio(u) {
+            if (u >= 2) return millsRatioContinuedFraction(u);
             const logPhi = -0.5 * u * u - LOG_SQRT_2PI;
             const logTail = logBarPhi(u);
             const diff = logPhi - logTail;
@@ -2569,6 +2794,100 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             );
           });
 
+          findEquationBlocks("eq:r-substituted").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:r-substituted",
+                title: "Check: does r* from eq:system satisfy r(1−P(r))²=α·B(P(r))?",
+                description:
+                  "First solves eq:system to find r*, then verifies whether this r* satisfies r(1−P(r))²=α·B(P(r)). " +
+                  commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.25 },
+                  { key: "alpha", label: "α", value: 0.5, step: 0.05, min: 0.001 },
+                  { key: "r0", label: "init r", value: 1, step: 0.5, min: 0 },
+                  { key: "damp", label: "damping", value: 0.6, step: 0.05, min: 0.05, max: 1 },
+                  { key: "tol", label: "tolerance", value: 1e-6, step: 1e-6, min: 1e-12, max: 1e-2 },
+                  { key: "iters", label: "max iters", value: 60, step: 1, parse: "int", min: 5, max: 500 },
+                  { key: "n", label: "Samples N", value: 60000, step: 1000, parse: "int", min: 5000, max: 300000 },
+                  { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, alpha, r0, damp, tol, iters, n, seed }) => {
+                  const k = Number(kappa) || 0;
+                  const a = Math.max(0, Number(alpha) || 0);
+                  const N = clamp(toInt(n, 60000), 5000, 300000);
+                  const maxIter = clamp(toInt(iters, 60), 5, 500);
+                  const damping = clamp(Number(damp) || 0.6, 0.05, 1);
+                  const tolerance = Math.max(1e-12, Math.abs(Number(tol) || 1e-6));
+
+                  const { Ck, alphaC } = criticalCapacity(k);
+                  const zs = makeNormalSamples(N, seed);
+
+                  const lines = [];
+                  lines.push(`κ=${formatNumber(k, 4)}, α=${formatNumber(a, 6)}`);
+                  lines.push(`Cκ≈${formatNumber(Ck)}  αc(κ)≈${formatNumber(alphaC)}`);
+                  lines.push(`α < αc ? ${a < alphaC ? "YES (solution should exist)" : "NO (no solution expected)"}`);
+                  lines.push(`settings: N=${N}, seed=${seed}, maxIter=${maxIter}, damping=${formatNumber(damping, 3)}, tol=${tolerance}\n`);
+
+                  // Solve eq:system to get r*
+                  const sol = await solveRsFixedPoint({
+                    kappa: k,
+                    alpha: a,
+                    zs,
+                    rInit: Math.max(0, Number(r0) || 0),
+                    maxIter,
+                    damping,
+                    tol: tolerance,
+                  });
+
+                  if (!sol || typeof sol !== "object") {
+                    lines.push("Error: solver failed to return a result");
+                    return lines.join("\n");
+                  }
+
+                  if (!sol.converged) {
+                    lines.push(`Solver did not converge (init r=${formatNumber(r0, 4)}), iter=${sol.iter}, reason=${sol.reason || "?"}`);
+                    lines.push(`  q≈${formatNumber(sol.q)}  r≈${formatNumber(sol.r)}`);
+                    return lines.join("\n");
+                  }
+
+                  lines.push(`Step 1: Solved eq:system`);
+                  lines.push(`  Converged in ${sol.iter} iterations`);
+                  lines.push(`  Found solution: r*≈${formatNumber(sol.r, 6)}, q*≈${formatNumber(sol.q, 6)}`);
+                  lines.push(`  From system: r_rhs≈${formatNumber(sol.rRhs)}  B(q)≈${formatNumber(sol.B)}\n`);
+
+                  // Now verify whether r* satisfies r(1-P(r))²=α·B(P(r))
+                  const rStar = sol.r;
+                  const qStar = await estimateP(rStar, zs);
+                  const eps = 1 - qStar;
+                  const lhs = rStar * eps * eps;
+                  const rhs = a * (await estimateB(qStar, k, zs));
+                  const diff = lhs - rhs;
+                  const relErr = Math.abs(diff) / Math.max(Math.abs(lhs), Math.abs(rhs), 1e-12);
+
+                  lines.push(`Step 2: Check if r* satisfies r(1−P(r))²=α·B(P(r))`);
+                  lines.push(`  Using r*≈${formatNumber(rStar, 6)}`);
+                  lines.push(`  P(r*)≈${formatNumber(qStar, 6)}`);
+                  lines.push(`  LHS: r*(1−P(r*))²≈${formatNumber(lhs, 6)}`);
+                  lines.push(`  RHS: α·B(P(r*))≈${formatNumber(rhs, 6)}`);
+                  lines.push(`  Difference (LHS−RHS)≈${formatNumber(diff, 6)}`);
+                  lines.push(`  |Difference|≈${formatNumber(Math.abs(diff), 6)}`);
+                  lines.push(`  Relative error≈${formatNumber(relErr, 6)}\n`);
+
+                  const checkTol = 0.01;
+                  if (Math.abs(diff) < checkTol) {
+                    lines.push(`✓ VERIFIED: r* satisfies the equation within tolerance ${checkTol}`);
+                  } else {
+                    lines.push(`✗ WARNING: equation not satisfied within tolerance ${checkTol}`);
+                  }
+
+                  return lines.join("\n");
+                },
+              })
+            );
+          });
+
           findEquationBlocks("eq:defA").forEach((block) => {
             insertAfterBlock(
               block,
@@ -2694,45 +3013,60 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               createSimCard({
                 label: "eq:Bprime-TOBECHECKED",
                 title: "Check: B′(t) = E[g(U_t)]",
-                description: commonDisclaimer,
+                description: commonDisclaimer + " (Matches numerics/simulate_bprime_tobechecked.py.)",
                 fields: [
                   { key: "kappa", label: "κ", value: 0, step: 0.1 },
                   { key: "t", label: "t", value: 0.5, step: 0.01, min: 0.001, max: 0.999 },
-                  { key: "dt", label: "Δt (finite diff)", value: 0.002, step: 0.0001, min: 1e-6, max: 0.1 },
+                  { key: "dt", label: "h (finite diff)", value: 0.002, step: 0.0001, min: 1e-6, max: 0.1 },
                   { key: "n", label: "Samples N", value: 120000, step: 1000, parse: "int", min: 2000 },
                   { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
                 ],
                 onRun: async ({ kappa, t, dt, n, seed }) => {
                   const N = clamp(toInt(n, 120000), 2000, 5000000);
                   const t0 = clamp(t, 1e-6, 1 - 1e-6);
-                  const maxDt = Math.min(0.25, t0 - 1e-6, 1 - t0 - 1e-6);
+                  const eps = 1e-12;
+                  const maxDt = Math.min(0.25, (t0 - eps) / 2, (1 - t0 - eps) / 2);
                   const h = clamp(Math.abs(dt) || 0.001, 1e-6, maxDt);
-                  const tp = t0 + h;
-                  const tm = t0 - h;
+                  const tm2 = t0 - 2 * h;
+                  const tm1 = t0 - h;
+                  const tp1 = t0 + h;
+                  const tp2 = t0 + 2 * h;
 
                   const rng = makeRng(seed);
                   const normal = makeNormalSampler(rng);
 
-                  let sumE2 = 0;
-                  let sumE2p = 0;
-                  let sumE2m = 0;
+                  let sumBm2 = 0;
+                  let sumBm1 = 0;
+                  let sumB0 = 0;
+                  let sumBp1 = 0;
+                  let sumBp2 = 0;
                   let meanG = 0;
                   let m2G = 0;
+                  let meanFd = 0;
+                  let m2Fd = 0;
+                  let meanDiff = 0;
+                  let m2Diff = 0;
 
                   const sqrtT0 = Math.sqrt(t0);
-                  const sqrtTp = Math.sqrt(tp);
-                  const sqrtTm = Math.sqrt(tm);
+                  const sqrtTm2 = Math.sqrt(tm2);
+                  const sqrtTm1 = Math.sqrt(tm1);
+                  const sqrtTp1 = Math.sqrt(tp1);
+                  const sqrtTp2 = Math.sqrt(tp2);
                   const invS0 = 1 / Math.sqrt(1 - t0);
-                  const invSp = 1 / Math.sqrt(1 - tp);
-                  const invSm = 1 / Math.sqrt(1 - tm);
+                  const invSm2 = 1 / Math.sqrt(1 - tm2);
+                  const invSm1 = 1 / Math.sqrt(1 - tm1);
+                  const invSp1 = 1 / Math.sqrt(1 - tp1);
+                  const invSp2 = 1 / Math.sqrt(1 - tp2);
 
                   const chunkSize = 25000;
                   for (let i = 1; i <= N; i++) {
                     const z = normal();
+
                     const u0 = (kappa - sqrtT0 * z) * invS0;
                     const e0 = millsRatio(u0);
                     const e02 = e0 * e0;
-                    sumE2 += e02;
+                    const b0 = (1 - t0) * e02;
+                    sumB0 += b0;
                     const ep0 = millsDerivative(u0, e0);
                     const g = ep0 * ep0 - 2 * (1 - ep0) * e02;
 
@@ -2740,30 +3074,64 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     meanG += delta / i;
                     m2G += delta * (g - meanG);
 
-                    const up = (kappa - sqrtTp * z) * invSp;
-                    const um = (kappa - sqrtTm * z) * invSm;
-                    const epv = millsRatio(up);
-                    const emv = millsRatio(um);
-                    sumE2p += epv * epv;
-                    sumE2m += emv * emv;
+                    const um2 = (kappa - sqrtTm2 * z) * invSm2;
+                    const um1 = (kappa - sqrtTm1 * z) * invSm1;
+                    const up1 = (kappa - sqrtTp1 * z) * invSp1;
+                    const up2 = (kappa - sqrtTp2 * z) * invSp2;
+
+                    const em2 = millsRatio(um2);
+                    const em1 = millsRatio(um1);
+                    const ep1 = millsRatio(up1);
+                    const ep2 = millsRatio(up2);
+
+                    const bm2 = (1 - tm2) * em2 * em2;
+                    const bm1 = (1 - tm1) * em1 * em1;
+                    const bp1 = (1 - tp1) * ep1 * ep1;
+                    const bp2 = (1 - tp2) * ep2 * ep2;
+
+                    sumBm2 += bm2;
+                    sumBm1 += bm1;
+                    sumBp1 += bp1;
+                    sumBp2 += bp2;
+
+                    const fd = (bm2 - 8 * bm1 + 8 * bp1 - bp2) / (12 * h);
+                    {
+                      const deltaFd = fd - meanFd;
+                      meanFd += deltaFd / i;
+                      m2Fd += deltaFd * (fd - meanFd);
+                    }
+
+                    const diff = fd - g;
+                    {
+                      const deltaDiff = diff - meanDiff;
+                      meanDiff += deltaDiff / i;
+                      m2Diff += deltaDiff * (diff - meanDiff);
+                    }
 
                     if (i % chunkSize === 0) await yieldToUi();
                   }
 
-                  const B = (1 - t0) * (sumE2 / N);
-                  const Bp = (1 - tp) * (sumE2p / N);
-                  const Bm = (1 - tm) * (sumE2m / N);
-                  const finiteDiff = (Bp - Bm) / (2 * h);
-
                   const varG = N > 1 ? m2G / (N - 1) : 0;
+                  const varFd = N > 1 ? m2Fd / (N - 1) : 0;
+                  const varDiff = N > 1 ? m2Diff / (N - 1) : 0;
                   const seG = Math.sqrt(varG / N);
+                  const seFd = Math.sqrt(varFd / N);
+                  const seDiff = Math.sqrt(varDiff / N);
+                  const zScore = seDiff > 0 ? meanDiff / seDiff : NaN;
+
+                  const Bm2 = sumBm2 / N;
+                  const Bm1 = sumBm1 / N;
+                  const B0 = sumB0 / N;
+                  const Bp1 = sumBp1 / N;
+                  const Bp2 = sumBp2 / N;
 
                   return [
-                    `κ=${formatNumber(kappa, 4)}, t=${formatNumber(t0, 5)}, N=${N}`,
-                    `B(t) ≈ ${formatNumber(B)}`,
+                    `κ=${formatNumber(kappa, 4)}, t=${formatNumber(t0, 5)}, N=${N}, h=${formatNumber(h, 6)}`,
+                    `B(t-2h)≈${formatNumber(Bm2)}  B(t-h)≈${formatNumber(Bm1)}  B(t)≈${formatNumber(B0)}  B(t+h)≈${formatNumber(Bp1)}  B(t+2h)≈${formatNumber(Bp2)}`,
                     `E[g(U_t)] ≈ ${formatNumber(meanG)} (SE≈${formatNumber(seG)})`,
-                    `finite diff B′(t) ≈ ${formatNumber(finiteDiff)} (Δt=${formatNumber(h, 6)})`,
-                    `diff (finite - E[g]) ≈ ${formatNumber(finiteDiff - meanG)}`,
+                    `FD5 B′(t) ≈ ${formatNumber(meanFd)} (SE≈${formatNumber(seFd)})`,
+                    `diff (FD5 - E[g]) ≈ ${formatNumber(meanDiff)} (SE≈${formatNumber(seDiff)}, z≈${formatNumber(zScore, 3)})`,
+                    `match check (|z|<=3): ${Number.isFinite(zScore) ? (Math.abs(zScore) <= 3 ? "YES" : "NO") : "N/A"}`,
                   ].join("\n");
                 },
               })
@@ -3023,41 +3391,101 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             );
           });
 
+          
           findEquationBlocks("eq:Hxy-TOBECHECKED").forEach((block) => {
             insertAfterBlock(
               block,
               createSimCard({
                 label: "eq:Hxy-TOBECHECKED",
-                title: "Check: F(ud,d²) = d·H(u) < 0 (u≥0)",
-                description: "Scans u and reports max F. " + commonDisclaimer,
+                title: "Check: F(ud,d^2) = d*H(u) < 0 (u>=0)",
+                description:
+                  "Scans u on a grid plus random samples (d(u)=millsRatio(u)-u), compares F(ud,d^2) to d*H(u), and reports maxima. H(u)=u^2 d + 6u d^2 + 6 d^3 - u - 4 d. " +
+                  commonDisclaimer,
                 fields: [
                   { key: "uMin", label: "u min", value: 0, step: 0.25, min: 0 },
                   { key: "uMax", label: "u max", value: 8, step: 0.25, min: 0 },
                   { key: "steps", label: "grid steps", value: 801, step: 1, parse: "int", min: 5 },
+                  { key: "samples", label: "random samples", value: 20000, step: 1000, parse: "int", min: 0 },
+                  { key: "seed", label: "Seed", value: 7, step: 1, parse: "int" },
                 ],
-                onRun: async ({ uMin, uMax, steps }) => {
+                onRun: async ({ uMin, uMax, steps, samples, seed }) => {
                   const a = Math.max(0, Math.min(uMin, uMax));
                   const b = Math.max(0, Math.max(uMin, uMax));
                   const nSteps = clamp(toInt(steps, 801), 5, 100001);
+                  const nSamples = clamp(toInt(samples, 20000), 0, 2000000);
+                  const rng = makeRng(seed);
                   let maxF = -Infinity;
-                  let argU = a;
-                  for (let i = 0; i < nSteps; i++) {
-                    const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                  let maxH = -Infinity;
+                  let maxAbsDiff = -Infinity;
+                  let argUF = a;
+                  let argUH = a;
+                  let argUDiff = a;
+                  let dAtMaxF = NaN;
+                  let hAtMaxF = NaN;
+                  const gridUs = [];
+                  const dHVals = [];
+
+                  const evalAt = (u, record) => {
                     const d = millsRatio(u) - u;
                     const x = u * d;
                     const y = d * d;
+                    const H = u * u * d + 6 * u * d * d + 6 * d * d * d - u - 4 * d;
                     const F = x * x + 6 * x * y + 6 * y * y - x - 4 * y;
+                    const diff = F - d * H;
+                    if (record) {
+                      gridUs.push(u);
+                      dHVals.push(d * H);
+                    }
                     if (F > maxF) {
                       maxF = F;
-                      argU = u;
+                      argUF = u;
+                      dAtMaxF = d;
+                      hAtMaxF = H;
                     }
+                    if (H > maxH) {
+                      maxH = H;
+                      argUH = u;
+                    }
+                    const absDiff = Math.abs(diff);
+                    if (absDiff > maxAbsDiff) {
+                      maxAbsDiff = absDiff;
+                      argUDiff = u;
+                    }
+                  };
+
+                  for (let i = 0; i < nSteps; i++) {
+                    const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                    evalAt(u, true);
                     if (i % 5000 === 0) await yieldToUi();
                   }
-                  return [
-                    `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
-                    `max F(ud,d²) ≈ ${formatNumber(maxF)} at u≈${formatNumber(argU, 4)}`,
-                    `check: max F < 0 ? ${maxF < 0 ? "YES" : "NO (increase steps)"} `,
+
+                  if (nSamples > 0) {
+                    const chunkSize = 50000;
+                    for (let i = 0; i < nSamples; i++) {
+                      const u = a + (b - a) * rng();
+                      evalAt(u, false);
+                      if (i % chunkSize === 0) await yieldToUi();
+                    }
+                  }
+
+                  const text = [
+                    `u in [${formatNumber(a, 3)}, ${formatNumber(b, 3)}], grid=${nSteps}, random=${nSamples}`,
+                    `max F(ud,d^2) ~ ${formatNumber(maxF)} at u~${formatNumber(argUF, 4)}`,
+                    `d(u_max) ~ ${formatNumber(dAtMaxF)}; H(u_max) ~ ${formatNumber(hAtMaxF)}`,
+                    `max H(u) ~ ${formatNumber(maxH)} at u~${formatNumber(argUH, 4)}`,
+                    `max |F - d*H| ~ ${formatNumber(maxAbsDiff)} at u~${formatNumber(argUDiff, 4)}`,
+                    `check: max F < 0 ? ${maxF < 0 ? "YES" : "NO (increase grid/samples)"}; max H < 0 ? ${maxH < 0 ? "YES" : "NO"}`,
                   ].join("\n");
+
+                  const plot = createLinePlot({
+                    xs: gridUs,
+                    ys: dHVals,
+                    title: "d(u)*H(u) on grid",
+                    xLabel: "u",
+                    yLabel: "d*H",
+                  });
+
+                  return { text, nodes: plot ? [plot] : [] };
                 },
               })
             );
@@ -3367,6 +3795,426 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 },
               })
             );
+          });
+
+          function insertLemmaSimulation(id, def) {
+            const lemma = paperRoot.querySelector(`#${id}`);
+            if (!lemma) {
+              missingLabels.add(`lemma:${id}`);
+              return;
+            }
+            if (lemma.querySelector("details.sim-card")) return;
+            insertAfterBlock(lemma, createSimCard(def));
+          }
+
+          insertLemmaSimulation("lemma-lem-p-properties-tobechecked", {
+            label: "lemma-lem-p-properties-tobechecked",
+            title: "Check: P(r) increases and stays in [0,1)",
+            description:
+              "Computes P(r)=E[tanh²(√r Z)] on an r-grid and checks monotonicity / range. " +
+              commonDisclaimer,
+            fields: [
+              { key: "rMin", label: "r min", value: 0, step: 0.5, min: 0 },
+              { key: "rMax", label: "r max", value: 10, step: 0.5, min: 0.1 },
+              { key: "steps", label: "grid steps", value: 81, step: 1, parse: "int", min: 5, max: 2001 },
+              { key: "n", label: "Samples N", value: 25000, step: 1000, parse: "int", min: 5000, max: 300000 },
+              { key: "seed", label: "Seed", value: 21, step: 1, parse: "int" },
+            ],
+            onRun: async ({ rMin, rMax, steps, n, seed }) => {
+              const a = Math.max(0, Math.min(rMin, rMax));
+              const b = Math.max(0, Math.max(rMin, rMax));
+              const nSteps = clamp(toInt(steps, 81), 5, 2001);
+              const N = clamp(toInt(n, 25000), 5000, 300000);
+              const zs = makeNormalSamples(N, seed);
+
+              const monoTol = 2e-3;
+              let prev = null;
+              let maxDecrease = 0;
+              let minP = Infinity;
+              let maxP = -Infinity;
+              let P0 = NaN;
+              let P1 = NaN;
+
+              for (let i = 0; i < nSteps; i++) {
+                const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                const Pval = await estimateP(r, zs);
+                if (i === 0) P0 = Pval;
+                if (i === nSteps - 1) P1 = Pval;
+                if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - Pval);
+                prev = Pval;
+                minP = Math.min(minP, Pval);
+                maxP = Math.max(maxP, Pval);
+                if (i % 10 === 0) await yieldToUi();
+              }
+
+              return [
+                `r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, N=${N}, seed=${seed}`,
+                `P(r_min)≈${formatNumber(P0)}  P(r_max)≈${formatNumber(P1)}`,
+                `range on grid: min≈${formatNumber(minP)}  max≈${formatNumber(maxP)}  (1-max≈${formatNumber(1 - maxP)})`,
+                `max decrease≈${formatNumber(maxDecrease)}  check: ≤ ${formatNumber(monoTol)} ? ${
+                  maxDecrease <= monoTol ? "YES" : "NO"
+                }`,
+              ].join("\n");
+            },
+          });
+
+          insertLemmaSimulation("lemma-lem-a-tobechecked", {
+            label: "lemma-lem-a-tobechecked",
+            title: "Check: A(r) increases and A(r) ≤ 2/π",
+            description:
+              "Computes A(r)=r(1−P(r))² on an r-grid. " + commonDisclaimer,
+            fields: [
+              { key: "rMin", label: "r min", value: 0, step: 0.5, min: 0 },
+              { key: "rMax", label: "r max", value: 25, step: 0.5, min: 0.1 },
+              { key: "steps", label: "grid steps", value: 81, step: 1, parse: "int", min: 5, max: 2001 },
+              { key: "n", label: "Samples N", value: 25000, step: 1000, parse: "int", min: 5000, max: 300000 },
+              { key: "seed", label: "Seed", value: 22, step: 1, parse: "int" },
+            ],
+            onRun: async ({ rMin, rMax, steps, n, seed }) => {
+              const a = Math.max(0, Math.min(rMin, rMax));
+              const b = Math.max(0, Math.max(rMin, rMax));
+              const nSteps = clamp(toInt(steps, 81), 5, 2001);
+              const N = clamp(toInt(n, 25000), 5000, 300000);
+              const zs = makeNormalSamples(N, seed);
+
+              const bound = 2 / Math.PI;
+              const monoTol = 2e-3;
+              let prev = null;
+              let maxDecrease = 0;
+              let maxA = -Infinity;
+              let argR = a;
+              let A0 = NaN;
+              let A1 = NaN;
+
+              for (let i = 0; i < nSteps; i++) {
+                const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                const q = await estimateP(r, zs);
+                const eps = 1 - q;
+                const Aval = r * eps * eps;
+                if (i === 0) A0 = Aval;
+                if (i === nSteps - 1) A1 = Aval;
+                if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - Aval);
+                prev = Aval;
+                if (Aval > maxA) {
+                  maxA = Aval;
+                  argR = r;
+                }
+                if (i % 10 === 0) await yieldToUi();
+              }
+
+              return [
+                `r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, N=${N}, seed=${seed}`,
+                `A(r_min)≈${formatNumber(A0)}  A(r_max)≈${formatNumber(A1)}  (2/π−A(r_max)≈${formatNumber(bound - A1)})`,
+                `max A≈${formatNumber(maxA)} at r≈${formatNumber(argR, 4)}`,
+                `2/π≈${formatNumber(bound)}  check: max A ≤ 2/π ? ${
+                  maxA <= bound + monoTol ? "YES" : "NO"
+                }`,
+                `max decrease≈${formatNumber(maxDecrease)}  check: ≤ ${formatNumber(monoTol)} ? ${
+                  maxDecrease <= monoTol ? "YES" : "NO"
+                }`,
+              ].join("\n");
+            },
+          });
+
+          insertLemmaSimulation("lemma-lem-mills-bound-tobechecked", {
+            label: "lemma-lem-mills-bound-tobechecked",
+            title: "Check: inverse Mills ratio bounds",
+            description:
+              "Checks E(u) ≤ u_+ + C and u < E(u) ≤ u+1/u over a grid. " + commonDisclaimer,
+            fields: [
+              { key: "uMin", label: "u min", value: -6, step: 0.5 },
+              { key: "uMax", label: "u max", value: 8, step: 0.5 },
+              { key: "steps", label: "grid steps", value: 401, step: 1, parse: "int", min: 5, max: 50001 },
+              { key: "c", label: "C", value: 3, step: 0.25, min: 0 },
+            ],
+            onRun: async ({ uMin, uMax, steps, c }) => {
+              const a = Math.min(uMin, uMax);
+              const b = Math.max(uMin, uMax);
+              const nSteps = clamp(toInt(steps, 401), 5, 50001);
+              const C = Math.max(0, Number(c) || 0);
+
+              let maxUpper = -Infinity;
+              let argUpper = a;
+              let minLower = Infinity;
+              let argLower = 0;
+              let maxUpperPos = -Infinity;
+              let argUpperPos = 0;
+              let sawPos = false;
+
+              for (let i = 0; i < nSteps; i++) {
+                const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                const E = millsRatio(u);
+                const uPlus = Math.max(u, 0);
+                const upperExcess = E - (uPlus + C);
+                if (upperExcess > maxUpper) {
+                  maxUpper = upperExcess;
+                  argUpper = u;
+                }
+                if (u > 0) {
+                  sawPos = true;
+                  const lowerMargin = E - u;
+                  if (lowerMargin < minLower) {
+                    minLower = lowerMargin;
+                    argLower = u;
+                  }
+                  const upperPosExcess = E - (u + 1 / u);
+                  if (upperPosExcess > maxUpperPos) {
+                    maxUpperPos = upperPosExcess;
+                    argUpperPos = u;
+                  }
+                }
+                if (i % 5000 === 0) await yieldToUi();
+              }
+
+              const lines = [];
+              lines.push(
+                `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, C=${formatNumber(C)}`
+              );
+              lines.push(
+                `max(E - (u_+ + C)) ≈ ${formatNumber(maxUpper)} at u≈${formatNumber(argUpper, 4)} (<=0 expected)`
+              );
+              if (sawPos) {
+                lines.push(
+                  `min(E - u) ≈ ${formatNumber(minLower)} at u≈${formatNumber(argLower, 4)} (>=0 expected)`
+                );
+                lines.push(
+                  `max(E - (u + 1/u)) ≈ ${formatNumber(maxUpperPos)} at u≈${formatNumber(argUpperPos, 4)} (<=0 expected)`
+                );
+              } else {
+                lines.push("no u>0 in grid; adjust u min/max to test the u>0 bounds.");
+              }
+              return lines.join("\n");
+            },
+          });
+
+          insertLemmaSimulation("lemma-lem-b-cont0-tobechecked", {
+            label: "lemma-lem-b-cont0-tobechecked",
+            title: "Check: B(q) is finite and locally continuous",
+            description: "Evaluates B(q0±Δ) and compares differences. " + commonDisclaimer,
+            fields: [
+              { key: "kappa", label: "κ", value: 0, step: 0.25 },
+              { key: "q", label: "q₀", value: 0.6, step: 0.05, min: 0, max: 0.99999 },
+              { key: "delta", label: "Δ", value: 0.05, step: 0.01, min: 0 },
+              { key: "n", label: "Samples N", value: 25000, step: 1000, parse: "int", min: 5000, max: 300000 },
+              { key: "seed", label: "Seed", value: 23, step: 1, parse: "int" },
+            ],
+            onRun: async ({ kappa, q, delta, n, seed }) => {
+              const k = Number(kappa) || 0;
+              const q0 = clamp(Number(q) || 0, 0, 1 - 1e-6);
+              const d = Math.max(0, Number(delta) || 0);
+              const qMinus = clamp(q0 - d, 0, 1 - 1e-6);
+              const qPlus = clamp(q0 + d, 0, 1 - 1e-6);
+              const dm = q0 - qMinus;
+              const dp = qPlus - q0;
+              const N = clamp(toInt(n, 25000), 5000, 300000);
+              const zs = makeNormalSamples(N, seed);
+
+              const B0 = await estimateB(q0, k, zs);
+              const Bm = await estimateB(qMinus, k, zs);
+              const Bp = await estimateB(qPlus, k, zs);
+              const diffMinus = Math.abs(Bm - B0);
+              const diffPlus = Math.abs(Bp - B0);
+              const maxDiff = Math.max(diffMinus, diffPlus);
+
+              return [
+                `κ=${formatNumber(k, 4)}, q₀=${formatNumber(q0, 5)}, Δ−=${formatNumber(dm, 5)}, Δ+=${formatNumber(dp, 5)}`,
+                `B(q₀)≈${formatNumber(B0)}`,
+                `B(q₀−Δ)≈${formatNumber(Bm)}  |Δ|≈${formatNumber(diffMinus)}`,
+                `B(q₀+Δ)≈${formatNumber(Bp)}  |Δ|≈${formatNumber(diffPlus)}`,
+                `max |Δ|≈${formatNumber(maxDiff)}  (continuity check)`,
+              ].join("\n");
+            },
+          });
+
+          insertLemmaSimulation("lemma-lem-b-endpoints-tobechecked", {
+            label: "lemma-lem-b-endpoints-tobechecked",
+            title: "Check: B(0)=E(κ)² and B(q→1)=Cκ",
+            description: "Compares B at q=0 and near 1 with the closed forms. " + commonDisclaimer,
+            fields: [
+              { key: "kappa", label: "κ", value: 0, step: 0.25 },
+              { key: "q", label: "q near 1", value: 0.995, step: 0.001, min: 0.5, max: 0.999999 },
+              { key: "n", label: "Samples N", value: 30000, step: 1000, parse: "int", min: 5000, max: 300000 },
+              { key: "seed", label: "Seed", value: 24, step: 1, parse: "int" },
+            ],
+            onRun: async ({ kappa, q, n, seed }) => {
+              const k = Number(kappa) || 0;
+              const q1 = clamp(Number(q) || 0.995, 0, 1 - 1e-8);
+              const N = clamp(toInt(n, 30000), 5000, 300000);
+              const zs = makeNormalSamples(N, seed);
+
+              const E0 = millsRatio(k);
+              const B0 = E0 * E0;
+              const B1 = await estimateB(q1, k, zs);
+              const { Ck } = criticalCapacity(k);
+
+              return [
+                `κ=${formatNumber(k, 4)}, q≈${formatNumber(q1, 6)}, N=${N}, seed=${seed}`,
+                `B(0)=E(κ)² ≈ ${formatNumber(B0)}`,
+                `B(q≈1) ≈ ${formatNumber(B1)}`,
+                `Cκ ≈ ${formatNumber(Ck)}  (Cκ−B(q)≈${formatNumber(Ck - B1)})`,
+              ].join("\n");
+            },
+          });
+
+          insertLemmaSimulation("lemma-lem-main-reduction-tobechecked", {
+            label: "lemma-lem-main-reduction-tobechecked",
+            title: "Check: f(r)=A(r)−α·B(P(r)) is increasing",
+            description: "Evaluates f(r) on an r-grid and checks monotonicity. " + commonDisclaimer,
+            fields: [
+              { key: "kappa", label: "κ", value: 0, step: 0.25 },
+              { key: "alpha", label: "α", value: 0.5, step: 0.05, min: 0.001 },
+              { key: "rMin", label: "r min", value: 0, step: 0.5, min: 0 },
+              { key: "rMax", label: "r max", value: 10, step: 0.5, min: 0.1 },
+              { key: "steps", label: "grid steps", value: 61, step: 1, parse: "int", min: 5, max: 2001 },
+              { key: "n", label: "Samples N", value: 30000, step: 1000, parse: "int", min: 5000, max: 300000 },
+              { key: "seed", label: "Seed", value: 25, step: 1, parse: "int" },
+            ],
+            onRun: async ({ kappa, alpha, rMin, rMax, steps, n, seed }) => {
+              const k = Number(kappa) || 0;
+              const a0 = Math.max(0, Number(alpha) || 0);
+              const a = Math.max(0, Math.min(rMin, rMax));
+              const b = Math.max(0, Math.max(rMin, rMax));
+              const nSteps = clamp(toInt(steps, 61), 5, 2001);
+              const N = clamp(toInt(n, 30000), 5000, 300000);
+              const zs = makeNormalSamples(N, seed);
+
+              const monoTol = 2e-3;
+              let prev = null;
+              let maxDecrease = 0;
+              let minF = Infinity;
+              let maxF = -Infinity;
+              let f0 = NaN;
+              let f1 = NaN;
+
+              for (let i = 0; i < nSteps; i++) {
+                const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                const q = await estimateP(r, zs);
+                const eps = 1 - q;
+                const Aval = r * eps * eps;
+                const Bq = await estimateB(q, k, zs);
+                const f = Aval - a0 * Bq;
+                if (i === 0) f0 = f;
+                if (i === nSteps - 1) f1 = f;
+                if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - f);
+                prev = f;
+                minF = Math.min(minF, f);
+                maxF = Math.max(maxF, f);
+                if (i % 5 === 0) await yieldToUi();
+              }
+
+              return [
+                `κ=${formatNumber(k, 4)}, α=${formatNumber(a0, 6)}, r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}]`,
+                `steps=${nSteps}, N=${N}, seed=${seed}`,
+                `f(r_min)≈${formatNumber(f0)}  f(r_max)≈${formatNumber(f1)}`,
+                `range on grid: min≈${formatNumber(minF)}  max≈${formatNumber(maxF)}`,
+                `max decrease≈${formatNumber(maxDecrease)}  check: ≤ ${formatNumber(monoTol)} ? ${
+                  maxDecrease <= monoTol ? "YES" : "NO"
+                }`,
+              ].join("\n");
+            },
+          });
+
+          
+          insertLemmaSimulation("lemma-lem-g-decreasing-positive", {
+            label: "lemma-lem-g-decreasing-positive",
+            title: "Check: g(u) decreases on [u_min, u_max]",
+            description:
+              "Evaluates g(u)=E'(u)^2-2(1-E'(u))E(u)^2 on a u-grid, with E(u)=millsRatio(u) and E'(u)=E(u)(E(u)-u). " +
+              commonDisclaimer,
+            fields: [
+              { key: "uMin", label: "u min", value: 0, step: 0.25, min: 0 },
+              { key: "uMax", label: "u max", value: 8, step: 0.25, min: 0 },
+              { key: "steps", label: "grid steps", value: 401, step: 1, parse: "int", min: 5, max: 50001 },
+            ],
+            onRun: async ({ uMin, uMax, steps }) => {
+              const a = Math.max(0, Math.min(uMin, uMax));
+              const b = Math.max(0, Math.max(uMin, uMax));
+              const nSteps = clamp(toInt(steps, 401), 5, 50001);
+
+              const monoTol = 2e-3;
+              let prev = null;
+              let maxIncrease = 0;
+              let maxG = -Infinity;
+              let minG = Infinity;
+              let argMax = a;
+              let argMin = a;
+              let g0 = NaN;
+              let g1 = NaN;
+              const us = [];
+              const gs = [];
+
+              for (let i = 0; i < nSteps; i++) {
+                const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                const E = millsRatio(u);
+                const Ep = millsDerivative(u, E);
+                const g = Ep * Ep - 2 * (1 - Ep) * E * E;
+                us.push(u);
+                gs.push(g);
+                if (i === 0) g0 = g;
+                if (i === nSteps - 1) g1 = g;
+                if (prev !== null) maxIncrease = Math.max(maxIncrease, g - prev);
+                prev = g;
+                if (g > maxG) {
+                  maxG = g;
+                  argMax = u;
+                }
+                if (g < minG) {
+                  minG = g;
+                  argMin = u;
+                }
+                if (i % 5000 === 0) await yieldToUi();
+              }
+
+              const text = [
+                `u in [${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
+                `g(u_min)~${formatNumber(g0)}  g(u_max)~${formatNumber(g1)}`,
+                `max g~${formatNumber(maxG)} at u~${formatNumber(argMax, 4)}`,
+                `min g~${formatNumber(minG)} at u~${formatNumber(argMin, 4)}`,
+                `max increase~${formatNumber(maxIncrease)}  check: <= ${formatNumber(monoTol)} ? ${
+                  maxIncrease <= monoTol ? "YES" : "NO"
+                }`,
+              ].join("\n");
+
+              const plot = createLinePlot({
+                xs: us,
+                ys: gs,
+                title: "g(u) on grid",
+                xLabel: "u",
+                yLabel: "g(u)",
+              });
+
+              return { text, nodes: plot ? [plot] : [] };
+            },
+          });
+
+          insertLemmaSimulation("lemma-lem-rationalfunctionbound-tobechecked", {
+            label: "lemma-lem-rationalfunctionbound-tobechecked",
+            title: "Check: r(4−r)(1−r)²/(r²−6r+6)² ≤ 1/18",
+            description: "Scans r on a grid and reports max value. " + commonDisclaimer,
+            fields: [{ key: "steps", label: "grid steps", value: 20001, step: 1, parse: "int", min: 101 }],
+            onRun: async ({ steps }) => {
+              const nSteps = clamp(toInt(steps, 20001), 101, 2000001);
+              let maxV = -Infinity;
+              let argR = 0.5;
+              for (let i = 1; i < nSteps; i++) {
+                const r = i / nSteps;
+                const num = r * (4 - r) * (1 - r) * (1 - r);
+                const den = r * r - 6 * r + 6;
+                const v = num / (den * den);
+                if (v > maxV) {
+                  maxV = v;
+                  argR = r;
+                }
+                if (i % 200000 === 0) await yieldToUi();
+              }
+              const bound = 1 / 18;
+              return [
+                `steps=${nSteps}`,
+                `max ≈ ${formatNumber(maxV)} at r≈${formatNumber(argR, 6)}`,
+                `1/18 ≈ ${formatNumber(bound)}`,
+                `check: max ≤ 1/18 ? ${maxV <= bound + 1e-12 ? "YES" : "NO (increase steps)"} `,
+              ].join("\n");
+            },
           });
         }
         // Main page is section 1.

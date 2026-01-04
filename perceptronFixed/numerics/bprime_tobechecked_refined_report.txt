@@ -1,0 +1,127 @@
+refined B'(t) check: eq:Bprime-TOBECHECKED
+cmd: py .\simulate_bprime_tobechecked.py --kappa 0 --t 0.5 --n 200000 --refine --seed 1 --antithetic
+timestamp: 2026-01-04T13:31:48.1711201+09:00
+
+=== B'(t) check: eq:Bprime-TOBECHECKED ===
+params: kappa=0, t=0.5
+mc: N=200000, seed=1, antithetic=True
+E(u) eval: cf_terms=60, cf_min=1.0
+U_t stats: P(U_t<0)~0.500000, min~-4.40635, max~4.40635
+
+RHS: E[g(U_t)] ~ -0.11322161097  (se~0.000345, sd~0.154)
+sign check: E[g(U_t)] < 0 ? YES
+
+--- finite diff step h=0.01 (requested 0.01) ---
+B(t-h)~0.594912713075  B(t)~0.593750579208  B(t+h)~0.592572129323
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117029187612  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380757664186  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=0.005 (requested 0.005) ---
+B(t-h)~0.594333665313  B(t)~0.593750579208  B(t+h)~0.593163414395
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117025091858  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380348088722  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=0.002 (requested 0.002) ---
+B(t-h)~0.593984300672  B(t)~0.593750579208  B(t+h)~0.593516204899
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117023943184  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380233221351  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=0.001 (requested 0.001) ---
+B(t-h)~0.593867521285  B(t)~0.593750579208  B(t+h)~0.593633473823
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117023730838  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.0038021198673  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=0.0005 (requested 0.0005) ---
+B(t-h)~0.593809070631  B(t)~0.593750579208  B(t+h)~0.593692046872
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117023758434  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.0038021474639  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=0.0002 (requested 0.0002) ---
+B(t-h)~0.593773980695  B(t)~0.593750579208  B(t+h)~0.593727171091
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117024009577  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380239860689  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=0.0001 (requested 0.0001) ---
+B(t-h)~0.593762280788  B(t)~0.593750579208  B(t+h)~0.593738876007
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.1170239037  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380229273009  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=5e-05 (requested 5e-05) ---
+B(t-h)~0.593756430191  B(t)~0.593750579208  B(t+h)~0.593744727806
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.11702385083  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380223985995  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=2e-05 (requested 2e-05) ---
+B(t-h)~0.593752919629  B(t)~0.593750579208  B(t+h)~0.593748238711
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022961485  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380135051469  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=1e-05 (requested 1e-05) ---
+B(t-h)~0.593751749427  B(t)~0.593750579208  B(t+h)~0.593749408973
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699958  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108898793  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=5e-06 (requested 5e-06) ---
+B(t-h)~0.593751164319  B(t)~0.593750579208  B(t+h)~0.593749994092
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699954  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108898391  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=2e-06 (requested 2e-06) ---
+B(t-h)~0.593750813253  B(t)~0.593750579208  B(t+h)~0.593750345162
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699961  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108899052  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=1e-06 (requested 1e-06) ---
+B(t-h)~0.59375069623  B(t)~0.593750579208  B(t+h)~0.593750462185
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699926  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108895554  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=5e-07 (requested 5e-07) ---
+B(t-h)~0.593750637719  B(t)~0.593750579208  B(t+h)~0.593750520696
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699992  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108902169  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=2e-07 (requested 2e-07) ---
+B(t-h)~0.593750602612  B(t)~0.593750579208  B(t+h)~0.593750555803
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.11702269999  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108901967  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=1e-07 (requested 1e-07) ---
+B(t-h)~0.59375059091  B(t)~0.593750579208  B(t+h)~0.593750567506
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699989  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.0038010890185  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=5e-08 (requested 5e-08) ---
+B(t-h)~0.593750585059  B(t)~0.593750579208  B(t+h)~0.593750573357
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022699758  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108878786  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=2e-08 (requested 2e-08) ---
+B(t-h)~0.593750581548  B(t)~0.593750579208  B(t+h)~0.593750576867
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022698885  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108791435  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
+--- finite diff step h=1e-08 (requested 1e-08) ---
+B(t-h)~0.593750580378  B(t)~0.593750579208  B(t+h)~0.593750578038
+FD:  (B(t+h)-B(t-h))/(2h) ~ -0.117022698893  (se~0.00208)
+DIFF: FD - E[g(U_t)] ~ -0.00380108792274  (se~0.00235, z~-1.62)
+match check (|z|<=3): YES
+
