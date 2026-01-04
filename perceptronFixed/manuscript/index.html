@@ -1,0 +1,3385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Uniqueness of RS Saddle Point for Ising Perceptron</title>
+    <meta
+      name="description"
+      content="Interactive HTML view of the manuscript with MathJax rendering and equation simulations."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b1220;
+        --surface: rgba(15, 23, 42, 0.92);
+        --surface-2: rgba(17, 24, 39, 0.96);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: rgba(148, 163, 184, 0.28);
+        --blue: #2563eb;
+        --violet: #4f46e5;
+        --emerald: #059669;
+        --amber: #b45309;
+        --bg-blob-1: rgba(37, 99, 235, 0.18);
+        --bg-blob-2: rgba(79, 70, 229, 0.13);
+        --bg-blob-3: rgba(5, 150, 105, 0.09);
+        --accent: var(--blue);
+        --accent-2: rgba(37, 99, 235, 0.1);
+        --focus: #93c5fd;
+        --shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+        --radius: 14px;
+        --pad: 14px;
+        --max-width: 1200px;
+        --button-height: 40px;
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f8fafc;
+          --surface: rgba(255, 255, 255, 0.92);
+          --surface-2: #ffffff;
+          --text: #0b1220;
+          --muted: #4b5563;
+          --border: rgba(15, 23, 42, 0.12);
+          --bg-blob-1: rgba(37, 99, 235, 0.09);
+          --bg-blob-2: rgba(79, 70, 229, 0.07);
+          --bg-blob-3: rgba(5, 150, 105, 0.07);
+          --accent: #2563eb;
+          --accent-2: rgba(37, 99, 235, 0.1);
+          --focus: #2563eb;
+          --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(1100px circle at 10% -10%, var(--bg-blob-1), transparent 60%),
+          radial-gradient(900px circle at 92% 0%, var(--bg-blob-2), transparent 55%),
+          radial-gradient(900px circle at 30% 110%, var(--bg-blob-3), transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        line-height: 1.35;
+      }
+
+      .shell {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      header {
+        padding: var(--pad) var(--pad) 10px;
+      }
+
+      main {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0 var(--pad);
+      }
+
+      footer {
+        padding: 10px var(--pad) var(--pad);
+      }
+
+      .header-inner,
+      .frame-wrap,
+      .footer-inner {
+        max-width: var(--max-width);
+        margin: 0 auto;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .header-inner {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .title-row {
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .title {
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 0.2px;
+      }
+
+      @supports (-webkit-background-clip: text) or (background-clip: text) {
+        .title {
+          background: linear-gradient(90deg, var(--blue), var(--violet));
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .toc {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .toc button {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        border-radius: 999px;
+        height: 34px;
+        padding: 0 12px;
+        font-size: 0.92rem;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .toc button[aria-current="page"] {
+        border-color: color-mix(in oklab, var(--accent), var(--border) 45%);
+        background: var(--accent-2);
+      }
+
+      .frame-wrap {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .content {
+        height: 100%;
+        overflow: auto;
+        background: var(--surface-2);
+      }
+
+      .paper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 28px 22px 44px;
+        font-size: 1.05rem;
+        line-height: 1.72;
+        font-family: ui-serif, Georgia, "Times New Roman", Times, serif;
+        text-rendering: optimizeLegibility;
+        font-kerning: normal;
+      }
+
+      .paper h1,
+      .paper h2,
+      .paper h3 {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        line-height: 1.2;
+      }
+
+      .paper h1 {
+        margin: 0 0 0.25em;
+        font-size: 1.85rem;
+        letter-spacing: -0.01em;
+      }
+
+      .paper h2 {
+        margin: 1.8em 0 0.65em;
+        font-size: 1.35rem;
+      }
+
+      .paper h3 {
+        margin: 1.2em 0 0.5em;
+        font-size: 1.1rem;
+      }
+
+      .paper h2:first-child {
+        margin-top: 0;
+      }
+
+      .paper p {
+        margin: 0.85em 0;
+      }
+
+      .paper ul,
+      .paper ol {
+        margin: 0.9em 0;
+        padding-left: 1.35em;
+      }
+
+      .paper li {
+        margin: 0.3em 0;
+      }
+
+      .paper a {
+        color: color-mix(in oklab, var(--accent), var(--text) 10%);
+        text-decoration: none;
+        border-bottom: 1px solid
+          color-mix(in oklab, var(--accent), transparent 60%);
+      }
+
+      .paper a:hover {
+        border-bottom-color: var(--accent);
+      }
+
+      .paper a:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 3px;
+        border-bottom-color: transparent;
+      }
+
+      .paper a.citation,
+      .paper a.xref {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        font-weight: 650;
+      }
+
+      .paper .byline {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 0.95rem;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+
+      .abstract {
+        margin: 14px 0 18px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: linear-gradient(180deg, color-mix(in oklab, var(--accent), transparent 92%), transparent);
+        padding: 12px 14px;
+        font-family: inherit;
+        line-height: 1.65;
+      }
+
+      .abstract h2 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+      }
+
+      .env {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: color-mix(in oklab, var(--surface-2), var(--surface) 40%);
+        margin: 1.1em 0;
+        font-family: inherit;
+        line-height: 1.65;
+      }
+
+      .env-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: baseline;
+        padding: 10px 12px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: color-mix(in oklab, var(--accent), transparent 92%);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .env.env-proof .env-head {
+        background: color-mix(in oklab, var(--emerald), transparent 90%);
+      }
+
+      .env-kind {
+        font-weight: 800;
+        letter-spacing: 0.2px;
+      }
+
+      .env-no {
+        font-weight: 750;
+        color: var(--accent);
+      }
+
+      .env-note {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .env-body {
+        padding: 10px 12px 12px;
+      }
+
+      .env-body > :first-child {
+        margin-top: 0;
+      }
+
+      .env-body > :last-child {
+        margin-bottom: 0;
+      }
+
+      .proof-end {
+        display: flex;
+        justify-content: flex-end;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .math-block {
+        margin: 0.9em 0;
+        padding: 0.25em 0;
+      }
+
+      .bibliography {
+        padding-left: 1.4em;
+      }
+
+      .bibliography li {
+        margin: 0.85em 0;
+      }
+
+      .bibline {
+        margin: 0.25em 0;
+      }
+
+      .paper h2,
+      .paper h3,
+      .math-block,
+      .env,
+      .bibliography li {
+        scroll-margin-top: 18px;
+      }
+
+      @media (max-width: 640px) {
+        .paper {
+          padding: 22px 16px 34px;
+          font-size: 1.02rem;
+        }
+
+        .paper h1 {
+          font-size: 1.6rem;
+        }
+      }
+
+      mjx-container[display="true"] {
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
+        padding: 0.2em 0;
+      }
+
+      .footer-inner {
+        padding: 12px 14px;
+      }
+
+      .nav {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .nav .status {
+        justify-self: start;
+        color: var(--muted);
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .nav .buttons {
+        justify-self: center;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .nav button {
+        height: var(--button-height);
+        padding: 0 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 650;
+      }
+
+      .nav button.primary {
+        color: #ffffff;
+        border-color: color-mix(in oklab, var(--accent), #ffffff 35%);
+        background: linear-gradient(180deg, color-mix(in oklab, var(--accent), #ffffff 18%), var(--accent));
+      }
+
+      .nav .hint {
+        justify-self: end;
+        color: var(--muted);
+        font-size: 0.85rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .callout {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: color-mix(in oklab, var(--amber), transparent 92%);
+        padding: 10px 12px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        margin: 12px 0;
+      }
+
+      /* Simulation cards (inserted under TOBECHECKED equations). */
+      .sim-card {
+        margin: 0.85em 0 1.15em;
+        border: 1px solid color-mix(in oklab, var(--border), var(--text) 14%);
+        border-radius: 12px;
+        background: color-mix(in oklab, var(--accent), transparent 93%);
+        overflow: hidden;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+
+      .sim-card summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 10px 12px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .sim-card summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .sim-card summary::after {
+        content: "▸";
+        margin-left: 10px;
+        color: var(--muted);
+        font-weight: 800;
+        transform: translateY(1px);
+        transition: transform 0.18s ease;
+      }
+
+      .sim-card[open] summary::after {
+        transform: rotate(90deg) translateY(1px);
+      }
+
+      .sim-tail {
+        margin-left: auto;
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        min-width: 0;
+      }
+
+      .sim-card[open] .sim-run-summary {
+        display: none;
+      }
+
+      .sim-summary {
+        background: color-mix(in oklab, var(--accent), transparent 92%);
+      }
+
+      .sim-summary-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .sim-badge {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .sim-title {
+        font-weight: 700;
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .sim-label-tag {
+        max-width: min(360px, 42vw);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .sim-body {
+        border-top: 1px solid var(--border);
+        padding: 10px 12px 12px;
+      }
+
+      .sim-desc {
+        opacity: 0.88;
+        font-size: 0.92rem;
+        margin-bottom: 10px;
+      }
+
+      .sim-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+      }
+
+      .sim-field {
+        display: grid;
+        gap: 4px;
+        min-width: 160px;
+      }
+
+      .sim-label {
+        font-size: 0.82rem;
+        opacity: 0.85;
+      }
+
+      .sim-input {
+        height: 34px;
+        padding: 0 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: Canvas;
+        color: CanvasText;
+      }
+
+      .sim-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 10px;
+      }
+
+      .sim-run {
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .sim-run:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .sim-secondary {
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: CanvasText;
+        font-weight: 650;
+        cursor: pointer;
+      }
+
+      .sim-output {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: color-mix(in oklab, Canvas, var(--surface) 8%);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.85rem;
+        white-space: pre-wrap;
+      }
+    </style>
+
+    <script>
+      window.MathJax = {
+        tex: {
+          tags: "ams",
+          processEnvironments: true,
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+        },
+        startup: { typeset: false },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="header-inner">
+          <div class="title-row">
+            <div class="title">Uniqueness of RS Saddle Point for Ising Perceptron</div>
+            <div class="subtitle">Section viewer (Back / Home / Forward)</div>
+          </div>
+          <nav class="toc" aria-label="Sections">
+            <button type="button" data-section-id="setup-and-main-results">1&nbsp;Setup and main results</button>
+            <button type="button" data-section-id="motivation-and-related-research">2&nbsp;Motivation and related research</button>
+            <button type="button" data-section-id="auxiliary-results-for-theoremref-thmmain">3&nbsp;Auxiliary results</button>
+            <button type="button" data-section-id="monotonicity-of-b">4&nbsp;Monotonicity of B</button>
+            <button
+              type="button"
+              data-section-id="proof-of-theoremref-thmmainref-thmndmainref-thm-bound-for-threshold"
+            >
+              5&nbsp;Proof of main theorems
+            </button>
+            <button type="button" data-section-id="appendix">Appendix</button>
+          </nav>
+        </div>
+      </header>
+
+      <main>
+        <div class="frame-wrap" role="region" aria-label="Manuscript content">
+           <div class="content" id="contentScroll">
+            <article class="paper" id="paperRoot"><h1>Uniqueness of RS Saddle Point for Ising Perceptron</h1><div class="byline">Shuta Nakajima &middot; Department of Mathematics, Keio University</div><section class="abstract"><h2>Abstract</h2><p>We study the replica-symmetric saddle point equations for the Ising perceptron with Gaussian disorder and margin $\kappa\ge 0$. We prove that for each $\kappa\ge 0$ there is a critical capacity $\alpha_c(\kappa)=\frac{2}{\pi\,\mathbb E[(\kappa-Z)_+^2]}$, where $Z$ is a standard normal and $(x)_+=\max\{x,0\}$, such that the saddle point equation has a unique solution for $\alpha\in(0,\alpha_c(\kappa))$ and has no solution when $\alpha\ge \alpha_c(\kappa)$. When $\alpha\uparrow \alpha_c(\kappa)$ with $\kappa\geq 0$, the replica-symmetric free energy at this solution diverges to $-\infty$. In the zero-margin case $\kappa=0$, Ding and Sun obtained a conditional uniqueness result, with one step verified numerically. Our argument gives a fully analytic proof without computer assistance. We used GPT-5 to help develop intermediate proof steps and to perform sanity-check computations.</p></section><h2 id="setup-and-main-results">1. Setup and main results</h2><p>Let $\phi$ and $\Phi$ be the standard normal density and cumulative distribution function, respectively:</p><div class="math-block">\[
+\phi(u)=\frac{1}{\sqrt{2\pi}}e^{-u^2/2},
+\qquad
+\Phi(u)=\int_{-\infty}^u \phi(s)\,ds,
+\qquad
+\overline{\Phi}(u)=1-\Phi(u)=\int_u^{\infty}\phi(s)\,ds.
+\]</div><p>Define the inverse Mills ratio by</p><div class="math-block">\[
+E(u):=\frac{\phi(u)}{\overline{\Phi}(u)}\qquad (u\in\mathbb R),
+\]</div><p>and for $q\in[0,1)$ set</p><div class="math-block">\[
+F_q(x):=\frac{1}{\sqrt{1-q}}\,E\!\left(\frac{\kappa-x}{\sqrt{1-q}}\right),\qquad x\in\mathbb R.
+\]</div><p>Let $Z\sim\mathcal N(0,1)$. For $r\ge 0$, define</p><div class="math-block">\[
+P(r):=\mathbb E\big[\tanh^2(\sqrt{r}\,Z)\big]\in[0,1),
+\]</div><p>and for $\alpha&gt;0,\,\kappa\geq 0$ and $q\in[0,1)$ define</p><div class="math-block">\[
+R_{\kappa}(q,\alpha):=\alpha\,\mathbb E\big[F_q(\sqrt{q}\,Z)^2\big]\in(0,\infty).
+\]</div><p>We study solutions $(q,r)\in[0,1)\times[0,\infty)$ to</p><div class="math-block" data-eq-label="eq:system" id="eq-eq-system">\begin{equation}\label{eq:system}
+\left\{
+\begin{aligned}
+q&amp;=P(r),\\
+r&amp;=R_{\kappa}(q,\alpha).
+\end{aligned}
+\right.
+\end{equation}</div><p>It is convenient to introduce</p><div class="math-block" data-eq-label="eq:defB" id="eq-eq-defb">\begin{equation}\label{eq:defB}
+B(q):=(1-q)\,\mathbb E\left[E\!\left(\frac{\kappa-\sqrt{q}\,Z}{\sqrt{1-q}}\right)^2\right],\qquad q\in[0,1),
+\end{equation}</div><p>so that the second equation in \(\eqref{eq:system}\) can be rewritten as</p><div class="math-block" data-eq-label="eq:r_in_terms_of_B" id="eq-eq-r-in-terms-of-b">\begin{equation}\label{eq:r_in_terms_of_B}
+r=\frac{\alpha}{(1-q)^2}\,B(q).
+\end{equation}</div><p>Set</p><div class="math-block">\[
+C_{\kappa}:=\mathbb E\big[(\kappa-Z)_+^2\big]=(\kappa^2+1)\Phi(\kappa)+\kappa\phi(\kappa),
+\qquad
+\alpha_c(\kappa):=\frac{2}{\pi C_{\kappa}}.
+\]</div><div class="env env-theorem" id="theorem-thm-main"><div class="env-head"><span class="env-kind">Theorem</span><span class="env-no">1</span></div><div class="env-body"><p>Fix $\kappa\geq 0$ and $\alpha\in (0,\alpha_c(\kappa))$. There exists a unique solution to the equation \(\eqref{eq:system}\). Moreover, if $\alpha\ge \alpha_c(\kappa)$, then there is no solution.</p></div></div><p>For $\alpha&lt;\alpha_c(\kappa)$, let $(q_\alpha,r_\alpha)$ be the unique solution to the equation \(\eqref{eq:system}\) given by Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a>.</p><div class="env env-theorem" id="theorem-thm-2ndmain"><div class="env-head"><span class="env-kind">Theorem</span><span class="env-no">2</span></div><div class="env-body"><p>Fix $\kappa\geq 0$. When $\alpha\uparrow\alpha_c(\kappa)$,</p><div class="math-block">\[
+q_\alpha\to 1
+\ \text{ and }\ 
+r_\alpha\to\infty.
+\]</div></div></div><div class="env env-theorem" id="theorem-thm-boundforthreshold"><div class="env-head"><span class="env-kind">Theorem</span><span class="env-no">3</span></div><div class="env-body"><p>Fix $\kappa\geq 0$. Define the RS functional</p><div class="math-block" data-eq-label="eq:RSfunctional" id="eq-eq-rsfunctional">\begin{equation}\label{eq:RSfunctional}
+\mathcal F_\kappa(\alpha;q,r)
+:=
+-\frac{r(1-q)}{2}
++\mathbb E\big[\log(2\cosh(\sqrt r\,Z))\big]
++\alpha\,\mathbb E\!\left[\log \overline\Phi\!\left(\frac{\kappa-\sqrt q\,Z}{\sqrt{1-q}}\right)\right].
+\end{equation}</div><p>For $\alpha\in(0,\alpha_c(\kappa))$, define the Gardner formula (also known as the replica-symmetric formula) by</p><div class="math-block">$\mathrm{RS}_\star(\alpha,\kappa):=\mathcal F_\kappa(\alpha;q_\alpha,r_\alpha),$</div><p>where $(q_\alpha,r_\alpha)$ is the unique solution given by Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a>. Then</p><div class="math-block">\[
+\lim_{\alpha\uparrow\alpha_c(\kappa)} \mathrm{RS}_\star(\alpha,\kappa)=-\infty.
+\]</div></div></div><h2 id="motivation-and-related-research">2. Motivation and related research</h2><h3>2.1. The Ising perceptron and the storage problem</h3><p>The binary (Ising) perceptron is a standard high-dimensional model for memory storage in a single-layer neural network. It can also be seen as a random constraint satisfaction problem with many constraints. Fix $N\ge 1$ and let $g^1,\dots,g^M\in\mathbb R^N$ be i.i.d. random patterns. In this paper, we focus on Gaussian disorder, \( g^m \sim \mathcal N(0,I_N)\quad\text{i.i.d.} \) We set the number of constraints $M=\lfloor \alpha N\rfloor$ with $\alpha&gt;0$ fixed as $N\to\infty$. For a margin parameter $\kappa\in\mathbb R$, define the feasible set</p><div class="math-block">\[
+\mathcal S_{N,M}^{(\kappa)}
+:=
+\Bigl\{
+\sigma\in\{-1,1\}^N:
+\frac{\langle g^m,\sigma\rangle}{\sqrt N}\ge \kappa
+\ \text{for all } m\in[M]
+\Bigr\},
+\qquad [M]:=\{1,\dots,M\},
+\]</div><p>where $\langle\cdot,\cdot\rangle$ is the Euclidean inner product in $\mathbb R^N$, and the corresponding number of solutions</p><div class="math-block">\[
+Z_{N,M}^{(\kappa)}
+:=
+\bigl|\mathcal S_{N,M}^{(\kappa)}\bigr|.
+\]</div><p>When $\kappa=0$, this becomes the classical half-space intersection model. In this case, $Z_{N,M}^{(0)}$ counts vertices of the hypercube in the intersection of $M$ random half-spaces. We study the quenched free energy</p><div class="math-block">\[
+F_N(\alpha,\kappa)
+:=
+\frac{1}{N} \log Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)},
+\]</div><p>and we ask when $Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}&gt;0$. It is expected that feasibility exhibits a sharp transition in $\alpha$. The critical capacity was predicted by statistical physics in the late 1980s; see [<a class="citation" href="#bib-gardnerderrida1988">1</a>,<a class="citation" href="#bib-krauthmezard1989">2</a>,<a class="citation" href="#bib-mezard1989">3</a>].</p><h3>2.2. Replica-symmetric free energy and the saddle point system</h3><p>A main goal is to determine the limiting free energy $\lim_{N\to\infty}F_N(\alpha,\kappa)$ and relate it to the feasibility threshold. Methods from statistical physics predict that this limit is given by an explicit variational formula, often called the Gardner or Krauth–Mézard prediction for the Ising perceptron [<a class="citation" href="#bib-krauthmezard1989">2</a>,<a class="citation" href="#bib-mezard1989">3</a>]. Talagrand proved the replica-symmetric formula at small densities $\alpha$, for the half-space model and for more general activation functions [<a class="citation" href="#bib-talagrand2000">4</a>,<a class="citation" href="#bib-talagrand2011">5</a>]. Later, Bolthausen, Sun, Xu, and Nakajima gave another proof based on the conditional second-moment method via approximate message passing (AMP), which applies to a wider class of activation functions [<a class="citation" href="#bib-bolthausennakajimasunxu2022">6</a>].</p><p>To describe the previous work more precisely, we use the generalized replica-symmetric expression from [<a class="citation" href="#bib-bolthausennakajimasunxu2022">6</a>]. Let $U:\mathbb R\to[0,1]$ be a measurable activation function. For $M=\lfloor \alpha N\rfloor$ and $G\in\mathbb R^{M\times N}$ with i.i.d. standard Gaussian entries (rows $g^m$), define</p><div class="math-block">\[
+Z_N
+:=
+\sum_{\sigma\in\{-1,1\}^N}
+\prod_{m=1}^M U\Bigl(\frac{\langle g^m,\sigma\rangle}{\sqrt N}\Bigr).
+\]</div><p>The half-space model corresponds to $U(x)=\mathbf 1\{x\ge \kappa\}$. In that case $Z_N=Z_{N,M}^{(\kappa)}$. The replica-symmetric functional uses a pair $(q,r)$. We view $q$ as an overlap parameter and $r$ as a variance parameter. Let $Z,\xi\sim\mathcal N(0,1)$ be independent. For $q\in(0,1)$ define</p><div class="math-block">\[
+L_q(x):=\log\mathbb E\Bigl[U\bigl(x+\sqrt{1-q}\,\xi\bigr)\Bigr],
+\qquad
+F_q(x):=\frac{d}{dx}L_q(x).
+\]</div><p>The replica-symmetric free energy is the functional</p><div class="math-block" data-eq-label="eq:RS-functional" id="eq-eq-rs-functional">\begin{equation}\label{eq:RS-functional}
+\mathrm{RS}(\alpha;U;q,r)
+:=
+-\frac{r(1-q)}{2}
++
+\mathbb E\Bigl[\log\bigl(2\cosh(\sqrt r\,Z)\bigr)\Bigr]
++
+\alpha\,\mathbb E\Bigl[L_q(\sqrt q\,Z)\Bigr].
+\end{equation}</div><p>The following theorem summarizes the replica-symmetric formula and the uniqueness of the associated fixed point equation at sufficiently small $\alpha$.</p><div class="env env-theorem"><div class="env-head"><span class="env-kind">Theorem</span><span class="env-no">4</span><span class="env-note">[<a class="citation" href="#bib-talagrand2000">4</a>]; [<a class="citation" href="#bib-bolthausennakajimasunxu2022">6</a>]</span></div><div class="env-body"><p>Assume that $U$ satisfies the following conditions (cf. [<a class="citation" href="#bib-bolthausennakajimasunxu2022">6</a>]).</p><ul><li><strong><span>(A1)</span></strong> <p>$U:\mathbb R\to[0,1]$ is measurable, and for $\xi\sim\mathcal N(0,1)$,</p><div class="math-block">\[
+\mathbb E_{\xi}\bigl[\xi\,U(\xi)\bigr]
+=
+\int_{\mathbb R} z\,U(z)\,\phi(z)\,dz
+\neq 0.
+\]</div></li><li><strong><span>(A2)</span></strong> <p>Let $\xi,\xi&#39;\sim\mathcal N(0,1)$ be i.i.d. Assume that</p><div class="math-block">\[
+(K_2)_1(U)
+:=
+\sup\Biggl\{
+\frac{\mathbb E_{\xi,\xi&#39;}\bigl[(\xi-\xi&#39;)^2\,U(x+c\xi)\,U(x+c\xi&#39;)\bigr]}
+ {\mathbb E_{\xi,\xi&#39;}\bigl[U(x+c\xi)\,U(x+c\xi&#39;)\bigr]}
+:\ x\in\mathbb R,\ \frac{2}{5}\le c\le \frac{7}{3}
+\Biggr\}&lt;\infty,
+\]</div><p>with the convention that the ratio is $+\infty$ when the denominator is $0$.</p></li></ul><p>Then there exists $\alpha_0=\alpha_0(U)&gt;0$ such that for every $\alpha\in(0,\alpha_0]$ the fixed point equation \(\eqref{eq:RS-fixed-point}\) has a unique solution $(q_\star,r_\star)$, and</p><div class="math-block">\[
+\frac{1}{N}\log Z_N \xrightarrow[N\to\infty]{\mathbb P} \mathrm{RS}(\alpha;U;q_\star,r_\star).
+\]</div><p>In the special cases where $U(x)=\mathbf 1\{x\ge \kappa\}$, or $U$ is sufficiently smooth, the convergence above was proved earlier by Talagrand [<a class="citation" href="#bib-talagrand2000">4</a>,<a class="citation" href="#bib-talagrand2011">5</a>].</p></div></div><p>The saddle point equations are the stationarity conditions for \(\eqref{eq:RS-functional}\). They can be written as the fixed point equation</p><div class="math-block" data-eq-label="eq:RS-fixed-point" id="eq-eq-rs-fixed-point">\begin{equation}\label{eq:RS-fixed-point}
+q
+=
+\mathbb E\bigl[\tanh^2(\sqrt r\,Z)\bigr],
+\qquad
+r
+=
+\alpha\,\mathbb E\bigl[F_q(\sqrt q\,Z)^2\bigr].
+\end{equation}</div><p>In the half-space case $U(x)=\mathbf 1\{x\ge \kappa\}$, we have the explicit formulas</p><div class="math-block">\[
+L_q(x)=\log \Phi\Bigl(\frac{x-\kappa}{\sqrt{1-q}}\Bigr),
+\qquad
+F_q(x)
+=
+\frac{1}{\sqrt{1-q}}\,
+\frac{\phi\bigl(\frac{x-\kappa}{\sqrt{1-q}}\bigr)}{\Phi\bigl(\frac{x-\kappa}{\sqrt{1-q}}\bigr)},
+\]</div><p>where $\Phi$ and $\phi$ are the standard Gaussian distribution function and density. In this case \(\eqref{eq:RS-fixed-point}\) is equivalent to \(\eqref{eq:system}\) above.</p><p>There are two ways to understand the fixed point equation \(\eqref{eq:RS-fixed-point}\). One way is from replica computations: the moment calculation of $Z_N$ becomes a saddle point problem over order parameters, and \(\eqref{eq:RS-fixed-point}\) gives the self-consistency condition. Another way is from the TAP/AMP description of the Gibbs measure of $Z_N$. In this view, $q$ and $r$ describe macroscopic second moments of the AMP iterations, and \(\eqref{eq:RS-fixed-point}\) follows from the AMP state evolution [<a class="citation" href="#bib-dingsun2025">7</a>,<a class="citation" href="#bib-bolthausennakajimasunxu2022">6</a>].</p><h3>2.3. Sharp thresholds and capacity results</h3><p>There is also work on sharp thresholds for feasibility. For Bernoulli disorder versions of the half-space model, Xu proved a sharp threshold phenomenon from $\{Z_{N,M}^{(\kappa)}&gt;0\}$ to $\{Z_{N,M}^{(\kappa)}=0\}$ of the half-space model [<a class="citation" href="#bib-xu2021">8</a>] in the sense of \(\eqref{eq:sharp-seq-exp}\). For general disorder (including Gaussian disorder) and more general $\{0,1\}$-valued activation functions, Sun and Nakajima proved self-averaging of the free energy, the existence of a sharp threshold sequence, and universality with respect to the disorder [<a class="citation" href="#bib-nakajimasun2022">9</a>]. These results suggest a clear picture: feasibility transitions occur in a narrow window as $\alpha$ varies, though the window may depend on $N$ in those work.</p><p>Another line of work aims to determine the critical capacity of the Gaussian half-space model in the zero-margin case $\kappa=0$. Ding and Sun proved, conditional on an additional analytic hypothesis, a lower bound matching the constant $\alpha_\star\approx 0.833$ predicted by Krauth and Mézard, using a second-moment argument together with an AMP-motivated truncation [<a class="citation" href="#bib-dingsun2025">7</a>]. More recently, Huang obtained a conditionally matching upper bound under a related maximization assumption, yielding a conditional verification of the Krauth–Mézard prediction [<a class="citation" href="#bib-huang2024">10</a>]. We summarize the streamlined version of their results here.</p><div class="env env-theorem" id="theorem-thm-conditional-rs-threshold-kappa0"><div class="env-head"><span class="env-kind">Theorem</span><span class="env-no">5</span><span class="env-note">[<a class="citation" href="#bib-dingsun2025">7</a>]; [<a class="citation" href="#bib-xu2021">8</a>]; [<a class="citation" href="#bib-nakajimasun2022">9</a>]; [<a class="citation" href="#bib-huang2024">10</a>]</span></div><div class="env-body"><p>Let $\kappa=0$. Then there exists $\alpha_\star(0)\in(0,\infty)$ such that</p><div class="math-block">\[
+\mathrm{RS}_\star(\alpha,0)&gt;0 \quad \text{for } \alpha&lt;\alpha_\star(0),
+\qquad
+\mathrm{RS}_\star(\alpha,0)&lt;0 \quad \text{for } \alpha&gt;\alpha_\star(0).
+\]</div><p>Under the analytic hypotheses of [<a class="citation" href="#bib-dingsun2025">7</a>,<a class="citation" href="#bib-huang2024">10</a>], it holds that</p><p>\[ \lim_{N\to\infty}\mathbb P\bigl(Z^{(0)}_{N,\lfloor \alpha N\rfloor}&gt;0\bigr) =</p><pre>\begin{cases}
+1, &amp; \alpha&lt;\alpha_\star(0),\\
+0, &amp; \alpha&gt;\alpha_\star(0).
+\end{cases}</pre><p>\]</p></div></div><p>Motivated by this, it is natural to view the replica-symmetric prediction as defining a candidate feasibility threshold via the point at which the predicted limiting free energy vanishes. These works show that understanding the replica-symmetric equations, and in particular the structure of the saddle point system, is important for rigorous capacity bounds.</p><h3>2.4. Main result: uniqueness of the replica-symmetric saddle point</h3><p>The replica-symmetric formula is most useful in parameter regimes where the saddle point equation \(\eqref{eq:RS-fixed-point}\) has a unique solution $(q,r)$. Uniqueness matters for several reasons. It eliminates ambiguity in selecting a branch of solutions, yields regular dependence of $(q,r)$ on the parameters $(\alpha,\kappa)$, and controls the derivatives of the replica-symmetric free energy \(\eqref{eq:RS-functional}\).</p><p>Related work of Ding and Sun [<a class="citation" href="#bib-dingsun2025">7</a>] established the uniqueness when $\kappa=0$, with one step verified via a computer-assisted numerical check.</p><p>In this paper we give a fully analytic proof of uniqueness for the half-space Ising perceptron. Concretely, when $U(x)=\mathbf{1}\{x\ge \kappa\}$ with $\kappa\ge 0$, we show that the map in \(\eqref{eq:RS-fixed-point}\) has at most one fixed point in the relevant domain. As a consequence, the replica-symmetric free energy can be written unambiguously as</p><div class="math-block">\[
+\mathrm{RS}(\alpha;U)
+=
+\mathrm{RS}(\alpha;U;q(\alpha),r(\alpha)),
+\]</div><p>where $(q(\alpha),r(\alpha))$ is the unique solution to \(\eqref{eq:RS-fixed-point}\).</p><h3>2.5. Connection to the multi-label classification</h3><p>The Ising perceptron is closely related to the multi-label classification with random labels. Consider random inputs $g^1,\dots,g^M\in\mathbb R^N$ and random outputs $y^m\in\{-1,1\}^L$. Assume that the entries of $g^m$ are i.i.d., and that the random labels $(y^m_\ell)$ are independent of the inputs $(g^m)$. We write $[n]:=[1,n]\cap \mathbb Z$. A binary weight matrix $W=(w_{\ell i})\in\{-1,1\}^{L\times N}$ satisfies the multi-output classification constraints if</p><div class="math-block">\[\operatorname{sgn}\bigl(W g^m\bigr)=y^m,\quad\text{for all } m\in[M],
+\]</div><p>which is written as</p><div class="math-block">\[
+\operatorname{sgn}\bigl(\langle w^\ell,g^m\rangle\bigr)=y^m_\ell
+\quad\text{for all } m\in[M],\ \ell\in[L],\]</div><p>where $w^\ell$ is the $\ell$-th row of $W$. Equivalently, since $\langle w^\ell,g^m\rangle\neq 0$ almost surely,</p><div class="math-block">\[
+y^m_\ell\,\langle w^\ell,g^m\rangle \ge 0
+\quad\text{for all } m,\ell.
+\]</div><p>If the input distribution is symmetric, meaning $g^m\stackrel d= -g^m$, then the label-flipped patterns $\tilde g^{m,\ell}:=y^m_\ell g^m$ satisfy $\tilde g^{m,\ell}\stackrel d=g^m$ for each fixed $\ell$. Therefore, for each $\ell$ the feasibility event for row $\ell$ has the same distribution as $\{Z_{N,M}^{(0)}&gt;0\}$. Let $\mathcal E$ be the event that there is <em>no</em> matrix solution $W$. Then</p><div class="math-block">\[
+\mathcal E=\bigcup_{\ell=1}^L\Bigl\{\text{no feasible } w^\ell \in\{-1,1\}^N \text{ for output }\ell\Bigr\}.
+\]</div><p>By a union bound, we obtain the bounds</p><div class="math-block" data-eq-label="eq:union-bound" id="eq-eq-union-bound">\begin{equation}\label{eq:union-bound}
+\mathbb P(Z_{N,M}^{(0)}=0)
+\le
+\mathbb P(\mathcal E)
+\le
+L\,\mathbb P(Z_{N,M}^{(0)}=0).
+\end{equation}</div><p>The same reduction applies with a positive margin: if one requires $y^m_\ell \langle w^\ell,g^m\rangle/\sqrt N\ge \kappa$ for all $m\in[M]$ and $\ell\in[L]$, then the analogue of \(\eqref{eq:union-bound}\) holds with $Z_{N,M}^{(\kappa)}$.</p><p>We use the sharp-threshold sequence proved in [<a class="citation" href="#bib-xu2021">8</a>,<a class="citation" href="#bib-nakajimasun2022">9</a>] to summarize the conclusion. Fix $\kappa\ge 0$, and write $M=\lfloor \alpha N\rfloor$. Assume there exists a sequence $\alpha_N=\alpha_N(\kappa)$ such that for every fixed $\varepsilon&gt;0$ there is $c_\varepsilon&gt;0$ with, for all large $N$,</p><div class="math-block" data-eq-label="eq:sharp-seq-exp" id="eq-eq-sharp-seq-exp">\begin{equation}\label{eq:sharp-seq-exp}
+\begin{split}
+ &amp; \alpha\le \alpha_N-\varepsilon
+\ \Longrightarrow\
+\mathbb P\!\left(Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}=0\right)\le e^{-c_\varepsilon N},\\
+&amp;\alpha\ge \alpha_N+\varepsilon
+\ \Longrightarrow\
+\mathbb P\!\left(Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}=0\right)\ge 1-e^{-c_\varepsilon N}.
+\end{split}
+\end{equation}</div><p>If $\alpha\le \alpha_N-\varepsilon$, then</p><div class="math-block">\[
+\mathbb P(\mathcal E)\le L\,\mathbb P\!\left(Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}=0\right)\le L\,e^{-c_\varepsilon N},
+\]</div><p>so whenever $\log L=o(N)$ (e.g., fixed $L$ or polynomial $L$), the probability $\mathbb P(\mathcal E)$ still decays exponentially in $N$. If $\alpha\ge \alpha_N+\varepsilon$, then</p><div class="math-block">\[
+\mathbb P(\mathcal E)\ge \mathbb P\!\left(Z_{N,\lfloor \alpha N\rfloor}^{(\kappa)}=0\right)\ge 1-e^{-c_\varepsilon N},
+\]</div><p>which converges to $1$ as $N\to \infty$.</p><p>Thus, except for a narrow window, the two models behave in the same way.</p><h3>2.6. How we use GPT-5 in this project</h3><p>We used GPT-5 as a tool for computation and reasoning throughout the project (in particular, Lemma&nbsp;<a class="xref" href="#lemma-lem-g-decreasing-positive">13</a>, <a class="xref" href="#lemma-lem-g-uniform-negative-tobechecked">15</a> below). In a typical workflow, we supplied a problem together with a proposed proof strategy, and asked GPT-5 to suggest an outline and to elaborate intermediate steps. Because the outputs contained gaps or errors, we independently verified the details and either corrected them ourselves or asked GPT-5 to address specific issues. We repeated this process iteratively until reaching the final version of each proof. All arguments in the manuscript are fully analytic and were not computer-verified. Overall, we found generative AI helpful for converting informal sketches or computer-assisted arguments into fully rigorous analytic proofs. Numerical computer-assisted proofs typically depend on approximating a large number of quantities, while an analytic proof often reduces the problem to a small set of key estimates. This type of reduction appears to match well with the strengths of generative AI.</p><h2 id="auxiliary-results-for-theoremref-thmmain">3. Auxiliary results for Theorem&nbsp;\ref{thm:main}</h2><h3>3.1. Roadmap of the proof</h3><p>The aim of this section is to reduce the fixed point equation \(\eqref{eq:system}\) to a one-dimensional equation and to isolate the main technical ingredient needed for Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a> (the strict monotonicity of $B$, proved in Section&nbsp;3).</p><p>Recall that, with $B$ defined in \(\eqref{eq:defB}\), the second equation in \(\eqref{eq:system}\) can be rewritten as \(\eqref{eq:r_in_terms_of_B}\):</p><div class="math-block">\[
+r=\frac{\alpha}{(1-q)^2}\,B(q).
+\]</div><p>Substituting $q=P(r)$ yields</p><div class="math-block">\[
+r\bigl(1-P(r)\bigr)^2=\alpha\,B\bigl(P(r)\bigr).
+\]</div><p>Define</p><div class="math-block" data-eq-label="eq:defA" id="eq-eq-defa">\begin{equation}\label{eq:defA}
+A(r):=r\bigl(1-P(r)\bigr)^2
+=r\Bigl(\mathbb E\big[\operatorname{sech}^2(\sqrt{r}\,Z)\big]\Bigr)^2,\qquad r\ge 0.
+\end{equation}</div><p>Letting $q=P(r)$, solving \(\eqref{eq:system}\) is equivalent to solving the one-dimensional equation</p><div class="math-block" data-eq-label="eq:one-dimensional" id="eq-eq-one-dimensional">\begin{equation}\label{eq:one-dimensional}
+A(r)=\alpha\,B\bigl(P(r)\bigr),\qquad r\ge 0.
+\end{equation}</div><p>The remaining ingredients are standard: $P$ is strictly increasing (Lemma&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>); $A$ is strictly increasing with range $[0,2/\pi)$ (Lemma&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>); and $B$ is finite/continuous on $[0,1)$ with endpoint limits $B(0)=E(\kappa)^2$ and $\lim_{q\uparrow 1}B(q)=C_\kappa$ (Lemmas&nbsp;<a class="xref" href="#lemma-lem-b-cont0-tobechecked">9</a> and&nbsp;<a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>). Once $B$ is known to be strictly decreasing, the difference $A(r)-\alpha B(P(r))$ is strictly increasing and has at most one root, and comparing endpoint limits yields existence/nonexistence with threshold $\alpha_c(\kappa)=2/(\pi C_\kappa)$.</p><h3>3.2. Properties of $P$</h3><div class="env env-lemma" id="lemma-lem-p-properties-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">6</span></div><div class="env-body"><p>The function $P:[0,\infty)\to[0,1)$ defined by</p><div class="math-block">\[
+P(r)=\mathbb E\big[\tanh^2(\sqrt r\,Z)\big]
+\]</div><p>is continuous and strictly increasing, satisfies $P(0)=0$ and $P(r)&lt;1$ for all finite $r$, and</p><div class="math-block">\[
+\lim_{r\to\infty}P(r)=1.
+\]</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>For each fixed $z\in\mathbb R$, the map $r\mapsto \tanh^2(\sqrt r\,z)$ is nondecreasing and continuous on $[0,\infty)$. Since $0\le \tanh^2(\sqrt r\,Z)\le 1$, dominated convergence yields continuity of $P$ and preserves monotonicity.</p><p>To see strictness, fix $0\le r_1&lt;r_2$. Then $\tanh^2(\sqrt{r_1}\,z)&lt;\tanh^2(\sqrt{r_2}\,z)$ for every $z\neq 0$, and $\mathbb{P}(Z=0)=0$, hence $P(r_1)&lt;P(r_2)$.</p><p>The identity $P(0)=0$ is immediate. If $r&lt;\infty$, then $\tanh^2(\sqrt r\,z)&lt;1$ for every $z\in\mathbb R$, hence $P(r)&lt;1$. Finally, when $r\to\infty$ one has $\tanh^2(\sqrt r\,z)\to 1$ for every $z\ne 0$, so dominated convergence yields $P(r)\to 1$.</p><div class="proof-end">∎</div></div></div><h3>3.3. The function $A$: monotonicity and range</h3><div class="env env-lemma" id="lemma-lem-a-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">7</span></div><div class="env-body"><p>The function $A:[0,\infty)\to[0,\infty)$ defined in \(\eqref{eq:defA}\) is continuous on $[0,\infty)$ and strictly increasing on $(0,\infty)$. Moreover,</p><div class="math-block">\[
+A(0)=0,
+\qquad
+\lim_{r\to\infty}A(r)=\frac{2}{\pi}.
+\]</div><p>In particular, $A$ is a bijection from $[0,\infty)$ onto $[0,2/\pi)$.</p></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>For $r&gt;0$, let</p><div class="math-block">\[
+S(r):=\mathbb E\big[\operatorname{sech}^2(\sqrt{r}\,Z)\big]
+=\int_{\mathbb R}\operatorname{sech}^2(\sqrt{r}\,z)\,\phi(z)\,dz.
+\]</div><p>Then $A(r)=rS(r)^2$. Make the change of variables $y=\sqrt{r}\,z$ to obtain</p><div class="math-block">\[
+S(r)=\frac{1}{\sqrt{2\pi r}}\int_{\mathbb R}\operatorname{sech}^2(y)\,e^{-y^2/(2r)}\,dy.
+\]</div><p>Hence</p><div class="math-block" data-eq-label="eq:A_as_I" id="eq-eq-a-as-i">\begin{equation}\label{eq:A_as_I}
+A(r)=\frac{1}{2\pi}\,I(r)^2,
+\qquad
+I(r):=\int_{\mathbb R}\operatorname{sech}^2(y)\,e^{-y^2/(2r)}\,dy.
+\end{equation}</div><p>For $r&gt;0$ we may differentiate under the integral sign:</p><div class="math-block">\[
+I&#39;(r)=\int_{\mathbb R}\operatorname{sech}^2(y)\,e^{-y^2/(2r)}\,\frac{y^2}{2r^2}\,dy&gt;0.
+\]</div><p>Therefore $I$ is strictly increasing on $(0,\infty)$, hence so is $A$ by \(\eqref{eq:A_as_I}\). Continuity of $A$ follows from continuity of $P$ (Lemma&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>) and the representation $A(r)=r(1-P(r))^2$.</p><p>Finally, for each $y$ one has $e^{-y^2/(2r)}\uparrow 1$ as $r\to\infty$, so by monotone convergence,</p><div class="math-block">\[
+\lim_{r\to\infty}I(r)=\int_{\mathbb R}\operatorname{sech}^2(y)\,dy
+=\bigl[\tanh(y)\bigr]_{-\infty}^{\infty}=2.
+\]</div><p>Using \(\eqref{eq:A_as_I}\) yields $\lim_{r\to\infty}A(r)=\frac{1}{2\pi}\cdot 2^2=\frac{2}{\pi}$.</p><div class="proof-end">∎</div></div></div><h3>3.4. The function $B$: finiteness, continuity, and endpoint values</h3><p>In this subsection, we record the basic analytic properties of $B$; the strict monotonicity of $B$ is deferred to Section&nbsp;3.</p><p>The following lemma provides a simple bound for the inverse Mills ratio. Since the proof is elementary, we defer it to the appendix.</p><div class="env env-lemma" id="lemma-lem-mills-bound-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">8</span></div><div class="env-body"><p>Recall $E(u)=\phi(u)/\overline{\Phi}(u)$. There exists a finite constant $C&gt;0$ such that for all $u\in\mathbb R$,</p><div class="math-block">\[
+0&lt;E(u)=\frac{\phi(u)}{\overline{\Phi}(u)} \le u_+ + C,\qquad u_+:=\max\{u,0\}.
+\]</div><p>Moreover, for all $u&gt;0$,</p><div class="math-block">\[
+u&lt;\frac{\phi(u)}{\overline{\Phi}(u)}\le u+\frac{1}{u}.
+\]</div></div></div><div class="env env-lemma" id="lemma-lem-b-cont0-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">9</span></div><div class="env-body"><p>The function</p><div class="math-block">\[
+B(q)=(1-q)\,\mathbb E\!\left[E\!\left(\frac{\kappa-\sqrt{q}\,Z}{\sqrt{1-q}}\right)^2\right]
+\]</div><p>is finite and continuous for all $q\in[0,1)$.</p></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>Fix $q_0\in[0,1)$ and let $q_n\in [0,1)$ with $q_n\to q_0$. Define</p><div class="math-block">\[
+U_n:=\frac{\kappa-\sqrt{q_n}\,Z}{\sqrt{1-q_n}},\qquad
+U_0:=\frac{\kappa-\sqrt{q_0}\,Z}{\sqrt{1-q_0}}.
+\]</div><p>Then $U_n\to U_0$ almost surely, hence $(1-q_n)E(U_n)^2\to (1-q_0)E(U_0)^2$ almost surely.</p><p>To apply dominated convergence, use Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a>:</p><div class="math-block">\[
+E(U_n)^2\le (U_n^+ + C)^2\le 2\big((U_n^+)^2+C^2\big)\le 2(U_n^2+C^2).
+\]</div><p>Multiplying by $(1-q_n)$ gives</p><div class="math-block">\[
+(1-q_n)E(U_n)^2
+\le 2\big((1-q_n)U_n^2 + C^2(1-q_n)\big)
+=2\big((\kappa-\sqrt{q_n}\,Z)^2 + C^2(1-q_n)\big).
+\]</div><p>Since $0\le q_n&lt; 1$, $(\kappa-\sqrt{q_n}\,Z)^2\le 2(\kappa^2+Z^2)$ and $1-q_n \le 1$, so</p><div class="math-block">\[
+(1-q_n)E(U_n)^2\le 4(\kappa^2+Z^2)+2C^2.
+\]</div><p>The right-hand side is integrable because $\mathbb E[Z^2]=1$. Therefore dominated convergence applies, and we obtain $B(q_n)\to B(q_0)$. Finiteness follows from the same domination.</p><div class="proof-end">∎</div></div></div><div class="env env-lemma" id="lemma-lem-b-endpoints-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">10</span></div><div class="env-body"><p>Let $B$ be defined by \(\eqref{eq:defB}\). Then</p><div class="math-block">\[
+B(0)=E(\kappa)^2,
+\qquad
+\lim_{q\uparrow 1}B(q)=C_{\kappa}=\mathbb E\big[(\kappa-Z)_+^2\big]=(\kappa^2+1)\Phi(\kappa)+\kappa\phi(\kappa).
+\]</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>At $q=0$, it is trivial to see $B(0)=(1-0)E(\kappa)^2$. For the limit $q\uparrow 1$, set</p><div class="math-block">\[U_q(z) :=\frac{\kappa-\sqrt{q}\,z}{\sqrt{1-q}}.
+\]</div><p>For each fixed $z\in\mathbb R$,</p><div class="math-block">\[
+(1-q)\,E\bigl(U_q(z)\bigr)^2\to (\kappa-z)_+^2
+\qquad (q\uparrow 1),
+\]</div><p>because $U_q(z)\to+\infty$ when $z&lt;\kappa$, $U_q(z)\to-\infty$ when $z&gt;\kappa$, $E(u)\sim u$ as $u\to+\infty$ by Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a> and $E(u) \to 0$ as $u\to-\infty$ since $|E(u)| \leq 2\phi(u)$ for $u&lt;0$.</p><p>Moreover, one may dominate the integrand as follows. By Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a>, there is a constant $C&gt;0$ such that $E(u)\le u_+ + C$ for all $u\in\mathbb{R}$. Hence, by $(a+b)^2\leq 2(a^2+b^2)$, for any $q\in(0,1)$ and $z\in\mathbb{R}$,</p><div class="math-block">\begin{align*}
+ (1-q)E(U_q(z))^2&amp;\le 2(1-q)(U_q(z))^2+2C^2(1-q)\\
+&amp;=2(\kappa-\sqrt{q}\,z)^2+2C^2(1-q)\\
+&amp;\le 2(\kappa+|z|)^2+2C^2.
+\end{align*}</div><p>The right-hand side is integrable against $\phi(z)\,dz$, so dominated convergence yields</p><div class="math-block">\[
+\lim_{q\uparrow 1}B(q)=\int_{\mathbb R}(\kappa-z)_+^2\,\phi(z)\,dz=\mathbb E\big[(\kappa-Z)_+^2\big]=:C_{\kappa}.
+\]</div><p>Finally,</p><div class="math-block">\[
+C_{\kappa}=\int_{-\infty}^{\kappa}(\kappa-z)^2\,\phi(z)\,dz
+=\kappa^2\Phi(\kappa)-2\kappa\int_{-\infty}^{\kappa}z\phi(z)\,dz+\int_{-\infty}^{\kappa}z^2\phi(z)\,dz.
+\]</div><p>Using $\phi&#39;(z)=-z\phi(z)$ gives $\int_{-\infty}^{\kappa}z\phi(z)\,dz=-\phi(\kappa)$ and $\int_{-\infty}^{\kappa}z^2\phi(z)\,dz=\Phi(\kappa)-\kappa\phi(\kappa)$, hence</p><div class="math-block">\[
+C_{\kappa}=(\kappa^2+1)\Phi(\kappa)+\kappa\phi(\kappa).
+\]</div><div class="proof-end">∎</div></div></div><p>Recall that $\alpha_c(\kappa)=2/(\pi C_\kappa)$; this is the value at which the limiting upper range $2/\pi$ of $A$ matches the limiting size $\alpha\,C_\kappa$ of the right-hand side in \(\eqref{eq:one-dimensional}\).</p><h3>3.5. Reduction of Theorem&nbsp;\ref{thm:main}</h3><div class="env env-lemma" id="lemma-lem-main-reduction-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">11</span></div><div class="env-body"><p>Assume that $B$ is strictly decreasing on $[0,1)$. Fix $\alpha&gt;0$ and define</p><div class="math-block">\[
+f(r):=A(r)-\alpha\,B\bigl(P(r)\bigr),\qquad r\ge 0.
+\]</div><p>Then $f$ is strictly increasing on $(0,\infty)$. In particular, the one-dimensional equation \(\eqref{eq:one-dimensional}\) has at most one solution $r\in[0,\infty)$, and the fixed point equation \(\eqref{eq:system}\) admits at most one solution $(q,r)\in[0,1)\times[0,\infty)$.</p></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>By Lemma&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, $A$ is strictly increasing on $(0,\infty)$. By Lemma&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a> and the assumed strict monotonicity of $B$, the composition $r\mapsto B(P(r))$ is strictly decreasing on $(0,\infty)$. Hence $f$ is strictly increasing on $(0,\infty)$.</p><p>Moreover, by Lemmas&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>,&thinsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
+f(0)=A(0)-\alpha B(P(0))=-\alpha B(0)=-\alpha E(\kappa)^2&lt;0,
+\]</div><p>so any zero of $f$ must lie in $(0,\infty)$. Since $f$ is strictly increasing on $(0,\infty)$, it has at most one zero. Therefore \(\eqref{eq:one-dimensional}\), which is equivalent to $f(r)=0$, has at most one solution $r\in[0,\infty)$. The correspondence $q=P(r)$ then yields at most one solution $(q,r)$ to \(\eqref{eq:system}\).</p><div class="proof-end">∎</div></div></div><p>Thus, the proof of Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a> reduces to the following monotonicity property of $B$.</p><div class="env env-theorem" id="theorem-thm-b-monotone"><div class="env-head"><span class="env-kind">Theorem</span><span class="env-no">12</span><span class="env-note">Monotonicity of $B$</span></div><div class="env-body"><p>The function $q\mapsto B(q)$ is strictly decreasing on $[0,1)$.</p></div></div><p>Section&nbsp;<a class="xref" href="#monotonicity-of-b">4</a> is devoted to the proof of Theorem&nbsp;<a class="xref" href="#theorem-thm-b-monotone">12</a>.</p><h2 id="monotonicity-of-b">4. Monotonicity of $B$</h2><p>Recall that $Z\sim N(0,1)$ and for $u\in\mathbb{R}$,</p><div class="math-block">\[
+\phi(u) := \frac{1}{\sqrt{2\pi}}e^{-u^{2}/2},\quad
+\Phi(u):= \int_{-\infty}^{u}\phi(s)\,ds,\quad
+\overline{\Phi}(u):= 1-\Phi(u),\quad 
+E(u):= \frac{\phi(u)}{\overline{\Phi}(u)},
+\]</div><p>and for $q\in[0,1)$ define</p><div class="math-block">\[
+U_q:= \frac{\kappa-\sqrt{q}\,Z}{\sqrt{1-q}},\qquad
+B(q):= (1-q)\,\mathbb{E}\bigl[E(U_q)^2\bigr].
+\]</div><p>We now prove Theorem&nbsp;<a class="xref" href="#theorem-thm-b-monotone">12</a>.</p><h3>4.1. Preliminaries on $E$ and truncated Gaussians</h3><p>Let $X\sim N(0,1)$. For every $u\in\mathbb{R}$,</p><div class="math-block">\[
+\mathbb{P}(X\ge u)=\overline{\Phi}(u),\qquad
+\mathbb{E}[X\mathbf{1}_{\{X\ge u\}}]=\phi(u),
+\]</div><p>hence</p><div class="math-block" data-eq-label="eq:condmean" id="eq-eq-condmean">\begin{equation}\label{eq:condmean}
+E(u)=\frac{\phi(u)}{\overline{\Phi}(u)}=\mathbb{E}[X\mid X\ge u].
+\end{equation}</div><p>Differentiating $E(u)=\phi(u)/\overline{\Phi}(u)$ and using $\phi&#39;(u)=-u\phi(u)$ and $\overline{\Phi}&#39;(u)=-\phi(u)$ gives</p><div class="math-block" data-eq-label="eq:mprime" id="eq-eq-mprime">\begin{equation}\label{eq:mprime}
+E&#39;(u)=E(u)^2-u\,E(u).
+\end{equation}</div><p>Define also</p><div class="math-block">\[
+d(u):= E(u)-u=\mathbb{E}[X-u\mid X\ge u].
+\]</div><p>Let $\tilde{\mathbb{P}}(\,\cdot\,):= \mathbb{P}(\,\cdot\,\mid X\ge u)$ and let $Y_u$ denote the random variable \( Y_u:= X-u \) under $\tilde{\mathbb{P}}$. Then \( d(u)=\tilde{\mathbb{E}}[Y_u]. \) Moreover, $Y_u\ge 0$ $\tilde{\mathbb{P}}$-a.s., and for every integer $k\ge 0$ its conditional moments are finite:</p><div class="math-block">\[
+\tilde{\mathbb{E}}\bigl[Y_u^k\bigr]
+=\mathbb{E}\bigl[(X-u)^k\mid X\ge u\bigr]
+=\frac{\mathbb{E}\bigl[(X-u)^k\mathbf{1}_{\{X\ge u\}}\bigr]}{\overline{\Phi}(u)}
+\le \frac{\mathbb{E}\bigl[(|X|+|u|)^k\bigr]}{\overline{\Phi}(u)}&lt;\infty,
+\]</div><p>since $X\sim N(0,1)$ has moments of all orders and $\overline{\Phi}(u)&gt;0$ for all $u\in\mathbb{R}$.</p><p>A useful identity is</p><div class="math-block" data-eq-label="eq:varidentity" id="eq-eq-varidentity">\begin{equation}\label{eq:varidentity}
+\begin{aligned}
+1-E&#39;(u)
+&amp;=1-\bigl(E(u)^2-uE(u)\bigr)\\
+&amp;=1+uE(u)-E(u)^2\\
+&amp;=\frac{\int_u^\infty x^2\phi(x)\,dx}{\overline\Phi(u)}
+-\left(\frac{\int_u^\infty x\phi(x)\,dx}{\overline\Phi(u)}\right)^2\\
+&amp;=\mathbb{E}[X^{2}\mid X\ge u]-\bigl(\mathbb{E}[X\mid X\ge u]\bigr)^{2}
+=\mathrm{Var}(X\mid X\ge u)&gt;0.
+\end{aligned}
+\end{equation}</div><p>so $E&#39;(u)&lt;1$ for all $u$, and consequently</p><div class="math-block" data-eq-label="eq:dprime" id="eq-eq-dprime">\begin{equation}\label{eq:dprime}
+d&#39;(u)=E&#39;(u)-1=-\mathrm{Var}(X\mid X\ge u)&lt;0.
+\end{equation}</div><p>In particular, $d(u)&gt;0$ and $d$ is strictly decreasing on $\mathbb{R}$.</p><h3>4.2. Derivative formula</h3><p>Fix $t\in(0,1)$ and let $Z\sim\mathcal N(0,1)$. Set</p><div class="math-block" data-eq-label="eq:U-def" id="eq-eq-u-def">\begin{equation}\label{eq:U-def}
+U_t:= \frac{\kappa-\sqrt{t}\,Z}{\sqrt{1-t}},
+\end{equation}</div><p>so that $B(t)=(1-t)\,\mathbb E\bigl[E(U_t)^2\bigr].$ Let $h(u):=E(u)^2$. Then $B(t)=(1-t)\,\mathbb E[h(U_t)]$. We differentiate under the expectation,</p><div class="math-block">\[
+B&#39;(t)=-\mathbb E[h(U_t)]+(1-t)\,\mathbb E\bigl[h&#39;(U_t)\,\partial_t U_t\bigr].
+\]</div><p>A direct computation gives</p><div class="math-block">\[
+\partial_t U_t=\frac{U_t}{2(1-t)}-\frac{Z}{2\sqrt t\,\sqrt{1-t}},
+\]</div><p>hence</p><div class="math-block" data-eq-label="eq:Bprime_preIBP" id="eq-eq-bprime-preibp">\begin{equation}\label{eq:Bprime_preIBP}
+B&#39;(t)=\mathbb E\Bigl[-h(U_t)+\frac12 U_t h&#39;(U_t)\Bigr]
+-\frac{\sqrt{1-t}}{2\sqrt t}\,\mathbb E\bigl[Z\,h&#39;(U_t)\bigr].
+\end{equation}</div><p>We now use Gaussian integration by parts: for smooth $\varphi$,</p><div class="math-block">\[
+\mathbb E[Z\varphi(Z)]=\mathbb E[\varphi&#39;(Z)].
+\]</div><p>Apply this with</p><div class="math-block">\[
+\varphi(z):=h&#39;\!\left(\frac{\kappa-\sqrt t\,z}{\sqrt{1-t}}\right)=h&#39;(U_t(z)).
+\]</div><p>Since $\frac{d}{dz}U_t(z)=-\sqrt{\frac{t}{1-t}}$, we have</p><div class="math-block">\[
+\varphi&#39;(z)=-\sqrt{\frac{t}{1-t}}\,h&#39;&#39;(U_t(z)),
+\]</div><p>and therefore</p><div class="math-block">\[
+\mathbb E\bigl[Z\,h&#39;(U_t)\bigr]
+=-\sqrt{\frac{t}{1-t}}\,\mathbb E\bigl[h&#39;&#39;(U_t)\bigr].
+\]</div><p>Substituting into \(\eqref{eq:Bprime_preIBP}\) yields</p><div class="math-block">\[
+B&#39;(t)=\mathbb E\Bigl[-h(U_t)+\frac12 U_t h&#39;(U_t)+\frac12 h&#39;&#39;(U_t)\Bigr].
+\]</div><p>Next,</p><div class="math-block">\[
+h&#39;(u)=2E(u)E&#39;(u),\qquad
+h&#39;&#39;(u)=2(E&#39;(u))^2+2E(u)E&#39;&#39;(u).
+\]</div><p>Thus, we have</p><div class="math-block">\[
+B&#39;(t)= \mathbb{E}\Big[-(E(U_t))^2+U_t E(U_t)E&#39;(U_t)+(E&#39;(U_t))^2+E(U_t)E&#39;&#39;(U_t)\Big].
+\]</div><p>Using the identity (recall $E&#39;(u)=E(u)^2-u\,E(u)$ from \(\eqref{eq:mprime}\))</p><div class="math-block">\[
+E&#39;&#39;(u)=2E(u)E&#39;(u)-E(u)-uE&#39;(u),
+\]</div><p>we get</p><div class="math-block">\[
+uE(u)E&#39;(u)+E(u)E&#39;&#39;(u)-(E(u))^2=2E(u)^2\bigl(E&#39;(u)-1\bigr).
+\]</div><p>Hence</p><div class="math-block" data-eq-label="eq:Bprime-TOBECHECKED" id="eq-eq-bprime-tobechecked">\begin{equation}\label{eq:Bprime-TOBECHECKED}
+    B&#39;(t)=\mathbb E\Bigl[(E&#39;(U_t))^2+2E(U_t)^2\bigl(E&#39;(U_t)-1\bigr)\Bigr]
+=\mathbb E\bigl[g(U_t)\bigr],
+\end{equation}</div><p>where we define, for $u\in\mathbb{R}$,</p><div class="math-block" data-eq-label="eq:g-def" id="eq-eq-g-def">\begin{equation}\label{eq:g-def}
+g(u):= E&#39;(u)^2-2\bigl(1-E&#39;(u)\bigr)E(u)^2.
+\end{equation}</div><p>Therefore, to prove that $B$ is strictly decreasing on $(0,1)$, it suffices to show that</p><div class="math-block" data-eq-label="eq:goal" id="eq-eq-goal">\begin{equation}\label{eq:goal}
+\mathbb{E}\bigl[g(U_t)\bigr]&lt;0\qquad\text{for all }t\in(0,1).
+\end{equation}</div><h3>4.3. The function $g$ on $[0,\infty)$</h3><p>Recall that $E(u)=\frac{\phi(u)}{\overline{\Phi}(u)}=\mathbb{E}[X\mid X\ge u]$ with standard normal $X$. Using \(\eqref{eq:mprime}\), i.e., $E&#39;(u)=E(u)^2-u\,E(u)$, one can rewrite $g$ as the quartic form</p><div class="math-block" data-eq-label="eq:g-expanded" id="eq-eq-g-expanded">\begin{equation}\label{eq:g-expanded}
+g(u)=E(u)^2\bigl(3E(u)^2-4u\,E(u)+u^2-2\bigr).
+\end{equation}</div><p>We will also use the first few conditional moments of $Y_u$: for $k\geq 0$,</p><div class="math-block">\[
+\mu_k(u):= \tilde{\mathbb{E}}\bigl[(Y_u)^k\bigr]
+=\mathbb{E}\bigl[(X-u)^k\mid X\ge u\bigr].
+\]</div><p>Recall that $d(u):= E(u)-u=\mu_1(u)$. A standard integration by parts recursion gives</p><div class="math-block" data-eq-label="eq:moments-TOBECHECKED" id="eq-eq-moments-tobechecked">\begin{align}
+\mu_0(u)&amp;=1,\quad 
+\mu_1(u)=d(u),\label{eq:moments-TOBECHECKED}\\
+\mu_2(u)&amp;=1-u\,d(u),\nonumber\\
+\mu_3(u)&amp;=(u^2+2)\,d(u)-u,\nonumber\\
+\mu_4(u)&amp;=u^2+3-u(u^2+5)\,d(u).\nonumber
+\end{align}</div><div class="env env-lemma" id="lemma-lem-g-decreasing-positive"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">13</span></div><div class="env-body"><p>The function $g$ is strictly decreasing on $[0,\infty)$. In particular, $g(u)\le g(0)$ for all $u\ge 0$. Moreover,</p><div class="math-block">\[
+g(0)=\frac{12}{\pi^2}-\frac{4}{\pi}=-\frac{4(\pi-3)}{\pi^2}.
+\]</div></div></div><p>Before going into the proof of the lemma above, we introduce a simple analytic lemma which will be proved in the appendix.</p><div class="env env-lemma" id="lemma-lem-fnegative-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">14</span></div><div class="env-body"><p>Let $(x,y)\in\mathbb R^2$ satisfy $x\ge 0$, $0&lt;y&lt;\frac{2}{3}$, and</p><div class="math-block" data-eq-label="eq:consFneg_lemma" id="eq-eq-consfneg-lemma">\begin{equation}\label{eq:consFneg_lemma}
+x+2y\ge 1,\qquad
+x^2+xy-3x-3y+2\ge 0,\qquad
+x+y&lt;1.
+\end{equation}</div><p>Then it holds that</p><div class="math-block" data-eq-label="eq:FdefFneg_lemma-TOBECHECKED" id="eq-eq-fdeffneg-lemma-tobechecked">\begin{equation}\label{eq:FdefFneg_lemma-TOBECHECKED}
+F(x,y):=x^2+6xy+6y^2-x-4y&lt;0.
+\end{equation}</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Lemma&nbsp;<a class="xref" href="#lemma-lem-g-decreasing-positive">13</a> assuming Lemma&nbsp;<a class="xref" href="#lemma-lem-fnegative-tobechecked">14</a></span></div><div class="env-body"><p>We differentiate $g$ and rewrite it in a form that is convenient for moment inequalities. Set $E=E(u)$, $E&#39;=E&#39;(u)=E(u)^2-u\,E(u)$, and $d=d(u)=E(u)-u$. A direct differentiation of \(\eqref{eq:g-expanded}\), using \(\eqref{eq:mprime}\) and $d&#39;=E&#39;-1$, yields the identity</p><div class="math-block" data-eq-label="eq:gprime" id="eq-eq-gprime">\begin{equation}\label{eq:gprime}
+g&#39;(u)=2\,E(u)^2\,H(u),
+\qquad
+H(u):= u^2 d + 6u d^2 + 6 d^3 - u - 4d .
+\end{equation}</div><p>Since $E(u)&gt;0$ for all $u$, the sign of $g&#39;(u)$ is the sign of $H(u)$.</p><p>Fix $u\ge 0$. Let $X\sim N(0,1)$ and let $Y_u=X-u$ under the conditional law given $\{X\ge u\}$. Then $Y_u\ge 0$ almost surely, and $\mu_k(u)=\tilde{\mathbb{E}}[Y_u^k]$ are given in \(\eqref{eq:moments-TOBECHECKED}\).</p><p>For any polynomial $P$ we have $\tilde{\mathbb{E}}[P(Y_u)^2]\ge 0$, so the (unshifted) Hankel moment matrices $\bigl(\mu_{i+j}(u)\bigr)_{i,j\ge 0}$ are positive semidefinite. Moreover, since $Y_u\ge 0$, also $\tilde{\mathbb{E}}\!\bigl[Y_u\,P(Y_u)^2\bigr]\ge 0$, so the <em>shifted</em> Hankel matrices $\bigl(\mu_{i+j+1}(u)\bigr)_{i,j\ge 0}$ are positive semidefinite. In particular,</p><p>\[ M_1(u):=</p><pre>\begin{pmatrix}
+\mu_1 &amp; \mu_2\\
+\mu_2 &amp; \mu_3
+\end{pmatrix}</pre><p>\succeq 0, \qquad \widetilde M_2(u):=</p><pre>\begin{pmatrix}
+\mu_0 &amp; \mu_1 &amp; \mu_2\\
+\mu_1 &amp; \mu_2 &amp; \mu_3\\
+\mu_2 &amp; \mu_3 &amp; \mu_4
+\end{pmatrix}</pre><p>\succeq 0, \] and $\mathrm{Var}(Y_u)=\mu_2-\mu_1^2&gt;0$.</p><p>Hence $\det M_1(u)\ge 0$ and, using \(\eqref{eq:moments-TOBECHECKED}\),</p><div class="math-block" data-eq-label="eq:detM1-TOBECHECKED" id="eq-eq-detm1-tobechecked">\begin{equation}\label{eq:detM1-TOBECHECKED}
+\det M_1(u)=\mu_1 \mu_3-\mu_2^2 = u d +2 d^2 -1 \ge 0.
+\end{equation}</div><p>Similarly, $\det \widetilde M_2(u)\ge 0$ yields</p><div class="math-block" data-eq-label="eq:detM2-TOBECHECKED" id="eq-eq-detm2-tobechecked">\begin{equation}\label{eq:detM2-TOBECHECKED}
+\begin{split}
+    \det \widetilde M_2(u) &amp;=\mu_0(\mu_2\mu_4-\mu_3^2)-\mu_1(\mu_1\mu_4-\mu_2\mu_3)+\mu_2(\mu_1\mu_3-\mu_2^2)\\
+    &amp;= u^2 d^2 + u d^3 -3 d^2 -3 u d +2 \ge 0.
+    \end{split}
+\end{equation}</div><p>Finally,</p><div class="math-block" data-eq-label="eq:varY-TOBECHECKED" id="eq-eq-vary-tobechecked">\begin{equation}\label{eq:varY-TOBECHECKED}
+\mathrm{Var}(Y_u)=\mu_2-\mu_1^2=1-u d-d^2&gt;0,
+\end{equation}</div><p>so $u d + d^2 &lt; 1$.</p><p>Introduce the variables</p><div class="math-block">\[
+x:= u d,\qquad y:= d^2.
+\]</div><p>Since $d=\mathbb{E}[X-u\mid X\ge u]&gt;0$, for $u\ge 0$ one has $x\ge 0$ and $y&gt;0$. The inequalities \(\eqref{eq:detM1-TOBECHECKED}\), \(\eqref{eq:detM2-TOBECHECKED}\), \(\eqref{eq:varY-TOBECHECKED}\) become</p><div class="math-block" data-eq-label="eq:constraints-TOBECHECKED" id="eq-eq-constraints-tobechecked">\begin{equation}\label{eq:constraints-TOBECHECKED}
+x+2y\ge 1,\qquad
+x^2+xy-3x-3y+2\ge 0,\qquad
+x+y&lt;1.
+\end{equation}</div><p>Also, $u\mapsto d(u)$ is decreasing by \(\eqref{eq:dprime}\), so $d(u)\le d(0)=E(0)=\sqrt{2/\pi}$ and hence</p><div class="math-block" data-eq-label="eq:ybound-TOBECHECKED" id="eq-eq-ybound-tobechecked">\begin{equation}\label{eq:ybound-TOBECHECKED}
+0&lt;y\le \frac{2}{\pi}&lt;\frac{2}{3}.
+\end{equation}</div><p>Now rewrite $H(u)$ in terms of $(x,y)$:</p><div class="math-block" data-eq-label="eq:Hxy-TOBECHECKED" id="eq-eq-hxy-tobechecked">\begin{equation}\label{eq:Hxy-TOBECHECKED}
+ F(x,y):= d\,H(u)=u^2 d^2 + 6u d^3 + 6 d^4 - ud - 4d^2= x^2+6xy+6y^2-x-4y.
+\end{equation}</div><p>By Lemma&nbsp;<a class="xref" href="#lemma-lem-fnegative-tobechecked">14</a> with $d&gt;0$, we have $H(u)&lt;0$ for all $u\ge 0$. By \(\eqref{eq:gprime}\), $g&#39;(u)&lt;0$ on $[0,\infty)$, so $g$ is strictly decreasing there.</p><p>Finally, at $u=0$ one has $E(0)=\phi(0)/\overline{\Phi}(0)=\sqrt{2/\pi}$ and by \(\eqref{eq:mprime}\) $E&#39;(0)=E(0)^2=2/\pi$. Plugging into \(\eqref{eq:g-def}\) gives</p><div class="math-block" data-eq-label="eq:g-zero-value-TOBECHECKED" id="eq-eq-g-zero-value-tobechecked">\begin{equation}\label{eq:g-zero-value-TOBECHECKED}
+    g(0)=\left(\frac{2}{\pi}\right)^2-2\left(1-\frac{2}{\pi}\right)\left(\frac{2}{\pi}\right)
+=\frac{12}{\pi^2}-\frac{4}{\pi}
+=-\frac{4(\pi-3)}{\pi^2}.
+\end{equation}</div><div class="proof-end">∎</div></div></div><h3>4.4. $g$ on $(-\infty,0]$ via critical points</h3><div class="env env-lemma" id="lemma-lem-g-uniform-negative-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">15</span></div><div class="env-body"><p>For all $u\le 0$ one has</p><div class="math-block">\[
+g(u)\le \frac{1}{18}.
+\]</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>First note that $g$ is continuous on $\mathbb{R}$ (because $E$ is smooth on $\mathbb{R}$), and $g(u)\to 0$ as $u\to -\infty$ since $E(u)=\phi(u)/\overline{\Phi}(u)\le 2\phi(u)$ for $u\le 0$ and $\phi(u)\to 0$ as $u\to-\infty$. Moreover, $|u|\phi(u)\to 0$, so $|u|E(u)\le 2|u|\phi(u)\to 0$ and \(\eqref{eq:mprime}\) gives $E&#39;(u)=E(u)^2-uE(u)\to 0$, hence $g(u)\to 0$. Also, $g(0)&lt;0$ by Lemma <a class="xref" href="#lemma-lem-g-decreasing-positive">13</a>.</p><p>If $\sup_{u\le 0}g(u)=0$, then $g(u)\le 0\le 1/18$ for all $u\le 0$ and there is nothing to prove. Otherwise, $\sup_{u\le 0}g(u)&gt;0$. Since $g(0)&lt;0$, this supremum cannot be attained at $u=0$ and therefore must be attained at some interior maximizer $u_\star&lt;0$.</p><p>At such an interior maximizer, $g&#39;(u_\star)=0$. By \(\eqref{eq:gprime}\), this implies $H(u_\star)=0$, where $H$ is as in \(\eqref{eq:gprime}\). Write $d_\star:=d(u_\star)=E(u_\star)-u_\star$, and define</p><div class="math-block">\[
+r_\star:= -\frac{u_\star}{d_\star}=-\frac{u_\star}{E(u_\star)-u_\star}.
+\]</div><p>Since $u_\star&lt;0$ and $d_\star&gt;0$, one has $r_\star&gt;0$. Moreover,</p><div class="math-block">$0&lt;\phi(u_\star)/\overline{\Phi}(u_\star)=E(u_\star)=u_\star+d_\star=d_\star(1-r_\star),$</div><p>so $r_\star&lt;1$. Hence $r_\star\in(0,1)$.</p><p>The equation $H(u_\star)=0$ becomes, after substituting $u_\star=-r_\star d_\star$,</p><div class="math-block">\[
+u_\star^2 d_\star + 6u_\star d_\star^2 + 6 d_\star^3 -4d_\star -u_\star
+= (r_\star^2-6r_\star+6)d_\star^3 + (r_\star-4)d_\star = 0.
+\]</div><p>Dividing by $d_\star&gt;0$ gives</p><div class="math-block">\[
+(r_\star^2-6r_\star+6)d_\star^2 + (r_\star-4)=0,
+\qquad\text{so}\qquad
+d_\star^2=\frac{4-r_\star}{r_\star^2-6r_\star+6}.
+\]</div><p>Now evaluate $g(u_\star)$ using \(\eqref{eq:g-expanded}\), i.e., $g(u_\star)=E(u_\star)^2\bigl(3E(u_\star)^2-4u_\star\,E(u_\star)+u_\star^2-2\bigr) $. With $E(u_\star)=u_\star+d_\star=d_\star(1-r_\star)$ and $u_\star d_\star=-r_\star d_\star^2$, one has</p><div class="math-block">\[
+g(u_\star)=d_\star^2(1-r_\star)^2\bigl((-2r_\star+3)d_\star^2-2\bigr).
+\]</div><p>Substituting $d_\star^2=(4-r_\star)/(r_\star^2-6r_\star+6)$, a cancellation occurs:</p><div class="math-block">\[
+((-2r_\star+3)d_\star^2-2)
+=\frac{(3-2r_\star)(4-r_\star)-2(r_\star^2-6r_\star+6)}{r_\star^2-6r_\star+6}
+=\frac{r_\star}{r_\star^2-6r_\star+6}.
+\]</div><p>Therefore the value of $g$ at any critical point $u=u_\star&lt;0$ is</p><div class="math-block" data-eq-label="eq:g-critical-r-TOBECHECKED" id="eq-eq-g-critical-r-tobechecked">\begin{equation}\label{eq:g-critical-r-TOBECHECKED}
+g(u_\star)=\frac{r_\star(4-r_\star)(1-r_\star)^2}{(r_\star^2-6r_\star+6)^2},
+\qquad r_\star\in(0,1).
+\end{equation}</div><p>It remains to bound the right-hand side:</p><div class="math-block">\[
+\frac{r(4-r)(1-r)^2}{(r^2-6r+6)^2}\le \frac{1}{18},
+\qquad r\in(0,1).
+\]</div><p>Since this is a straightforward estimate, we defer the proof to the appendix; see Lemma&nbsp;<a class="xref" href="#lemma-lem-rationalfunctionbound-tobechecked">16</a>.</p><p>Combining this with \(\eqref{eq:g-critical-r-TOBECHECKED}\), every interior maximizer $u_\star&lt;0$ satisfies $g(u_\star)\le 1/18$. Since $g(u)\le \max\{0,g(u_\star)\}$ for all $u\le 0$ and $0\le 1/18$, it follows that $g(u)\le 1/18$ for all $u\le 0$.</p><div class="proof-end">∎</div></div></div><h3>4.5. Completion of the proof: monotonicity of $B$</h3><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Theorem&nbsp;<a class="xref" href="#theorem-thm-b-monotone">12</a></span></div><div class="env-body"><p>Fix $t\in(0,1)$ and write $U_t=\frac{\kappa-\sqrt{t}\,Z}{\sqrt{1-t}}$ as in \(\eqref{eq:U-def}\). Since $\kappa/\sqrt{t}\geq 0$,</p><div class="math-block">\[
+\mathbb{P}(U_t&lt;0)=\mathbb{P}\!\left(\frac{\kappa-\sqrt{t}\,Z}{\sqrt{1-t}}&lt;0\right)
+=\mathbb{P}(\sqrt{t}\,Z&gt;\kappa)
+=\overline{\Phi}\!\left(\frac{\kappa}{\sqrt{t}}\right)
+\leq \frac{1}{2}.
+\]</div><p>Split the expectation in \(\eqref{eq:Bprime-TOBECHECKED}\) according to the sign of $U_t$. By Lemma <a class="xref" href="#lemma-lem-g-decreasing-positive">13</a>, for $U_t\ge 0$ one has $g(U_t)\le g(0)$. By Lemma <a class="xref" href="#lemma-lem-g-uniform-negative-tobechecked">15</a>, for $U_t&lt;0$ one has $g(U_t)\le 1/18$. Therefore, with $p_t:= \mathbb{P}(U_t&lt;0)\in(0,1/2]$,</p><div class="math-block" data-eq-label="eq:split" id="eq-eq-split">\begin{equation}\label{eq:split}
+\mathbb{E}[g(U_t)]
+\le g(0)\,(1-p_t) + \frac{1}{18}\,p_t.
+\end{equation}</div><p>We now show $g(0)&lt; -1/18$, so that the right-hand side of \(\eqref{eq:split}\) is strictly negative. From Lemma <a class="xref" href="#lemma-lem-g-decreasing-positive">13</a>, we have $g(0)=-{4(\pi-3)}/{\pi^2}.$ Hence, it suffices to show that</p><div class="math-block" data-eq-label="eq:pi-estimate-TOBECHECKED" id="eq-eq-pi-estimate-tobechecked">\begin{equation}\label{eq:pi-estimate-TOBECHECKED}
+    -\frac{4(\pi-3)}{\pi^2}&lt;-\frac{1}{18}.
+\end{equation}</div><p>It is classical (Archimedes&#39; bounds) that $\pi&gt;\frac{223}{71}$. The function</p><div class="math-block">\[
+h(x):= \frac{4(x-3)}{x^2}
+\]</div><p>is strictly increasing for $x\in(3,6)$ because $h&#39;(x)=\frac{4(6-x)}{x^3}&gt;0$ there. Since $\pi\in(3,6)$, we have</p><div class="math-block">\[
+\frac{4(\pi-3)}{\pi^2}=h(\pi)\ge h\!\left(\frac{223}{71}\right)
+=\frac{4\bigl(\frac{223}{71}-3\bigr)}{\bigl(\frac{223}{71}\bigr)^2}
+=\frac{201640}{3530759}
+&gt;\frac{1}{18}.
+\]</div><p>Insert this into \(\eqref{eq:split}\):</p><div class="math-block">\[
+\mathbb{E}[g(U_t)]
+&lt; g(0)\,(1-p_t) - g(0)\,p_t
+= g(0)\,(1-2p_t)
+\leq 0,
+\]</div><p>since $g(0)&lt;0$ and $p_t\leq 1/2$. By \(\eqref{eq:Bprime-TOBECHECKED}\), $B&#39;(t)=\mathbb{E}[g(U_t)]&lt;0$ for all $t\in(0,1)$.</p><p>Therefore $B$ is strictly decreasing on $(0,1)$. Continuity of $B$ on $[0,1)$ follows directly from the definition and dominated convergence, so $B$ is strictly decreasing on $[0,1)$ as claimed.</p><div class="proof-end">∎</div></div></div><h2 id="proof-of-theoremref-thmmainref-thmndmainref-thm-bound-for-threshold">5. Proof of Theorem&nbsp;\ref{thm:main}</h2><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Theorem <a class="xref" href="#theorem-thm-main">1</a></span></div><div class="env-body"><p>By Theorem&nbsp;<a class="xref" href="#theorem-thm-b-monotone">12</a>, $B$ is strictly decreasing on $[0,1)$. Fix $\alpha&gt;0$ and define $f(r)=A(r)-\alpha\,B\bigl(P(r)\bigr)$ as in Lemma&nbsp;<a class="xref" href="#lemma-lem-main-reduction-tobechecked">11</a>. Then $f$ is strictly increasing on $(0,\infty)$.</p><p>Moreover, by Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-cont0-tobechecked">9</a>, the function $f$ is continuous on $[0,\infty)$. By Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
+f(0)=A(0)-\alpha B(P(0))=-\alpha B(0)&lt;0.
+\]</div><p>Also, using Lemmas&nbsp;<a class="xref" href="#lemma-lem-a-tobechecked">7</a>, <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>, and <a class="xref" href="#lemma-lem-b-endpoints-tobechecked">10</a>,</p><div class="math-block">\[
+\lim_{r\to\infty}f(r)=\lim_{r\to\infty}A(r)-\alpha\lim_{r\to\infty}B(P(r))
+=\frac{2}{\pi}-\alpha C_{\kappa}.
+\]</div><p>If $\alpha&lt;\alpha_c(\kappa)=\frac{2}{\pi C_{\kappa}}$, then $\lim_{r\to\infty}f(r)&gt;0$, so by continuity there exists $r_*\in(0,\infty)$ with $f(r_*)=0$. Since $f$ is strictly increasing on $(0,\infty)$, this $r_*$ is unique. Using $R_\kappa(q,\alpha)=\alpha\,\mathbb E[F_q(\sqrt q Z)^2]=\alpha B(q)/(1-q)^2$, we get $r_*=R_\kappa(q_*,\alpha)$. Setting $q_*:=P(r_*)&lt;1$, the identity $f(r_*)=0$ is equivalent to \( r_*=\alpha B(q_*)/(1-q_*)^2, \) so $(q_*,r_*)$ solves \(\eqref{eq:system}\).</p><p>If $\alpha\ge \alpha_c(\kappa)$, then $\lim_{r\to\infty}f(r)\le 0$. Since $f(0)&lt;0$ and $f$ is strictly increasing on $(0,\infty)$, it follows that $f(r)&lt;0$ for all $r\ge 0$. Any solution $(q,r)$ of \(\eqref{eq:system}\) would satisfy $f(r)=0$ (since $q=P(r)$ and $r=R_\kappa(q,\alpha)=\alpha B(q)/(1-q)^2$), contradicting $f(r)&lt;0$. Hence \(\eqref{eq:system}\) has no solution.</p><div class="proof-end">∎</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">{Proof of Theorem&nbsp;<a class="xref" href="#theorem-thm-2ndmain">2</a>}</span></div><div class="env-body"><p>Fix $\kappa\geq 0$. For each $\alpha\in(0,\alpha_c(\kappa))$, let $(q_\alpha,r_\alpha)$ be the unique solution to \(\eqref{eq:system}\). It suffices to show that for any sequence $\alpha_n\uparrow\alpha_c(\kappa)$,</p><div class="math-block">\[
+r_{\alpha_n}\to\infty.
+\]</div><p>Indeed, if $r_{\alpha_n}\to\infty$ then $q_{\alpha_n}=P(r_{\alpha_n})\to 1$ by Lemma <a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a>. Since the choice of $\alpha_n$ is arbitrary, this yields</p><div class="math-block">\[
+r_\alpha\to\infty,\qquad q_\alpha\to 1\qquad\text{as }\alpha\uparrow\alpha_c(\kappa).
+\]</div><p>Let $\alpha_n\uparrow \alpha_c(\kappa)$. Set $(q_n,r_n):=(q_{\alpha_n},r_{\alpha_n})$, so</p><div class="math-block">\[
+q_n=P(r_n),\qquad r_n=\frac{\alpha_n}{(1-q_n)^2}\,B(q_n).
+\]</div><p>We will prove that $r_n\to\infty$. To this end, assume the contrary. Then there exists a subsequence, still denoted $(r_n)$, that is bounded. By compactness, after passing to a further subsequence we may assume $r_n\to r_*\in[0,\infty)$. By Lemma&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a> and $q_n=P(r_n)$,</p><div class="math-block">\[
+q_n\to q_*:=P(r_*).
+\]</div><p>Since $r_*&lt;\infty$, Lemma&nbsp;<a class="xref" href="#lemma-lem-p-properties-tobechecked">6</a> gives $q_*=P(r_*)&lt;1$.</p><p>Now use the second equation and take limits. Because $q_n\to q_*&lt;1$, we have $(1-q_n)^{-2}\to(1-q_*)^{-2}$, and by Lemma&nbsp;<a class="xref" href="#lemma-lem-b-cont0-tobechecked">9</a>, $B(q_n)\to B(q_*)$. Also, $\alpha_n\to\alpha_c(\kappa)$. Therefore</p><div class="math-block">\[
+r_*=\lim_{n\to\infty} r_n
+=\lim_{n\to\infty}\frac{\alpha_n}{(1-q_n)^2}\,B(q_n)
+=\frac{\alpha_c(\kappa)}{(1-q_*)^2}\,B(q_*).
+\]</div><p>Together with $q_*=P(r_*)$, this shows that $(q_*,r_*)$ solves \(\eqref{eq:system}\) at $\alpha=\alpha_c(\kappa)$. This contradicts Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a>, which states that a solution exists if and only if $\alpha&lt;\alpha_c(\kappa)$. The contradiction proves $r_n\to\infty$.</p><div class="proof-end">∎</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Theorem&nbsp;<a class="xref" href="#theorem-thm-boundforthreshold">3</a></span></div><div class="env-body"><p>Let $\alpha_n\uparrow \alpha_c(\kappa)$ and set $(q_n,r_n):=(q_{\alpha_n},r_{\alpha_n})$. Write $\varepsilon_n:=1-q_n$. By Theorem&nbsp;<a class="xref" href="#theorem-thm-2ndmain">2</a>, $\varepsilon_n\to 0$ and $r_n\to\infty$. Recall also from Theorem&nbsp;<a class="xref" href="#theorem-thm-main">1</a> that $(q_n,r_n)$ satisfies the fixed point relations</p><div class="math-block">\[
+q_n=\mathbb E\big[\tanh^2(\sqrt{r_n}\,Z)\big],
+\qquad
+r_n=\frac{\alpha_n}{\varepsilon_n^2}\,B(q_n).
+\]</div><p>Define</p><div class="math-block">\[
+U_n:=\frac{\kappa-\sqrt{q_n}\,Z}{\sqrt{\varepsilon_n}},
+\qquad
+A_n:=\mathbb E\big[(\kappa-\sqrt{q_n}\,Z)_+^2\big].
+\]</div><p>Then</p><div class="math-block">\[
+\mathrm{RS}_\star(\alpha_n,\kappa)
+=
+\log 2 -\frac{r_n\varepsilon_n}{2}
++\mathbb E\big[\log\cosh(\sqrt{r_n}\,Z)\big]
++\alpha_n\,\mathbb E\!\left[\log \overline{\Phi}(U_n)\right].
+\]</div><p>For every $x\in\mathbb R$ one has $\log\cosh x\le x\tanh x$. Taking $x=\sqrt{r_n}\,Z$ and using Gaussian integration by parts,</p><div class="math-block" data-eq-label="eq:cosh_sech_comparison-TOBECHECKED" id="eq-eq-cosh-sech-comparison-tobechecked">\begin{equation}\label{eq:cosh_sech_comparison-TOBECHECKED}
+    \mathbb E\big[\log\cosh(\sqrt{r_n}\,Z)\big]
+\le
+\sqrt{r_n}\,\mathbb E\big[Z\tanh(\sqrt{r_n}\,Z)\big]
+
+=
+r_n\,\mathbb E\big[\mathrm{sech}^2(\sqrt{r_n}\,Z)\big].
+\end{equation}</div><p>Since $\mathrm{sech}^2=1-\tanh^2$ and $q_n=\mathbb E[\tanh^2(\sqrt{r_n}Z)]$, this gives $\mathbb E[\mathrm{sech}^2(\sqrt{r_n}Z)]=1-q_n=\varepsilon_n$, hence</p><div class="math-block">\[
+-\frac{r_n\varepsilon_n}{2}+\mathbb E\big[\log\cosh(\sqrt{r_n}\,Z)\big]
+\le \frac{r_n\varepsilon_n}{2}.
+\]</div><p>Using $r_n=\frac{\alpha_n}{\varepsilon_n^2}B(q_n)$ yields</p><div class="math-block" data-eq-label="eq:spin_bd_unif_nostep_revised-TOBECHECKED" id="eq-eq-spin-bd-unif-nostep-revised-tobechecked">\begin{equation}\label{eq:spin_bd_unif_nostep_revised-TOBECHECKED}
+-\frac{r_n\varepsilon_n}{2}+\mathbb E\big[\log\cosh(\sqrt{r_n}\,Z)\big]
+\le
+\frac{\alpha_n}{2\varepsilon_n}\,B(q_n).
+\end{equation}</div><p>Fix $\delta\in(0,1)$. Since $q_n\to 1$, for all large $n$ we have $\sqrt{q_n}\ge 1/2$. On the event $\{Z\le \kappa-\delta\}$,</p><div class="math-block">\[
+\kappa-\sqrt{q_n}Z\ge \kappa-\sqrt{q_n}(\kappa-\delta)
+=\kappa(1-\sqrt{q_n})+\sqrt{q_n}\delta\ge \delta/2,
+\]</div><p>so $U_n\ge \delta/(2\sqrt{\varepsilon_n})&gt;0$ on $\{Z\le \kappa-\delta\}$.</p><p>For $u&gt;0$, Chernoff&#39;s bound gives</p><div class="math-block">$\overline{\Phi}(u)=\mathbb P(Z\geq u)\leq e^{-u^2}\mathbb E[e^{u Z}]= e^{-u^2/2}.$</div><p>By Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a>, we have</p><div class="math-block">\begin{equation*}
+ \begin{split}
+ \overline{\Phi}(u)\le \phi(u)/u\le u^{-1}e^{-u^2/2}.
+\end{split}
+\end{equation*}</div><p>Hence</p><div class="math-block">\[
+\log\overline{\Phi}(u)\le -\frac{u^2}{2},
+\qquad
+\log\overline{\Phi}(u)\le -\frac{u^2}{2}-\log u,
+\qquad (u&gt;0),
+\]</div><p>and trivially $\log\overline{\Phi}(u)\le 0$ for all $u\in\mathbb R$. Therefore, for all large $n$,</p><div class="math-block">\[
+\log\overline{\Phi}(U_n)
+\le
+-\frac{U_n^2}{2}\,\mathbf{1}_{\{U_n&gt;0\}}
+-(\log U_n)\,\mathbf{1}_{\{Z\le \kappa-\delta\}}.
+\]</div><p>Taking expectations and using $U_n^2\,\mathbf{1}_{\{U_n&gt;0\}}=\varepsilon_n^{-1}(\kappa-\sqrt{q_n}Z)_+^2$,</p><div class="math-block">\[
+\mathbb E\big[\log\overline{\Phi}(U_n)\big]
+\le
+-\frac{A_n}{2\varepsilon_n}
+-\mathbb E\big[(\log U_n)\,\mathbf{1}_{\{Z\le \kappa-\delta\}}\big].
+\]</div><p>On $\{Z\le \kappa-\delta\}$ we have $\log U_n=\log(\kappa-\sqrt{q_n}Z)-\frac12\log\varepsilon_n$, hence</p><div class="math-block">\[
+-\mathbb E\big[(\log U_n)\,\mathbf{1}_{\{Z\le \kappa-\delta\}}\big]
+=
+\frac{\Phi(\kappa-\delta)}{2}\log\varepsilon_n
+-\mathbb E\big[\log(\kappa-\sqrt{q_n}Z)\,\mathbf{1}_{\{Z\le \kappa-\delta\}}\big].
+\]</div><p>Since on $\{Z\le \kappa-\delta\}$ and for large $n$ we have $\kappa-\sqrt{q_n}Z\ge \delta/2$, it follows that $\log(\kappa-\sqrt{q_n}Z)\ge \log(\delta/2)$ and therefore</p><div class="math-block">\[
+-\mathbb E\big[\log(\kappa-\sqrt{q_n}Z)\,\mathbf{1}_{\{Z\le \kappa-\delta\}}\big]\le -\log(\delta/2).
+\]</div><p>Consequently, with $C(\delta):=-\log(\delta/2)\in(0,\infty)$,</p><div class="math-block" data-eq-label="eq:constraint_bd_unif_nostep_revised-TOBECHECKED" id="eq-eq-constraint-bd-unif-nostep-revised-tobechecked">\begin{equation}\label{eq:constraint_bd_unif_nostep_revised-TOBECHECKED}
+\mathbb E\big[\log\overline{\Phi}(U_n)\big]
+\le
+-\frac{A_n}{2\varepsilon_n}
++\frac{\Phi(\kappa-\delta)}{2}\log\varepsilon_n
++C(\delta),
+\end{equation}</div><p>for all large $n$.</p><p>Next, let $E(u):=\phi(u)/\overline{\Phi}(u)$ and recall</p><div class="math-block">\[
+B(q_n)=\varepsilon_n\,\mathbb E\big[E(U_n)^2\big],
+\qquad
+A_n=\varepsilon_n\,\mathbb E\big[(U_n)_+^2\big].
+\]</div><p>For $u&gt;0$, Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a>, $\overline{\Phi}(u)\le \phi(u)/u$, implies $E(u)\ge u$, hence $E(u)^2\ge u^2=(u_+)^2$, while for $u\le 0$ one has $(u_+)^2=0\le E(u)^2$. Thus $E(u)^2\ge (u_+)^2$ for all $u\in\mathbb R$, and so $B(q_n)\ge A_n$.</p><p>Moreover, there is a finite constant $C_0$ such that</p><div class="math-block">\[
+0\le E(u)^2-(u_+)^2\le C_0\qquad\text{for all }u\in\mathbb R.
+\]</div><p>Indeed, if $u\le 0$, then $\overline{\Phi}(u)\ge 1/2$ and $\phi(u)\le \phi(0)$, so $E(u)\le 2\phi(0)=\sqrt{2/\pi}$ and $E(u)^2-(u_+)^2=E(u)^2\le 2/\pi$. If $u\ge 1$, the two-sided Mills bound $\overline{\Phi}(u)\ge \phi(u)\,u/(1+u^2)$ by Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a> gives $E(u)\le (1+u^2)/u=u+1/u$, hence</p><div class="math-block">\[
+0\le E(u)^2-u^2\le (u+1/u)^2-u^2=2+1/u^2\le 3.
+\]</div><p>Finally, on $u\in[0,1]$ the function $u\mapsto E(u)^2-u^2$ is continuous and hence bounded. Taking $C_0$ as the maximum of these bounds yields the claim.</p><p>Therefore,</p><div class="math-block" data-eq-label="eq:BA_bd_unif_nostep_revised-TOBECHECKED" id="eq-eq-ba-bd-unif-nostep-revised-tobechecked">\begin{equation}\label{eq:BA_bd_unif_nostep_revised-TOBECHECKED}
+0\le B(q_n)-A_n
+=
+\varepsilon_n\,\mathbb E\big[E(U_n)^2-(U_n)_+^2\big]
+\le C_0\,\varepsilon_n.
+\end{equation}</div><p>Combining \(\eqref{eq:spin_bd_unif_nostep_revised-TOBECHECKED}\), \(\eqref{eq:constraint_bd_unif_nostep_revised-TOBECHECKED}\), and \(\eqref{eq:BA_bd_unif_nostep_revised-TOBECHECKED}\),</p><div class="math-block">\begin{align*}
+\mathrm{RS}_\star(\alpha_n,\kappa)
+&amp;\le
+\log 2+\frac{\alpha_n}{2\varepsilon_n}B(q_n)
++\alpha_n\left(
+-\frac{A_n}{2\varepsilon_n}
++\frac{\Phi(\kappa-\delta)}{2}\log\varepsilon_n
++C(\delta)\right)\\
+&amp;=
+\frac{\alpha_n\Phi(\kappa-\delta)}{2}\log\varepsilon_n
++\log 2
++\frac{\alpha_n}{2\varepsilon_n}\big(B(q_n)-A_n\big)
++\alpha_n C(\delta)\\
+&amp;\le
+\frac{\alpha_n\Phi(\kappa-\delta)}{2}\log\varepsilon_n
++\log 2
++\frac{C_0\alpha_c(\kappa)}{2}
++\alpha_c(\kappa)\,C(\delta),
+\end{align*}</div><p>for all large $n$, since $\alpha_n\le \alpha_c(\kappa)$ and $C(\delta)&gt;0$.</p><p>Since $\varepsilon_n\to 0$, we have $\log\varepsilon_n\to -\infty$, and since $\alpha_n\to\alpha_c(\kappa)&gt;0$ and $\Phi(\kappa-\delta)&gt;0$, the right-hand side tends to $-\infty$. Therefore $\mathrm{RS}_\star(\alpha_n,\kappa)\to -\infty$, proving the claim.</p><div class="proof-end">∎</div></div></div><p>\appendix</p><h2 id="appendix">6. Appendix</h2><h3>6.1. Uniform growth bound for the inverse Mills ratio: Lemma&nbsp;\ref{lem:Mills_bound-TOBECHECKED</h3><p>Recall $E(u)=\phi(u)/\overline{\Phi}(u)$. We aim to prove that there exists $C&gt;0$ such that for all $u\in\mathbb R$,</p><div class="math-block">\[
+0&lt;E(u)=\frac{\phi(u)}{\overline{\Phi}(u)} \le \max\{u,0\} + C.
+\]</div><p>For all $u&gt;0$,</p><div class="math-block">\[
+u&lt;\frac{\phi(u)}{\overline{\Phi}(u)}\le u+\frac{1}{u}.
+\]</div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span><span class="env-note">Proof of Lemma&nbsp;<a class="xref" href="#lemma-lem-mills-bound-tobechecked">8</a></span></div><div class="env-body"><p>For $u\le 1$, since $\overline{\Phi}$ is decreasing, we have $\overline{\Phi}(u)\ge \overline{\Phi}(1)&gt;0$ and $\phi(u)\le 1$, hence</p><div class="math-block">\[
+E(u)=\frac{\phi(u)}{\overline{\Phi}(u)}\le \frac{1}{\overline{\Phi}(1)}=:C_1&lt;\infty.
+\]</div><p>For $u&gt;0$, integrate by parts to get the classical identity</p><div class="math-block">\[
+\overline{\Phi}(u)=\int_u^\infty \phi(t)\,dt
+=\Big[-\frac{\phi(t)}{t}\Big]_{t=u}^\infty-\int_u^\infty\frac{\phi(t)}{t^2}\,dt
+=\frac{\phi(u)}{u}-\int_u^\infty\frac{\phi(t)}{t^2}\,dt.
+\]</div><p>Here the boundary term at $\infty$ vanishes since $\phi(t)/t\to 0$ as $t\to\infty$. Since $t\ge u$ on $[u,\infty)$,</p><div class="math-block">\[
+\int_u^\infty \frac{\phi(t)}{t^2}\,dt\le \frac{1}{u^2}\int_u^\infty \phi(t)\,dt
+=\frac{\overline{\Phi}(u)}{u^2},
+\]</div><p>so</p><div class="math-block" data-eq-label="eq:two-sidedmills" id="eq-eq-two-sidedmills">\begin{equation}\label{eq:two-sidedmills}
+ \overline{\Phi}(u)\ge \frac{\phi(u)}{u}-\frac{\overline{\Phi}(u)}{u^2},
+\qquad\text{hence}\qquad
+\frac{\phi(u)}{\overline{\Phi}(u)}\le u+\frac{1}{u}.
+\end{equation}</div><p>In particular, for $u\ge 1$ we have $E(u)\le u+1$. Hence, we can choose $C:=\max\{C_1,1\}$.</p><p>Finally, for $u&gt;0$,</p><div class="math-block">\[ \overline{\Phi}(u)= \int_u^\infty \phi(t)\,dt=\int_u^\infty \frac{-\phi&#39;(t)}{t}\,dt
+=\Big[-\frac{\phi(t)}{t}\Big]_{u}^{\infty}-\int_u^\infty \frac{\phi(t)}{t^{2}}\,dt\\
+&lt; \frac{\phi(u)}u.\]</div><div class="proof-end">∎</div></div></div><h3>6.2. Proof of Lemma&nbsp;\ref{lem:F negative-TOBECHECKED</h3><p>We aim to prove the following: Let $(x,y)\in\mathbb R^2$ satisfy $x\ge 0$, $0&lt;y&lt;\frac{2}{3}$, and</p><div class="math-block" data-eq-label="eq:consFneg_lemma" id="eq-eq-consfneg-lemma">\begin{equation}\label{eq:consFneg_lemma}
+x+2y\ge 1,\qquad
+x^2+xy-3x-3y+2\ge 0,\qquad
+x+y&lt;1.
+\end{equation}</div><p>Then it holds that</p><div class="math-block" data-eq-label="eq:FdefFneg_lemma-TOBECHECKED" id="eq-eq-fdeffneg-lemma-tobechecked">\begin{equation}\label{eq:FdefFneg_lemma-TOBECHECKED}
+F(x,y):=x^2+6xy+6y^2-x-4y&lt;0.
+\end{equation}</div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>Fix $y\in(0,2/3)$. Consider the quadratic constraint</p><div class="math-block">\[
+q_y(x):=x^2+xy-3x-3y+2\ge 0.
+\]</div><p>Its roots are</p><div class="math-block" data-eq-label="eq:rootsFneg_lemma" id="eq-eq-rootsfneg-lemma">\begin{equation}\label{eq:rootsFneg_lemma}
+r_\pm(y)=\frac{3-y\pm\sqrt{y^2+6y+1}}{2}.
+\end{equation}</div><p>Since ${y^2+6y+1}&gt;(y+1)^2$ for $y&gt;0$, we have</p><div class="math-block">\[
+r_+(y)=\frac{3-y+\sqrt{y^2+6y+1}}{2}&gt;\frac{3-y+(y+1)}{2}=2&gt;1.
+\]</div><p>Because $q_y$ has leading coefficient $1$, the inequality $q_y(x)\ge 0$ implies</p><div class="math-block">\[
+x\in(-\infty,r_-(y)]\cup[r_+(y),\infty).
+\]</div><p>From $x+y&lt;1$ in \(\eqref{eq:consFneg_lemma}\) we get $x&lt;1-y\le 1&lt;r_+(y)$, so the second branch is impossible and therefore \( x\le r_-(y). \) Moreover, $r_-(y)+y&lt;1$ holds for $y&gt;0$, because it is equivalent to $\sqrt{y^2+6y+1}&gt;y+1$.</p><p>Combining $x\ge 0$ and $x+2y\ge 1$ from \(\eqref{eq:consFneg_lemma}\) with $x\le r_-(y)$, the feasible set of $x$ for this fixed $y$ is the interval</p><div class="math-block" data-eq-label="eq:IyFneg_lemma" id="eq-eq-iyfneg-lemma">\begin{equation}\label{eq:IyFneg_lemma}
+I_y:=\Bigl[\max\{0,1-2y\},\,r_-(y)\Bigr].
+\end{equation}</div><p>Note that if $I_y$ is empty, then the claim follows immediately for that $y$. Hence, we assume that $I_y$ is not empty.</p><p>For fixed $y$, the function $x\mapsto F(x,y)$ is a convex quadratic since</p><div class="math-block">\[
+F(x,y)=x^2+(6y-1)x+(6y^2-4y),\qquad \frac{\partial^2}{\partial x^2}F(x,y)=2&gt;0.
+\]</div><p>Hence the maximum of $F(\cdot,y)$ over the interval $I_y$ is attained at an endpoint since $I_y$ is a closed interval and $F(\cdot,y)$ is convex and continuous.</p><p>For the left endpoint, there are two cases. If $y\le \tfrac12$, then $\max\{0,1-2y\}=1-2y$ and</p><div class="math-block" data-eq-label="eq:leftEndpoint1Fneg_lemma" id="eq-eq-leftendpoint1fneg-lemma">\begin{equation}\label{eq:leftEndpoint1Fneg_lemma}
+F(1-2y,y)=-2y^2&lt;0.
+\end{equation}</div><p>If $y\ge \tfrac12$, then $\max\{0,1-2y\}=0$ and, using $y&lt;\tfrac23$,</p><div class="math-block" data-eq-label="eq:leftEndpoint2Fneg_lemma" id="eq-eq-leftendpoint2fneg-lemma">\begin{equation}\label{eq:leftEndpoint2Fneg_lemma}
+F(0,y)=6y^2-4y=2y(3y-2)&lt;0.
+\end{equation}</div><p>For the right endpoint $x=r_-(y)$, use the identity $q_y(x)=0$ to eliminate $x^2$:</p><div class="math-block">\[
+F(x,y)=(x^2+xy-3x-3y+2) + (5xy+2x+6y^2-y-2)=5xy+2x+6y^2-y-2.
+\]</div><p>Substituting $x=r_-(y)$ gives</p><div class="math-block" data-eq-label="eq:rightEndpointFneg_lemma" id="eq-eq-rightendpointfneg-lemma">\begin{equation}\label{eq:rightEndpointFneg_lemma}
+F(r_-(y),y)=\frac{7y^2+11y+2-(5y+2)\sqrt{y^2+6y+1}}{2}.
+\end{equation}</div><p>Both $7y^2+11y+2$ and $(5y+2)\sqrt{y^2+6y+1}$ are strictly positive for $y&gt;0$, so \(\eqref{eq:rightEndpointFneg_lemma}\) is negative if and only if</p><div class="math-block">\[
+(5y+2)\sqrt{y^2+6y+1}&gt;7y^2+11y+2.
+\]</div><p>Squaring and simplifying yields</p><div class="math-block" data-eq-label="eq:squareDiffFneg_lemma" id="eq-eq-squaredifffneg-lemma">\begin{equation}\label{eq:squareDiffFneg_lemma}
+(5y+2)^2(y^2+6y+1)-(7y^2+11y+2)^2
+=8y^3(2-3y),
+\end{equation}</div><p>which is strictly positive for $y\in(0,2/3)$. Hence $F(r_-(y),y)&lt;0$.</p><p>Therefore $F$ is negative at both endpoints of $I_y$, so $\max_{x\in I_y}F(x,y)&lt;0$ and $F(x,y)&lt;0$ for every feasible $x$ at this $y$. Since $y$ was arbitrary in $(0,2/3)$, the conclusion follows.</p><div class="proof-end">∎</div></div></div><h3>6.3. A rational function inequality</h3><div class="env env-lemma" id="lemma-lem-rationalfunctionbound-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">16</span></div><div class="env-body"><p>For any $r\in(0,1)$,</p><div class="math-block">\[ \frac{r(4-r)(1-r)^2}{(r^2-6r+6)^2}\le \frac{1}{18}.
+\]</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>This is equivalent to</p><div class="math-block">\[
+(r^2-6r+6)^2 - 18\,r(4-r)(1-r)^2 \ge 0.
+\]</div><p>Expanding gives the quartic polynomial</p><div class="math-block">\[
+P(r):= 19r^4-120r^3+210r^2-144r+36.
+\]</div><p>A useful factorization is</p><div class="math-block">\[
+P(r)-1=(r-1)\,C(r),
+\qquad
+C(r):= 19r^3-101r^2+109r-35.
+\]</div><p>On $[0,1]$, the cubic $C$ is strictly concave because</p><div class="math-block">\[
+C&#39;&#39;(r)=114r-202&lt;0\qquad\text{for all }r\in[0,1].
+\]</div><p>The derivative $C&#39;(r)=57r^2-202r+109$ is strictly decreasing, and $C&#39;(0)=109&gt;0$ while $C&#39;(1)=-36&lt;0$, so there is a unique $r_0\in(0,1)$ with $C&#39;(r_0)=0$, and $C$ attains its maximum at $r_0$. Using $C&#39;(r_0)=0$ (i.e. $57r_0^2=202r_0-109$) gives</p><div class="math-block">\[
+C(r_0)=\frac{5024-7976r_0}{171}.
+\]</div><p>The quadratic formula yields</p><div class="math-block">\[
+r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
+\]</div><p>and $202^2-4\cdot 57\cdot 109=15952&lt;127^2$, hence $r_0&gt;(202-127)/114=25/38$. Therefore $7976r_0&gt;7976\cdot(25/38)=99700/19&gt;5024$, so $C(r_0)&lt;0$. Thus $C(r)&lt;0$ for all $r\in[0,1]$. Since $r-1&lt;0$ for $r\in(0,1)$, we obtain $(r-1)C(r)&gt;0$ on $(0,1)$, and thus $P(r)&gt;1$ on $(0,1)$. In particular, $P(r)&gt;0$ on $(0,1)$, proving the desired inequality.</p><div class="proof-end">∎</div></div></div><h2 id="references">References</h2><ol class="bibliography"><li id="bib-gardnerderrida1988"><div class="bibline">E.&nbsp;Gardner and B.&nbsp;Derrida.</div><div class="bibline">Optimal storage properties of neural network models.</div><div class="bibline"><em>J. Phys. A: Math. Gen.</em>, 21(1):271–284, 1988.</div><div class="bibline">doi:10.1088/0305-4470/21/1/031.</div></li><li id="bib-krauthmezard1989"><div class="bibline">W.&nbsp;Krauth and M.&nbsp;M{é}zard.</div><div class="bibline">Storage capacity of memory networks with binary couplings.</div><div class="bibline"><em>J. Physique</em>, 50(20):3057–3066, 1989.</div><div class="bibline">doi:10.1051/jphys:0198900500200305700.</div></li><li id="bib-mezard1989"><div class="bibline">M.&nbsp;M{é}zard.</div><div class="bibline">The space of interactions in neural networks: Gardner&#39;s computation with the cavity method.</div><div class="bibline"><em>J. Phys. A: Math. Gen.</em>, 22(12):2181–2190, 1989.</div><div class="bibline">doi:10.1088/0305-4470/22/12/018.</div></li><li id="bib-talagrand2000"><div class="bibline">M.&nbsp;Talagrand.</div><div class="bibline">Intersecting random half-spaces: toward the Gardner–Derrida formula.</div><div class="bibline"><em>Ann. Probab.</em>, 28(2):725–758, 2000.</div><div class="bibline">doi:10.1214/aop/1019160259.</div></li><li id="bib-talagrand2011"><div class="bibline">M.&nbsp;Talagrand.</div><div class="bibline"><em>Mean Field Models for Spin Glasses</em>, Vol. I: Basic Examples and Vol. II: Advanced Replica-Symmetry and Low Temperature.</div><div class="bibline">Springer, Berlin Heidelberg, 2011.</div><div class="bibline">doi:10.1007/978-3-642-15202-3 and doi:10.1007/978-3-642-22253-5.</div></li><li id="bib-bolthausennakajimasunxu2022"><div class="bibline">E.&nbsp;Bolthausen, S.&nbsp;Nakajima, N.&nbsp;Sun, and C.&nbsp;Xu.</div><div class="bibline">Gardner formula for Ising perceptron models at small densities.</div><div class="bibline">In <em>Proceedings of the 35th Conference on Learning Theory (COLT)</em>, <em>Proc. Mach. Learn. Res.</em>, 178:1787–1911, 2022.</div><div class="bibline">arXiv:2111.02855.</div></li><li id="bib-dingsun2025"><div class="bibline">J.&nbsp;Ding and N.&nbsp;Sun.</div><div class="bibline">Capacity lower bound for the Ising perceptron.</div><div class="bibline"><em>Probab. Theory Relat. Fields</em>, 193:627–715, 2025.</div><div class="bibline">doi:10.1007/s00440-025-01364-x; arXiv:1809.07742.</div></li><li id="bib-xu2021"><div class="bibline">C.&nbsp;Xu.</div><div class="bibline">Sharp threshold for the Ising perceptron model.</div><div class="bibline"><em>Ann. Probab.</em>, 49(5):2399–2415, 2021.</div><div class="bibline">doi:10.1214/21-AOP1511; arXiv:1905.05978.</div></li><li id="bib-nakajimasun2022"><div class="bibline">S.&nbsp;Nakajima and N.&nbsp;Sun.</div><div class="bibline">Sharp threshold sequence and universality for Ising perceptron models.</div><div class="bibline">In <em>Proceedings of the 2023 Annual ACM-SIAM Symposium on Discrete Algorithms (SODA)</em>, pages 638–674. SIAM, 2023.</div><div class="bibline">doi:10.1137/1.9781611977554.ch28; arXiv:2204.03469.</div></li><li id="bib-huang2024"><div class="bibline">B.&nbsp;Huang.</div><div class="bibline">Capacity threshold for the Ising perceptron.</div><div class="bibline">In <em>2024 IEEE 65th Annual Symposium on Foundations of Computer Science (FOCS)</em>, pages 1126–1136. IEEE, 2024.</div><div class="bibline">doi:10.1109/FOCS61266.2024.00074; arXiv:2404.18902.</div></li></ol></article>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <div class="footer-inner">
+          <div class="nav" role="navigation" aria-label="Section navigation">
+            <div class="status" id="statusText"></div>
+            <div class="buttons">
+              <button type="button" id="btnBack">Back</button>
+              <button type="button" id="btnHome" class="primary">Home</button>
+              <button type="button" id="btnForward">Forward</button>
+            </div>
+            <div class="hint">Keyboard: Alt+← / Alt+→</div>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <noscript>
+      <div
+        style="max-width:1200px;margin:12px auto;padding:12px 14px;border:1px solid rgba(148,163,184,.28);border-radius:14px;background:#111c33;color:#e5e7eb"
+      >
+        JavaScript is required to render the manuscript.
+      </div>
+    </noscript>
+
+    <script>
+      (function () {
+        const sections = [
+          { id: "setup-and-main-results", label: "1 Setup and main results" },
+          { id: "motivation-and-related-research", label: "2 Motivation and related research" },
+          { id: "auxiliary-results-for-theoremref-thmmain", label: "3 Auxiliary results" },
+          { id: "monotonicity-of-b", label: "4 Monotonicity of B" },
+          {
+            id: "proof-of-theoremref-thmmainref-thmndmainref-thm-bound-for-threshold",
+            label: "5 Proof of main theorems",
+          },
+          { id: "appendix", label: "A Appendix" },
+        ];
+
+        const paperRoot = document.getElementById("paperRoot");
+        const statusText = document.getElementById("statusText");        
+        const backButton = document.getElementById("btnBack");
+        const homeButton = document.getElementById("btnHome");
+        const forwardButton = document.getElementById("btnForward");     
+        const tocButtons = Array.from(document.querySelectorAll("button[data-section-id]"));
+
+        let currentIndex = 0;
+
+        function normalizeHash(hash) {
+          const raw = (hash || "").replace(/^#/, "");
+          try {
+            return decodeURIComponent(raw);
+          } catch {
+            return raw;
+          }
+        }
+
+        function findIndexById(id) {
+          return sections.findIndex((s) => s.id === id);
+        }
+
+        function updateUi() {
+          statusText.textContent = sections[currentIndex].label;
+          backButton.disabled = currentIndex <= 0;
+          forwardButton.disabled = currentIndex >= sections.length - 1;
+          for (const button of tocButtons) {
+            const isCurrent = button.dataset.sectionId === sections[currentIndex].id;
+            if (isCurrent) button.setAttribute("aria-current", "page");
+            else button.removeAttribute("aria-current");
+          }
+        }
+
+        function scrollToSection(id) {
+          const target = document.getElementById(id);
+          if (!target) return false;
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          return true;
+        }
+
+        function goToIndex(nextIndex, { updateHash = true } = {}) {
+          currentIndex = Math.max(0, Math.min(sections.length - 1, nextIndex));
+          updateUi();
+          const id = sections[currentIndex].id;
+          if (updateHash && normalizeHash(location.hash) !== id) location.hash = id;
+          scrollToSection(id);
+        }
+
+        tocButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            const idx = findIndexById(button.dataset.sectionId);
+            if (idx !== -1) goToIndex(idx);
+          });
+        });
+
+        backButton.addEventListener("click", () => goToIndex(currentIndex - 1));
+        forwardButton.addEventListener("click", () => goToIndex(currentIndex + 1));
+        homeButton.addEventListener("click", () => goToIndex(0));
+
+        window.addEventListener("hashchange", () => {
+          const idx = findIndexById(normalizeHash(location.hash));
+          if (idx !== -1 && idx !== currentIndex) goToIndex(idx, { updateHash: false });
+        });
+
+        window.addEventListener("keydown", (event) => {
+          if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            goToIndex(currentIndex - 1);
+          }
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            goToIndex(currentIndex + 1);
+          }
+        });
+
+        async function typesetMath(root) {
+          const start = performance.now();
+          const timeoutMs = 20000;
+          while (performance.now() - start < timeoutMs) {
+            if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+              await window.MathJax.typesetPromise([root]);
+              return;
+            }
+            await new Promise((r) => setTimeout(r, 50));
+          }
+        }
+
+        function canonicalizeLabel(label) {
+          return String(label || "").replace(/\s+/g, "");
+        }
+
+        function slugifyId(value) {
+          return String(value || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+        }
+
+        function escapeHtml(text) {
+          return String(text || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function stripComments(tex) {
+          const lines = String(tex || "").replace(/\r\n?/g, "\n").split("\n");
+          const out = [];
+          for (const line of lines) {
+            let keep = "";
+            let escaped = false;
+            for (let i = 0; i < line.length; i++) {
+              const ch = line[i];
+              if (ch === "%" && !escaped) break;
+              keep += ch;
+              escaped = ch === "\\" && !escaped;
+              if (ch !== "\\") escaped = false;
+            }
+            out.push(keep);
+          }
+          return out.join("\n");
+        }
+
+        function extractCommandArg(tex, command) {
+          const re = new RegExp(String.raw`\\${command}\\{([\\s\\S]*?)\\}`, "m");
+          const m = String(tex || "").match(re);
+          return m ? String(m[1] || "").trim() : "";
+        }
+
+        function extractDocumentBody(tex) {
+          const m = String(tex || "").match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/m);
+          return m ? m[1] : tex;
+        }
+
+        function canonicalizeLabelsInTex(tex) {
+          return String(tex || "").replace(/\\(label|ref|eqref)\{([^}]+)\}/g, (m, cmd, inner) => {
+            return `\\${cmd}{${canonicalizeLabel(inner)}}`;
+          });
+
+          return { insertedCount, missingLabels: Array.from(missingLabels).sort() };
+        }
+
+        function scanRegistry(bodyText) {
+          const registry = {
+            theoremCounter: 0,
+            theoremLabels: new Map(),
+            theoremIds: new Map(),
+            sectionLabels: new Map(),
+            citeNumbers: new Map(),
+            citeIds: new Map(),
+          };
+
+          const lines = String(bodyText || "").split("\n");
+          let sectionIndex = 0;
+          for (const line of lines) {
+            if (line.startsWith("\\section{")) {
+              sectionIndex += 1;
+              const labelMatch = line.match(/\\label\{([^}]+)\}/);
+              if (labelMatch) {
+                const canon = canonicalizeLabel(labelMatch[1]);
+                const id = sections[Math.max(0, Math.min(sections.length - 1, sectionIndex - 1))].id;
+                registry.sectionLabels.set(canon, { id, n: sectionIndex });
+              }
+            }
+
+            const envMatch = line.match(/^\\begin\{(theorem|lemma|claim|remark)\}/);
+            if (envMatch) {
+              registry.theoremCounter += 1;
+              const labelMatch = line.match(/\\label\{([^}]+)\}/);
+              if (labelMatch) {
+                const canon = canonicalizeLabel(labelMatch[1]);
+                registry.theoremLabels.set(canon, registry.theoremCounter);
+                registry.theoremIds.set(canon, `${envMatch[1]}-${slugifyId(canon)}`);
+              }
+              continue;
+            }
+
+            const bibMatch = line.match(/^\\bibitem\{([^}]+)\}/);
+            if (bibMatch) {
+              const keyCanon = canonicalizeLabel(bibMatch[1]);
+              if (!registry.citeNumbers.has(keyCanon)) {
+                const n = registry.citeNumbers.size + 1;
+                registry.citeNumbers.set(keyCanon, n);
+                registry.citeIds.set(keyCanon, `bib-${slugifyId(keyCanon)}`);
+              }
+            }
+          }
+          return registry;
+        }
+
+        function splitInlineMath(text) {
+          const s = String(text || "");
+          const segments = [];
+          let i = 0;
+          let mode = "text";
+          let start = 0;
+
+          function push(type, end) {
+            if (end <= start) return;
+            segments.push({ type, value: s.slice(start, end) });
+          }
+
+          while (i < s.length) {
+            if (mode === "text") {
+              if (s.startsWith("\\(", i)) {
+                push("text", i);
+                mode = "math-paren";
+                start = i;
+                i += 2;
+                continue;
+              }
+              if (s[i] === "$" && (i === 0 || s[i - 1] !== "\\")) {
+                push("text", i);
+                mode = "math-dollar";
+                start = i;
+                i += 1;
+                continue;
+              }
+              i += 1;
+              continue;
+            }
+            if (mode === "math-paren") {
+              if (s.startsWith("\\)", i)) {
+                i += 2;
+                push("math", i);
+                mode = "text";
+                start = i;
+                continue;
+              }
+              i += 1;
+              continue;
+            }
+            if (mode === "math-dollar") {
+              if (s[i] === "$" && s[i - 1] !== "\\") {
+                i += 1;
+                push("math", i);
+                mode = "text";
+                start = i;
+                continue;
+              }
+              i += 1;
+              continue;
+            }
+          }
+
+          push(mode === "text" ? "text" : "math", s.length);
+          return segments;
+        }
+
+        function renderInlineText(raw, registry) {
+          const segments = splitInlineMath(raw);
+          return segments
+            .map((seg) => {
+              if (seg.type === "math") return escapeHtml(canonicalizeLabelsInTex(seg.value));
+              return renderTextSegment(seg.value, registry);
+            })
+            .join("");
+        }
+
+        function renderTextSegment(text, registry) {
+          const s = String(text || "");
+          let out = "";
+          let i = 0;
+
+          function readBracedArg(from) {
+            if (s[from] !== "{") return null;
+            let depth = 0;
+            for (let j = from; j < s.length; j++) {
+              const ch = s[j];
+              if (ch === "{" && (j === 0 || s[j - 1] !== "\\")) depth += 1;
+              if (ch === "}" && (j === 0 || s[j - 1] !== "\\")) {
+                depth -= 1;
+                if (depth === 0) return { arg: s.slice(from + 1, j), next: j + 1 };
+              }
+            }
+            return null;
+          }
+
+          function cite(arg) {
+            const keys = String(arg || "")
+              .split(",")
+              .map((k) => canonicalizeLabel(k))
+              .filter(Boolean);
+            if (keys.length === 0) return "[?]";
+            const parts = keys.map((k) => {
+              const n = registry.citeNumbers.get(k);
+              const id = registry.citeIds.get(k);
+              const label = n ? String(n) : k;
+              return id ? `<a class="citation" href="#${escapeHtml(id)}">${escapeHtml(label)}</a>` : escapeHtml(label);
+            });
+            return `[${parts.join(",")}]`;
+          }
+
+          function ref(arg) {
+            const canon = canonicalizeLabel(arg);
+            if (canon.startsWith("eq:")) return escapeHtml(`\\(\\ref{${canon}}\\)`);
+            const num = registry.theoremLabels.get(canon);
+            const id = registry.theoremIds.get(canon);
+            if (num && id) return `<a class="xref" href="#${escapeHtml(id)}">${escapeHtml(String(num))}</a>`;
+            const section = registry.sectionLabels.get(canon);
+            if (section && section.id) {
+              const display = section.id === "appendix" ? "A" : String(section.n);
+              return `<a class="xref" href="#${escapeHtml(section.id)}">${escapeHtml(display)}</a>`;
+            }
+            return `<span class="xref" style="color:var(--muted)">?</span>`;
+          }
+
+          function eqref(arg) {
+            const canon = canonicalizeLabel(arg);
+            return escapeHtml(`\\(\\eqref{${canon}}\\)`);
+          }
+
+          function replaceAccent(accent, arg) {
+            const base = String(arg || "");
+            const mapAcute = { e: "é", E: "É" };
+            if (accent === "'" && base.length === 1 && mapAcute[base]) return mapAcute[base];
+            return base;
+          }
+
+          while (i < s.length) {
+            if (s.startsWith("\\emph{", i)) {
+              const arg = readBracedArg(i + 5);
+              if (arg) {
+                out += `<em>${renderInlineText(arg.arg, registry)}</em>`;
+                i = arg.next;
+                continue;
+              }
+            }
+            if (s.startsWith("\\textup{", i)) {
+              const arg = readBracedArg(i + 7);
+              if (arg) {
+                out += `<span>${renderInlineText(arg.arg, registry)}</span>`;
+                i = arg.next;
+                continue;
+              }
+            }
+            if (s.startsWith("\\cite{", i)) {
+              const arg = readBracedArg(i + 5);
+              if (arg) {
+                out += cite(arg.arg);
+                i = arg.next;
+                continue;
+              }
+            }
+            if (s.startsWith("\\eqref{", i)) {
+              const arg = readBracedArg(i + 6);
+              if (arg) {
+                out += eqref(arg.arg);
+                i = arg.next;
+                continue;
+              }
+            }
+            if (s.startsWith("\\ref{", i)) {
+              const arg = readBracedArg(i + 4);
+              if (arg) {
+                out += ref(arg.arg);
+                i = arg.next;
+                continue;
+              }
+            }
+            if (s.startsWith("\\,", i) || s.startsWith("\\:", i)) {
+              out += "&thinsp;";
+              i += 2;
+              continue;
+            }
+            if (s.startsWith("\\;", i)) {
+              out += "&nbsp;";
+              i += 2;
+              continue;
+            }
+            if (s.startsWith("\\ ", i)) {
+              out += " ";
+              i += 2;
+              continue;
+            }
+            if (s.startsWith("\\'", i)) {
+              const braced = readBracedArg(i + 2);
+              if (braced && braced.arg.length === 1) {
+                out += escapeHtml(replaceAccent("'", braced.arg));
+                i = braced.next;
+                continue;
+              }
+              const next = s[i + 2];
+              if (next) {
+                out += escapeHtml(replaceAccent("'", next));
+                i += 3;
+                continue;
+              }
+            }
+            if (s.startsWith("---", i)) {
+              out += "—";
+              i += 3;
+              continue;
+            }
+            if (s.startsWith("--", i)) {
+              out += "–";
+              i += 2;
+              continue;
+            }
+            if (s[i] === "~") {
+              out += "&nbsp;";
+              i += 1;
+              continue;
+            }
+
+            out += escapeHtml(s[i]);
+            i += 1;
+          }
+          return out;
+        }
+
+        function splitDisplayMathBlocks(paragraph) {
+          const s = String(paragraph || "");
+          const parts = [];
+          let i = 0;
+          while (i < s.length) {
+            const nextDollars = s.indexOf("$$", i);
+            const nextBrackets = s.indexOf("\\[", i);
+            let next = -1;
+            let kind = null;
+            if (nextDollars !== -1 && (nextBrackets === -1 || nextDollars < nextBrackets)) {
+              next = nextDollars;
+              kind = "$$";
+            } else if (nextBrackets !== -1) {
+              next = nextBrackets;
+              kind = "\\[";
+            }
+            if (next === -1) {
+              parts.push({ type: "text", value: s.slice(i) });
+              break;
+            }
+            if (next > i) parts.push({ type: "text", value: s.slice(i, next) });
+            if (kind === "$$") {
+              const end = s.indexOf("$$", next + 2);
+              if (end === -1) {
+                parts.push({ type: "text", value: s.slice(next) });
+                break;
+              }
+              parts.push({ type: "math", value: s.slice(next, end + 2) });
+              i = end + 2;
+            } else {
+              const end = s.indexOf("\\]", next + 2);
+              if (end === -1) {
+                parts.push({ type: "text", value: s.slice(next) });
+                break;
+              }
+              parts.push({ type: "math", value: s.slice(next, end + 2) });
+              i = end + 2;
+            }
+          }
+          return parts;
+        }
+
+        function consumeEnvironment(lines, startIndex) {
+          const tokenRe = /\\(begin|end)\{([^}]+)\}/g;
+          const block = [];
+          const stack = [];
+          let outer = null;
+          let i = startIndex;
+          for (; i < lines.length; i++) {
+            const line = lines[i];
+            block.push(line);
+            tokenRe.lastIndex = 0;
+            let m;
+            while ((m = tokenRe.exec(line))) {
+              const kind = m[1];
+              const name = m[2];
+              if (kind === "begin") {
+                stack.push(name);
+                if (!outer) outer = name;
+              } else if (kind === "end") {
+                if (stack.length && stack[stack.length - 1] === name) stack.pop();
+                else {
+                  const idx = stack.lastIndexOf(name);
+                  if (idx !== -1) stack.splice(idx, 1);
+                }
+              }
+            }
+            if (outer && stack.length === 0) break;
+          }
+          return { env: outer, lines: block, endIndex: i };
+        }
+
+        function renderBibliography(innerLines, registry) {
+          const items = [];
+          let currentKey = null;
+          let currentLines = [];
+
+          function flush() {
+            if (!currentKey) return;
+            const canon = canonicalizeLabel(currentKey);
+            const id = registry.citeIds.get(canon) || `bib-${slugifyId(canon)}`;
+            const chunks = currentLines
+              .join("\n")
+              .split("\\newblock")
+              .map((x) => x.replace(/\s+/g, " ").trim())
+              .filter(Boolean)
+              .map((chunk) => `<div class="bibline">${renderInlineText(chunk, registry)}</div>`)
+              .join("");
+            items.push(`<li id="${escapeHtml(id)}">${chunks}</li>`);
+          }
+
+          for (const line of innerLines) {
+            const m = String(line).match(/^\\bibitem\{([^}]+)\}/);
+            if (m) {
+              flush();
+              currentKey = m[1];
+              currentLines = [];
+              const rest = String(line).replace(/^\\bibitem\{[^}]+\}/, "").trim();
+              if (rest) currentLines.push(rest);
+              continue;
+            }
+            if (currentKey) currentLines.push(line);
+          }
+          flush();
+          return `<h2 id="references">References</h2><ol class="bibliography">${items.join("")}</ol>`;
+        }
+
+        function renderBlocks(lines, registry) {
+          const html = [];
+          let paragraphLines = [];
+          let sectionIndex = 0;
+          let subsectionIndex = 0;
+          let theoremCounter = 0;
+
+          function flushParagraph() {
+            if (paragraphLines.length === 0) return;
+            const raw = paragraphLines.join("\n");
+            paragraphLines = [];
+            const parts = splitDisplayMathBlocks(raw);
+            for (const part of parts) {
+              if (part.type === "math") {
+                html.push(`<div class="math-block">${escapeHtml(canonicalizeLabelsInTex(part.value))}</div>`);
+                continue;
+              }
+              const text = part.value.replace(/\s+/g, " ").trim();
+              if (!text) continue;
+              html.push(`<p>${renderInlineText(text, registry)}</p>`);
+            }
+          }
+
+          function renderMathEnv(blockLines) {
+            const tex = canonicalizeLabelsInTex(blockLines.join("\n"));
+            const labelMatch = tex.match(/\\label\{([^}]+)\}/);
+            const label = labelMatch ? canonicalizeLabel(labelMatch[1]) : "";
+            const dataAttr = label ? ` data-eq-label="${escapeHtml(label)}"` : "";
+            const idAttr = label ? ` id="eq-${escapeHtml(slugifyId(label))}"` : "";
+            html.push(`<div class="math-block"${dataAttr}${idAttr}>${escapeHtml(tex)}</div>`);
+          }
+
+          for (let i = 0; i < lines.length; i++) {
+            const rawLine = lines[i] ?? "";
+            const line = String(rawLine).trimEnd();
+
+            if (!line.trim()) {
+              flushParagraph();
+              continue;
+            }
+            if (line.trim() === "\\maketitle") continue;
+
+            const sec = line.match(/^\\section\{([\s\S]*?)\}/);
+            if (sec) {
+              flushParagraph();
+              sectionIndex += 1;
+              subsectionIndex = 0;
+              const sectionId = sections[Math.max(0, Math.min(sections.length - 1, sectionIndex - 1))].id;
+              html.push(`<h2 id="${escapeHtml(sectionId)}">${sectionIndex}. ${renderInlineText(sec[1], registry)}</h2>`);
+              continue;
+            }
+
+            const sub = line.match(/^\\subsection\{([\s\S]*?)\}/);
+            if (sub) {
+              flushParagraph();
+              subsectionIndex += 1;
+              html.push(`<h3>${sectionIndex}.${subsectionIndex}. ${renderInlineText(sub[1], registry)}</h3>`);
+              continue;
+            }
+
+            if (line.startsWith("\\begin{")) {
+              flushParagraph();
+              const envBlock = consumeEnvironment(lines, i);
+              const env = envBlock.env || "";
+              const block = envBlock.lines;
+              i = envBlock.endIndex;
+
+              if (env === "abstract") {
+                const body = renderBlocks(block.slice(1, -1), registry);
+                html.push(`<section class="abstract"><h2>Abstract</h2>${body}</section>`);
+                continue;
+              }
+
+              if (env === "thebibliography") {
+                html.push(renderBibliography(block.slice(1, -1), registry));
+                continue;
+              }
+
+              if (env === "itemize") {
+                const inner = block.slice(1, -1);
+                const items = [];
+                let currentLabel = null;
+                let current = [];
+
+                function flushItem() {
+                  if (!currentLabel && current.length === 0) return;
+                  const body = renderBlocks(current, registry);
+                  const labelHtml = currentLabel ? `<strong>${renderInlineText(currentLabel, registry)}</strong> ` : "";
+                  items.push(`<li>${labelHtml}${body}</li>`);
+                }
+
+                for (const l of inner) {
+                  const m = String(l).match(/^\\item(\[([\s\S]*?)\])?\s*(.*)$/);
+                  if (m) {
+                    flushItem();
+                    currentLabel = m[2] ? m[2].trim() : null;
+                    current = [];
+                    if (m[3] && m[3].trim()) current.push(m[3]);
+                    continue;
+                  }
+                  current.push(l);
+                }
+                flushItem();
+                html.push(`<ul>${items.join("")}</ul>`);
+                continue;
+              }
+
+              if (env === "theorem" || env === "lemma" || env === "claim" || env === "remark") {
+                theoremCounter += 1;
+                const headLine = block[0] || "";
+                const optMatch = String(headLine).match(/^\\begin\{[^}]+\}\[([\s\S]*?)\]/);
+                const labelMatch = String(headLine).match(/\\label\{([^}]+)\}/);
+                const labelCanon = labelMatch ? canonicalizeLabel(labelMatch[1]) : "";
+                const envId = labelCanon ? registry.theoremIds.get(labelCanon) : "";
+                const note = optMatch ? renderInlineText(optMatch[1], registry) : "";
+                const body = renderBlocks(block.slice(1, -1), registry);
+                html.push(
+                  `<div class="env env-${env}"${envId ? ` id="${escapeHtml(envId)}"` : ""}>` +
+                    `<div class="env-head"><span class="env-kind">${env[0].toUpperCase()}${env.slice(1)}</span><span class="env-no">${theoremCounter}</span>` +
+                    (note ? `<span class="env-note">${note}</span>` : "") +
+                    `</div>` +
+                    `<div class="env-body">${body}</div>` +
+                    `</div>`
+                );
+                continue;
+              }
+
+              if (env === "proof") {
+                const headLine = block[0] || "";
+                const optMatch = String(headLine).match(/^\\begin\{proof\}\[([\s\S]*?)\]/);
+                const note = optMatch ? renderInlineText(optMatch[1], registry) : "";
+                const body = renderBlocks(block.slice(1, -1), registry);
+                html.push(
+                  `<div class="env env-proof">` +
+                    `<div class="env-head"><span class="env-kind">Proof</span>${note ? `<span class="env-note">${note}</span>` : ""}</div>` +
+                    `<div class="env-body">${body}<div class="proof-end">∎</div></div>` +
+                    `</div>`
+                );
+                continue;
+              }
+
+              if (
+                env === "equation" ||
+                env === "equation*" ||
+                env === "align" ||
+                env === "align*" ||
+                env === "gather" ||
+                env === "gather*" ||
+                env === "multline" ||
+                env === "multline*"
+              ) {
+                renderMathEnv(block);
+                continue;
+              }
+
+              html.push(`<pre>${escapeHtml(block.join("\n"))}</pre>`);
+              continue;
+            }
+
+            paragraphLines.push(rawLine);
+          }
+
+          flushParagraph();
+          return html.join("");
+        }
+
+        function createSimCard({ label, title, description, fields, onRun, instance }) {
+          const details = document.createElement("details");
+          details.className = "sim-card";
+
+          const summary = document.createElement("summary");
+          const badge = document.createElement("span");
+          badge.className = "sim-badge";
+          badge.textContent = "Simulation";
+
+          const heading = document.createElement("span");
+          heading.className = "sim-title";
+          heading.textContent = title;
+
+          const tail = document.createElement("span");
+          tail.className = "sim-tail";
+
+          const tag = document.createElement("span");
+          tag.className = "sim-label-tag";
+          tag.style.color = "var(--muted)";
+          tag.style.fontSize = "0.86rem";
+          tag.textContent = instance ? `${label} (#${instance})` : label;
+          tag.title = tag.textContent;
+
+          const runButtonSummary = document.createElement("button");
+          runButtonSummary.className = "sim-run sim-run-summary";
+          runButtonSummary.type = "button";
+          runButtonSummary.textContent = "Run simulation";
+
+          tail.appendChild(tag);
+          tail.appendChild(runButtonSummary);
+
+          summary.appendChild(badge);
+          summary.appendChild(heading);
+          summary.appendChild(tail);
+          details.appendChild(summary);
+
+          const body = document.createElement("div");
+          body.className = "sim-body";
+
+          const desc = document.createElement("div");
+          desc.className = "sim-desc";
+          desc.textContent = description;
+          body.appendChild(desc);
+
+          const grid = document.createElement("div");
+          grid.className = "sim-grid";
+
+          const inputs = {};
+          const initialValues = {};
+
+          for (const field of fields || []) {
+            const fieldWrap = document.createElement("div");
+            fieldWrap.className = "sim-field";
+
+            const labelEl = document.createElement("div");
+            labelEl.className = "sim-label";
+            labelEl.textContent = field.label;
+
+            const input = document.createElement("input");
+            input.className = "sim-input";
+            input.type = "number";
+            input.step = field.step != null ? String(field.step) : "any";
+            if (field.min != null) input.min = String(field.min);
+            if (field.max != null) input.max = String(field.max);
+            input.value = field.value != null ? String(field.value) : "0";
+
+            initialValues[field.key] = input.value;
+            inputs[field.key] = { input, field };
+
+            fieldWrap.appendChild(labelEl);
+            fieldWrap.appendChild(input);
+            grid.appendChild(fieldWrap);
+          }
+
+          body.appendChild(grid);
+
+          const actions = document.createElement("div");
+          actions.className = "sim-actions";
+
+          const runButton = document.createElement("button");
+          runButton.className = "sim-run";
+          runButton.type = "button";
+          runButton.textContent = "Run simulation";
+
+          const resetButton = document.createElement("button");
+          resetButton.className = "sim-secondary";
+          resetButton.type = "button";
+          resetButton.textContent = "Reset";
+
+          const output = document.createElement("div");
+          output.className = "sim-output";
+          output.textContent = "Ready.";
+
+          actions.appendChild(runButton);
+          actions.appendChild(resetButton);
+          body.appendChild(actions);
+          body.appendChild(output);
+          details.appendChild(body);
+
+          function toFiniteNumber(value, fallback) {
+            const num = typeof value === "number" ? value : Number(value);
+            return Number.isFinite(num) ? num : fallback;
+          }
+
+          function toInt(value, fallback) {
+            const num = Number.parseInt(String(value), 10);
+            return Number.isFinite(num) ? num : fallback;
+          }
+
+          resetButton.addEventListener("click", () => {
+            for (const [key, { input }] of Object.entries(inputs)) {
+              if (Object.prototype.hasOwnProperty.call(initialValues, key)) input.value = initialValues[key];
+            }
+            output.textContent = "Ready.";
+          });
+
+          async function runSimulation() {
+            details.open = true;
+            runButton.disabled = true;
+            runButtonSummary.disabled = true;
+            resetButton.disabled = true;
+            output.textContent = "Running…";
+            const started = performance.now();
+            try {
+              const values = {};
+              for (const [key, { input, field }] of Object.entries(inputs)) {
+                const raw = input.value;
+                values[key] =
+                  (field.parse || "float") === "int" ? toInt(raw, toInt(field.value, 0)) : toFiniteNumber(raw, toFiniteNumber(field.value, 0));
+              }
+              const text = await onRun(values);
+              const ms = Math.round(performance.now() - started);
+              output.textContent = `${text}\n\nElapsed: ${ms} ms`;
+            } catch (err) {
+              output.textContent = `Error: ${err && err.message ? err.message : String(err)}`;
+            } finally {
+              runButton.disabled = false;
+              runButtonSummary.disabled = false;
+              resetButton.disabled = false;
+            }
+          }
+
+          runButtonSummary.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            runSimulation().catch(() => {});
+          });
+
+          runButton.addEventListener("click", () => {
+            runSimulation().catch(() => {});
+          });
+
+          return details;
+        }
+
+        function upsertSimulationSummary(report) {
+          const existing = document.getElementById("simSummary");
+          if (existing) existing.remove();
+
+          const cards = Array.from(paperRoot.querySelectorAll("details.sim-card"));
+          const insertedCount = report && Number.isFinite(report.insertedCount) ? report.insertedCount : cards.length;
+          const missing = report && Array.isArray(report.missingLabels) ? report.missingLabels : [];
+
+          const box = document.createElement("div");
+          box.className = "callout sim-summary";
+          box.id = "simSummary";
+
+          const title = document.createElement("strong");
+          title.textContent = "Interactive checks";
+          box.appendChild(title);
+
+          const line = document.createElement("div");
+          line.style.marginTop = "6px";
+          line.appendChild(
+            document.createTextNode(
+              `${insertedCount} simulation${insertedCount === 1 ? "" : "s"} attached throughout the manuscript.`
+            )
+          );
+          box.appendChild(line);
+
+          const actions = document.createElement("div");
+          actions.className = "sim-summary-actions";
+
+          const jump = document.createElement("button");
+          jump.type = "button";
+          jump.textContent = "Jump to first";
+          jump.disabled = cards.length === 0;
+          jump.addEventListener("click", () => {
+            const first = paperRoot.querySelector("details.sim-card");
+            if (!first) return;
+            first.open = true;
+            first.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+
+          const expand = document.createElement("button");
+          expand.type = "button";
+          expand.textContent = "Expand all";
+          expand.disabled = cards.length === 0;
+          expand.addEventListener("click", () => {
+            for (const card of paperRoot.querySelectorAll("details.sim-card")) card.open = true;
+          });
+
+          const collapse = document.createElement("button");
+          collapse.type = "button";
+          collapse.textContent = "Collapse all";
+          collapse.disabled = cards.length === 0;
+          collapse.addEventListener("click", () => {
+            for (const card of paperRoot.querySelectorAll("details.sim-card")) card.open = false;
+          });
+
+          actions.appendChild(jump);
+          actions.appendChild(expand);
+          actions.appendChild(collapse);
+          box.appendChild(actions);
+
+          if (insertedCount === 0 || missing.length) {
+            const diag = document.createElement("details");
+            diag.style.marginTop = "10px";
+
+            const summary = document.createElement("summary");
+            summary.textContent = "Diagnostics";
+            diag.appendChild(summary);
+
+            const pre = document.createElement("pre");
+            pre.style.whiteSpace = "pre-wrap";
+            pre.style.margin = "8px 0 0";
+            pre.textContent =
+              `math blocks: ${paperRoot.querySelectorAll(".math-block").length}\n` +
+              `labeled math blocks: ${paperRoot.querySelectorAll("[data-eq-label]").length}\n` +
+              (missing.length ? `missing labels:\n- ${missing.join("\n- ")}\n` : "");
+            diag.appendChild(pre);
+            box.appendChild(diag);
+          }
+
+          const byline = paperRoot.querySelector(".byline");
+          if (byline && byline.parentElement === paperRoot) byline.after(box);
+          else paperRoot.prepend(box);
+        }
+
+        function installTobecheckedSimulations() {
+          const LOG_SQRT_2PI = 0.5 * Math.log(2 * Math.PI);
+
+          function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+          }
+
+          function toInt(value, fallback) {
+            const num = Number.parseInt(String(value), 10);
+            return Number.isFinite(num) ? num : fallback;
+          }
+
+          function formatNumber(value, digits = 6) {
+            if (!Number.isFinite(value)) return String(value);
+            const abs = Math.abs(value);
+            if (abs !== 0 && (abs < 1e-4 || abs >= 1e6)) return value.toExponential(3);
+            return value.toFixed(digits);
+          }
+
+          function makeRng(seed) {
+            let state = (seed >>> 0) || 0x9e3779b9;
+            if (state === 0) state = 0x9e3779b9;
+            return function rng() {
+              state ^= state << 13;
+              state ^= state >>> 17;
+              state ^= state << 5;
+              return (state >>> 0) / 4294967296;
+            };
+          }
+
+          function makeNormalSampler(rng) {
+            let spare = null;
+            return function nextNormal() {
+              if (spare !== null) {
+                const value = spare;
+                spare = null;
+                return value;
+              }
+              let u = 0;
+              let v = 0;
+              while (u === 0) u = rng();
+              while (v === 0) v = rng();
+              const mag = Math.sqrt(-2 * Math.log(u));
+              const z0 = mag * Math.cos(2 * Math.PI * v);
+              const z1 = mag * Math.sin(2 * Math.PI * v);
+              spare = z1;
+              return z0;
+            };
+          }
+
+          function erfApprox(x) {
+            const sign = x < 0 ? -1 : 1;
+            const ax = Math.abs(x);
+            const p = 0.3275911;
+            const a1 = 0.254829592;
+            const a2 = -0.284496736;
+            const a3 = 1.421413741;
+            const a4 = -1.453152027;
+            const a5 = 1.061405429;
+            const t = 1 / (1 + p * ax);
+            const poly = (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t);
+            const y = 1 - poly * Math.exp(-ax * ax);
+            return sign * y;
+          }
+
+          function normalCdf(x) {
+            return 0.5 * (1 + erfApprox(x * Math.SQRT1_2));
+          }
+
+          function logBarPhi(x) {
+            if (!Number.isFinite(x)) return x === Infinity ? -Infinity : 0;
+            if (x < 0) return Math.log(Math.max(normalCdf(-x), 1e-300));
+            if (x <= 8) return Math.log(Math.max(1 - normalCdf(x), 1e-300));
+            const inv = 1 / (x * x);
+            const series = Math.max(1 - inv + 3 * inv * inv, 1e-16);
+            return -0.5 * x * x - Math.log(x) - LOG_SQRT_2PI + Math.log(series);
+          }
+
+          function millsRatio(u) {
+            const logPhi = -0.5 * u * u - LOG_SQRT_2PI;
+            const logTail = logBarPhi(u);
+            const diff = logPhi - logTail;
+            if (diff < -745) return 0;
+            if (diff > 709) return Infinity;
+            return Math.exp(diff);
+          }
+
+          function millsDerivative(u, E) {
+            return E * (E - u);
+          }
+
+          function yieldToUi() {
+            return new Promise((resolve) => requestAnimationFrame(resolve));
+          }
+
+          async function simulateTruncatedMoments(u, acceptedTarget, seed, maxDrawsMultiplier = 50) {
+            const rng = makeRng(seed);
+            const normal = makeNormalSampler(rng);
+
+            const maxDraws = Math.max(acceptedTarget, Math.floor(acceptedTarget * maxDrawsMultiplier));
+            let draws = 0;
+            let accepted = 0;
+            let s1 = 0;
+            let s2 = 0;
+            let s3 = 0;
+            let s4 = 0;
+
+            const chunkSize = 50000;
+            while (accepted < acceptedTarget && draws < maxDraws) {
+              const x = normal();
+              draws++;
+              if (x < u) {
+                if (draws % chunkSize === 0) await yieldToUi();
+                continue;
+              }
+
+              const y = x - u;
+              const y2 = y * y;
+              accepted++;
+              s1 += y;
+              s2 += y2;
+              s3 += y2 * y;
+              s4 += y2 * y2;
+
+              if (draws % chunkSize === 0) await yieldToUi();
+            }
+
+            if (accepted === 0) return { draws, accepted, acceptanceRate: 0, mu1: NaN, mu2: NaN, mu3: NaN, mu4: NaN };
+            return {
+              draws,
+              accepted,
+              acceptanceRate: accepted / draws,
+              mu1: s1 / accepted,
+              mu2: s2 / accepted,
+              mu3: s3 / accepted,
+              mu4: s4 / accepted,
+            };
+          }
+
+          function normalPdf(x) {
+            return Math.exp(-0.5 * x * x - LOG_SQRT_2PI);
+          }
+
+          function criticalCapacity(kappa) {
+            const k = Number(kappa) || 0;
+            const Ck = (k * k + 1) * normalCdf(k) + k * normalPdf(k);
+            const alphaC = 2 / (Math.PI * Ck);
+            return { Ck, alphaC };
+          }
+
+          function makeNormalSamples(count, seed) {
+            const N = clamp(toInt(count, 60000), 1, 5000000);
+            const rng = makeRng(seed);
+            const normal = makeNormalSampler(rng);
+            const zs = new Float64Array(N);
+            for (let i = 0; i < N; i++) zs[i] = normal();
+            return zs;
+          }
+
+          async function estimateP(r, zs) {
+            const sr = Math.sqrt(Math.max(0, r));
+            let sum = 0;
+            const N = zs.length;
+            const chunkSize = 50000;
+            for (let i = 0; i < N; i++) {
+              const t = Math.tanh(sr * zs[i]);
+              sum += t * t;
+              if (i > 0 && i % chunkSize === 0) await yieldToUi();
+            }
+            return sum / N;
+          }
+
+          async function estimateB(q, kappa, zs) {
+            const k = Number(kappa) || 0;
+            const q0 = clamp(Number(q) || 0, 0, 1 - 1e-12);
+            const eps = 1 - q0;
+            if (eps <= 0) return Infinity;
+            if (q0 === 0) {
+              const E = millsRatio(k);
+              return E * E;
+            }
+
+            const sqrtQ = Math.sqrt(q0);
+            const invS = 1 / Math.sqrt(eps);
+            let sumE2 = 0;
+            const N = zs.length;
+            const chunkSize = 50000;
+            for (let i = 0; i < N; i++) {
+              const U = (k - sqrtQ * zs[i]) * invS;
+              const E = millsRatio(U);
+              sumE2 += E * E;
+              if (i > 0 && i % chunkSize === 0) await yieldToUi();
+            }
+            return eps * (sumE2 / N);
+          }
+
+          async function solveRsFixedPoint({ kappa, alpha, zs, rInit, maxIter, damping, tol }) {
+            const k = Number(kappa) || 0;
+            const a = Math.max(0, Number(alpha) || 0);
+            const maxIt = clamp(toInt(maxIter, 60), 5, 500);
+            const damp = clamp(Number(damping) || 0.6, 0.05, 1);
+            const tolerance = Math.max(1e-12, Math.abs(Number(tol) || 1e-6));
+
+            let r = Math.max(0, Number(rInit) || 0);
+            let lastErr = Infinity;
+            let iter = 0;
+
+            for (iter = 1; iter <= maxIt; iter++) {
+              const q = await estimateP(r, zs);
+              const eps = 1 - q;
+              if (!(eps > 1e-12)) {
+                return { converged: false, iter, r, q, reason: "q≈1" };
+              }
+              const Bq = await estimateB(q, k, zs);
+              const rRhs = (a / (eps * eps)) * Bq;
+              const delta = rRhs - r;
+              lastErr = Math.abs(delta);
+              r = r + damp * delta;
+              if (!Number.isFinite(r) || r > 1e12) {
+                return { converged: false, iter, r, q, reason: "diverged" };
+              }
+              if (lastErr <= tolerance * (1 + Math.abs(r))) break;
+              if (iter % 5 === 0) await yieldToUi();
+            }
+
+            const qFinal = await estimateP(r, zs);
+            const epsFinal = 1 - qFinal;
+            const BFinal = epsFinal > 1e-12 ? await estimateB(qFinal, k, zs) : Infinity;
+            const rRhsFinal = epsFinal > 1e-12 ? (a / (epsFinal * epsFinal)) * BFinal : Infinity;
+            const residual = rRhsFinal - r;
+            const converged = Number.isFinite(residual) && Math.abs(residual) <= tolerance * (1 + Math.abs(r));
+            return {
+              converged,
+              iter,
+              r,
+              q: qFinal,
+              B: BFinal,
+              rRhs: rRhsFinal,
+              residual,
+              eps: epsFinal,
+              lastErr,
+            };
+          }
+
+          const missingLabels = new Set();
+          let insertedCount = 0;
+
+          function selectorForEqLabel(canon) {
+            const safe = String(canon).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+            return `[data-eq-label="${safe}"]`;
+          }
+
+          function findEquationBlocks(label) {
+            const canon = canonicalizeLabel(label);
+            const direct = Array.from(paperRoot.querySelectorAll(selectorForEqLabel(canon)));
+            if (direct.length) return direct;
+
+            const re = /\\label\{([^}]+)\}/g;
+            const matches = [];
+
+            for (const el of Array.from(paperRoot.querySelectorAll(".math-block"))) {
+              const text = el.textContent || "";
+              re.lastIndex = 0;
+              let m;
+              while ((m = re.exec(text))) {
+                if (canonicalizeLabel(m[1]) === canon) {
+                  if (!el.dataset.eqLabel) el.dataset.eqLabel = canon;
+                  matches.push(el);
+                  break;
+                }
+              }
+            }
+
+            if (matches.length) return matches;
+
+            for (const el of Array.from(paperRoot.querySelectorAll("pre"))) {
+              const text = el.textContent || "";
+              if (!text.includes("\\label{")) continue;
+              re.lastIndex = 0;
+              let m;
+              while ((m = re.exec(text))) {
+                if (canonicalizeLabel(m[1]) === canon) {
+                  if (!el.dataset.eqLabel) el.dataset.eqLabel = canon;
+                  matches.push(el);
+                  break;
+                }
+              }
+            }
+
+            if (!matches.length) missingLabels.add(canon);
+            return matches;
+          }
+
+          const inserted = new WeakSet();
+          function insertAfterBlock(block, card) {
+            if (!block || !card) return false;
+            if (inserted.has(block)) return false;
+            inserted.add(block);
+            if (typeof block.after === "function") block.after(card);
+            else if (block.parentNode) block.parentNode.insertBefore(card, block.nextSibling);
+            else return false;
+            insertedCount += 1;
+            return true;
+          }
+
+          const commonDisclaimer = "Monte Carlo / numerical check (not a proof).";
+
+          // Extra interactive checks for core objects (beyond *TOBECHECKED).
+          findEquationBlocks("eq:system").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:system",
+                title: "Solve: RS saddle point (q,r) for given (α, κ)",
+                description:
+                  "Iterates r ← α·B(P(r))/(1−P(r))² using common random numbers and reports the residual r_rhs−r. " +
+                  commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.25 },
+                  { key: "alpha", label: "α", value: 0.5, step: 0.05, min: 0.001 },
+                  { key: "r0", label: "init r₀", value: 0, step: 0.5, min: 0 },
+                  { key: "r1", label: "init r₁", value: 5, step: 0.5, min: 0 },
+                  { key: "damp", label: "damping", value: 0.6, step: 0.05, min: 0.05, max: 1 },
+                  { key: "tol", label: "tolerance", value: 1e-6, step: 1e-6, min: 1e-12, max: 1e-2 },
+                  { key: "iters", label: "max iters", value: 60, step: 1, parse: "int", min: 5, max: 500 },
+                  { key: "n", label: "Samples N", value: 60000, step: 1000, parse: "int", min: 5000, max: 300000 },
+                  { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, alpha, r0, r1, damp, tol, iters, n, seed }) => {
+                  const k = Number(kappa) || 0;
+                  const a = Math.max(0, Number(alpha) || 0);
+                  const N = clamp(toInt(n, 60000), 5000, 300000);
+                  const maxIter = clamp(toInt(iters, 60), 5, 500);
+                  const damping = clamp(Number(damp) || 0.6, 0.05, 1);
+                  const tolerance = Math.max(1e-12, Math.abs(Number(tol) || 1e-6));
+
+                  const { Ck, alphaC } = criticalCapacity(k);
+                  const zs = makeNormalSamples(N, seed);
+
+                  const sol0 = await solveRsFixedPoint({
+                    kappa: k,
+                    alpha: a,
+                    zs,
+                    rInit: Math.max(0, Number(r0) || 0),
+                    maxIter,
+                    damping,
+                    tol: tolerance,
+                  });
+                  const sol1 = await solveRsFixedPoint({
+                    kappa: k,
+                    alpha: a,
+                    zs,
+                    rInit: Math.max(0, Number(r1) || 0),
+                    maxIter,
+                    damping,
+                    tol: tolerance,
+                  });
+
+                  const lines = [];
+                  lines.push(`κ=${formatNumber(k, 4)}, α=${formatNumber(a, 6)}`);
+                  lines.push(`Cκ≈${formatNumber(Ck)}  αc(κ)≈${formatNumber(alphaC)}`);
+                  lines.push(`α < αc ? ${a < alphaC ? "YES" : "NO"}`);
+                  lines.push(
+                    `settings: N=${N}, seed=${seed}, maxIter=${maxIter}, damping=${formatNumber(damping, 3)}, tol=${tolerance}`
+                  );
+
+                  function formatSol(name, initR, sol) {
+                    if (!sol || typeof sol !== "object") return;
+                    if (!sol.converged) {
+                      lines.push(
+                        `${name}: not converged (init r=${formatNumber(initR, 4)}), iter=${sol.iter}, reason=${sol.reason || "?"}`
+                      );
+                      lines.push(`  q≈${formatNumber(sol.q)}  r≈${formatNumber(sol.r)}`);
+                      return;
+                    }
+                    lines.push(`${name}: converged in ${sol.iter} iter (init r=${formatNumber(initR, 4)})`);
+                    lines.push(`  q≈${formatNumber(sol.q)}  r≈${formatNumber(sol.r)}`);
+                    lines.push(
+                      `  B(q)≈${formatNumber(sol.B)}  r_rhs≈${formatNumber(sol.rRhs)}  residual≈${formatNumber(sol.residual, 3)}`
+                    );
+                  }
+
+                  formatSol("run#1", r0, sol0);
+                  formatSol("run#2", r1, sol1);
+
+                  if (sol0 && sol1 && sol0.converged && sol1.converged) {
+                    lines.push(
+                      `Δq≈${formatNumber(sol0.q - sol1.q, 3)}  Δr≈${formatNumber(sol0.r - sol1.r, 3)}`
+                    );
+                  }
+
+                  return lines.join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:defA").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:defA",
+                title: "Check: A(r)=r(1−P(r))² is increasing and ≤ 2/π",
+                description:
+                  "Computes A(r) on an r-grid using Monte Carlo approximation of P(r)=E[tanh²(√r Z)]. " + commonDisclaimer,
+                fields: [
+                  { key: "rMin", label: "r min", value: 0, step: 0.5, min: 0 },
+                  { key: "rMax", label: "r max", value: 25, step: 0.5, min: 0.1 },
+                  { key: "steps", label: "grid steps", value: 81, step: 1, parse: "int", min: 5, max: 2001 },
+                  { key: "n", label: "Samples N", value: 25000, step: 1000, parse: "int", min: 5000, max: 300000 },
+                  { key: "seed", label: "Seed", value: 11, step: 1, parse: "int" },
+                ],
+                onRun: async ({ rMin, rMax, steps, n, seed }) => {
+                  const a = Math.max(0, Math.min(rMin, rMax));
+                  const b = Math.max(0, Math.max(rMin, rMax));
+                  const nSteps = clamp(toInt(steps, 81), 5, 2001);
+                  const N = clamp(toInt(n, 25000), 5000, 300000);
+                  const zs = makeNormalSamples(N, seed);
+
+                  const bound = 2 / Math.PI;
+                  const monoTol = 2e-3;
+                  let prev = null;
+                  let maxA = -Infinity;
+                  let argR = a;
+                  let A0 = NaN;
+                  let A1 = NaN;
+                  let maxDecrease = 0;
+
+                  for (let i = 0; i < nSteps; i++) {
+                    const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                    const q = await estimateP(r, zs);
+                    const eps = 1 - q;
+                    const A = r * eps * eps;
+                    if (i === 0) A0 = A;
+                    if (i === nSteps - 1) A1 = A;
+                    if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - A);
+                    prev = A;
+                    if (A > maxA) {
+                      maxA = A;
+                      argR = r;
+                    }
+                    if (i % 10 === 0) await yieldToUi();
+                  }
+
+                  return [
+                    `r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, N=${N}, seed=${seed}`,
+                    `A(r_min)≈${formatNumber(A0)}  A(r_max)≈${formatNumber(A1)}  (2/π−A(r_max)≈${formatNumber(bound - A1)})`,
+                    `max A≈${formatNumber(maxA)} at r≈${formatNumber(argR, 4)}`,
+                    `2/π≈${formatNumber(bound)}  check: max A ≤ 2/π ? ${maxA <= bound + monoTol ? "YES" : "NO"}`,
+                    `max decrease (monotonic violation)≈${formatNumber(maxDecrease)}  check: ≤ ${formatNumber(monoTol)} ? ${maxDecrease <= monoTol ? "YES" : "NO"}`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:defB").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:defB",
+                title: "Check: B(q) decreases; endpoints B(0)=E(κ)² and B(q→1)=Cκ",
+                description: "Computes B(q) on a q-grid. " + commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.25 },
+                  { key: "qMin", label: "q min", value: 0, step: 0.05, min: 0, max: 0.999 },
+                  { key: "qMax", label: "q max", value: 0.999, step: 0.01, min: 0.1, max: 0.999999 },
+                  { key: "steps", label: "grid steps", value: 61, step: 1, parse: "int", min: 5, max: 2001 },
+                  { key: "n", label: "Samples N", value: 25000, step: 1000, parse: "int", min: 5000, max: 300000 },
+                  { key: "seed", label: "Seed", value: 12, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, qMin, qMax, steps, n, seed }) => {
+                  const k = Number(kappa) || 0;
+                  const a = clamp(Math.min(qMin, qMax), 0, 1 - 1e-8);
+                  const b = clamp(Math.max(qMin, qMax), 0, 1 - 1e-8);
+                  const nSteps = clamp(toInt(steps, 61), 5, 2001);
+                  const N = clamp(toInt(n, 25000), 5000, 300000);
+                  const zs = makeNormalSamples(N, seed);
+
+                  const { Ck } = criticalCapacity(k);
+                  const E0 = millsRatio(k);
+                  const B0Exact = E0 * E0;
+
+                  const monoTol = 2e-3;
+                  let prev = null;
+                  let maxIncrease = 0;
+                  let Bmin = Infinity;
+                  let Bmax = -Infinity;
+                  let Bstart = NaN;
+                  let Bend = NaN;
+
+                  for (let i = 0; i < nSteps; i++) {
+                    const q = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                    const Bq = await estimateB(q, k, zs);
+                    if (i === 0) Bstart = Bq;
+                    if (i === nSteps - 1) Bend = Bq;
+                    if (prev !== null) maxIncrease = Math.max(maxIncrease, Bq - prev);
+                    prev = Bq;
+                    Bmin = Math.min(Bmin, Bq);
+                    Bmax = Math.max(Bmax, Bq);
+                    if (i % 10 === 0) await yieldToUi();
+                  }
+
+                  return [
+                    `κ=${formatNumber(k, 4)}, q∈[${formatNumber(a, 4)}, ${formatNumber(b, 4)}], steps=${nSteps}, N=${N}, seed=${seed}`,
+                    `B(0)=E(κ)² exact ≈ ${formatNumber(B0Exact)}`,
+                    `B(q_min)≈${formatNumber(Bstart)}  B(q_max)≈${formatNumber(Bend)}`,
+                    `Cκ=E[(κ−Z)_+²] ≈ ${formatNumber(Ck)}  (Cκ−B(q_max)≈${formatNumber(Ck - Bend)})`,
+                    `range on grid: min≈${formatNumber(Bmin)}  max≈${formatNumber(Bmax)}`,
+                    `max increase (monotonic violation)≈${formatNumber(maxIncrease)}  check: ≤ ${formatNumber(monoTol)} ? ${maxIncrease <= monoTol ? "YES" : "NO"}`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:Bprime-TOBECHECKED").forEach((block) => {      
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:Bprime-TOBECHECKED",
+                title: "Check: B′(t) = E[g(U_t)]",
+                description: commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.1 },
+                  { key: "t", label: "t", value: 0.5, step: 0.01, min: 0.001, max: 0.999 },
+                  { key: "dt", label: "Δt (finite diff)", value: 0.002, step: 0.0001, min: 1e-6, max: 0.1 },
+                  { key: "n", label: "Samples N", value: 120000, step: 1000, parse: "int", min: 2000 },
+                  { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, t, dt, n, seed }) => {
+                  const N = clamp(toInt(n, 120000), 2000, 5000000);
+                  const t0 = clamp(t, 1e-6, 1 - 1e-6);
+                  const maxDt = Math.min(0.25, t0 - 1e-6, 1 - t0 - 1e-6);
+                  const h = clamp(Math.abs(dt) || 0.001, 1e-6, maxDt);
+                  const tp = t0 + h;
+                  const tm = t0 - h;
+
+                  const rng = makeRng(seed);
+                  const normal = makeNormalSampler(rng);
+
+                  let sumE2 = 0;
+                  let sumE2p = 0;
+                  let sumE2m = 0;
+                  let meanG = 0;
+                  let m2G = 0;
+
+                  const sqrtT0 = Math.sqrt(t0);
+                  const sqrtTp = Math.sqrt(tp);
+                  const sqrtTm = Math.sqrt(tm);
+                  const invS0 = 1 / Math.sqrt(1 - t0);
+                  const invSp = 1 / Math.sqrt(1 - tp);
+                  const invSm = 1 / Math.sqrt(1 - tm);
+
+                  const chunkSize = 25000;
+                  for (let i = 1; i <= N; i++) {
+                    const z = normal();
+                    const u0 = (kappa - sqrtT0 * z) * invS0;
+                    const e0 = millsRatio(u0);
+                    const e02 = e0 * e0;
+                    sumE2 += e02;
+                    const ep0 = millsDerivative(u0, e0);
+                    const g = ep0 * ep0 - 2 * (1 - ep0) * e02;
+
+                    const delta = g - meanG;
+                    meanG += delta / i;
+                    m2G += delta * (g - meanG);
+
+                    const up = (kappa - sqrtTp * z) * invSp;
+                    const um = (kappa - sqrtTm * z) * invSm;
+                    const epv = millsRatio(up);
+                    const emv = millsRatio(um);
+                    sumE2p += epv * epv;
+                    sumE2m += emv * emv;
+
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+
+                  const B = (1 - t0) * (sumE2 / N);
+                  const Bp = (1 - tp) * (sumE2p / N);
+                  const Bm = (1 - tm) * (sumE2m / N);
+                  const finiteDiff = (Bp - Bm) / (2 * h);
+
+                  const varG = N > 1 ? m2G / (N - 1) : 0;
+                  const seG = Math.sqrt(varG / N);
+
+                  return [
+                    `κ=${formatNumber(kappa, 4)}, t=${formatNumber(t0, 5)}, N=${N}`,
+                    `B(t) ≈ ${formatNumber(B)}`,
+                    `E[g(U_t)] ≈ ${formatNumber(meanG)} (SE≈${formatNumber(seG)})`,
+                    `finite diff B′(t) ≈ ${formatNumber(finiteDiff)} (Δt=${formatNumber(h, 6)})`,
+                    `diff (finite - E[g]) ≈ ${formatNumber(finiteDiff - meanG)}`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:moments-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:moments-TOBECHECKED",
+                title: "Check: truncated moment recursion μk(u)",
+                description: "Simulates Y_u = X-u | X≥u and compares μ1..μ4. " + commonDisclaimer,
+                fields: [
+                  { key: "u", label: "u", value: 0.5, step: 0.1, min: 0 },
+                  { key: "n", label: "Accepted samples", value: 60000, step: 1000, parse: "int", min: 2000 },
+                  { key: "mult", label: "Max draw multiplier", value: 60, step: 1, parse: "int", min: 5 },
+                  { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
+                ],
+                onRun: async ({ u, n, mult, seed }) => {
+                  const u0 = Math.max(0, u);
+                  const acceptedTarget = clamp(toInt(n, 60000), 2000, 500000);
+                  const multiplier = clamp(toInt(mult, 60), 5, 5000);
+                  const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed, multiplier);
+
+                  const E = millsRatio(u0);
+                  const d = E - u0;
+
+                  const mu1 = d;
+                  const mu2 = 1 - u0 * d;
+                  const mu3 = (u0 * u0 + 2) * d - u0;
+                  const mu4 = u0 * u0 + 3 - u0 * (u0 * u0 + 5) * d;
+
+                  return [
+                    `u=${formatNumber(u0, 4)}, accepted=${sim.accepted}, draws=${sim.draws}, accept≈${formatNumber(sim.acceptanceRate, 4)}`,
+                    `μ1(sample)=${formatNumber(sim.mu1)}  μ1(theory)=${formatNumber(mu1)}  diff=${formatNumber(sim.mu1 - mu1)}`,
+                    `μ2(sample)=${formatNumber(sim.mu2)}  μ2(theory)=${formatNumber(mu2)}  diff=${formatNumber(sim.mu2 - mu2)}`,
+                    `μ3(sample)=${formatNumber(sim.mu3)}  μ3(theory)=${formatNumber(mu3)}  diff=${formatNumber(sim.mu3 - mu3)}`,
+                    `μ4(sample)=${formatNumber(sim.mu4)}  μ4(theory)=${formatNumber(mu4)}  diff=${formatNumber(sim.mu4 - mu4)}`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:FdefFneg_lemma-TOBECHECKED").forEach((block, idx) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:FdefFneg_lemma-TOBECHECKED",
+                title: "Check: F(x,y) < 0 under constraints",
+                description:
+                  "Randomly samples (x,y) in a bounding box and rejects samples violating the constraints, tracking max F. " +
+                  commonDisclaimer,
+                instance: idx + 1,
+                fields: [
+                  { key: "m", label: "Proposals", value: 200000, step: 1000, parse: "int", min: 5000 },
+                  { key: "seed", label: "Seed", value: 10 + idx, step: 1, parse: "int" },
+                ],
+                onRun: async ({ m, seed }) => {
+                  const M = clamp(toInt(m, 200000), 5000, 5000000);
+                  const rng = makeRng(seed);
+
+                  let accepted = 0;
+                  let maxF = -Infinity;
+                  let minF = Infinity;
+                  let argX = 0;
+                  let argY = 0;
+
+                  const yMax = 2 / 3;
+                  const chunkSize = 50000;
+                  for (let i = 1; i <= M; i++) {
+                    const x = rng();
+                    const y = rng() * yMax;
+
+                    if (y <= 0 || y >= yMax) continue;
+                    if (x + 2 * y < 1) continue;
+                    if (x * x + x * y - 3 * x - 3 * y + 2 < 0) continue;
+                    if (x + y >= 1) continue;
+
+                    const F = x * x + 6 * x * y + 6 * y * y - x - 4 * y;
+                    accepted++;
+                    if (F > maxF) {
+                      maxF = F;
+                      argX = x;
+                      argY = y;
+                    }
+                    if (F < minF) minF = F;
+
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+
+                  if (accepted === 0) return `proposals=${M}\naccepted=0\nNo feasible samples found (try more proposals).`;
+                  return [
+                    `proposals=${M}, accepted=${accepted}`,
+                    `min F ≈ ${formatNumber(minF)}`,
+                    `max F ≈ ${formatNumber(maxF)} at (x≈${formatNumber(argX, 4)}, y≈${formatNumber(argY, 4)})`,
+                    `check: max F < 0 ? ${maxF < 0 ? "YES" : "NO (increase proposals)"} `,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          // A small bundle of additional checks used later in the proof.
+          const simpleSims = [
+            {
+              label: "eq:detM1-TOBECHECKED",
+              title: "Check: det M1(u) = u d + 2 d² − 1 ≥ 0",
+              description: "Simulates μ1..μ3 and compares det M1 to the closed form. " + commonDisclaimer,
+              fields: [
+                { key: "u", label: "u", value: 0.5, step: 0.1, min: 0 },
+                { key: "n", label: "Accepted samples", value: 60000, step: 1000, parse: "int", min: 2000 },
+                { key: "mult", label: "Max draw multiplier", value: 60, step: 1, parse: "int", min: 5 },
+                { key: "seed", label: "Seed", value: 2, step: 1, parse: "int" },
+              ],
+              onRun: async ({ u, n, mult, seed }) => {
+                const u0 = Math.max(0, u);
+                const acceptedTarget = clamp(toInt(n, 60000), 2000, 500000);
+                const multiplier = clamp(toInt(mult, 60), 5, 5000);
+                const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed, multiplier);
+                const d = millsRatio(u0) - u0;
+                const detSample = sim.mu1 * sim.mu3 - sim.mu2 * sim.mu2;
+                const detTheory = u0 * d + 2 * d * d - 1;
+                return [
+                  `u=${formatNumber(u0, 4)}, accepted=${sim.accepted}, draws=${sim.draws}, accept≈${formatNumber(sim.acceptanceRate, 4)}`,
+                  `det M1(sample) ≈ ${formatNumber(detSample)}`,
+                  `det M1(theory) ≈ ${formatNumber(detTheory)}  (>=0 expected)`,
+                ].join("\n");
+              },
+            },
+            {
+              label: "eq:detM2-TOBECHECKED",
+              title: "Check: det Ṁ2(u) ≥ 0",
+              description: "Simulates μ0..μ4 and compares det Ṁ2 to the closed form. " + commonDisclaimer,
+              fields: [
+                { key: "u", label: "u", value: 0.5, step: 0.1, min: 0 },
+                { key: "n", label: "Accepted samples", value: 60000, step: 1000, parse: "int", min: 2000 },
+                { key: "mult", label: "Max draw multiplier", value: 60, step: 1, parse: "int", min: 5 },
+                { key: "seed", label: "Seed", value: 3, step: 1, parse: "int" },
+              ],
+              onRun: async ({ u, n, mult, seed }) => {
+                const u0 = Math.max(0, u);
+                const acceptedTarget = clamp(toInt(n, 60000), 2000, 500000);
+                const multiplier = clamp(toInt(mult, 60), 5, 5000);
+                const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed, multiplier);
+                const d = millsRatio(u0) - u0;
+                const mu0 = 1;
+                const mu1 = sim.mu1;
+                const mu2 = sim.mu2;
+                const mu3 = sim.mu3;
+                const mu4 = sim.mu4;
+                const detSample = mu0 * (mu2 * mu4 - mu3 * mu3) - mu1 * (mu1 * mu4 - mu2 * mu3) + mu2 * (mu1 * mu3 - mu2 * mu2);
+                const detTheory = u0 * u0 * d * d + u0 * d * d * d - 3 * d * d - 3 * u0 * d + 2;
+                return [
+                  `u=${formatNumber(u0, 4)}, accepted=${sim.accepted}, draws=${sim.draws}, accept≈${formatNumber(sim.acceptanceRate, 4)}`,
+                  `det Ṁ2(sample) ≈ ${formatNumber(detSample)}`,
+                  `det Ṁ2(theory) ≈ ${formatNumber(detTheory)}  (>=0 expected)`,
+                ].join("\n");
+              },
+            },
+            {
+              label: "eq:varY-TOBECHECKED",
+              title: "Check: Var(Y_u) = 1 − u d − d² > 0",
+              description: "Computes Var(Y_u)=1-ud-d² from d(u)=E(u)-u. " + commonDisclaimer,
+              fields: [{ key: "u", label: "u", value: 0.5, step: 0.1, min: 0 }],
+              onRun: async ({ u }) => {
+                const u0 = Math.max(0, u);
+                const d = millsRatio(u0) - u0;
+                const varTheory = 1 - u0 * d - d * d;
+                return [`u=${formatNumber(u0, 4)}`, `Var(Y_u) ≈ ${formatNumber(varTheory)}  (>0 expected)`].join("\n");
+              },
+            },
+            {
+              label: "eq:constraints-TOBECHECKED",
+              title: "Check: (x,y) constraints from moments",
+              description: "Evaluates constraints over u on a grid using x=ud, y=d². " + commonDisclaimer,
+              fields: [
+                { key: "uMin", label: "u min", value: 0, step: 0.25, min: 0 },
+                { key: "uMax", label: "u max", value: 6, step: 0.25, min: 0 },
+                { key: "steps", label: "grid steps", value: 121, step: 1, parse: "int", min: 5 },
+              ],
+              onRun: async ({ uMin, uMax, steps }) => {
+                const a = Math.max(0, Math.min(uMin, uMax));
+                const b = Math.max(0, Math.max(uMin, uMax));
+                const nSteps = clamp(toInt(steps, 121), 5, 50001);
+                let minC1 = Infinity;
+                let minC2 = Infinity;
+                let minC3 = Infinity;
+                for (let i = 0; i < nSteps; i++) {
+                  const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                  const d = millsRatio(u) - u;
+                  const x = u * d;
+                  const y = d * d;
+                  minC1 = Math.min(minC1, x + 2 * y - 1);
+                  minC2 = Math.min(minC2, x * x + x * y - 3 * x - 3 * y + 2);
+                  minC3 = Math.min(minC3, 1 - x - y);
+                  if (i % 2500 === 0) await yieldToUi();
+                }
+                return [
+                  `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
+                  `min(x+2y-1) ≈ ${formatNumber(minC1)}  (>=0 expected)`,
+                  `min(x²+xy-3x-3y+2) ≈ ${formatNumber(minC2)}  (>=0 expected)`,
+                  `min(1-x-y) ≈ ${formatNumber(minC3)}  (>0 expected)`,
+                ].join("\n");
+              },
+            },
+          ];
+
+          for (const def of simpleSims) {
+            findEquationBlocks(def.label).forEach((block) => insertAfterBlock(block, createSimCard(def)));
+          }
+
+          function logCosh(x) {
+            const a = Math.abs(x);
+            return a + Math.log1p(Math.exp(-2 * a)) - Math.LN2;
+          }
+
+          // Remaining TOBECHECKED equation checks.
+          findEquationBlocks("eq:ybound-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:ybound-TOBECHECKED",
+                title: "Check: y=d(u)² ≤ 2/π (u≥0)",
+                description: "Scans u on a grid and reports max y=d(u)^2. " + commonDisclaimer,
+                fields: [
+                  { key: "uMin", label: "u min", value: 0, step: 0.25, min: 0 },
+                  { key: "uMax", label: "u max", value: 8, step: 0.25, min: 0 },
+                  { key: "steps", label: "grid steps", value: 401, step: 1, parse: "int", min: 5 },
+                ],
+                onRun: async ({ uMin, uMax, steps }) => {
+                  const a = Math.max(0, Math.min(uMin, uMax));
+                  const b = Math.max(0, Math.max(uMin, uMax));
+                  const nSteps = clamp(toInt(steps, 401), 5, 50001);
+                  let maxY = -Infinity;
+                  let argU = a;
+                  for (let i = 0; i < nSteps; i++) {
+                    const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                    const d = millsRatio(u) - u;
+                    const y = d * d;
+                    if (y > maxY) {
+                      maxY = y;
+                      argU = u;
+                    }
+                    if (i % 2500 === 0) await yieldToUi();
+                  }
+                  const bound = 2 / Math.PI;
+                  return [
+                    `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
+                    `max y ≈ ${formatNumber(maxY)} at u≈${formatNumber(argU, 4)}`,
+                    `2/π ≈ ${formatNumber(bound)}`,
+                    `check: max y ≤ 2/π ? ${maxY <= bound + 1e-12 ? "YES" : "NO (increase steps)"} `,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:Hxy-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:Hxy-TOBECHECKED",
+                title: "Check: F(ud,d²) = d·H(u) < 0 (u≥0)",
+                description: "Scans u and reports max F. " + commonDisclaimer,
+                fields: [
+                  { key: "uMin", label: "u min", value: 0, step: 0.25, min: 0 },
+                  { key: "uMax", label: "u max", value: 8, step: 0.25, min: 0 },
+                  { key: "steps", label: "grid steps", value: 801, step: 1, parse: "int", min: 5 },
+                ],
+                onRun: async ({ uMin, uMax, steps }) => {
+                  const a = Math.max(0, Math.min(uMin, uMax));
+                  const b = Math.max(0, Math.max(uMin, uMax));
+                  const nSteps = clamp(toInt(steps, 801), 5, 100001);
+                  let maxF = -Infinity;
+                  let argU = a;
+                  for (let i = 0; i < nSteps; i++) {
+                    const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+                    const d = millsRatio(u) - u;
+                    const x = u * d;
+                    const y = d * d;
+                    const F = x * x + 6 * x * y + 6 * y * y - x - 4 * y;
+                    if (F > maxF) {
+                      maxF = F;
+                      argU = u;
+                    }
+                    if (i % 5000 === 0) await yieldToUi();
+                  }
+                  return [
+                    `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
+                    `max F(ud,d²) ≈ ${formatNumber(maxF)} at u≈${formatNumber(argU, 4)}`,
+                    `check: max F < 0 ? ${maxF < 0 ? "YES" : "NO (increase steps)"} `,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:g-zero-value-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:g-zero-value-TOBECHECKED",
+                title: "Check: g(0) closed form",
+                description: "Evaluates g(0) numerically and compares to 12/π²−4/π. " + commonDisclaimer,
+                fields: [],
+                onRun: async () => {
+                  const u = 0;
+                  const E = millsRatio(u);
+                  const Ep = millsDerivative(u, E);
+                  const g = Ep * Ep - 2 * (1 - Ep) * E * E;
+                  const closed = 12 / (Math.PI * Math.PI) - 4 / Math.PI;
+                  const closed2 = (-4 * (Math.PI - 3)) / (Math.PI * Math.PI);
+                  return [
+                    `E(0) ≈ ${formatNumber(E)}`,
+                    `E′(0)=E(0)² ≈ ${formatNumber(Ep)}`,
+                    `g(0) (from definition) ≈ ${formatNumber(g)}`,
+                    `12/π²−4/π ≈ ${formatNumber(closed)} (diff=${formatNumber(g - closed)})`,
+                    `-4(π-3)/π² ≈ ${formatNumber(closed2)} (diff=${formatNumber(g - closed2)})`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:g-critical-r-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:g-critical-r-TOBECHECKED",
+                title: "Check: r(4−r)(1−r)²/(r²−6r+6)² ≤ 1/18 on (0,1)",
+                description: "Scans r on a grid and reports max value. " + commonDisclaimer,
+                fields: [{ key: "steps", label: "grid steps", value: 20001, step: 1, parse: "int", min: 101 }],
+                onRun: async ({ steps }) => {
+                  const nSteps = clamp(toInt(steps, 20001), 101, 2000001);
+                  let maxV = -Infinity;
+                  let argR = 0.5;
+                  for (let i = 1; i < nSteps; i++) {
+                    const r = i / nSteps; // (0,1)
+                    const num = r * (4 - r) * (1 - r) * (1 - r);
+                    const den = r * r - 6 * r + 6;
+                    const v = num / (den * den);
+                    if (v > maxV) {
+                      maxV = v;
+                      argR = r;
+                    }
+                    if (i % 200000 === 0) await yieldToUi();
+                  }
+                  const bound = 1 / 18;
+                  return [
+                    `steps=${nSteps}`,
+                    `max ≈ ${formatNumber(maxV)} at r≈${formatNumber(argR, 6)}`,
+                    `1/18 ≈ ${formatNumber(bound)}`,
+                    `check: max ≤ 1/18 ? ${maxV <= bound + 1e-12 ? "YES" : "NO (increase steps)"} `,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:pi-estimate-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:pi-estimate-TOBECHECKED",
+                title: "Check: -4(π−3)/π² < -1/18",
+                description: "Evaluates both sides with Math.PI. " + commonDisclaimer,
+                fields: [],
+                onRun: async () => {
+                  const lhs = (-4 * (Math.PI - 3)) / (Math.PI * Math.PI);
+                  const rhs = -1 / 18;
+                  return [
+                    `lhs = -4(π-3)/π² ≈ ${formatNumber(lhs)}`,
+                    `rhs = -1/18 ≈ ${formatNumber(rhs)}`,
+                    `check: lhs < rhs ? ${lhs < rhs ? "YES" : "NO"}`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:cosh_sech_comparison-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:cosh_sech_comparison-TOBECHECKED",
+                title: "Check: E[log cosh(√r Z)] ≤ r·E[sech²(√r Z)]",
+                description: "Monte Carlo check for a chosen r. " + commonDisclaimer,
+                fields: [
+                  { key: "r", label: "r", value: 1, step: 0.1, min: 0.001 },
+                  { key: "n", label: "Samples N", value: 200000, step: 1000, parse: "int", min: 2000 },
+                  { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
+                ],
+                onRun: async ({ r, n, seed }) => {
+                  const r0 = Math.max(1e-6, r);
+                  const N = clamp(toInt(n, 200000), 2000, 5000000);
+                  const rng = makeRng(seed);
+                  const normal = makeNormalSampler(rng);
+                  const sr = Math.sqrt(r0);
+
+                  let sumLogCosh = 0;
+                  let sumSech2 = 0;
+                  const chunkSize = 25000;
+                  for (let i = 1; i <= N; i++) {
+                    const z = normal();
+                    const x = sr * z;
+                    sumLogCosh += logCosh(x);
+                    const t = Math.tanh(x);
+                    sumSech2 += 1 - t * t;
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+                  const lhs = sumLogCosh / N;
+                  const rhs = r0 * (sumSech2 / N);
+                  return [
+                    `r=${formatNumber(r0, 4)}, N=${N}`,
+                    `lhs = E[log cosh] ≈ ${formatNumber(lhs)}`,
+                    `rhs = r·E[sech²] ≈ ${formatNumber(rhs)}`,
+                    `lhs ≤ rhs ? ${lhs <= rhs ? "YES" : "NO (increase N)"} `,
+                    `rhs-lhs ≈ ${formatNumber(rhs - lhs)}`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:spin_bd_unif_nostep_revised-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:spin_bd_unif_nostep_revised-TOBECHECKED",
+                title: "Check: -rε/2 + E[log cosh(√r Z)] ≤ α·B(q)/(2ε)",
+                description: commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.25 },
+                  { key: "q", label: "q", value: 0.99, step: 0.005, min: 0.1, max: 0.99999 },
+                  { key: "alpha", label: "α", value: 0.5, step: 0.05, min: 0.01 },
+                  { key: "n", label: "Samples N", value: 120000, step: 1000, parse: "int", min: 2000 },
+                  { key: "seed", label: "Seed", value: 5, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, q, alpha, n, seed }) => {
+                  const q0 = clamp(q, 1e-6, 1 - 1e-6);
+                  const eps = 1 - q0;
+                  const N = clamp(toInt(n, 120000), 2000, 5000000);
+                  const rng = makeRng(seed);
+                  const normal = makeNormalSampler(rng);
+                  const sqrtQ = Math.sqrt(q0);
+                  const invS = 1 / Math.sqrt(eps);
+
+                  const zs = new Float64Array(N);
+                  let sumE2 = 0;
+                  const chunkSize = 25000;
+                  for (let i = 0; i < N; i++) {
+                    const z = normal();
+                    zs[i] = z;
+                    const U = (kappa - sqrtQ * z) * invS;
+                    const E = millsRatio(U);
+                    sumE2 += E * E;
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+                  const Bq = eps * (sumE2 / N);
+                  const r0 = (alpha / (eps * eps)) * Bq;
+                  const sr = Math.sqrt(Math.max(0, r0));
+
+                  let sumLogCosh = 0;
+                  for (let i = 0; i < N; i++) {
+                    sumLogCosh += logCosh(sr * zs[i]);
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+                  const lhs = -0.5 * r0 * eps + sumLogCosh / N;
+                  const rhs = (alpha * Bq) / (2 * eps);
+                  return [
+                    `κ=${formatNumber(kappa, 4)}, q=${formatNumber(q0, 5)}, ε=${formatNumber(eps, 6)}, α=${formatNumber(alpha, 4)}, N=${N}`,
+                    `B(q) ≈ ${formatNumber(Bq)}`,
+                    `r ≈ ${formatNumber(r0)}`,
+                    `lhs ≈ ${formatNumber(lhs)}`,
+                    `rhs ≈ ${formatNumber(rhs)}`,
+                    `lhs ≤ rhs ? ${lhs <= rhs ? "YES" : "NO (increase N)"} `,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:constraint_bd_unif_nostep_revised-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:constraint_bd_unif_nostep_revised-TOBECHECKED",
+                title: "Check: bound on E[log Φ̄(U)]",
+                description: commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.25 },
+                  { key: "q", label: "q", value: 0.99, step: 0.005, min: 0.1, max: 0.99999 },
+                  { key: "delta", label: "δ", value: 0.5, step: 0.05, min: 0.01, max: 0.99 },
+                  { key: "n", label: "Samples N", value: 120000, step: 1000, parse: "int", min: 2000 },
+                  { key: "seed", label: "Seed", value: 7, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, q, delta, n, seed }) => {
+                  const q0 = clamp(q, 1e-6, 1 - 1e-6);
+                  const eps = 1 - q0;
+                  const d0 = clamp(delta, 1e-6, 1 - 1e-6);
+                  const N = clamp(toInt(n, 120000), 2000, 5000000);
+
+                  const rng = makeRng(seed);
+                  const normal = makeNormalSampler(rng);
+                  const sqrtQ = Math.sqrt(q0);
+                  const invS = 1 / Math.sqrt(eps);
+
+                  let sumLogTail = 0;
+                  let sumA = 0;
+
+                  const chunkSize = 25000;
+                  for (let i = 1; i <= N; i++) {
+                    const z = normal();
+                    const kMinus = kappa - sqrtQ * z;
+                    const U = kMinus * invS;
+                    sumLogTail += logBarPhi(U);
+                    const pos = Math.max(0, kMinus);
+                    sumA += pos * pos;
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+
+                  const lhs = sumLogTail / N;
+                  const A = sumA / N;
+                  const Cdelta = -Math.log(d0 / 2);
+                  const phiTerm = normalCdf(kappa - d0);
+                  const rhs = -A / (2 * eps) + (phiTerm / 2) * Math.log(eps) + Cdelta;
+
+                  return [
+                    `κ=${formatNumber(kappa, 4)}, q=${formatNumber(q0, 5)}, ε=${formatNumber(eps, 6)}, δ=${formatNumber(d0, 4)}, N=${N}`,
+                    `lhs = E[log Φ̄(U)] ≈ ${formatNumber(lhs)}`,
+                    `A = E[(κ-√q Z)_+²] ≈ ${formatNumber(A)}`,
+                    `rhs ≈ ${formatNumber(rhs)}`,
+                    `lhs ≤ rhs ? ${lhs <= rhs ? "YES" : "NO (increase N)"} `,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+
+          findEquationBlocks("eq:BA_bd_unif_nostep_revised-TOBECHECKED").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:BA_bd_unif_nostep_revised-TOBECHECKED",
+                title: "Check: 0 ≤ B(q) − A ≤ C0(1−q)",
+                description: commonDisclaimer,
+                fields: [
+                  { key: "kappa", label: "κ", value: 0, step: 0.25 },
+                  { key: "q", label: "q", value: 0.99, step: 0.005, min: 0.1, max: 0.99999 },
+                  { key: "c0", label: "C0 (try 3)", value: 3, step: 0.1, min: 0 },
+                  { key: "n", label: "Samples N", value: 120000, step: 1000, parse: "int", min: 2000 },
+                  { key: "seed", label: "Seed", value: 8, step: 1, parse: "int" },
+                ],
+                onRun: async ({ kappa, q, c0, n, seed }) => {
+                  const q0 = clamp(q, 1e-6, 1 - 1e-6);
+                  const eps = 1 - q0;
+                  const N = clamp(toInt(n, 120000), 2000, 5000000);
+
+                  const rng = makeRng(seed);
+                  const normal = makeNormalSampler(rng);
+                  const sqrtQ = Math.sqrt(q0);
+                  const invS = 1 / Math.sqrt(eps);
+
+                  let sumE2 = 0;
+                  let sumUplus2 = 0;
+                  let sumDiff = 0;
+
+                  const chunkSize = 25000;
+                  for (let i = 1; i <= N; i++) {
+                    const z = normal();
+                    const U = (kappa - sqrtQ * z) * invS;
+                    const E = millsRatio(U);
+                    const e2 = E * E;
+                    const up = Math.max(0, U);
+                    const up2 = up * up;
+                    sumE2 += e2;
+                    sumUplus2 += up2;
+                    sumDiff += e2 - up2;
+                    if (i % chunkSize === 0) await yieldToUi();
+                  }
+
+                  const meanE2 = sumE2 / N;
+                  const meanUp2 = sumUplus2 / N;
+                  const meanDiff = sumDiff / N;
+
+                  const Bq = eps * meanE2;
+                  const A = eps * meanUp2;
+                  const diff = Bq - A;
+                  const checkUpper = diff <= c0 * eps + 1e-12;
+
+                  return [
+                    `κ=${formatNumber(kappa, 4)}, q=${formatNumber(q0, 5)}, ε=${formatNumber(eps, 6)}, N=${N}`,
+                    `B(q) ≈ ${formatNumber(Bq)}`,
+                    `A ≈ ${formatNumber(A)}`,
+                    `B(q)-A ≈ ${formatNumber(diff)} (should be ≥0)`,
+                    `check: B(q)-A ≤ C0·ε ? ${checkUpper ? "YES" : "NO"} (C0=${formatNumber(c0, 3)})`,
+                    `E[E(U)² - (U_+)²] ≈ ${formatNumber(meanDiff)} (should be bounded)`,
+                  ].join("\n");
+                },
+              })
+            );
+          });
+        }
+        // Main page is section 1.
+        updateUi();
+        const simReport = installTobecheckedSimulations();
+        upsertSimulationSummary(simReport);
+        typesetMath(paperRoot).catch((err) => {
+          console.error("Failed to typeset MathJax:", err);
+        });
+        const initialId = normalizeHash(location.hash);
+        const initialIndex = findIndexById(initialId);
+        goToIndex(initialIndex !== -1 ? initialIndex : 0, { updateHash: false });
+      })();
+    </script>
+  </body>
+</html>
