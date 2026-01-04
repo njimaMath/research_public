@@ -2228,16 +2228,42 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
           function downsampleSeries(xs, ys, maxPoints = 1000) {
             const n = xs.length;
             if (n <= maxPoints) return { xs, ys };
-            const step = Math.max(1, Math.ceil(n / maxPoints));
+
+            const bucketCount = Math.max(1, Math.floor(maxPoints / 2));
+            const bucketSize = n / bucketCount;
+            const indices = new Set([0, n - 1]);
+
+            for (let b = 0; b < bucketCount; b++) {
+              const start = Math.floor(b * bucketSize);
+              const end = Math.min(n, Math.floor((b + 1) * bucketSize));
+              let minY = Infinity;
+              let maxY = -Infinity;
+              let minI = -1;
+              let maxI = -1;
+
+              for (let i = start; i < end; i++) {
+                const y = ys[i];
+                if (!Number.isFinite(y)) continue;
+                if (y < minY) {
+                  minY = y;
+                  minI = i;
+                }
+                if (y > maxY) {
+                  maxY = y;
+                  maxI = i;
+                }
+              }
+
+              if (minI >= 0) indices.add(minI);
+              if (maxI >= 0) indices.add(maxI);
+            }
+
+            const sorted = Array.from(indices).sort((a, b) => a - b);
             const xOut = [];
             const yOut = [];
-            for (let i = 0; i < n; i += step) {
+            for (const i of sorted) {
               xOut.push(xs[i]);
               yOut.push(ys[i]);
-            }
-            if (xOut.length === 0 || xOut[xOut.length - 1] !== xs[n - 1]) {
-              xOut.push(xs[n - 1]);
-              yOut.push(ys[n - 1]);
             }
             return { xs: xOut, ys: yOut };
           }
@@ -2339,7 +2365,9 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               "stroke-width": 1,
             });
 
+            const gridStroke = "color-mix(in oklab, var(--border), CanvasText 18%)";
             const ticks = 4;
+
             for (let i = 0; i <= ticks; i++) {
               const t = i / ticks;
               const y = padTop + plotH * (1 - t);
@@ -2349,7 +2377,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 y1: y,
                 x2: padLeft + plotW,
                 y2: y,
-                stroke: "rgba(255,255,255,0.12)",
+                stroke: gridStroke,
                 "stroke-width": 1,
               });
               add("text", {
@@ -2359,6 +2387,43 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 "font-size": 12,
                 fill: "var(--muted)",
               }).textContent = formatNumber(val, 4);
+            }
+
+            for (let i = 0; i <= ticks; i++) {
+              const t = i / ticks;
+              const x = padLeft + plotW * t;
+              const val = xMin + xSpan * t;
+              add("line", {
+                x1: x,
+                y1: padTop,
+                x2: x,
+                y2: padTop + plotH,
+                stroke: gridStroke,
+                "stroke-width": 1,
+              });
+
+              const anchor = i === 0 ? "start" : i === ticks ? "end" : "middle";
+              const xText = i === 0 ? padLeft : i === ticks ? padLeft + plotW : x;
+              add("text", {
+                x: xText,
+                y: padTop + plotH + 18,
+                "text-anchor": anchor,
+                "font-size": 12,
+                fill: "var(--muted)",
+              }).textContent = formatNumber(val, 4);
+            }
+
+            if (yMin < 0 && yMax > 0) {
+              const y0 = yToSvg(0);
+              add("line", {
+                x1: padLeft,
+                y1: y0,
+                x2: padLeft + plotW,
+                y2: y0,
+                stroke: "color-mix(in oklab, var(--muted), var(--border) 55%)",
+                "stroke-width": 1,
+                "stroke-dasharray": "4 4",
+              });
             }
 
             add("polyline", {
@@ -2458,6 +2523,64 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             return 0.5 * (1 + erfApprox(x * Math.SQRT1_2));
           }
 
+          function normalInv(p) {
+            // Acklam's approximation for the inverse standard normal CDF.
+            if (!(p > 0)) return -Infinity;
+            if (!(p < 1)) return Infinity;
+
+            const a1 = -3.969683028665376e1;
+            const a2 = 2.209460984245205e2;
+            const a3 = -2.759285104469687e2;
+            const a4 = 1.38357751867269e2;
+            const a5 = -3.066479806614716e1;
+            const a6 = 2.506628277459239;
+
+            const b1 = -5.447609879822406e1;
+            const b2 = 1.615858368580409e2;
+            const b3 = -1.556989798598866e2;
+            const b4 = 6.680131188771972e1;
+            const b5 = -1.328068155288572e1;
+
+            const c1 = -7.784894002430293e-3;
+            const c2 = -3.223964580411365e-1;
+            const c3 = -2.400758277161838;
+            const c4 = -2.549732539343734;
+            const c5 = 4.374664141464968;
+            const c6 = 2.938163982698783;
+
+            const d1 = 7.784695709041462e-3;
+            const d2 = 3.224671290700398e-1;
+            const d3 = 2.445134137142996;
+            const d4 = 3.754408661907416;
+
+            const plow = 0.02425;
+            const phigh = 1 - plow;
+
+            if (p < plow) {
+              const q = Math.sqrt(-2 * Math.log(p));
+              return (
+                (((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+                ((((d1 * q + d2) * q + d3) * q + d4) * q + 1)
+              );
+            }
+
+            if (p > phigh) {
+              const q = Math.sqrt(-2 * Math.log(1 - p));
+              return (
+                -(((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+                ((((d1 * q + d2) * q + d3) * q + d4) * q + 1)
+              );
+            }
+
+            const q = p - 0.5;
+            const r = q * q;
+            return (
+              (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) *
+              q /
+              (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1)
+            );
+          }
+
           function logBarPhi(x) {
             if (!Number.isFinite(x)) return x === Infinity ? -Infinity : 0;
             if (x < 0) return Math.log(Math.max(normalCdf(-x), 1e-300));
@@ -2493,42 +2616,37 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
           }
 
           async function simulateTruncatedMoments(u, acceptedTarget, seed, maxDrawsMultiplier = 50) {
+            const u0 = Math.max(0, Number(u) || 0);
+            const accepted = clamp(toInt(acceptedTarget, 60000), 1, 5000000);
             const rng = makeRng(seed);
-            const normal = makeNormalSampler(rng);
-
-            const maxDraws = Math.max(acceptedTarget, Math.floor(acceptedTarget * maxDrawsMultiplier));
-            let draws = 0;
-            let accepted = 0;
+            const tail = Math.exp(logBarPhi(u0));
+            const pMin = clamp(1 - tail, 1e-16, 1 - 1e-16);
+            const span = clamp(tail, 0, 1);
             let s1 = 0;
             let s2 = 0;
             let s3 = 0;
             let s4 = 0;
 
-            const chunkSize = 50000;
-            while (accepted < acceptedTarget && draws < maxDraws) {
-              const x = normal();
-              draws++;
-              if (x < u) {
-                if (draws % chunkSize === 0) await yieldToUi();
-                continue;
-              }
-
-              const y = x - u;
+            const chunkSize = 25000;
+            for (let i = 1; i <= accepted; i++) {
+              const p = clamp(pMin + span * rng(), 1e-16, 1 - 1e-16);
+              const x = normalInv(p);
+              const y = x - u0;
               const y2 = y * y;
-              accepted++;
               s1 += y;
               s2 += y2;
               s3 += y2 * y;
               s4 += y2 * y2;
 
-              if (draws % chunkSize === 0) await yieldToUi();
+              if (i % chunkSize === 0) await yieldToUi();
             }
 
-            if (accepted === 0) return { draws, accepted, acceptanceRate: 0, mu1: NaN, mu2: NaN, mu3: NaN, mu4: NaN };
             return {
-              draws,
+              draws: accepted,
               accepted,
-              acceptanceRate: accepted / draws,
+              acceptanceRate: tail,
+              tailProbability: tail,
+              method: "truncated-normal-inv-cdf",
               mu1: s1 / accepted,
               mu2: s2 / accepted,
               mu3: s3 / accepted,
@@ -2550,9 +2668,12 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
           function makeNormalSamples(count, seed) {
             const N = clamp(toInt(count, 60000), 1, 5000000);
             const rng = makeRng(seed);
-            const normal = makeNormalSampler(rng);
             const zs = new Float64Array(N);
-            for (let i = 0; i < N; i++) zs[i] = normal();
+            const invN = 1 / N;
+            for (let i = 0; i < N; i++) {
+              const u = clamp((i + rng()) * invN, 1e-16, 1 - 1e-16);
+              zs[i] = normalInv(u);
+            }
             return zs;
           }
 
@@ -2702,7 +2823,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             return true;
           }
 
-          const commonDisclaimer = "Monte Carlo / numerical check (not a proof).";
+          const commonDisclaimer = "Numerical check (not a proof).";
 
           // Extra interactive checks for core objects (beyond *TOBECHECKED).
           findEquationBlocks("eq:system").forEach((block) => {
@@ -2918,12 +3039,16 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   let A0 = NaN;
                   let A1 = NaN;
                   let maxDecrease = 0;
+                  const rs = [];
+                  const As = [];
 
                   for (let i = 0; i < nSteps; i++) {
                     const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                     const q = await estimateP(r, zs);
                     const eps = 1 - q;
                     const A = r * eps * eps;
+                    rs.push(r);
+                    As.push(A);
                     if (i === 0) A0 = A;
                     if (i === nSteps - 1) A1 = A;
                     if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - A);
@@ -2935,13 +3060,23 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     if (i % 10 === 0) await yieldToUi();
                   }
 
-                  return [
+                  const text = [
                     `r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, N=${N}, seed=${seed}`,
                     `A(r_min)≈${formatNumber(A0)}  A(r_max)≈${formatNumber(A1)}  (2/π−A(r_max)≈${formatNumber(bound - A1)})`,
                     `max A≈${formatNumber(maxA)} at r≈${formatNumber(argR, 4)}`,
                     `2/π≈${formatNumber(bound)}  check: max A ≤ 2/π ? ${maxA <= bound + monoTol ? "YES" : "NO"}`,
                     `max decrease (monotonic violation)≈${formatNumber(maxDecrease)}  check: ≤ ${formatNumber(monoTol)} ? ${maxDecrease <= monoTol ? "YES" : "NO"}`,
                   ].join("\n");
+
+                  const plot = createLinePlot({
+                    xs: rs,
+                    ys: As,
+                    title: "A(r) on grid",
+                    xLabel: "r",
+                    yLabel: "A(r)",
+                  });
+
+                  return { text, nodes: plot ? [plot] : [] };
                 },
               })
             );
@@ -2981,10 +3116,14 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   let Bmax = -Infinity;
                   let Bstart = NaN;
                   let Bend = NaN;
+                  const qs = [];
+                  const Bs = [];
 
                   for (let i = 0; i < nSteps; i++) {
                     const q = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                     const Bq = await estimateB(q, k, zs);
+                    qs.push(q);
+                    Bs.push(Bq);
                     if (i === 0) Bstart = Bq;
                     if (i === nSteps - 1) Bend = Bq;
                     if (prev !== null) maxIncrease = Math.max(maxIncrease, Bq - prev);
@@ -2994,7 +3133,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     if (i % 10 === 0) await yieldToUi();
                   }
 
-                  return [
+                  const text = [
                     `κ=${formatNumber(k, 4)}, q∈[${formatNumber(a, 4)}, ${formatNumber(b, 4)}], steps=${nSteps}, N=${N}, seed=${seed}`,
                     `B(0)=E(κ)² exact ≈ ${formatNumber(B0Exact)}`,
                     `B(q_min)≈${formatNumber(Bstart)}  B(q_max)≈${formatNumber(Bend)}`,
@@ -3002,6 +3141,17 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     `range on grid: min≈${formatNumber(Bmin)}  max≈${formatNumber(Bmax)}`,
                     `max increase (monotonic violation)≈${formatNumber(maxIncrease)}  check: ≤ ${formatNumber(monoTol)} ? ${maxIncrease <= monoTol ? "YES" : "NO"}`,
                   ].join("\n");
+
+                  const plot = createLinePlot({
+                    xs: qs,
+                    ys: Bs,
+                    title: "B(q) on grid",
+                    xLabel: "q",
+                    yLabel: "B(q)",
+                    stroke: "var(--violet)",
+                  });
+
+                  return { text, nodes: plot ? [plot] : [] };
                 },
               })
             );
@@ -3148,14 +3298,13 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 fields: [
                   { key: "u", label: "u", value: 0.5, step: 0.1, min: 0 },
                   { key: "n", label: "Accepted samples", value: 60000, step: 1000, parse: "int", min: 2000 },
-                  { key: "mult", label: "Max draw multiplier", value: 60, step: 1, parse: "int", min: 5 },
                   { key: "seed", label: "Seed", value: 1, step: 1, parse: "int" },
                 ],
-                onRun: async ({ u, n, mult, seed }) => {
+                onRun: async ({ u, n, seed }) => {
                   const u0 = Math.max(0, u);
                   const acceptedTarget = clamp(toInt(n, 60000), 2000, 500000);
-                  const multiplier = clamp(toInt(mult, 60), 5, 5000);
-                  const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed, multiplier);
+                  const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed);
+                  const tail = sim && typeof sim.tailProbability === "number" ? sim.tailProbability : sim.acceptanceRate;
 
                   const E = millsRatio(u0);
                   const d = E - u0;
@@ -3166,7 +3315,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   const mu4 = u0 * u0 + 3 - u0 * (u0 * u0 + 5) * d;
 
                   return [
-                    `u=${formatNumber(u0, 4)}, accepted=${sim.accepted}, draws=${sim.draws}, accept≈${formatNumber(sim.acceptanceRate, 4)}`,
+                    `u=${formatNumber(u0, 4)}, samples=${sim.accepted}, P(X≥u)≈${formatNumber(tail, 6)}, seed=${seed}`,
                     `μ1(sample)=${formatNumber(sim.mu1)}  μ1(theory)=${formatNumber(mu1)}  diff=${formatNumber(sim.mu1 - mu1)}`,
                     `μ2(sample)=${formatNumber(sim.mu2)}  μ2(theory)=${formatNumber(mu2)}  diff=${formatNumber(sim.mu2 - mu2)}`,
                     `μ3(sample)=${formatNumber(sim.mu3)}  μ3(theory)=${formatNumber(mu3)}  diff=${formatNumber(sim.mu3 - mu3)}`,
@@ -3245,19 +3394,18 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               fields: [
                 { key: "u", label: "u", value: 0.5, step: 0.1, min: 0 },
                 { key: "n", label: "Accepted samples", value: 60000, step: 1000, parse: "int", min: 2000 },
-                { key: "mult", label: "Max draw multiplier", value: 60, step: 1, parse: "int", min: 5 },
                 { key: "seed", label: "Seed", value: 2, step: 1, parse: "int" },
               ],
-              onRun: async ({ u, n, mult, seed }) => {
+              onRun: async ({ u, n, seed }) => {
                 const u0 = Math.max(0, u);
                 const acceptedTarget = clamp(toInt(n, 60000), 2000, 500000);
-                const multiplier = clamp(toInt(mult, 60), 5, 5000);
-                const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed, multiplier);
+                const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed);
+                const tail = sim && typeof sim.tailProbability === "number" ? sim.tailProbability : sim.acceptanceRate;
                 const d = millsRatio(u0) - u0;
                 const detSample = sim.mu1 * sim.mu3 - sim.mu2 * sim.mu2;
                 const detTheory = u0 * d + 2 * d * d - 1;
                 return [
-                  `u=${formatNumber(u0, 4)}, accepted=${sim.accepted}, draws=${sim.draws}, accept≈${formatNumber(sim.acceptanceRate, 4)}`,
+                  `u=${formatNumber(u0, 4)}, samples=${sim.accepted}, P(X≥u)≈${formatNumber(tail, 6)}, seed=${seed}`,
                   `det M1(sample) ≈ ${formatNumber(detSample)}`,
                   `det M1(theory) ≈ ${formatNumber(detTheory)}  (>=0 expected)`,
                 ].join("\n");
@@ -3270,14 +3418,13 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               fields: [
                 { key: "u", label: "u", value: 0.5, step: 0.1, min: 0 },
                 { key: "n", label: "Accepted samples", value: 60000, step: 1000, parse: "int", min: 2000 },
-                { key: "mult", label: "Max draw multiplier", value: 60, step: 1, parse: "int", min: 5 },
                 { key: "seed", label: "Seed", value: 3, step: 1, parse: "int" },
               ],
-              onRun: async ({ u, n, mult, seed }) => {
+              onRun: async ({ u, n, seed }) => {
                 const u0 = Math.max(0, u);
                 const acceptedTarget = clamp(toInt(n, 60000), 2000, 500000);
-                const multiplier = clamp(toInt(mult, 60), 5, 5000);
-                const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed, multiplier);
+                const sim = await simulateTruncatedMoments(u0, acceptedTarget, seed);
+                const tail = sim && typeof sim.tailProbability === "number" ? sim.tailProbability : sim.acceptanceRate;
                 const d = millsRatio(u0) - u0;
                 const mu0 = 1;
                 const mu1 = sim.mu1;
@@ -3287,7 +3434,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 const detSample = mu0 * (mu2 * mu4 - mu3 * mu3) - mu1 * (mu1 * mu4 - mu2 * mu3) + mu2 * (mu1 * mu3 - mu2 * mu2);
                 const detTheory = u0 * u0 * d * d + u0 * d * d * d - 3 * d * d - 3 * u0 * d + 2;
                 return [
-                  `u=${formatNumber(u0, 4)}, accepted=${sim.accepted}, draws=${sim.draws}, accept≈${formatNumber(sim.acceptanceRate, 4)}`,
+                  `u=${formatNumber(u0, 4)}, samples=${sim.accepted}, P(X≥u)≈${formatNumber(tail, 6)}, seed=${seed}`,
                   `det Ṁ2(sample) ≈ ${formatNumber(detSample)}`,
                   `det Ṁ2(theory) ≈ ${formatNumber(detTheory)}  (>=0 expected)`,
                 ].join("\n");
@@ -3321,22 +3468,41 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 let minC1 = Infinity;
                 let minC2 = Infinity;
                 let minC3 = Infinity;
+                const us = [];
+                const mins = [];
                 for (let i = 0; i < nSteps; i++) {
                   const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                   const d = millsRatio(u) - u;
                   const x = u * d;
                   const y = d * d;
-                  minC1 = Math.min(minC1, x + 2 * y - 1);
-                  minC2 = Math.min(minC2, x * x + x * y - 3 * x - 3 * y + 2);
-                  minC3 = Math.min(minC3, 1 - x - y);
+                  const c1 = x + 2 * y - 1;
+                  const c2 = x * x + x * y - 3 * x - 3 * y + 2;
+                  const c3 = 1 - x - y;
+                  minC1 = Math.min(minC1, c1);
+                  minC2 = Math.min(minC2, c2);
+                  minC3 = Math.min(minC3, c3);
+                  us.push(u);
+                  mins.push(Math.min(c1, c2, c3));
                   if (i % 2500 === 0) await yieldToUi();
                 }
-                return [
+
+                const text = [
                   `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
                   `min(x+2y-1) ≈ ${formatNumber(minC1)}  (>=0 expected)`,
                   `min(x²+xy-3x-3y+2) ≈ ${formatNumber(minC2)}  (>=0 expected)`,
                   `min(1-x-y) ≈ ${formatNumber(minC3)}  (>0 expected)`,
                 ].join("\n");
+
+                const plot = createLinePlot({
+                  xs: us,
+                  ys: mins,
+                  title: "min constraint margin (x=ud, y=d^2)",
+                  xLabel: "u",
+                  yLabel: "min margin",
+                  stroke: "var(--amber)",
+                });
+
+                return { text, nodes: plot ? [plot] : [] };
               },
             },
           ];
@@ -3369,10 +3535,14 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   const nSteps = clamp(toInt(steps, 401), 5, 50001);
                   let maxY = -Infinity;
                   let argU = a;
+                  const us = [];
+                  const ys = [];
                   for (let i = 0; i < nSteps; i++) {
                     const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                     const d = millsRatio(u) - u;
                     const y = d * d;
+                    us.push(u);
+                    ys.push(y);
                     if (y > maxY) {
                       maxY = y;
                       argU = u;
@@ -3380,12 +3550,23 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     if (i % 2500 === 0) await yieldToUi();
                   }
                   const bound = 2 / Math.PI;
-                  return [
+                  const text = [
                     `u∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
                     `max y ≈ ${formatNumber(maxY)} at u≈${formatNumber(argU, 4)}`,
                     `2/π ≈ ${formatNumber(bound)}`,
                     `check: max y ≤ 2/π ? ${maxY <= bound + 1e-12 ? "YES" : "NO (increase steps)"} `,
                   ].join("\n");
+
+                  const plot = createLinePlot({
+                    xs: us,
+                    ys,
+                    title: "y(u)=d(u)^2 on grid",
+                    xLabel: "u",
+                    yLabel: "y",
+                    stroke: "var(--emerald)",
+                  });
+
+                  return { text, nodes: plot ? [plot] : [] };
                 },
               })
             );
@@ -3491,6 +3672,91 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
             );
           });
 
+          findEquationBlocks("eq:gprime").forEach((block) => {
+            insertAfterBlock(
+              block,
+              createSimCard({
+                label: "eq:gprime",
+                title: "Check: g′(u) = 2E(u)²H(u)",
+                description:
+                  "Finite-differences g(u) and compares to 2E(u)^2 H(u), with d(u)=E(u)-u and H(u)=u^2 d + 6u d^2 + 6 d^3 - u - 4 d. " +
+                  commonDisclaimer,
+                fields: [
+                  { key: "uMin", label: "u min", value: 0, step: 0.25 },
+                  { key: "uMax", label: "u max", value: 8, step: 0.25 },
+                  { key: "steps", label: "grid steps", value: 401, step: 1, parse: "int", min: 1 },
+                  { key: "h", label: "h (finite diff)", value: 1e-4, step: 1e-5, min: 1e-8, max: 0.1 },
+                ],
+                onRun: async ({ uMin, uMax, steps, h }) => {
+                  const a = Math.min(uMin, uMax);
+                  const b = Math.max(uMin, uMax);
+                  const nSteps = clamp(toInt(steps, 401), 1, 200001);
+                  const du = clamp(Math.abs(h) || 1e-4, 1e-8, 0.1);
+
+                  const gAt = (u) => {
+                    const E = millsRatio(u);
+                    const Ep = millsDerivative(u, E);
+                    const E2 = E * E;
+                    return Ep * Ep - 2 * (1 - Ep) * E2;
+                  };
+
+                  const us = [];
+                  const diffs = [];
+                  let maxAbsDiff = -Infinity;
+                  let argU = a;
+                  let lhsAtArg = NaN;
+                  let rhsAtArg = NaN;
+
+                  for (let i = 0; i < nSteps; i++) {
+                    const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
+
+                    const gm2 = gAt(u - 2 * du);
+                    const gm1 = gAt(u - du);
+                    const gp1 = gAt(u + du);
+                    const gp2 = gAt(u + 2 * du);
+                    const lhs = (gm2 - 8 * gm1 + 8 * gp1 - gp2) / (12 * du);
+
+                    const E = millsRatio(u);
+                    const d = E - u;
+                    const H = u * u * d + 6 * u * d * d + 6 * d * d * d - u - 4 * d;
+                    const rhs = 2 * E * E * H;
+
+                    const diff = lhs - rhs;
+                    us.push(u);
+                    diffs.push(diff);
+
+                    const absDiff = Math.abs(diff);
+                    if (absDiff > maxAbsDiff) {
+                      maxAbsDiff = absDiff;
+                      argU = u;
+                      lhsAtArg = lhs;
+                      rhsAtArg = rhs;
+                    }
+
+                    if (i % 5000 === 0) await yieldToUi();
+                  }
+
+                  const text = [
+                    `u in [${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}`,
+                    `h=${formatNumber(du)}`,
+                    `max |FD g′(u) − 2E(u)^2H(u)| ≈ ${formatNumber(maxAbsDiff)} at u≈${formatNumber(argU, 4)}`,
+                    `FD g′(u)≈${formatNumber(lhsAtArg)}  RHS≈${formatNumber(rhsAtArg)}  diff≈${formatNumber(lhsAtArg - rhsAtArg)}`,
+                  ].join("\n");
+
+                  const plot = createLinePlot({
+                    xs: us,
+                    ys: diffs,
+                    title: "FD g′(u) − 2E(u)²H(u)",
+                    xLabel: "u",
+                    yLabel: "difference",
+                  });
+
+                  return { text, nodes: plot ? [plot] : [] };
+                },
+              })
+            );
+          });
+
           findEquationBlocks("eq:g-zero-value-TOBECHECKED").forEach((block) => {
             insertAfterBlock(
               block,
@@ -3530,11 +3796,15 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   const nSteps = clamp(toInt(steps, 20001), 101, 2000001);
                   let maxV = -Infinity;
                   let argR = 0.5;
+                  const rs = [];
+                  const vs = [];
                   for (let i = 1; i < nSteps; i++) {
                     const r = i / nSteps; // (0,1)
                     const num = r * (4 - r) * (1 - r) * (1 - r);
                     const den = r * r - 6 * r + 6;
                     const v = num / (den * den);
+                    rs.push(r);
+                    vs.push(v);
                     if (v > maxV) {
                       maxV = v;
                       argR = r;
@@ -3542,12 +3812,24 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     if (i % 200000 === 0) await yieldToUi();
                   }
                   const bound = 1 / 18;
-                  return [
+                  const text = [
                     `steps=${nSteps}`,
                     `max ≈ ${formatNumber(maxV)} at r≈${formatNumber(argR, 6)}`,
                     `1/18 ≈ ${formatNumber(bound)}`,
                     `check: max ≤ 1/18 ? ${maxV <= bound + 1e-12 ? "YES" : "NO (increase steps)"} `,
                   ].join("\n");
+
+                  const plot = createLinePlot({
+                    xs: rs,
+                    ys: vs,
+                    title: "r(4−r)(1−r)²/(r²−6r+6)²",
+                    xLabel: "r",
+                    yLabel: "value",
+                    stroke: "var(--amber)",
+                    heightPx: 240,
+                  });
+
+                  return { text, nodes: plot ? [plot] : [] };
                 },
               })
             );
@@ -3580,7 +3862,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               createSimCard({
                 label: "eq:cosh_sech_comparison-TOBECHECKED",
                 title: "Check: E[log cosh(√r Z)] ≤ r·E[sech²(√r Z)]",
-                description: "Monte Carlo check for a chosen r. " + commonDisclaimer,
+                description: "Numerical check for a chosen r. " + commonDisclaimer,
                 fields: [
                   { key: "r", label: "r", value: 1, step: 0.1, min: 0.001 },
                   { key: "n", label: "Samples N", value: 200000, step: 1000, parse: "int", min: 2000 },
@@ -3589,20 +3871,18 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 onRun: async ({ r, n, seed }) => {
                   const r0 = Math.max(1e-6, r);
                   const N = clamp(toInt(n, 200000), 2000, 5000000);
-                  const rng = makeRng(seed);
-                  const normal = makeNormalSampler(rng);
+                  const zs = makeNormalSamples(N, seed);
                   const sr = Math.sqrt(r0);
 
                   let sumLogCosh = 0;
                   let sumSech2 = 0;
                   const chunkSize = 25000;
-                  for (let i = 1; i <= N; i++) {
-                    const z = normal();
-                    const x = sr * z;
+                  for (let i = 0; i < N; i++) {
+                    const x = sr * zs[i];
                     sumLogCosh += logCosh(x);
                     const t = Math.tanh(x);
                     sumSech2 += 1 - t * t;
-                    if (i % chunkSize === 0) await yieldToUi();
+                    if (i > 0 && i % chunkSize === 0) await yieldToUi();
                   }
                   const lhs = sumLogCosh / N;
                   const rhs = r0 * (sumSech2 / N);
@@ -3636,21 +3916,18 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   const q0 = clamp(q, 1e-6, 1 - 1e-6);
                   const eps = 1 - q0;
                   const N = clamp(toInt(n, 120000), 2000, 5000000);
-                  const rng = makeRng(seed);
-                  const normal = makeNormalSampler(rng);
+                  const zs = makeNormalSamples(N, seed);
                   const sqrtQ = Math.sqrt(q0);
                   const invS = 1 / Math.sqrt(eps);
 
-                  const zs = new Float64Array(N);
                   let sumE2 = 0;
                   const chunkSize = 25000;
                   for (let i = 0; i < N; i++) {
-                    const z = normal();
-                    zs[i] = z;
+                    const z = zs[i];
                     const U = (kappa - sqrtQ * z) * invS;
                     const E = millsRatio(U);
                     sumE2 += E * E;
-                    if (i % chunkSize === 0) await yieldToUi();
+                    if (i > 0 && i % chunkSize === 0) await yieldToUi();
                   }
                   const Bq = eps * (sumE2 / N);
                   const r0 = (alpha / (eps * eps)) * Bq;
@@ -3659,7 +3936,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   let sumLogCosh = 0;
                   for (let i = 0; i < N; i++) {
                     sumLogCosh += logCosh(sr * zs[i]);
-                    if (i % chunkSize === 0) await yieldToUi();
+                    if (i > 0 && i % chunkSize === 0) await yieldToUi();
                   }
                   const lhs = -0.5 * r0 * eps + sumLogCosh / N;
                   const rhs = (alpha * Bq) / (2 * eps);
@@ -3696,8 +3973,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   const d0 = clamp(delta, 1e-6, 1 - 1e-6);
                   const N = clamp(toInt(n, 120000), 2000, 5000000);
 
-                  const rng = makeRng(seed);
-                  const normal = makeNormalSampler(rng);
+                  const zs = makeNormalSamples(N, seed);
                   const sqrtQ = Math.sqrt(q0);
                   const invS = 1 / Math.sqrt(eps);
 
@@ -3705,14 +3981,14 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   let sumA = 0;
 
                   const chunkSize = 25000;
-                  for (let i = 1; i <= N; i++) {
-                    const z = normal();
+                  for (let i = 0; i < N; i++) {
+                    const z = zs[i];
                     const kMinus = kappa - sqrtQ * z;
                     const U = kMinus * invS;
                     sumLogTail += logBarPhi(U);
                     const pos = Math.max(0, kMinus);
                     sumA += pos * pos;
-                    if (i % chunkSize === 0) await yieldToUi();
+                    if (i > 0 && i % chunkSize === 0) await yieldToUi();
                   }
 
                   const lhs = sumLogTail / N;
@@ -3752,8 +4028,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   const eps = 1 - q0;
                   const N = clamp(toInt(n, 120000), 2000, 5000000);
 
-                  const rng = makeRng(seed);
-                  const normal = makeNormalSampler(rng);
+                  const zs = makeNormalSamples(N, seed);
                   const sqrtQ = Math.sqrt(q0);
                   const invS = 1 / Math.sqrt(eps);
 
@@ -3762,8 +4037,8 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   let sumDiff = 0;
 
                   const chunkSize = 25000;
-                  for (let i = 1; i <= N; i++) {
-                    const z = normal();
+                  for (let i = 0; i < N; i++) {
+                    const z = zs[i];
                     const U = (kappa - sqrtQ * z) * invS;
                     const E = millsRatio(U);
                     const e2 = E * E;
@@ -3772,7 +4047,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                     sumE2 += e2;
                     sumUplus2 += up2;
                     sumDiff += e2 - up2;
-                    if (i % chunkSize === 0) await yieldToUi();
+                    if (i > 0 && i % chunkSize === 0) await yieldToUi();
                   }
 
                   const meanE2 = sumE2 / N;
@@ -3834,10 +4109,14 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               let maxP = -Infinity;
               let P0 = NaN;
               let P1 = NaN;
+              const rs = [];
+              const Ps = [];
 
               for (let i = 0; i < nSteps; i++) {
                 const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                 const Pval = await estimateP(r, zs);
+                rs.push(r);
+                Ps.push(Pval);
                 if (i === 0) P0 = Pval;
                 if (i === nSteps - 1) P1 = Pval;
                 if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - Pval);
@@ -3847,7 +4126,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 if (i % 10 === 0) await yieldToUi();
               }
 
-              return [
+              const text = [
                 `r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, N=${N}, seed=${seed}`,
                 `P(r_min)≈${formatNumber(P0)}  P(r_max)≈${formatNumber(P1)}`,
                 `range on grid: min≈${formatNumber(minP)}  max≈${formatNumber(maxP)}  (1-max≈${formatNumber(1 - maxP)})`,
@@ -3855,6 +4134,16 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   maxDecrease <= monoTol ? "YES" : "NO"
                 }`,
               ].join("\n");
+
+              const plot = createLinePlot({
+                xs: rs,
+                ys: Ps,
+                title: "P(r) on grid",
+                xLabel: "r",
+                yLabel: "P(r)",
+              });
+
+              return { text, nodes: plot ? [plot] : [] };
             },
           });
 
@@ -3885,12 +4174,16 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               let argR = a;
               let A0 = NaN;
               let A1 = NaN;
+              const rs = [];
+              const As = [];
 
               for (let i = 0; i < nSteps; i++) {
                 const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                 const q = await estimateP(r, zs);
                 const eps = 1 - q;
                 const Aval = r * eps * eps;
+                rs.push(r);
+                As.push(Aval);
                 if (i === 0) A0 = Aval;
                 if (i === nSteps - 1) A1 = Aval;
                 if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - Aval);
@@ -3902,7 +4195,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 if (i % 10 === 0) await yieldToUi();
               }
 
-              return [
+              const text = [
                 `r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}], steps=${nSteps}, N=${N}, seed=${seed}`,
                 `A(r_min)≈${formatNumber(A0)}  A(r_max)≈${formatNumber(A1)}  (2/π−A(r_max)≈${formatNumber(bound - A1)})`,
                 `max A≈${formatNumber(maxA)} at r≈${formatNumber(argR, 4)}`,
@@ -3913,6 +4206,16 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   maxDecrease <= monoTol ? "YES" : "NO"
                 }`,
               ].join("\n");
+
+              const plot = createLinePlot({
+                xs: rs,
+                ys: As,
+                title: "A(r) on grid",
+                xLabel: "r",
+                yLabel: "A(r)",
+              });
+
+              return { text, nodes: plot ? [plot] : [] };
             },
           });
 
@@ -3940,12 +4243,19 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               let maxUpperPos = -Infinity;
               let argUpperPos = 0;
               let sawPos = false;
+              const us = [];
+              const upperExcesses = [];
+              const usPos = [];
+              const lowerMargins = [];
+              const upperPosExcesses = [];
 
               for (let i = 0; i < nSteps; i++) {
                 const u = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
                 const E = millsRatio(u);
                 const uPlus = Math.max(u, 0);
                 const upperExcess = E - (uPlus + C);
+                us.push(u);
+                upperExcesses.push(upperExcess);
                 if (upperExcess > maxUpper) {
                   maxUpper = upperExcess;
                   argUpper = u;
@@ -3953,11 +4263,14 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 if (u > 0) {
                   sawPos = true;
                   const lowerMargin = E - u;
+                  usPos.push(u);
+                  lowerMargins.push(lowerMargin);
                   if (lowerMargin < minLower) {
                     minLower = lowerMargin;
                     argLower = u;
                   }
                   const upperPosExcess = E - (u + 1 / u);
+                  upperPosExcesses.push(upperPosExcess);
                   if (upperPosExcess > maxUpperPos) {
                     maxUpperPos = upperPosExcess;
                     argUpperPos = u;
@@ -3983,7 +4296,41 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               } else {
                 lines.push("no u>0 in grid; adjust u min/max to test the u>0 bounds.");
               }
-              return lines.join("\n");
+
+              const nodes = [];
+              const plot1 = createLinePlot({
+                xs: us,
+                ys: upperExcesses,
+                title: "E(u) − (u_+ + C)",
+                xLabel: "u",
+                yLabel: "excess",
+                stroke: "var(--amber)",
+              });
+              if (plot1) nodes.push(plot1);
+
+              if (sawPos) {
+                const plot2 = createLinePlot({
+                  xs: usPos,
+                  ys: lowerMargins,
+                  title: "E(u) − u (u>0)",
+                  xLabel: "u",
+                  yLabel: "margin",
+                  stroke: "var(--emerald)",
+                });
+                if (plot2) nodes.push(plot2);
+
+                const plot3 = createLinePlot({
+                  xs: usPos,
+                  ys: upperPosExcesses,
+                  title: "E(u) − (u + 1/u) (u>0)",
+                  xLabel: "u",
+                  yLabel: "excess",
+                  stroke: "var(--violet)",
+                });
+                if (plot3) nodes.push(plot3);
+              }
+
+              return { text: lines.join("\n"), nodes };
             },
           });
 
@@ -4085,6 +4432,8 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               let maxF = -Infinity;
               let f0 = NaN;
               let f1 = NaN;
+              const rs = [];
+              const fs = [];
 
               for (let i = 0; i < nSteps; i++) {
                 const r = nSteps === 1 ? a : a + ((b - a) * i) / (nSteps - 1);
@@ -4093,6 +4442,8 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 const Aval = r * eps * eps;
                 const Bq = await estimateB(q, k, zs);
                 const f = Aval - a0 * Bq;
+                rs.push(r);
+                fs.push(f);
                 if (i === 0) f0 = f;
                 if (i === nSteps - 1) f1 = f;
                 if (prev !== null) maxDecrease = Math.max(maxDecrease, prev - f);
@@ -4102,7 +4453,7 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 if (i % 5 === 0) await yieldToUi();
               }
 
-              return [
+              const text = [
                 `κ=${formatNumber(k, 4)}, α=${formatNumber(a0, 6)}, r∈[${formatNumber(a, 3)}, ${formatNumber(b, 3)}]`,
                 `steps=${nSteps}, N=${N}, seed=${seed}`,
                 `f(r_min)≈${formatNumber(f0)}  f(r_max)≈${formatNumber(f1)}`,
@@ -4111,6 +4462,16 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                   maxDecrease <= monoTol ? "YES" : "NO"
                 }`,
               ].join("\n");
+
+              const plot = createLinePlot({
+                xs: rs,
+                ys: fs,
+                title: "f(r) on grid",
+                xLabel: "r",
+                yLabel: "f(r)",
+              });
+
+              return { text, nodes: plot ? [plot] : [] };
             },
           });
 
@@ -4196,11 +4557,15 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
               const nSteps = clamp(toInt(steps, 20001), 101, 2000001);
               let maxV = -Infinity;
               let argR = 0.5;
+              const rs = [];
+              const vs = [];
               for (let i = 1; i < nSteps; i++) {
                 const r = i / nSteps;
                 const num = r * (4 - r) * (1 - r) * (1 - r);
                 const den = r * r - 6 * r + 6;
                 const v = num / (den * den);
+                rs.push(r);
+                vs.push(v);
                 if (v > maxV) {
                   maxV = v;
                   argR = r;
@@ -4208,12 +4573,24 @@ r_0=\frac{202-\sqrt{202^2-4\cdot 57\cdot 109}}{2\cdot 57}
                 if (i % 200000 === 0) await yieldToUi();
               }
               const bound = 1 / 18;
-              return [
+              const text = [
                 `steps=${nSteps}`,
                 `max ≈ ${formatNumber(maxV)} at r≈${formatNumber(argR, 6)}`,
                 `1/18 ≈ ${formatNumber(bound)}`,
                 `check: max ≤ 1/18 ? ${maxV <= bound + 1e-12 ? "YES" : "NO (increase steps)"} `,
               ].join("\n");
+
+              const plot = createLinePlot({
+                xs: rs,
+                ys: vs,
+                title: "r(4−r)(1−r)²/(r²−6r+6)²",
+                xLabel: "r",
+                yLabel: "value",
+                stroke: "var(--amber)",
+                heightPx: 240,
+              });
+
+              return { text, nodes: plot ? [plot] : [] };
             },
           });
         }
