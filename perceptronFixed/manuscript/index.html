@@ -1171,15 +1171,18 @@ E(u)=\frac{\phi(u)}{\overline{\Phi}(u)}\le \frac{1}{\overline{\Phi}(1)}=:C_1&lt;
 \frac{\phi(u)}{\overline{\Phi}(u)}\le u+\frac{1}{u}.
 \end{equation}</div><p>In particular, for $u\ge 1$ we have $E(u)\le u+1$. Hence, we can choose $C:=\max\{C_1,1\}$.</p><p>Finally, for $u&gt;0$,</p><div class="math-block">\[ \overline{\Phi}(u)= \int_u^\infty \phi(t)\,dt=\int_u^\infty \frac{-\phi&#39;(t)}{t}\,dt
 =\Big[-\frac{\phi(t)}{t}\Big]_{u}^{\infty}-\int_u^\infty \frac{\phi(t)}{t^{2}}\,dt\\
-&lt; \frac{\phi(u)}u.\]</div><div class="proof-end">∎</div></div></div><h3>6.2. Proof of Lemma&nbsp;\ref{lem:F negative-TOBECHECKED</h3><p>We aim to prove the following: Let $(x,y)\in\mathbb R^2$ satisfy $x\ge 0$, $0&lt;y&lt;\frac{2}{3}$, and</p><div class="math-block" data-eq-label="eq:consFneg_lemma" id="eq-eq-consfneg-lemma">\begin{equation}\label{eq:consFneg_lemma}
+&lt; \frac{\phi(u)}u.\]</div><div class="proof-end">∎</div></div></div><h3>6.2. Proof of Lemma&nbsp;<a class="xref" href="#lemma-lem-fnegative-tobechecked">14</a></h3><p>
+  We aim to prove the following: Let $(x,y)\in\mathbb R^2$ satisfy $x\ge 0$, $0&lt;y&lt;\frac{2}{3}$, and</p><div class="math-block" data-eq-label="eq:consFneg_lemma" id="eq-eq-consfneg-lemma">\begin{equation}
 x+2y\ge 1,\qquad
 x^2+xy-3x-3y+2\ge 0,\qquad
 x+y&lt;1.
-\end{equation}</div><p>Then it holds that</p><div class="math-block" data-eq-label="eq:FdefFneg_lemma-TOBECHECKED" id="eq-eq-fdeffneg-lemma-tobechecked">\begin{equation}\label{eq:FdefFneg_lemma-TOBECHECKED}
-F(x,y):=x^2+6xy+6y^2-x-4y&lt;0.
-\end{equation}</div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>Fix $y\in(0,2/3)$. Consider the quadratic constraint</p><div class="math-block">\[
+\end{equation}</div><p>Then it holds that</p><div class="math-block" id="eq-eq-fdeffneg-lemma-tobechecked">\begin{equation}
+F(x,y):=x^2+6xy+6y^2-x-4y< 0.
+\end{equation}</div>
+<div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>Fix $y\in(0,2/3)$. Consider the quadratic constraint</p><div class="math-block">\[
 q_y(x):=x^2+xy-3x-3y+2\ge 0.
-\]</div><p>Its roots are</p><div class="math-block" data-eq-label="eq:rootsFneg_lemma" id="eq-eq-rootsfneg-lemma">\begin{equation}\label{eq:rootsFneg_lemma}
+\]</div><p>Its roots are</p>
+<div class="math-block" data-eq-label="eq:rootsFneg_lemma" id="eq-eq-rootsfneg-lemma">\begin{equation}\label{eq:rootsFneg_lemma}
 r_\pm(y)=\frac{3-y\pm\sqrt{y^2+6y+1}}{2}.
 \end{equation}</div><p>Since ${y^2+6y+1}&gt;(y+1)^2$ for $y&gt;0$, we have</p><div class="math-block">\[
 r_+(y)=\frac{3-y+\sqrt{y^2+6y+1}}{2}&gt;\frac{3-y+(y+1)}{2}=2&gt;1.
@@ -1202,7 +1205,8 @@ F(r_-(y),y)=\frac{7y^2+11y+2-(5y+2)\sqrt{y^2+6y+1}}{2}.
 \]</div><p>Squaring and simplifying yields</p><div class="math-block" data-eq-label="eq:squareDiffFneg_lemma" id="eq-eq-squaredifffneg-lemma">\begin{equation}\label{eq:squareDiffFneg_lemma}
 (5y+2)^2(y^2+6y+1)-(7y^2+11y+2)^2
 =8y^3(2-3y),
-\end{equation}</div><p>which is strictly positive for $y\in(0,2/3)$. Hence $F(r_-(y),y)&lt;0$.</p><p>Therefore $F$ is negative at both endpoints of $I_y$, so $\max_{x\in I_y}F(x,y)&lt;0$ and $F(x,y)&lt;0$ for every feasible $x$ at this $y$. Since $y$ was arbitrary in $(0,2/3)$, the conclusion follows.</p><div class="proof-end">∎</div></div></div><h3>6.3. A rational function inequality</h3><div class="env env-lemma" id="lemma-lem-rationalfunctionbound-tobechecked"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">16</span></div><div class="env-body"><p>For any $r\in(0,1)$,</p><div class="math-block">\[ \frac{r(4-r)(1-r)^2}{(r^2-6r+6)^2}\le \frac{1}{18}.
+\end{equation}</div><p>which is strictly positive for $y\in(0,2/3)$. Hence $F(r_-(y),y)&lt;0$.</p><p>Therefore $F$ is negative at both endpoints of $I_y$, so $\max_{x\in I_y}F(x,y)&lt;0$ and $F(x,y)&lt;0$ for every feasible $x$ at this $y$. Since $y$ was arbitrary in $(0,2/3)$, the conclusion follows.</p><div class="proof-end">∎</div></div></div><h3>6.3. A rational function inequality</h3>
+<div class="env env-lemma"><div class="env-head"><span class="env-kind">Lemma</span><span class="env-no">16</span></div><div class="env-body"><p>For any $r\in(0,1)$,</p><div class="math-block">\[ \frac{r(4-r)(1-r)^2}{(r^2-6r+6)^2}\le \frac{1}{18}.
 \]</div></div></div><div class="env env-proof"><div class="env-head"><span class="env-kind">Proof</span></div><div class="env-body"><p>This is equivalent to</p><div class="math-block">\[
 (r^2-6r+6)^2 - 18\,r(4-r)(1-r)^2 \ge 0.
 \]</div><p>Expanding gives the quartic polynomial</p><div class="math-block">\[
