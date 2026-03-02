@@ -47,12 +47,3 @@ lake build perceptronFixed
 
 In the current checkout, this command completes successfully.
 
-## Submission workflow
-
-If [main.tex](./main.tex) changes before submission, the file to keep aligned first is [mainresult.lean](./mainresult.lean). The intent is:
-
-1. Update the manuscript.
-2. Update `mainresult.lean` so the paper-level notation and statements still match the manuscript.
-3. Re-run `lake build perceptronFixed`.
-
-The lower-level modules can remain more detailed than the paper, but the exported statements in `MainResult` should continue to match the submission text.
