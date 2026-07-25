@@ -12,7 +12,7 @@ $$
 \qquad
 \kappa(q)=
 \begin{cases}
-\dfrac{q}{\operatorname{artanh}(q)}, & q\ne 0,\\[6pt]
+\dfrac{q}{{\rm artanh}(q)}, & q\ne 0,\\[6pt]
 1, & q=0.
 \end{cases}
 $$
@@ -31,7 +31,7 @@ the main theorem is
 ## Mathematical statement
 
 For $N\ge 1$, a spin configuration is a function
-$\sigma:\operatorname{Fin}(N)\to\operatorname{Bool}$, interpreted as a vector of
+$\sigma:{\rm Fin}(N)\to{\rm Bool}$, interpreted as a vector of
 signs in $\{-1,1\}^N$. Its normalized overlap with $\tau$ is
 
 $$
@@ -42,7 +42,7 @@ The disorder is represented abstractly by a centered Gaussian random field
 $U(\sigma)$ with covariance
 
 $$
-\operatorname{Cov}(U(\sigma),U(\tau))
+{\rm Cov}(U(\sigma),U(\tau))
 =\frac{N\beta^2}{2}R(\sigma,\tau)^2.
 $$
 
