@@ -3,7 +3,17 @@
 This directory contains a Lean 4 formalization of a generalized Latała
 interpolation argument for the finite-volume Sherrington--Kirkpatrick spin-glass
 model. The main result proves overlap concentration and an $O(1/N)$ error bound
-for the replica-symmetric pressure in the improved high-temperature region.
+for the replica-symmetric pressure in the improved high-temperature region
+
+$$
+\rho(\beta,q)=\beta^2\kappa(q)<1,
+\qquad
+\kappa(q)=
+\begin{cases}
+q/\operatorname{artanh}(q),&q\ne0,\\
+1,&q=0.
+\end{cases}
+$$
 
 The public entry point is [`mainresult_latala.lean`](mainresult_latala.lean), and
 the main theorem is
