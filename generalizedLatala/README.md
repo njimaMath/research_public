@@ -3,11 +3,28 @@
 This directory contains a Lean 4 formalization of a generalized Latała
 interpolation argument for the finite-volume Sherrington--Kirkpatrick spin-glass
 model. The main result proves overlap concentration and an $O(1/N)$ error bound
-for the replica-symmetric pressure in the improved high-temperature region.
+for the replica-symmetric pressure in the improved high-temperature region
+
+$$
+\rho(\beta,q)=\beta^2\kappa(q)<1,
+\qquad
+\kappa(q)=
+\begin{cases}
+\dfrac{q}{\operatorname{artanh}(q)}, & q\ne 0,\\[6pt]
+1, & q=0.
+\end{cases}
+$$
 
 The public entry point is [`mainresult_latala.lean`](mainresult_latala.lean), and
 the main theorem is
-`SpinGlass.GeneralizedLatala.model_result`.
+[`SpinGlass.GeneralizedLatala.model_result`](mainresult_latala.lean#L124).
+
+## Browse the formalization
+
+- [Public model definitions and main theorem](mainresult_latala.lean)
+- [Complete generalized Latała proof](Proof_of_generalized_latala/proof.lean)
+- [Informal mathematical blueprint](blueprint_latala.txt)
+- [Finite-volume spin-glass library](SpinGlass/)
 
 ## Mathematical statement
 
@@ -173,15 +190,16 @@ The proof uses interpolation and replica calculus, not the cavity method.
   in this directory; it is not imported by the public generalized Latała
   theorem.
 
-## Checking the formalization
+## Type-checking
 
-The repository pins Lean `v4.28.0` and mathlib `v4.28.0`. From the repository
-root, run
+The formalization targets Lean `v4.28.0` and mathlib `v4.28.0`. From the root
+of a compatible Lean project containing this directory, run
 
 ```powershell
-lake env lean GeneralizedLatala/mainresult_latala.lean
+lake env lean generalizedLatala/mainresult_latala.lean
 ```
 
 This command checks the public entry point and all of its transitive imports.
-The `lakefile.lean` and `lean-toolchain` files live at the repository root, so
-this directory is not intended to be built as a standalone Lean project.
+This public repository does not include a root `lakefile.lean` or
+`lean-toolchain`, so the directory is intended for source browsing on GitHub or
+for use inside a compatible Lean project rather than as a standalone project.
