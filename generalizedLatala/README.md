@@ -12,7 +12,7 @@ $$
 \qquad
 \kappa(q)=
 \begin{cases}
-\dfrac{q}{{\rm artanh}(q)}, & q\ne 0,\\[6pt]
+\dfrac{q}{{\rm artanh}(q)}, & q\ne 0,\\
 1, & q=0.
 \end{cases}
 $$
@@ -23,10 +23,20 @@ the main theorem is
 
 ## Browse the formalization
 
-- [Public model definitions and main theorem](mainresult_latala.lean)
-- [Complete generalized Latała proof](Proof_of_generalized_latala/proof.lean)
-- [Informal mathematical blueprint](blueprint_latala.txt)
-- [Finite-volume spin-glass library](SpinGlass/)
+- [`mainresult_latala.lean`](mainresult_latala.lean) contains the public model
+  definitions and main theorem.
+- [`Proof_of_generalized_latala/proof.lean`](Proof_of_generalized_latala/proof.lean)
+  contains the complete argument.
+- [`Proof_of_generalized_latala/IndependentEndpoint.lean`](Proof_of_generalized_latala/IndependentEndpoint.lean)
+  proves the laws and independence facts for the one-site Gaussian endpoint.
+- [`Proof_of_generalized_latala/IndependentGaussianAffineIBP.lean`](Proof_of_generalized_latala/IndependentGaussianAffineIBP.lean)
+  establishes Gaussian integration by parts for independent affine disorders.
+- [`SpinGlass/`](SpinGlass/) contains the finite-volume SK definitions, Guerra
+  interpolation, replica calculus, and analytic estimates.
+- [`blueprint_latala.txt`](blueprint_latala.txt) is the informal mathematical
+  blueprint followed by the Lean proof.
+- [`GibbsMeasure/`](GibbsMeasure/) is a separate Gibbs-measure development and
+  is not imported by the public generalized Latała theorem.
 
 ## Mathematical statement
 
@@ -102,7 +112,7 @@ In Lean, the two conclusions are bundled as `ModelClaims`. The proof actually
 constructs a common constant from
 
 $$
-\lambda_*=\frac{\kappa(q)^{-1}-\beta^2}{4}
+\lambda_{\ast}=\frac{\kappa(q)^{-1}-\beta^2}{4}
 $$
 
 and
@@ -117,8 +127,8 @@ $$
 One may take
 
 $$
-C=\frac{K(\beta,q)}{\lambda_*}
-+\frac{\beta^2K(\beta,q)}{4\lambda_*}.
+C=\frac{K(\beta,q)}{\lambda_{\ast}}
++\frac{\beta^2K(\beta,q)}{4\lambda_{\ast}}.
 $$
 
 The formal theorem permits $\beta\in\mathbb R$; the usual convention
@@ -171,26 +181,6 @@ The formal proof follows [`blueprint_latala.txt`](blueprint_latala.txt).
 - Guerra's replica-symmetric sum rule then gives the pressure error bound.
 
 The proof uses interpolation and replica calculus, not the cavity method.
-
-## Directory guide
-
-- [`mainresult_latala.lean`](mainresult_latala.lean): concise model definitions
-  and the public theorem.
-- [`blueprint_latala.txt`](blueprint_latala.txt): informal mathematical
-  blueprint mirrored by the formal proof.
-- [`Proof_of_generalized_latala/proof.lean`](Proof_of_generalized_latala/proof.lean):
-  the main argument, including the endpoint estimate, coupled free energy,
-  Gronwall bound, overlap concentration, and final theorem.
-- [`Proof_of_generalized_latala/IndependentEndpoint.lean`](Proof_of_generalized_latala/IndependentEndpoint.lean):
-  laws and independence facts for the one-site Gaussian endpoint.
-- [`Proof_of_generalized_latala/IndependentGaussianAffineIBP.lean`](Proof_of_generalized_latala/IndependentGaussianAffineIBP.lean):
-  Gaussian integration by parts for independent affine disorders.
-- [`SpinGlass/`](SpinGlass/): finite-volume SK definitions, Guerra
-  interpolation, replica calculus, analytic estimates, and local additions to
-  the probability library.
-- [`GibbsMeasure/`](GibbsMeasure/): a broader Gibbs-measure development included
-  in this directory; it is not imported by the public generalized Latała
-  theorem.
 
 ## Type-checking
 
