@@ -58,7 +58,7 @@ where $\beta$ and $h$ are inverse temperature and external field, respectively. 
 \beta^2\frac{q}{\operatorname{arctanh}q}<1.
 \]
 Note that for any $\beta<1$ and $h\in \mathbb R$, the condition above is satisfied. Moreover, for every nonzero $h$, this region contains a nonempty interval with $\beta>1$.
-We provide a formalization of the proof in \cite{brabra}.
+We provide a formalization of the proof in Lean 4 \cite{brabra}.
 \end{abstract}
 
 
@@ -625,6 +625,16 @@ This equality and \eqref{eq: overlap concentratino with t} yield
 \leq \frac{\beta^2C_0}{4\lambda_*N}.
 \]
 
+\section*{Acknowledgements}
+S.N.\ acknowledges support from JSPS KAKENHI Grant Numbers
+JP24K16937 and JP25K00911.
+
+\section*{Statement on the Use of Artificial Intelligence}
+OpenAI Codex was used to check computations and perform sanity checks.
+The Lean~4 formalization was developed with substantial assistance from
+OpenAI Codex and Aristotle. The authors reviewed and verified all
+AI-assisted output and take full responsibility for the content of this
+work.
 
 \begin{thebibliography}{10}
 

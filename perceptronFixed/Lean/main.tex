@@ -35,7 +35,7 @@ We study the replica-symmetric saddle point equations for the Ising perceptron w
 $\alpha_c(\kappa)=\frac{2}{\pi\,\mathbb E[(\kappa-Z)_+^2]}$,
 where $Z$ is a standard normal and $(x)_+=\max\{x,0\}$, such that the saddle point equation has a unique solution for $\alpha\in(0,\alpha_c(\kappa))$ and has no solution when $\alpha\ge \alpha_c(\kappa)$.
 When $\alpha\uparrow \alpha_c(\kappa)$ with $\kappa\geq 0$, the replica-symmetric free energy at this solution  diverges to $-\infty$.
-In the zero-margin case $\kappa=0$, Ding and Sun obtained a conditional uniqueness result, with one step verified numerically. Our argument gives a fully analytic proof without computer assistance. We used GPT-5 to help develop intermediate proof steps and to perform sanity-check computations.
+In the zero-margin case $\kappa=0$, Ding and Sun obtained a conditional uniqueness result, with one step verified numerically. Our argument gives a fully analytic proof without computer assistance.
 \end{abstract}
 
 \section{Setup and main results}
@@ -356,9 +356,6 @@ so whenever $\log L=o(N)$ (e.g., fixed $L$ or polynomial $L$), the probability $
 which converges to $1$ as $N\to \infty$.
 
 Thus, except for a narrow window, the two models behave in the same way.
-
-\subsection{How we use GPT-5 in this project}
-We used GPT-5 as a tool for computation and reasoning throughout the project (in particular, Lemma~\ref{lem:g-decreasing-positive}, \ref{lem:g-uniform-negative-TOBECHECKED} below). In a typical workflow, we supplied a problem together with a proposed proof strategy, and asked GPT-5 to suggest an outline and to elaborate intermediate steps. Because the outputs contained gaps or errors, we independently verified the details and either corrected them ourselves or asked GPT-5 to address specific issues. We repeated this process iteratively until reaching the final version of each proof. All arguments in the manuscript are fully analytic and were not computer-verified. Overall, we found generative AI helpful for converting informal sketches or computer-assisted arguments into fully rigorous analytic proofs. Numerical computer-assisted proofs typically depend on approximating a large number of quantities, while an analytic proof often reduces the problem to a small set of key estimates. This type of reduction appears to match well with the strengths of generative AI.
 
 \section{Auxiliary results for Theorem~\ref{thm:main}}
 \subsection{Roadmap of the proof}
@@ -1361,6 +1358,12 @@ Therefore $7976r_0>7976\cdot(25/38)=99700/19>5024$, so $C(r_0)<0$.
 Thus $C(r)<0$ for all $r\in[0,1]$. Since $r-1<0$ for $r\in(0,1)$, we obtain $(r-1)C(r)>0$ on $(0,1)$,
 and thus $P(r)>1$ on $(0,1)$. In particular, $P(r)>0$ on $(0,1)$, proving the desired inequality.
 \end{proof}
+\section*{Acknowledgements}
+The author gratefully acknowledges the Lean and Mathlib communities, whose tools and libraries made the accompanying formalization possible.
+
+\section*{Use of artificial intelligence}
+OpenAI Codex was used to check computations and perform sanity checks on the mathematical arguments. The accompanying Lean formalization required substantial implementation work and was developed with extensive assistance from OpenAI Codex and Aristotle. All AI-generated suggestions and formal code were reviewed and verified by the author, who takes full responsibility for the contents of the manuscript and the formalization.
+
 \begin{thebibliography}{99}
 \bibitem{GardnerDerrida1988}
 E.~Gardner and B.~Derrida.
