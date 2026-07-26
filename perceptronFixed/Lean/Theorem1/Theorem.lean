@@ -1,13 +1,11 @@
-
-
 import Mathlib
 
-import perceptronFixed.conditionalGaussianMoments.CGM
-import perceptronFixed.decreasing_g.decreasing_g
-import perceptronFixed.derivative_of_B.derivative_B
-import perceptronFixed.Prop_A_P.Prop_A_P
-import perceptronFixed.rational_function_bound.RatioBound
-import perceptronFixed.uniform_bound_of_g.uniform_bound_of_g
+import conditionalGaussianMoments.CGM
+import decreasing_g.decreasing_g
+import derivative_of_B.derivative_B
+import Prop_A_P.Prop_A_P
+import rational_function_bound.RatioBound
+import uniform_bound_of_g.uniform_bound_of_g
 
 
 import Batteries.Tactic.GeneralizeProofs
@@ -2328,7 +2326,7 @@ lemma expect_g_U_neg (κ : ℝ) (hκ : 0 ≤ κ) (q : ℝ) (hq : q ∈ Set.Ioo 0
       convert h_exp_neg using 1;
       rw [ ← MeasureTheory.setIntegral_union ] <;> norm_num;
       · rw [ show { z : ℝ | 0 ≤ Theorem1.U κ q z } ∪ { z : ℝ | Theorem1.U κ q z < 0 } = Set.univ by ext z; by_cases h : 0 ≤ Theorem1.U κ q z <;> aesop ] ; aesop;
-      · exact Set.disjoint_left.mpr fun x hx₁ hx₂ => hx₁.out.not_lt hx₂.out;
+      · exact Set.disjoint_left.mpr fun x hx₁ hx₂ => (not_lt_of_ge hx₁.out) hx₂.out;
       · exact measurableSet_Iio.mem.comp ( show Measurable ( fun z => Theorem1.U κ q z ) from by exact Measurable.div_const ( by exact Measurable.sub ( by exact measurable_const ) ( by exact measurable_id'.const_mul _ ) ) _ );
       · exact MeasureTheory.Integrable.integrableOn ( integrable_g_U κ q hq );
       · exact MeasureTheory.Integrable.integrableOn ( integrable_g_U κ q hq )

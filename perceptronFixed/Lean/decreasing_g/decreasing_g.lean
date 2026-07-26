@@ -1,7 +1,7 @@
 import Mathlib
 
-import perceptronFixed.conditionalGaussianMoments.CGM
-import Main
+import conditionalGaussianMoments.CGM
+import negative_F_bound.FnegLemma
 
 open scoped BigOperators Topology NNReal
 open MeasureTheory
@@ -259,9 +259,9 @@ private lemma integral_mul_φ_eq (u : ℝ) : (∫ x in Set.Ici u, x * φ x) = φ
         ext x
         constructor
         · intro hx
-          rcases le_or_lt x 0 with hx0 | hx0
+          by_cases hx0 : x ≤ 0
           · exact Or.inl hx0
-          · exact Or.inr ⟨hx0, hx⟩
+          · exact Or.inr ⟨lt_of_not_ge hx0, hx⟩
         · intro hx
           rcases hx with hx | hx
           · exact le_trans hx hu

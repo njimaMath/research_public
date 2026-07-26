@@ -1,6 +1,6 @@
 import Mathlib
 
-import perceptronFixed.Theorem1.Theorem
+import Theorem1.Theorem
 
 
 open scoped Topology
@@ -535,12 +535,12 @@ theorem second_main
   · exact tendsto_total_of_tendsto_seq κ
       (fun α hα0 hα => qSol κ α hκ hα0 hα)
       (qAlpha κ hκ)
-      (qAlpha_eq_qSol κ)
+      (fun α hα0 hα => qAlpha_eq_qSol κ α hκ hα0 hα)
       (fun α hα hlim => (second_main_seq κ hκ α hα hlim).2)
   · exact tendsto_total_of_tendsto_seq κ
       (fun α hα0 hα => rSol κ α hκ hα0 hα)
       (rAlpha κ hκ)
-      (rAlpha_eq_rSol κ)
+      (fun α hα0 hα => rAlpha_eq_rSol κ α hκ hα0 hα)
       (fun α hα hlim => (second_main_seq κ hκ α hα hlim).1)
 
 theorem third_main
@@ -549,7 +549,7 @@ theorem third_main
   exact tendsto_total_of_tendsto_seq κ
     (fun α hα0 hα => RSStar κ α hκ hα0 hα)
     (RSStarAlpha κ hκ)
-    (RSStarAlpha_eq_RSStar κ)
+    (fun α hα0 hα => RSStarAlpha_eq_RSStar κ α hκ hα0 hα)
     (third_main_seq κ hκ)
 
 end

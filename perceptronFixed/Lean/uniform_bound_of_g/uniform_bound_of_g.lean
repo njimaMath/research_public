@@ -1,6 +1,6 @@
 import Mathlib
-import perceptronFixed.decreasing_g.decreasing_g
-import perceptronFixed.rational_function_bound.RatioBound
+import decreasing_g.decreasing_g
+import rational_function_bound.RatioBound
 
 open scoped BigOperators Topology NNReal
 open MeasureTheory

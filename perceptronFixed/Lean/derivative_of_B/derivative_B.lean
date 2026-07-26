@@ -88,14 +88,8 @@ private lemma integrable_φ : Integrable φ := by
   exact h'.const_mul (1 / Real.sqrt (2 * Real.pi))
 
 private lemma continuous_φ : Continuous φ := by
-  change Continuous (fun u : ℝ => (1 / Real.sqrt (2 * Real.pi)) * rexp (-(u ^ 2) / 2))
-  have h_inner : Continuous (fun u : ℝ => -(u ^ 2) / (2 : ℝ)) := by
-    have h_pow : Continuous (fun u : ℝ => u ^ 2) := by
-      simpa using (continuous_pow 2 : Continuous fun u : ℝ => u ^ 2)
-    simpa [div_eq_mul_inv, mul_assoc] using (h_pow.neg.div_const (2 : ℝ))
-  have h_exp : Continuous (fun u : ℝ => rexp (-(u ^ 2) / (2 : ℝ))) := h_inner.rexp
-  have h_const : Continuous (fun _u : ℝ => (1 / Real.sqrt (2 * Real.pi))) := continuous_const
-  simpa [div_eq_mul_inv, mul_assoc] using h_const.mul h_exp
+  unfold φ
+  fun_prop
 
 private lemma φ_pos (u : ℝ) : 0 < φ u := by
   unfold φ
@@ -184,10 +178,9 @@ private lemma Φ_eq_const_add_intervalIntegral (u : ℝ) :
       ext x
       constructor
       · intro hx
-        have hx0 : x ≤ 0 ∨ 0 < x := le_or_lt x 0
-        cases hx0 with
-        | inl hx0 => exact Or.inl hx0
-        | inr hx0 => exact Or.inr ⟨hx0, hx⟩
+        by_cases hx0 : x ≤ 0
+        · exact Or.inl hx0
+        · exact Or.inr ⟨lt_of_not_ge hx0, hx⟩
       · intro hx
         rcases hx with hx | hx
         · exact le_trans hx hu
@@ -579,7 +572,7 @@ lemma Φbar_eq_phi_div_sub_integral {u : ℝ} (hu : 0 < u) :
       have hφc : ContinuousAt (fun x : ℝ => -φ x) u := continuous_φ.continuousAt.neg
       have hinv : ContinuousAt (fun x : ℝ => x⁻¹) u :=
         ContinuousInv₀.continuousAt_inv₀ (ne_of_gt hu)
-      simpa [mul_assoc] using hφc.mul hinv
+      exact hφc.mul hinv
     exact hcont.tendsto.mono_left nhdsWithin_le_nhds
 
   have h_infty :
@@ -811,12 +804,11 @@ lemma B_eq :
           (μ := P)
           (F := fun s ω => h (U (κ := κ) (Z := Z) s ω))
           (x₀ := t)
-          (ε := ε)
           (bound := bound)
           (F' := fun s ω =>
             (deriv h (U (κ := κ) (Z := Z) s ω))
               * (deriv (fun r => U (κ := κ) (Z := Z) r ω) s))
-          ε_pos h_meas h_int hF'_meas h_bound bound_int h_diff).2
+          (Metric.ball_mem_nhds t ε_pos) h_meas h_int hF'_meas h_bound bound_int h_diff).2
     simpa [𝔼] using hmain
 
   /-- Analytic domination step: justify differentiation under the expectation.
