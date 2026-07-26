@@ -12,7 +12,7 @@ $$
 \qquad
 \kappa(q)=
 \begin{cases}
-\dfrac{q}{{\rm artanh}(q)}, & q\ne 0,\\
+\dfrac{q}{\operatorname{artanh}(q)}, & q\ne 0,\\
 1, & q=0.
 \end{cases}
 $$
