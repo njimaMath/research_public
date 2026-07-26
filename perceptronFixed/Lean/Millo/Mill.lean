@@ -77,14 +77,8 @@ private lemma integrable_phi : Integrable phi := by
   exact h'.const_mul (1 / Real.sqrt (2 * Real.pi))
 
 private lemma continuous_phi : Continuous phi := by
-  change Continuous (fun u : ℝ => (1 / Real.sqrt (2 * Real.pi)) * Real.exp (-(u ^ 2) / 2))
-  have h_inner : Continuous (fun u : ℝ => -(u ^ 2) / (2 : ℝ)) := by
-    have h_pow : Continuous (fun u : ℝ => u ^ 2) := by
-      simpa using (continuous_pow 2 : Continuous fun u : ℝ => u ^ 2)
-    simpa [div_eq_mul_inv, mul_assoc] using (h_pow.neg.div_const (2 : ℝ))
-  have h_exp : Continuous (fun u : ℝ => Real.exp (-(u ^ 2) / (2 : ℝ))) := Real.continuous_exp.comp h_inner
-  have h_const : Continuous (fun _u : ℝ => (1 / Real.sqrt (2 * Real.pi))) := continuous_const
-  simpa [div_eq_mul_inv, mul_assoc] using h_const.mul h_exp
+  unfold phi
+  fun_prop
 
 lemma phi_pos (u : ℝ) : 0 < phi u := by
   have hconst : 0 < (1 / Real.sqrt (2 * Real.pi) : ℝ) := by
@@ -329,7 +323,7 @@ lemma PhiC_eq_phi_div_sub_integral (u : ℝ) (hu : 0 < u) :
       have hφc : ContinuousAt (fun x : ℝ => -phi x) u := continuous_phi.continuousAt.neg
       have hinv : ContinuousAt (fun x : ℝ => x⁻¹) u :=
         ContinuousInv₀.continuousAt_inv₀ (ne_of_gt hu)
-      simpa [mul_assoc] using hφc.mul hinv
+      exact hφc.mul hinv
     exact hcont.tendsto.mono_left nhdsWithin_le_nhds
 
   have h_infty :
