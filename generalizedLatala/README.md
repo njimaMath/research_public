@@ -1,6 +1,6 @@
 # Generalized Latała bound for the SK model
 
-This directory contains a Lean 4 formalization of a generalized Latała
+This directory contains Lean 4 formalization of a generalized Latała
 interpolation argument for the finite-volume Sherrington--Kirkpatrick spin-glass
 model. The formalization builds on the
 [`or4nge19/SpinGlass`](https://github.com/or4nge19/SpinGlass) library. The main
