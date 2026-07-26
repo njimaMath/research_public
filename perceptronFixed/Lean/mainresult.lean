@@ -502,66 +502,55 @@ private theorem exists_good_approx_seq
   have hα'_tendsto : Tendsto α' atTop (𝓝 (αc κ)) := hnhds.congr' hα'_eq.symm
   exact ⟨α', hα'_good, hα'_tendsto, hα'_eq⟩
 
+private theorem tendsto_total_of_tendsto_seq
+    {β : Type*}
+    {l : Filter β}
+    (κ : ℝ)
+    (f : ∀ α : ℝ, 0 < α → α < αc κ → β)
+    (fTotal : ℝ → β)
+    (fTotal_eq : ∀ α hα0 hα, fTotal α = f α hα0 hα)
+    (hseq :
+      ∀ (α : ℕ → ℝ) (hα : ∀ n, 0 < α n ∧ α n < αc κ),
+        Tendsto α atTop (𝓝 (αc κ)) →
+          Tendsto (fun n => f (α n) (hα n).1 (hα n).2) atTop l) :
+    Tendsto fTotal (𝓝[<] (αc κ)) l := by
+  refine Filter.tendsto_of_seq_tendsto ?_
+  intro α hlim
+  obtain ⟨α', hα', hα'lim, hα'eq⟩ := exists_good_approx_seq κ α hlim
+  have htotal' : Tendsto (fun n => fTotal (α' n)) atTop l := by
+    have hfun :
+        (fun n => fTotal (α' n)) =
+          fun n => f (α' n) (hα' n).1 (hα' n).2 := by
+      funext n
+      exact fTotal_eq (α' n) (hα' n).1 (hα' n).2
+    rw [hfun]
+    exact hseq α' hα' hα'lim
+  exact htotal'.congr' (hα'eq.fun_comp fTotal)
+
 theorem second_main
     (κ : ℝ) (hκ : 0 ≤ κ) :
     Tendsto (qAlpha κ hκ) (𝓝[<] (αc κ)) (𝓝 (1 : ℝ)) ∧
       Tendsto (rAlpha κ hκ) (𝓝[<] (αc κ)) atTop := by
   constructor
-  · refine Filter.tendsto_of_seq_tendsto ?_
-    intro α hlim
-    obtain ⟨α', hα', hα'lim, hα'eq⟩ := exists_good_approx_seq κ α hlim
-    have hseq := second_main_seq κ hκ α' hα' hα'lim
-    have hq' :
-        Tendsto (fun n => qAlpha κ hκ (α' n)) atTop (𝓝 (1 : ℝ)) := by
-      have hq_eq :
-          (fun n => qAlpha κ hκ (α' n)) =
-            fun n => qSol κ (α' n) hκ (hα' n).1 (hα' n).2 := by
-        funext n
-        exact qAlpha_eq_qSol κ (α' n) hκ (hα' n).1 (hα' n).2
-      rw [hq_eq]
-      exact hseq.2
-    have hq_event :
-        (fun n => qAlpha κ hκ (α' n)) =ᶠ[atTop] (fun n => qAlpha κ hκ (α n)) := by
-      exact hα'eq.mono (fun n hn => by simp [hn])
-    exact hq'.congr' hq_event
-  · refine Filter.tendsto_of_seq_tendsto ?_
-    intro α hlim
-    obtain ⟨α', hα', hα'lim, hα'eq⟩ := exists_good_approx_seq κ α hlim
-    have hseq := second_main_seq κ hκ α' hα' hα'lim
-    have hr' :
-        Tendsto (fun n => rAlpha κ hκ (α' n)) atTop atTop := by
-      have hr_eq :
-          (fun n => rAlpha κ hκ (α' n)) =
-            fun n => rSol κ (α' n) hκ (hα' n).1 (hα' n).2 := by
-        funext n
-        exact rAlpha_eq_rSol κ (α' n) hκ (hα' n).1 (hα' n).2
-      rw [hr_eq]
-      exact hseq.1
-    have hr_event :
-        (fun n => rAlpha κ hκ (α' n)) =ᶠ[atTop] (fun n => rAlpha κ hκ (α n)) := by
-      exact hα'eq.mono (fun n hn => by simp [hn])
-    exact hr'.congr' hr_event
+  · exact tendsto_total_of_tendsto_seq κ
+      (fun α hα0 hα => qSol κ α hκ hα0 hα)
+      (qAlpha κ hκ)
+      (qAlpha_eq_qSol κ)
+      (fun α hα hlim => (second_main_seq κ hκ α hα hlim).2)
+  · exact tendsto_total_of_tendsto_seq κ
+      (fun α hα0 hα => rSol κ α hκ hα0 hα)
+      (rAlpha κ hκ)
+      (rAlpha_eq_rSol κ)
+      (fun α hα hlim => (second_main_seq κ hκ α hα hlim).1)
 
 theorem third_main
     (κ : ℝ) (hκ : 0 ≤ κ) :
     Tendsto (RSStarAlpha κ hκ) (𝓝[<] (αc κ)) atBot := by
-  refine Filter.tendsto_of_seq_tendsto ?_
-  intro α hlim
-  obtain ⟨α', hα', hα'lim, hα'eq⟩ := exists_good_approx_seq κ α hlim
-  have hseq := third_main_seq κ hκ α' hα' hα'lim
-  have hRS' :
-      Tendsto (fun n => RSStarAlpha κ hκ (α' n)) atTop atBot := by
-    have hRS_eq :
-        (fun n => RSStarAlpha κ hκ (α' n)) =
-          fun n => RSStar κ (α' n) hκ (hα' n).1 (hα' n).2 := by
-      funext n
-      exact RSStarAlpha_eq_RSStar κ (α' n) hκ (hα' n).1 (hα' n).2
-    rw [hRS_eq]
-    exact hseq
-  have hRS_event :
-      (fun n => RSStarAlpha κ hκ (α' n)) =ᶠ[atTop] (fun n => RSStarAlpha κ hκ (α n)) := by
-    exact hα'eq.mono (fun n hn => by simp [hn])
-  exact hRS'.congr' hRS_event
+  exact tendsto_total_of_tendsto_seq κ
+    (fun α hα0 hα => RSStar κ α hκ hα0 hα)
+    (RSStarAlpha κ hκ)
+    (RSStarAlpha_eq_RSStar κ)
+    (third_main_seq κ hκ)
 
 end
 
