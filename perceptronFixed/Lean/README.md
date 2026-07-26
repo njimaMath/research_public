@@ -39,11 +39,12 @@ This project is pinned by [lean-toolchain](./lean-toolchain) and [lakefile.toml]
 - Lean `v4.26.0`
 - mathlib `v4.26.0`
 
-From this directory, run:
+From this directory, build the library and check the public entry point:
 
 ```bash
 lake build perceptronFixed
+lake env lean mainresult.lean
 ```
 
-In the current checkout, this command completes successfully.
+The second command checks `mainresult.lean` and all of its transitive imports.
 

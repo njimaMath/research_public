@@ -1,3 +1,4 @@
 # Mathlib
 
-This folder contains `.lean` files with declarations missing from the current version of Mathlib.
+This directory contains local Lean compatibility files for declarations that
+are not available in the mathlib revision targeted by this formalization.

@@ -1,41 +1,41 @@
-# research_public
+# Ising perceptron research artifacts
 
-This repository collects public research artifacts (manuscripts, numerics, and formal proof sketches).
+This directory contains the manuscript, numerical checks, and Lean 4
+formalization for *“Uniqueness of RS Saddle Point for Ising Perceptron”*.
 
 ## Contents
 
-### `perceptronFixed/`
-
-Supporting material for *“Uniqueness of RS Saddle Point for Ising Perceptron”*.
-
-- `perceptronFixed/manuscript/index.html`: interactive HTML manuscript (open in a browser).
-- `perceptronFixed/numerics/`: Python scripts + reports.
-- `perceptronFixed/Lean/`: Lean 4 + mathlib files and proof blueprints.
+- [`manuscript/index.html`](manuscript/index.html): interactive HTML manuscript.
+- [`numerics/`](numerics/): Python scripts and numerical reports.
+- [`Lean/`](Lean/): Lean 4 files, proof blueprints, and project configuration.
 
 ## Quick start
 
 ### Read the manuscript
 
-Open `perceptronFixed/manuscript/index.html` in your browser.
-Hosted version: https://njimamath.github.io/research_public/perceptronFixed/manuscript/index.html
+Open [`manuscript/index.html`](manuscript/index.html) in a browser, or read the
+[hosted version](https://njimamath.github.io/research_public/perceptronFixed/manuscript/index.html).
 
 ### Run numerics
 
-From the repo root (Python 3.10+ recommended):
+From the repository root, using Python 3.10 or later:
 
 ```bash
 python -m venv .venv
-# activate the venv, then:
+# Activate the virtual environment, then run:
 python -m pip install numpy scipy
 python perceptronFixed/numerics/simulate_bprime_tobechecked.py --help
 ```
 
-Note: `perceptronFixed/numerics/numerical_check.py` currently imports modules (e.g. `normal_utils`) that are not included in this repository.
+The separate `numerical_check.py` script depends on local modules such as
+`normal_utils` that are not included in this repository.
 
 ### Check Lean proofs
 
-The Lean files import `Mathlib`. To compile them, place the files under a Lean 4 + mathlib (Lake) project and run, e.g.:
+The [`Lean/`](Lean/) directory is a Lake project pinned to Lean and mathlib
+`v4.26.0`. To check the public entry point and all of its imports, run:
 
 ```bash
-lake env lean perceptronFixed/Lean/Fneg/FnegLemma.lean
+cd perceptronFixed/Lean
+lake env lean mainresult.lean
 ```
