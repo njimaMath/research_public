@@ -1,4 +1,5 @@
 import Mathlib
+import PerceptronIBP.GaussianIntegrationByParts
 
 /-!
 Blueprint scaffold: proof that `B'(t) = 𝔼[g(U_t)]`.
@@ -1139,128 +1140,6 @@ lemma deriv_ψ (ht : t ∈ Set.Ioo (0 : ℝ) 1) (z : ℝ) :
         * deriv (fun u => deriv h u) ((κ - Real.sqrt t * z) / Real.sqrt (1 - t)) := by
         simp [ufun]
 
-private lemma gaussianIBP_gaussianReal
-    (ψ : ℝ → ℝ)
-    (hψ : Differentiable ℝ ψ)
-    (hψ_int : Integrable ψ (ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0))))
-    (hψ'_int :
-      Integrable (fun x => deriv ψ x) (ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0))))
-    (hxψ_int :
-      Integrable (fun x => x * ψ x) (ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)))) :
-    (∫ x, x * ψ x ∂(ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)))) =
-      (∫ x, deriv ψ x ∂(ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)))) := by
-  set μ : Measure ℝ := ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0))
-  have hv : (1 : ℝ≥0) ≠ 0 := by simp
-  have hf : Measurable (ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0)) :=
-    ProbabilityTheory.measurable_gaussianPDF _ _
-  have hflt :
-      (∀ᵐ x ∂(volume : Measure ℝ), ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0) x < ∞) := by
-    exact ae_of_all _ (fun _ => ProbabilityTheory.gaussianPDF_lt_top)
-
-  have hψ_int' :
-      Integrable ψ (volume.withDensity (ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0))) := by
-    simpa [μ, ProbabilityTheory.gaussianReal_of_var_ne_zero (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) hv] using
-      hψ_int
-  have hψ'_int' :
-      Integrable (fun x => deriv ψ x)
-        (volume.withDensity (ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0))) := by
-    simpa [μ, ProbabilityTheory.gaussianReal_of_var_ne_zero (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) hv] using
-      hψ'_int
-  have hxψ_int' :
-      Integrable (fun x => x * ψ x)
-        (volume.withDensity (ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0))) := by
-    simpa [μ, ProbabilityTheory.gaussianReal_of_var_ne_zero (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) hv] using
-      hxψ_int
-
-  have hψφ : Integrable (fun x : ℝ => ψ x * φ x) (volume : Measure ℝ) := by
-    have h :=
-      (integrable_withDensity_iff_integrable_smul' (μ := (volume : Measure ℝ))
-            (f := ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0)) hf hflt (g := ψ)).1 hψ_int'
-    simpa [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm, φ_eq_gaussianPDFReal] using h
-  have hψ'φ : Integrable (fun x : ℝ => deriv ψ x * φ x) (volume : Measure ℝ) := by
-    have h :=
-      (integrable_withDensity_iff_integrable_smul' (μ := (volume : Measure ℝ))
-            (f := ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0)) hf hflt (g := fun x => deriv ψ x)).1
-        hψ'_int'
-    simpa [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm, φ_eq_gaussianPDFReal] using h
-  have hxψφ : Integrable (fun x : ℝ => (x * ψ x) * φ x) (volume : Measure ℝ) := by
-    have h :=
-      (integrable_withDensity_iff_integrable_smul' (μ := (volume : Measure ℝ))
-            (f := ProbabilityTheory.gaussianPDF (0 : ℝ) (1 : ℝ≥0)) hf hflt (g := fun x => x * ψ x)).1
-        hxψ_int'
-    simpa [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm, φ_eq_gaussianPDFReal] using h
-
-  have hu : ∀ x, HasDerivAt ψ (deriv ψ x) x := fun x => (hψ x).hasDerivAt
-  have hvφ : ∀ x, HasDerivAt φ (-x * φ x) x := by
-    intro x
-    have hdiff : DifferentiableAt ℝ φ x := by
-      change
-        DifferentiableAt ℝ
-          (fun u : ℝ => (1 / Real.sqrt (2 * Real.pi)) * rexp (-(u ^ 2) / 2)) x
-      fun_prop
-    simpa [deriv_φ (u := x)] using hdiff.hasDerivAt
-
-  have huv' : Integrable (fun x : ℝ => ψ x * (-x * φ x)) (volume : Measure ℝ) := by
-    have hneg : Integrable (fun x : ℝ => -(x * (ψ x * φ x))) (volume : Measure ℝ) := by
-      simpa [mul_assoc] using (hxψφ.const_mul (-1 : ℝ))
-    have hpoint :
-        (fun x : ℝ => ψ x * (-x * φ x)) = fun x => -(x * (ψ x * φ x)) := by
-      funext x
-      ring_nf
-    rw [hpoint]
-    exact hneg
-
-  have hu'v : Integrable (fun x : ℝ => deriv ψ x * φ x) (volume : Measure ℝ) := hψ'φ
-
-  have huv : Integrable (fun x : ℝ => ψ x * φ x) (volume : Measure ℝ) := hψφ
-
-  have hibp_vol :
-      (∫ x : ℝ, ψ x * (-x * φ x)) = -∫ x : ℝ, (deriv ψ x) * φ x := by
-    simpa using
-      (MeasureTheory.integral_mul_deriv_eq_deriv_mul_of_integrable
-        (u := ψ) (v := φ) (u' := fun x => deriv ψ x) (v' := fun x => -x * φ x)
-        hu hvφ huv' hu'v huv)
-
-  have hibp_vol' :
-      (∫ x : ℝ, (x * ψ x) * φ x) = ∫ x : ℝ, (deriv ψ x) * φ x := by
-    have hneg :
-        (∫ x : ℝ, (x * ψ x) * φ x) = -∫ x : ℝ, ψ x * (-x * φ x) := by
-      -- Expand and use linearity.
-      have :
-          (fun x : ℝ => (x * ψ x) * φ x) = fun x => -(ψ x * (-x * φ x)) := by
-        funext x
-        ring_nf
-      simp [this, MeasureTheory.integral_neg]
-    have hneg' :
-        -∫ x : ℝ, ψ x * (-x * φ x) = ∫ x : ℝ, (deriv ψ x) * φ x := by
-      simpa using congrArg Neg.neg hibp_vol
-    simpa [hneg] using hneg'
-
-  -- Go back to the Gaussian measure using `integral_gaussianReal_eq_integral_smul`.
-  have hL :
-      (∫ x, x * ψ x ∂μ) = ∫ x : ℝ, (x * ψ x) * φ x := by
-    have hμ :
-        (∫ x, x * ψ x ∂μ) =
-          ∫ x : ℝ, ProbabilityTheory.gaussianPDFReal 0 (1 : ℝ≥0) x * (x * ψ x) := by
-      simpa [μ, ProbabilityTheory.integral_gaussianReal_eq_integral_smul (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) hv,
-        smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
-    simpa [μ, φ_eq_gaussianPDFReal, mul_assoc, mul_left_comm, mul_comm] using hμ
-  have hR :
-      (∫ x, deriv ψ x ∂μ) = ∫ x : ℝ, (deriv ψ x) * φ x := by
-    have hμ :
-        (∫ x, deriv ψ x ∂μ) =
-          ∫ x : ℝ, ProbabilityTheory.gaussianPDFReal 0 (1 : ℝ≥0) x * (deriv ψ x) := by
-      simpa [μ, ProbabilityTheory.integral_gaussianReal_eq_integral_smul (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) hv,
-        smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
-    simpa [μ, φ_eq_gaussianPDFReal, mul_assoc, mul_left_comm, mul_comm] using hμ
-
-  -- Finish.
-  calc
-    (∫ x, x * ψ x ∂μ) = ∫ x : ℝ, (x * ψ x) * φ x := hL
-    _ = ∫ x : ℝ, (deriv ψ x) * φ x := hibp_vol'
-    _ = (∫ x, deriv ψ x ∂μ) := by
-      simpa [hR]
-
 /-- If `Z` has the standard Gaussian law, then `Z` is a.e. measurable. -/
 lemma aemeasurable_Z_of_gaussian
     (hZ_gaussian :
@@ -1358,8 +1237,8 @@ lemma Z_term_eq
       (∫ x, x * (ψ (κ := κ) (t := t) x) ∂μ) =
         (∫ x, deriv (ψ (κ := κ) (t := t)) x ∂μ) := by
     simpa [μ] using
-      gaussianIBP_gaussianReal (ψ := ψ (κ := κ) (t := t)) hψdiff hψ_int_gauss hψ'_int_gauss
-        hxψ_int_gauss
+      ProbabilityTheory.gaussianReal_integration_by_parts_of_integrable
+        (F := ψ (κ := κ) (t := t)) hψdiff hψ_int_gauss hψ'_int_gauss hxψ_int_gauss
 
   have hibp :
       (∫ ω, (Z ω) * (ψ (κ := κ) (t := t) (Z ω)) ∂P) =
