@@ -1,5 +1,7 @@
 import Mathlib.Analysis.SpecialFunctions.Artanh
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Tactic
 
@@ -46,15 +48,22 @@ The derivative of `tanh x / x` is nonpositive for positive `x`.
 -/
 private lemma deriv_tanh_div_nonpos {x : ℝ} (hx : 0 < x) :
     deriv (fun y : ℝ => Real.tanh y / y) x ≤ 0 := by
-  -- Compute the derivative of `tanh x / x` using the quotient rule.
-  have h_deriv : deriv (fun y => Real.tanh y / y) x = ((1 - Real.tanh x ^ 2) * x - Real.tanh x) / x ^ 2 := by
-    unfold Real.tanh; ring;
-    norm_num [ Complex.tanh, Complex.sinh, Complex.cosh, hx.ne' ];
-    norm_cast ; norm_num [ Real.exp_ne_zero, Real.exp_neg, Real.differentiableAt_exp, hx.ne', div_eq_mul_inv, differentiableAt_inv ] ; ring;
-    norm_num [ Real.exp_ne_zero, Real.differentiableAt_exp, differentiableAt_inv, ne_of_gt ( add_pos ( Real.exp_pos _ ) ( inv_pos.mpr ( Real.exp_pos _ ) ) ), ne_of_gt hx ] ; ring;
-    -- Combine like terms and simplify the expression.
+  have ht : HasDerivAt Real.tanh (1 - Real.tanh x ^ 2) x := by
+    have h := (Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x)
+      (Real.cosh_pos x).ne'
+    have hfun : (fun y : ℝ => Real.sinh y / Real.cosh y) = Real.tanh := by
+      funext y
+      exact (Real.tanh_eq_sinh_div_cosh y).symm
+    change HasDerivAt (fun y : ℝ => Real.sinh y / Real.cosh y) _ x at h
+    rw [hfun] at h
+    apply h.congr_deriv
+    rw [Real.tanh_eq_sinh_div_cosh, div_pow]
     field_simp
-    ring;
+  have h_deriv : deriv (fun y => Real.tanh y / y) x =
+      ((1 - Real.tanh x ^ 2) * x - Real.tanh x) / x ^ 2 := by
+    change deriv (Real.tanh / id) x = _
+    simpa only [Pi.div_apply, id_eq, mul_one] using
+      (ht.div (hasDerivAt_id x) hx.ne').deriv
   rw [ h_deriv, div_le_iff₀ ] <;> norm_num [ Real.tanh_eq_sinh_div_cosh ];
   · field_simp;
     simpa [ Real.cosh_sq' ] using le_sinh_mul_cosh hx.le;
@@ -88,65 +97,64 @@ function of the squared argument.
 private lemma log_cosh_le_quadratic_tangent {a : ℝ} (ha : 0 < a) (x : ℝ) :
     Real.log (Real.cosh x) - Real.log (Real.cosh a) ≤
       Real.tanh a / (2 * a) * (x ^ 2 - a ^ 2) := by
-  by_cases hx : x = 0 <;> simp_all +decide [ ← Real.log_div, ne_of_gt, Real.cosh_pos ];
-  · rw [ div_mul_eq_mul_div, div_le_iff₀ ] <;> try positivity;
-    -- We'll use the fact that $\log(\cosh(a)) \geq \frac{a \tanh(a)}{2}$ for all $a > 0$.
-    have h_log_cosh : ∀ a > 0, Real.log (Real.cosh a) ≥ a * Real.tanh a / 2 := by
-      intro a ha
-      have h_deriv : ∀ x > 0, deriv (fun x => Real.log (Real.cosh x) - x * Real.tanh x / 2) x ≥ 0 := by
-        intro x hx; norm_num [ Real.tanh_eq_sinh_div_cosh, Real.differentiableAt_sinh, Real.differentiableAt_cosh, ne_of_gt ( Real.cosh_pos _ ) ] ; ring_nf; norm_num [ Real.sinh_sq, ne_of_gt ( Real.cosh_pos _ ) ] ;
-        field_simp;
-        nlinarith [ le_sinh_mul_cosh hx.le, Real.sinh_sq x, Real.cosh_pos x ];
-      -- Apply the mean value theorem to the interval $[0, a]$.
-      obtain ⟨c, hc⟩ : ∃ c ∈ Set.Ioo 0 a, deriv (fun x => Real.log (Real.cosh x) - x * Real.tanh x / 2) c = (Real.log (Real.cosh a) - a * Real.tanh a / 2 - (Real.log (Real.cosh 0) - 0 * Real.tanh 0 / 2)) / (a - 0) := by
-        have := exists_deriv_eq_slope ( f := fun x => Real.log ( Real.cosh x ) - x * Real.tanh x / 2 ) ha;
-        exact this ( ContinuousOn.sub ( ContinuousOn.log ( Real.continuous_cosh.continuousOn ) fun x hx => ne_of_gt ( Real.cosh_pos x ) ) ( ContinuousOn.div_const ( continuousOn_id.mul ( show ContinuousOn ( fun x => Real.tanh x ) ( Set.Icc 0 a ) from ContinuousOn.congr ( show ContinuousOn ( fun x => Real.sinh x / Real.cosh x ) ( Set.Icc 0 a ) from ContinuousOn.div ( Real.continuous_sinh.continuousOn ) ( Real.continuous_cosh.continuousOn ) fun x hx => ne_of_gt ( Real.cosh_pos x ) ) fun x hx => Real.tanh_eq_sinh_div_cosh x ) ) _ ) ) ( fun x hx => DifferentiableAt.differentiableWithinAt ( by norm_num [ Real.differentiableAt_sinh, Real.differentiableAt_cosh, ne_of_gt ( Real.cosh_pos _ ), Real.tanh_eq_sinh_div_cosh ] ) );
-      have := h_deriv c hc.1.1; rw [ hc.2, ge_iff_le ] at this; rw [ le_div_iff₀ ] at this <;> norm_num at * <;> linarith;
-    nlinarith [ h_log_cosh a ha ];
-  · obtain ⟨b, hb⟩ : ∃ b > 0, Real.log (Real.cosh x) - Real.log (Real.cosh a) = Real.log (Real.cosh b) - Real.log (Real.cosh a) ∧ b^2 = x^2 := by
-      exact ⟨ |x|, abs_pos.mpr hx, by simp +decide [ Real.cosh_abs ], by simp +decide ⟩;
-    cases' lt_trichotomy b a with h h <;> simp_all +decide [ Real.log_div, ne_of_gt, Real.cosh_pos ];
-    · -- By the mean value theorem, there exists some $c \in (b, a)$ such that $\frac{\log(\cosh a) - \log(\cosh b)}{a^2 - b^2} = \frac{\tanh c}{2c}$.
-      obtain ⟨c, hc⟩ : ∃ c ∈ Set.Ioo b a, (Real.log (Real.cosh a) - Real.log (Real.cosh b)) / (a^2 - b^2) = Real.tanh c / (2 * c) := by
-        have h_mean_value : ∃ c ∈ Set.Ioo b a, deriv (fun y => Real.log (Real.cosh y)) c / deriv (fun y => y^2) c = (Real.log (Real.cosh a) - Real.log (Real.cosh b)) / (a^2 - b^2) := by
-          have h_mean_value : ∃ c ∈ Set.Ioo b a, deriv (fun y => Real.log (Real.cosh y) - (Real.log (Real.cosh b) + (Real.log (Real.cosh a) - Real.log (Real.cosh b)) / (a^2 - b^2) * (y^2 - b^2))) c = 0 := by
-            apply_rules [ exists_deriv_eq_zero ];
-            · exact ContinuousOn.sub ( ContinuousOn.log ( Real.continuous_cosh.continuousOn ) fun y hy => ne_of_gt ( Real.cosh_pos _ ) ) ( Continuous.continuousOn ( by continuity ) );
-            · rw [ div_mul_cancel₀ ] <;> nlinarith;
-          norm_num [ Real.differentiableAt_cosh, ne_of_gt ( Real.cosh_pos _ ) ] at *;
-          exact h_mean_value.imp fun x hx => ⟨ hx.1, by rw [ div_eq_iff ( by linarith ) ] ; linarith ⟩;
-        obtain ⟨ c, hc₁, hc₂ ⟩ := h_mean_value; use c; simp_all +decide [ Real.tanh_eq_sinh_div_cosh, Real.differentiableAt_sinh, Real.differentiableAt_cosh, ne_of_gt ( Real.cosh_pos _ ) ] ;
-      -- Since $c \in (b, a)$, we have $\frac{\tanh c}{2c} \geq \frac{\tanh a}{2a}$ by the antitone property of $\frac{\tanh x}{x}$.
-      have h_antitone : Real.tanh c / (2 * c) ≥ Real.tanh a / (2 * a) := by
-        have h_antitone : AntitoneOn (fun x : ℝ => Real.tanh x / x) (Set.Ioi 0) :=
-          antitoneOn_tanh_div
-        have := h_antitone ( show 0 < c by linarith [ hc.1.1 ] ) ( show 0 < a by linarith ) ( by linarith [ hc.1.2 ] ) ; ring_nf at *; linarith;
-      rw [ ← hb.2.2, ← hc.2, ge_iff_le, le_div_iff₀ ] at * <;> nlinarith;
-    · cases' h with h h <;> simp_all +decide [ Real.tanh_eq_sinh_div_cosh ];
-      -- By the mean value theorem, there exists some $c \in (a, b)$ such that $\frac{\log(\cosh b) - \log(\cosh a)}{b^2 - a^2} = \frac{\sinh c}{2c \cosh c}$.
-      obtain ⟨c, hc⟩ : ∃ c ∈ Set.Ioo a b, (Real.log (Real.cosh b) - Real.log (Real.cosh a)) / (b^2 - a^2) = (Real.sinh c) / (2 * c * Real.cosh c) := by
-        have h_mvt : ∃ c ∈ Set.Ioo a b, deriv (fun x => Real.log (Real.cosh x)) c / deriv (fun x => x^2) c = (Real.log (Real.cosh b) - Real.log (Real.cosh a)) / (b^2 - a^2) := by
-          have h_mvt : ∃ c ∈ Set.Ioo a b, deriv (fun x => Real.log (Real.cosh x) - (Real.log (Real.cosh a) + (Real.log (Real.cosh b) - Real.log (Real.cosh a)) / (b^2 - a^2) * (x^2 - a^2))) c = 0 := by
-            apply_rules [ exists_deriv_eq_zero ];
-            · exact ContinuousOn.sub ( ContinuousOn.log ( Real.continuous_cosh.continuousOn ) fun x hx => ne_of_gt ( Real.cosh_pos x ) ) ( Continuous.continuousOn ( by continuity ) );
-            · rw [ div_mul_cancel₀ ] <;> nlinarith;
-          obtain ⟨ c, hc₁, hc₂ ⟩ := h_mvt; use c; norm_num [ Real.differentiableAt_cosh, ne_of_gt ( Real.cosh_pos _ ) ] at *;
-          exact ⟨ hc₁, by rw [ div_eq_iff ( by linarith ) ] ; linarith ⟩;
-        norm_num [ Real.differentiableAt_cosh, ne_of_gt ( Real.cosh_pos _ ) ] at *;
-        exact h_mvt.imp fun x hx => ⟨ hx.1, by rw [ ← hx.2 ] ; ring ⟩;
-      -- Since $\frac{\sinh c}{2c \cosh c} \leq \frac{\sinh a}{2a \cosh a}$ for $c > a$, we have $\frac{\log(\cosh b) - \log(\cosh a)}{b^2 - a^2} \leq \frac{\sinh a}{2a \cosh a}$.
-      have h_ineq : (Real.sinh c) / (2 * c * Real.cosh c) ≤ (Real.sinh a) / (2 * a * Real.cosh a) := by
-        have h_ineq : ∀ x y : ℝ, 0 < x → x < y → (Real.sinh y) / (y * Real.cosh y) ≤ (Real.sinh x) / (x * Real.cosh x) := by
-          intros x y hx hy
-          have h_deriv_neg : ∀ x : ℝ, 0 < x → deriv (fun x => Real.sinh x / (x * Real.cosh x)) x ≤ 0 := by
-            intro x hx; norm_num [ Real.differentiableAt_sinh, Real.differentiableAt_cosh, ne_of_gt hx, ne_of_gt ( Real.cosh_pos x ) ];
-            rw [ div_le_iff₀ ] <;> nlinarith [ Real.sinh_sq x, Real.sinh_pos_iff.mpr hx, Real.cosh_pos x, mul_pos hx ( Real.cosh_pos x ), le_sinh_mul_cosh hx.le ];
-          have := exists_deriv_eq_slope ( f := fun x => Real.sinh x / ( x * Real.cosh x ) ) hy;
-          contrapose! this;
-          exact ⟨ continuousOn_of_forall_continuousAt fun z hz => DifferentiableAt.continuousAt <| by exact DifferentiableAt.div ( Real.differentiableAt_sinh ) ( DifferentiableAt.mul differentiableAt_id <| Real.differentiableAt_cosh ) <| ne_of_gt <| mul_pos ( by linarith [ hz.1 ] ) <| Real.cosh_pos _, fun z hz => DifferentiableAt.differentiableWithinAt <| by exact DifferentiableAt.div ( Real.differentiableAt_sinh ) ( DifferentiableAt.mul differentiableAt_id <| Real.differentiableAt_cosh ) <| ne_of_gt <| mul_pos ( by linarith [ hz.1 ] ) <| Real.cosh_pos _, fun z hz => by rw [ ne_eq, eq_div_iff ] <;> nlinarith [ h_deriv_neg z <| by linarith [ hz.1 ] ] ⟩;
-        convert mul_le_mul_of_nonneg_right ( h_ineq a c ha hc.1.1 ) ( show 0 ≤ 1 / 2 by norm_num ) using 1 <;> ring;
-      rw [ ← hb.2.2, ← hc.2 ] at *;
-      rw [ div_le_iff₀ ] at h_ineq <;> ring_nf at * <;> nlinarith
+  let g : ℝ → ℝ := fun z => Real.log (Real.cosh z) -
+    Real.tanh a / (2 * a) * z ^ 2
+  have hg_deriv (y : ℝ) :
+      deriv g y = Real.tanh y - (Real.tanh a / a) * y := by
+    dsimp [g]
+    have hlog : HasDerivAt (fun z : ℝ => Real.log (Real.cosh z)) (Real.tanh y) y := by
+      convert (Real.hasDerivAt_cosh y).log (Real.cosh_pos y).ne' using 1
+      exact Real.tanh_eq_sinh_div_cosh y
+    have hsq : HasDerivAt (fun z : ℝ => z ^ 2) (2 * y) y := by
+      simpa using (hasDerivAt_pow 2 y)
+    have hmul := hsq.const_mul (Real.tanh a / (2 * a))
+    change deriv ((fun z : ℝ => Real.log (Real.cosh z)) -
+      fun z : ℝ => Real.tanh a / (2 * a) * z ^ 2) y = _
+    rw [(hlog.sub hmul).deriv]
+    ring
+  have hg_diff : Differentiable ℝ g := by
+    intro y
+    dsimp [g]
+    exact ((Real.hasDerivAt_cosh y).log (Real.cosh_pos y).ne').differentiableAt.sub
+      (((hasDerivAt_id y).pow 2).const_mul
+        (Real.tanh a / (2 * a))).differentiableAt
+  let b := |x|
+  have hb0 : 0 ≤ b := abs_nonneg x
+  have hgb : g b = g x := by
+    dsimp [g, b]
+    rw [Real.cosh_abs, sq_abs]
+  have hga : g b ≤ g a := by
+    rcases le_total b a with hba | hab
+    · have hmono : MonotoneOn g (Set.Icc 0 a) := by
+        apply monotoneOn_of_deriv_nonneg (convex_Icc 0 a)
+        · exact hg_diff.continuous.continuousOn
+        · exact hg_diff.differentiableOn
+        · intro y hy
+          rw [interior_Icc] at hy
+          rw [hg_deriv]
+          have hr := antitoneOn_tanh_div hy.1 ha hy.2.le
+          change Real.tanh a / a ≤ Real.tanh y / y at hr
+          have hmul := mul_le_mul_of_nonneg_right hr hy.1.le
+          rw [div_mul_cancel₀ _ hy.1.ne'] at hmul
+          linarith
+      exact hmono ⟨hb0, hba⟩ ⟨ha.le, le_rfl⟩ hba
+    · have hanti_g : AntitoneOn g (Set.Ici a) := by
+        apply antitoneOn_of_deriv_nonpos (convex_Ici a)
+        · exact hg_diff.continuous.continuousOn
+        · exact hg_diff.differentiableOn
+        · intro y hy
+          rw [interior_Ici] at hy
+          rw [hg_deriv]
+          have hy0 : 0 < y := ha.trans hy
+          have hr := antitoneOn_tanh_div ha hy0 hy.le
+          change Real.tanh y / y ≤ Real.tanh a / a at hr
+          have hmul := mul_le_mul_of_nonneg_right hr hy0.le
+          rw [div_mul_cancel₀ _ hy0.ne'] at hmul
+          linarith
+      exact hanti_g (show a ∈ Set.Ici a by simp) (show b ∈ Set.Ici a by exact hab) hab
+  rw [hgb] at hga
+  dsimp [g] at hga
+  linarith
 
 /-
 Kearns--Saul inequality for a random variable in `{-1, 1}` with mean `q`.
@@ -160,28 +168,11 @@ lemma kearns_saul_inequality
         ((1 - q) / 2) * Real.exp (-u * (1 + q))
       ≤ Real.exp (ksCoefficient q * u ^ 2 / 2) := by
   by_cases hq : q = 0;
-  · unfold ksCoefficient; norm_num [ hq ] ; ring_nf ;
-    -- We'll use the exponential property to simplify the expression. Note that $e^{u^2 / 2} \geq \frac{e^u + e^{-u}}{2}$ for all $u$.
-    have h_exp : ∀ u : ℝ, Real.exp (u^2 / 2) ≥ (Real.exp u + Real.exp (-u)) / 2 := by
-      intro u; rw [ Real.exp_eq_exp_ℝ ] ; norm_num [ NormedSpace.exp_eq_tsum_div ] ; ring_nf; norm_num; (
-      rw [ ← tsum_mul_right, ← tsum_mul_right, ← Summable.tsum_add ] ; rw [ ← tsum_even_add_odd ] ; norm_num [ pow_mul', mul_assoc, mul_comm, mul_left_comm, tsum_mul_left ] ; ring_nf ; norm_num;
-      · refine' Summable.tsum_le_tsum _ _ _;
-        · intro i; rw [ mul_assoc ] ; gcongr ; induction' i with i ih <;> norm_num [ Nat.factorial_succ, pow_succ' ] at * ; ring_nf at * ; nlinarith;
-          field_simp;
-          induction i <;> simp_all +decide [ Nat.factorial, pow_succ' ];
-          norm_num [ Nat.succ_mul, Nat.factorial_succ ] at *;
-          norm_num [ Nat.factorial_succ, Nat.mul_two ] at *;
-          norm_num [ Nat.factorial_succ, add_assoc ] at *;
-          norm_num [ Nat.add_comm, Nat.add_left_comm, Nat.factorial ] at *;
-          nlinarith [ sq ( ( ↑‹ℕ› : ℝ ) : ℝ ), show ( 0 : ℝ ) ≤ ↑ ( ‹ℕ› + ‹ℕ› ).factorial * ( 2 ^ ‹ℕ› ) ⁻¹ by positivity ];
-        · exact Real.summable_pow_div_factorial _ |> Summable.comp_injective <| by aesop_cat;
-        · norm_num [ pow_mul' ];
-          exact Summable.of_nonneg_of_le ( fun n => by positivity ) ( fun n => mul_le_of_le_one_right ( by positivity ) ( pow_le_one₀ ( by positivity ) ( by norm_num ) ) ) ( Real.summable_pow_div_factorial _ );
-      · exact Summable.add ( Summable.mul_right _ <| Real.summable_pow_div_factorial _ |> Summable.comp_injective <| by intro m n h; simpa using h ) ( Summable.mul_right _ <| Summable.of_norm <| by simpa using Real.summable_pow_div_factorial _ |> Summable.comp_injective <| by intro m n h; simpa using h );
-      · norm_num [ pow_add ];
-      · exact Summable.mul_right _ <| Real.summable_pow_div_factorial _;
-      · exact Summable.mul_right _ <| Summable.of_norm <| by simpa using Real.summable_pow_div_factorial |u|;);
-    convert h_exp u |> le_trans <| le_of_eq _ using 1 <;> ring;
+  · subst q
+    calc
+      _ = Real.cosh u := by rw [Real.cosh_eq]; ring
+      _ ≤ Real.exp (u ^ 2 / 2) := Real.cosh_le_exp_half_sq u
+      _ = _ := by simp [ksCoefficient]
   · -- Let $a = \text{artanh}(q)$, so $a > 0$ and $\tanh(a) = q$.
     set a := Real.artanh q with ha
     have ha_pos : 0 < a := by

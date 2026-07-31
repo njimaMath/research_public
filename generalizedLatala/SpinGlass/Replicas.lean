@@ -81,13 +81,13 @@ noncomputable def UV : Ω → WithLp 2 (EnergySpace N × EnergySpace N) :=
   fun ω => WithLp.toLp 2 (sk.U ω, sim.V ω)
 
 /-- `UV` is a centered Gaussian Hilbert random variable when `U` and `V` are independent. -/
-noncomputable def isGaussianHilbert_UV
+noncomputable abbrev isGaussianHilbert_UV
     (hIndep : ProbabilityTheory.IndepFun sk.U sim.V (ℙ : Measure Ω)) :
     IsGaussianHilbert (UV (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)) := by
   classical
   let hU := sk.hU
   let hV := sim.hV
-  let κ : Bool → Type* := fun
+  let κ : Bool → Type := fun
     | true => hU.ι
     | false => hV.ι
   let X : (b : Bool) → (j : κ b) → Ω → ℝ :=
@@ -111,7 +111,9 @@ noncomputable def isGaussianHilbert_UV
       have hcont : Continuous (fun u : EnergySpace N => inner ℝ u (hU.w i)) := by
         have hpair : Continuous (fun u : EnergySpace N => (u, hU.w i)) :=
           (continuous_id.prodMk continuous_const)
-        simpa using (continuous_inner.comp hpair)
+        change Continuous ((fun p : EnergySpace N × EnergySpace N =>
+          inner ℝ p.1 p.2) ∘ fun u => (u, hU.w i))
+        exact continuous_inner.comp hpair
       exact hcont.measurable
     have hψ : Measurable (fun v : EnergySpace N => fun j : hV.ι => inner ℝ v (hV.w j)) := by
       refine measurable_pi_lambda _ ?_
@@ -119,7 +121,9 @@ noncomputable def isGaussianHilbert_UV
       have hcont : Continuous (fun v : EnergySpace N => inner ℝ v (hV.w j)) := by
         have hpair : Continuous (fun v : EnergySpace N => (v, hV.w j)) :=
           (continuous_id.prodMk continuous_const)
-        simpa using (continuous_inner.comp hpair)
+        change Continuous ((fun p : EnergySpace N × EnergySpace N =>
+          inner ℝ p.1 p.2) ∘ fun v => (v, hV.w j))
+        exact continuous_inner.comp hpair
       exact hcont.measurable
     have hInd_tuples :
         ProbabilityTheory.IndepFun
@@ -473,7 +477,9 @@ lemma replicaGibbsMeasure_univ (H : EnergySpace N) :
   have hsumNNReal :
       (∑ σs : ReplicaSpace N n, replicaGibbsWeightNNReal (N := N) (n := n) H σs) = (1 : ℝ≥0) := by
     apply NNReal.coe_injective
-    simpa [replicaGibbsWeightNNReal] using (sum_prod_gibbs_pmf_eq_one (N := N) (n := n) (H := H))
+    rw [NNReal.coe_sum]
+    simp only [replicaGibbsWeightNNReal, NNReal.coe_mk, NNReal.coe_one]
+    exact sum_prod_gibbs_pmf_eq_one (N := N) (n := n) (H := H)
   have hsumENNReal :
       (∑ σs : ReplicaSpace N n,
           (replicaGibbsWeightNNReal (N := N) (n := n) H σs : ℝ≥0∞)) = (1 : ℝ≥0∞) := by
@@ -509,8 +515,16 @@ lemma integral_replicaGibbsMeasure_eq_gibbs_average_n_det (H : EnergySpace N) (f
         (f := f) (μ := μatom) (s := (Finset.univ : Finset (ReplicaSpace N n))) h_integrable)
   -- Rewrite the left as `replicaGibbsMeasure` and simplify each atomic integral.
   -- `integral_smul_measure` turns the scalar into `toReal`, and `integral_dirac` evaluates `f`.
-  simpa [replicaGibbsMeasure, μatom, gibbs_average_n_det, replicaGibbsWeightNNReal, mul_comm, mul_left_comm,
-    mul_assoc] using hsum
+  change (∫ x, f x ∂((Finset.univ : Finset (ReplicaSpace N n)).sum μatom)) =
+    ∑ σs : ReplicaSpace N n, f σs * ∏ l : Fin n, gibbs_pmf N H (σs l)
+  rw [hsum]
+  refine Finset.sum_congr rfl (fun σs _hσs => ?_)
+  simp only [μatom, MeasureTheory.integral_smul_measure, MeasureTheory.integral_dirac,
+    ENNReal.toReal_ofNat, one_smul, replicaGibbsWeightNNReal, NNReal.smul_def]
+  rw [ENNReal.coe_toReal]
+  rw [smul_eq_mul]
+  change (∏ l : Fin n, gibbs_pmf N H (σs l)) * f σs = _
+  ring
 
 omit [IsProbabilityMeasure (ℙ : Measure Ω)] in
 /--
@@ -635,7 +649,10 @@ lemma integrable_gibbs_average_n (t : ℝ) (f : ReplicaFun N n) :
     have h1 : Measurable (fun w => (Real.sqrt t) • sk.U w) := hU_meas.const_smul (Real.sqrt t)
     have h2 : Measurable (fun w => (Real.sqrt (1 - t)) • sim.V w) := hV_meas.const_smul (Real.sqrt (1 - t))
     have h3 : Measurable (fun _w : Ω => H_field (N := N) (h := h)) := measurable_const
-    simpa [H_t, H_gauss] using ((h1.add h2).add h3)
+    change Measurable (((fun w => (Real.sqrt t) • sk.U w) +
+      fun w => (Real.sqrt (1 - t)) • sim.V w) +
+      fun _w : Ω => H_field (N := N) (h := h))
+    exact (h1.add h2).add h3
   have h_gibbs_pmf_meas :
       ∀ (σ : Config N),
         Measurable fun w =>
@@ -667,7 +684,11 @@ lemma integrable_gibbs_average_n (t : ℝ) (f : ReplicaFun N n) :
             Real.exp (-
               (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) τ))
           (hf := by intro τ _hτ; simpa using hterm τ))
-    simpa [SpinGlass.gibbs_pmf] using hNum.div hZ
+    change Measurable ((fun w => Real.exp (-
+      (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) σ)) /
+      fun w => Z N (H_t (N := N) (β := β) (h := h) (q := q)
+        (sk := sk) (sim := sim) t w))
+    exact hNum.div hZ
   have hMeas :
       Measurable (fun w =>
         gibbs_average_n (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) n t f w) := by
@@ -693,14 +714,20 @@ lemma integrable_gibbs_average_n (t : ℝ) (f : ReplicaFun N n) :
             (hf := by
               intro l _hl
               simpa using h_gibbs_pmf_meas (σs l)))
-      simpa [mul_assoc] using (measurable_const.mul hprod)
-    simpa [gibbs_average_n] using
+      change Measurable ((fun _w : Ω => f σs) * fun w =>
+        ∏ l : Fin n, gibbs_pmf N
+          (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (σs l))
+      exact measurable_const.mul hprod
+    change Measurable (fun w => ∑ σs : ReplicaSpace N n,
+      f σs * ∏ l : Fin n, gibbs_pmf N
+        (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (σs l))
+    exact
       (Finset.measurable_sum (s := (Finset.univ : Finset (ReplicaSpace N n)))
         (f := fun σs w =>
           f σs * ∏ l : Fin n,
             gibbs_pmf N
               (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (σs l))
-        (hf := by intro σs _hσs; simpa using hterm σs))
+        (hf := by intro σs _hσs; exact hterm σs))
   have hAESM :
       AEStronglyMeasurable
         (fun w =>
@@ -950,7 +977,11 @@ lemma hasDerivAt_H_gauss (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) (w : Ω) :
         (((1 / (2 * Real.sqrt (1 - t))) * (-1 : ℝ)) • sim.V w) t :=
     hsqrt_sub.smul_const (sim.V w)
   have hadd := hU.add hV
-  simpa [H_gauss, dH_t, sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
+  change HasDerivAt
+    ((fun s : ℝ => (Real.sqrt s) • sk.U w) +
+      fun s : ℝ => (Real.sqrt ((1 : ℝ) - s)) • sim.V w)
+    (dH_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) t
+  simpa [dH_t, sub_eq_add_neg, add_comm, add_left_comm, add_assoc,
     mul_assoc, mul_left_comm, mul_comm] using hadd
 
 omit [IsProbabilityMeasure (ℙ : Measure Ω)] in
@@ -997,7 +1028,11 @@ lemma hasDerivAt_gibbs_average_n (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) (f : Rep
         H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) s w)
       (l := G) (l' := fderiv ℝ G (H_t (N := N) (β := β) (h := h) (q := q)
         (sk := sk) (sim := sim) t w)) hG hHt)
-  simpa [gibbs_average_n, G, dgibbs_average_n] using hcomp
+  change HasDerivAt (G ∘ fun s =>
+    H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) s w)
+    (dgibbs_average_n (N := N) (β := β) (h := h) (q := q)
+      (sk := sk) (sim := sim) n t f w) t
+  simpa [G, dgibbs_average_n] using hcomp
 
 /-!
 To differentiate `ν_t(f) = 𝔼[⟨f⟩_t]`, we use the dominated differentiation lemma
@@ -1244,7 +1279,10 @@ theorem hasDerivAt_nu (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) (f : ReplicaFun N n
       have h1 : Measurable (fun w => (Real.sqrt t) • sk.U w) := hU_meas.const_smul (Real.sqrt t)
       have h2 : Measurable (fun w => (Real.sqrt (1 - t)) • sim.V w) := hV_meas.const_smul (Real.sqrt (1 - t))
       have h3 : Measurable (fun _w : Ω => H_field (N := N) (h := h)) := measurable_const
-      simpa [H_t, H_gauss] using ((h1.add h2).add h3)
+      change Measurable (((fun w => (Real.sqrt t) • sk.U w) +
+        fun w => (Real.sqrt (1 - t)) • sim.V w) +
+        fun _w : Ω => H_field (N := N) (h := h))
+      exact (h1.add h2).add h3
     have hdHt_meas :
         Measurable (fun w =>
           dH_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) := by
@@ -1252,7 +1290,9 @@ theorem hasDerivAt_nu (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) (f : ReplicaFun N n
         hU_meas.const_smul (1 / (2 * Real.sqrt t))
       have h2 : Measurable (fun w => (1 / (2 * Real.sqrt (1 - t))) • sim.V w) :=
         hV_meas.const_smul (1 / (2 * Real.sqrt (1 - t)))
-      simpa [dH_t, sub_eq_add_neg] using h1.add h2.neg
+      change Measurable ((fun w => (1 / (2 * Real.sqrt t)) • sk.U w) +
+        -(fun w => (1 / (2 * Real.sqrt (1 - t))) • sim.V w))
+      exact h1.add h2.neg
     have h_gibbs_pmf_meas :
         ∀ (σ : Config N),
           Measurable fun w =>
@@ -1329,7 +1369,19 @@ theorem hasDerivAt_nu (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) (f : ReplicaFun N n
             (hf := by
               intro l _hl
               exact hEv.sub (h_dHt_eval (σs l))))
-      simpa [mul_assoc] using (measurable_const.mul (hprod.mul hsumL))
+      change Measurable (((fun _w : Ω => f σs) *
+        (fun w => ∏ l : Fin n,
+          gibbs_pmf N
+            (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w)
+            (σs l))) * fun w =>
+          ∑ l : Fin n,
+            ((∑ τ : Config N,
+              gibbs_pmf N
+                (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) τ *
+              (dH_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) τ) -
+            (dH_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w)
+              (σs l)))
+      exact (measurable_const.mul hprod).mul hsumL
     have hderiv_meas :
         Measurable fun w =>
           (∑ σs : ReplicaSpace N n,

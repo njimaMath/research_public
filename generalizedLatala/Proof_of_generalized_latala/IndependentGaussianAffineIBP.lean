@@ -403,8 +403,8 @@ end GenericHelpers
 section JointDisorder
 
 variable (N : ℕ) [NeZero N] (β h q : ℝ)
-variable (sk : SKDisorder.{uΩ, uι} (Ω := Ω) N β h)
-variable (sim : SimpleDisorder.{uΩ, uι} (Ω := Ω) N β q)
+variable (sk : SKDisorder.{uΩ} (Ω := Ω) N β h)
+variable (sim : SimpleDisorder.{uΩ} (Ω := Ω) N β q)
 
 private noncomputable def affineIBP_jointAffineCLM
     (a b : ℝ) :
@@ -561,11 +561,22 @@ private lemma affineIBP_joint_trace_split
           ∑ i : sk.hU.ι, (sk.hU.τ i : ℝ) *
             hessian_free_energy N H
               (sk.hU.w i) (sk.hU.w i) +
-        (b * b') *
+      (b * b') *
           ∑ i : sim.hV.ι, (sim.hV.τ i : ℝ) *
             hessian_free_energy N H
               (sim.hV.w i) (sim.hV.w i) := by
   classical
+  rw [show
+    @Finset.univ
+        (isGaussianHilbert_UV
+          (N := N) (β := β) (h := h) (q := q)
+          (sk := sk) (sim := sim) hIndep).ι
+        (isGaussianHilbert_UV
+          (N := N) (β := β) (h := h) (q := q)
+          (sk := sk) (sim := sim) hIndep).fintype_ι =
+      @Finset.univ (sk.hU.ι ⊕ sim.hV.ι) inferInstance by
+    ext i
+    simp only [Finset.mem_univ]]
   simp only [
     isGaussianHilbert_UV,
     affineIBP_jointAffineCLM,

@@ -163,15 +163,19 @@ lemma hasFDerivAt_exp_neg_eval (H : EnergySpace N) (σ : Config N) :
         (E := fun _ : Config N => ℝ) (f := H) σ)
   have hneg :
       HasFDerivAt (fun H : EnergySpace N => -(H σ)) (-(evalCLM (N := N) σ)) H := by
-    simpa using heval.neg
+    change HasFDerivAt (-(fun H : EnergySpace N => H σ)) (-(evalCLM (N := N) σ)) H
+    exact heval.neg
   have hexp : HasDerivAt Real.exp (Real.exp (-H σ)) (-H σ) :=
     Real.hasDerivAt_exp (-H σ)
   have hcomp :
       HasFDerivAt (fun H : EnergySpace N => Real.exp (-(H σ)))
         ((Real.exp (-H σ)) • (-(evalCLM (N := N) σ))) H := by
-    simpa [Function.comp] using
-      (HasDerivAt.comp_hasFDerivAt (x := H) hexp hneg)
-  simpa [smul_neg, neg_smul] using hcomp
+    change HasFDerivAt (Real.exp ∘ fun H : EnergySpace N => -(H σ))
+      ((Real.exp (-H σ)) • (-(evalCLM (N := N) σ))) H
+    exact HasDerivAt.comp_hasFDerivAt (x := H) hexp hneg
+  exact hcomp.congr_fderiv (by
+    ext h
+    simp [evalCLM])
 
 lemma hasFDerivAt_Z (H : EnergySpace N) :
     HasFDerivAt (fun H : EnergySpace N => Z N H)
@@ -200,7 +204,10 @@ lemma hasFDerivAt_inv_Z (H : EnergySpace N) :
         (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (-(Z N H ^ 2)⁻¹) : ℝ →L[ℝ] ℝ)
         (Z N H) :=
     hasFDerivAt_inv (𝕜 := ℝ) (x := Z N H) (Z_ne_zero (N := N) (H := H))
-  simpa [Function.comp] using hInv.comp (x := H) (hasFDerivAt_Z (N := N) (H := H))
+  change HasFDerivAt ((fun x : ℝ => x⁻¹) ∘ Z N)
+    ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (-(Z N H ^ 2)⁻¹)).comp
+      (∑ σ : Config N, (-(Real.exp (-H σ))) • evalCLM (N := N) σ)) H
+  exact hInv.comp (x := H) (hasFDerivAt_Z (N := N) (H := H))
 
 lemma hasFDerivAt_gibbs_pmf (H : EnergySpace N) (σ : Config N) :
     HasFDerivAt (fun H : EnergySpace N => gibbs_pmf N H σ)
@@ -263,7 +270,6 @@ lemma fderiv_gibbs_pmf_apply (H h : EnergySpace N) (σ : Config N) :
         _ = (Z N H ^ 2)⁻¹ * ∑ x : Config N, h x * Real.exp (-H x) := by
               simp [mul_comm]
     simp [h', evalCLM, ContinuousLinearMap.smul_apply, smul_eq_mul, mul_comm]
-    exact Eq.symm (Finset.mul_sum Finset.univ (fun i ↦ rexp (-H.ofLp i) * h.ofLp i) (Z N H ^ 2)⁻¹)
   have hZ : Z N H ≠ 0 := Z_ne_zero (N := N) (H := H)
   have hsum :
       (∑ τ : Config N, (-(Real.exp (-H τ))) * h τ) =
@@ -330,8 +336,15 @@ lemma hasFDerivAt_grad_free_energy_density (H : EnergySpace N) :
           (fderiv ℝ (fun H : EnergySpace N => gibbs_pmf N H σ) H).smulRight (evalCLM (N := N) σ))
         (x := H)
         (fun σ _hσ => hterm σ))
-  simpa [grad_free_energy_density] using
-    (hsum.fun_const_smul (c := (-(1 / (N : ℝ)))))
+  change HasFDerivAt
+    (fun H : EnergySpace N => (-(1 / (N : ℝ))) •
+      ∑ σ : Config N, (gibbs_pmf N H σ) • evalCLM (N := N) σ)
+    (-((1 / (N : ℝ)) •
+      ∑ x : Config N,
+        (fderiv ℝ (fun H : EnergySpace N => gibbs_pmf N H x) H).smulRight
+          (evalCLM (N := N) x))) H
+  have hscaled := hsum.fun_const_smul (c := (-(1 / (N : ℝ))))
+  exact hscaled.congr_fderiv (by rw [neg_smul])
 
 lemma fderiv_Z_apply (H h : EnergySpace N) :
     fderiv ℝ (fun H : EnergySpace N => Z N H) H h =
@@ -354,7 +367,12 @@ lemma fderiv_free_energy_density_apply (H h : EnergySpace N) :
   have hF :
       HasFDerivAt (fun H : EnergySpace N => free_energy_density (N := N) H)
         ((1 / (N : ℝ)) • ((Z N H)⁻¹ • (∑ σ : Config N, (-(Real.exp (-H σ))) • evalCLM (N := N) σ))) H := by
-    simpa [free_energy_density, smul_eq_mul, mul_assoc] using (hlog.const_smul (c := (1 / (N : ℝ))))
+    change HasFDerivAt
+      ((fun _ : EnergySpace N => (1 / (N : ℝ))) •
+        (fun H : EnergySpace N => Real.log (Z N H)))
+      ((1 / (N : ℝ)) • ((Z N H)⁻¹ •
+        (∑ σ : Config N, (-(Real.exp (-H σ))) • evalCLM (N := N) σ))) H
+    exact hlog.const_smul (c := (1 / (N : ℝ)))
   have hF' := hF.fderiv
   have : fderiv ℝ (fun H : EnergySpace N => free_energy_density (N := N) H) H h =
         (1 / (N : ℝ)) * ((Z N H)⁻¹ * (-∑ σ : Config N, Real.exp (-H σ) * h σ)) := by

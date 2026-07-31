@@ -195,7 +195,8 @@ lemma gaussianHilbert_eval_pairing {Ω : Type*} [MeasureSpace Ω]
     have hc (k : hg.ι) : HasGaussianLaw (hg.c k) ℙ := HasLaw.hasGaussianLaw
       (HasLaw.mk (P := ℙ) (hg.c_meas k).aemeasurable (hg.c_gauss k))
     have hij : Integrable (fun ω => hg.c i ω * hg.c j ω) ℙ := by
-      simpa only [Pi.mul_apply] using (hc i).memLp_two.integrable_mul (hc j).memLp_two
+      exact ((hc i).memLp_two.integrable_mul (hc j).memLp_two).congr
+        (Filter.Eventually.of_forall fun ω => by rfl)
     convert hij.const_mul (hg.w i σ * hg.w j τ) using 1 <;> ext ω <;> ring
   simp_rw [hpoint, Finset.sum_mul, Finset.mul_sum]
   rw [integral_finset_sum _ (fun i _ => integrable_finset_sum _ (fun j _ => hterm i j))]
@@ -234,9 +235,9 @@ lemma referenceField_pairing (N : ℕ) (β q : ℝ) (hN : 0 < N) (hq0 : 0 ≤ q)
       Integrable (fun z : Fin N → ℝ =>
         (β * √q) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)) (gaussianProduct N) := by
     have hij : Integrable (fun z : Fin N → ℝ => z i * z j) (gaussianProduct N) := by
-      simpa only [Pi.mul_apply] using
-        ((gaussianProduct_eval_gaussian N i).memLp_two.integrable_mul
-          (gaussianProduct_eval_gaussian N j).memLp_two)
+      exact ((gaussianProduct_eval_gaussian N i).memLp_two.integrable_mul
+        (gaussianProduct_eval_gaussian N j).memLp_two).congr
+          (Filter.Eventually.of_forall fun z => by rfl)
     convert hij.const_mul ((β * √q) ^ 2 * spin N σ i * spin N τ j) using 1 <;>
       ext z <;> ring
   have hint (i j : Fin N) :

@@ -283,7 +283,10 @@ lemma hasDerivAt_tiltExponent
     have := hpow.const_mul ((v:ℝ)/2)
     simpa [mul_comm, mul_left_comm, mul_assoc, div_eq_mul_inv] using this
   have hsub := h1.sub h2
-  simpa using hsub
+  change HasDerivAt
+    ((fun s : ℝ => s * x) - (fun s : ℝ => (v : ℝ) * s ^ 2 / 2))
+    (x - (v : ℝ) * t) t
+  exact hsub
 
 /-- Derivative of the tilt kernel in `t`. -/
 lemma hasDerivAt_tiltKernel (v : ℝ≥0) (x t : ℝ) :
@@ -291,7 +294,10 @@ lemma hasDerivAt_tiltKernel (v : ℝ≥0) (x t : ℝ) :
     ((x - (v:ℝ) * t) * tiltKernel v t x) t := by
   have hExp := hasDerivAt_tiltExponent v x t
   have := (Real.hasDerivAt_exp _).comp t hExp
-  simpa [tiltKernel, mul_comm, mul_left_comm, mul_assoc] using this
+  change HasDerivAt
+    (Real.exp ∘ fun s : ℝ => s * x - (v : ℝ) * s ^ 2 / 2)
+    ((x - (v : ℝ) * t) * Real.exp (t * x - (v : ℝ) * t ^ 2 / 2)) t
+  simpa only [mul_comm] using this
 
 /-- Specialization of `hasDerivAt_tiltKernel` at `t = 0`. -/
 lemma hasDerivAt_tiltKernel_at0 (v : ℝ≥0) (x : ℝ) :
@@ -830,10 +836,9 @@ lemma integrable_abs_pow_gaussianReal_centered
       simp [pow_zero]
   | succ k =>
       have hmem :
-          MemLp (fun x : ℝ => x) ((Nat.succ k : ℝ≥0∞)) (gaussianReal 0 v) := by
-        simpa using
-          (memLp_id_gaussianReal' (μ := 0) (v := v)
-            (p := (Nat.succ k : ℝ≥0∞)) (by simp))
+          MemLp id ((Nat.succ k : ℝ≥0∞)) (gaussianReal 0 v) :=
+        memLp_id_gaussianReal' (μ := 0) (v := v)
+          (p := (Nat.succ k : ℝ≥0∞)) (by simp)
       have hInt_norm_rpow :
           Integrable
             (fun x : ℝ => ‖(fun y : ℝ => y) x‖ ^ (((Nat.succ k : ℝ≥0∞)).toReal))
@@ -1698,8 +1703,9 @@ lemma gaussianReal_integrable_one_add_abs_pow_shift
         have : 0 ≤ (1 : ℝ) + |y - μ| := by nlinarith [abs_nonneg (y - μ)]
         exact pow_nonneg this _
       simpa [Real.norm_eq_abs, abs_of_nonneg hy] using ofReal_eq_nnnorm hy
-    rw [hrew]; rw [← hrew]; rw [hrew]
-    simpa [hrew] using ENNReal.measurable_ofReal.comp hMeas
+    rw [hrew]
+    change Measurable (ENNReal.ofReal ∘ fun y : ℝ => (1 + |y - μ|) ^ k)
+    exact ENNReal.measurable_ofReal.comp hMeas
   have hlin :
       (∫⁻ y, (‖(1 + |y - μ|)^k‖₊ : ℝ≥0∞) ∂ gaussianReal μ v)
         =
@@ -1759,7 +1765,9 @@ private lemma measurable_nnnorm_of_nonneg_of_measurable
     funext x
     simpa [Real.norm_eq_abs, abs_of_nonneg (h0 x)]
       using ofReal_eq_nnnorm (h0 x)
-  simpa [hRew] using ENNReal.measurable_ofReal.comp hf
+  rw [hRew]
+  change Measurable (ENNReal.ofReal ∘ f)
+  exact ENNReal.measurable_ofReal.comp hf
 
 /-- With-density rewrite of the L¹-seminorm under `gaussianReal 0 v` (non-degenerate). -/
 private lemma lintegral_nnnorm_wrt_gaussian_eq_mul_pdf
@@ -2143,8 +2151,7 @@ lemma integrable_dom_profile_of_moderateGrowth
       have hLin  : Measurable fun x : ℝ => |x| + 1 := hAbs.add measurable_const
       have hExp  : Measurable fun x : ℝ => Real.exp (δ * |x|) :=
         (Real.continuous_exp.comp (continuous_const.mul continuous_abs)).measurable
-      simpa [mul_comm, mul_left_comm, mul_assoc]
-        using ((hFabs.mul hLin).mul hExp)
+      exact (hFabs.mul hLin).mul hExp
     simpa [hdirac] using Measure.integrable_dirac hMeas
   · rcases HasModerateGrowth.bound_F_mul_linear (F := F) hF with
       ⟨C, m, hCpos, hBound⟩
@@ -2295,7 +2302,8 @@ lemma Measure.map_sub_right {α : Type*} [MeasurableSpace α]
     μ.map (fun x => f x - c) = (μ.map f).map (· - c) := by
   have hg : Measurable (fun x : ℝ => x - c) :=
     (continuous_id.sub continuous_const).measurable
-  simpa [Function.comp] using
+  change μ.map ((fun x : ℝ => x - c) ∘ f) = (μ.map f).map (· - c)
+  exact
     (Measure.map_map (μ := μ) (f := f) (g := fun x : ℝ => x - c) (hf := hf) (hg := hg)).symm
 
 
@@ -2464,7 +2472,9 @@ lemma gaussianTilt_hasDerivAt_left_of_dominated
       (h_bound        := h_bound)
       (bound_integrable := hB_int)
       (h_diff         := h_diff)
-  simpa [gaussianTilt, G, G', tiltKernel, mul_comm] using hDer.2
+  change HasDerivAt (fun t => ∫ x, G t x ∂ gaussianReal 0 v)
+    (∫ x, x * F x ∂ gaussianReal 0 v) 0
+  exact hDer.2.congr_deriv (by simp [G', tiltKernel, mul_comm])
 
 lemma gaussianTilt_hasDerivAt_left
     {v : ℝ≥0} (_ : v ≠ 0) {F : ℝ → ℝ}
@@ -2676,7 +2686,9 @@ lemma gaussianTilt_hasDerivAt_right_aux
       (hF.continuous_deriv le_rfl).measurable
     have hEq : (fun x => G' 0 x) = (fun x => (v : ℝ) * deriv F x) := by
       funext x; simp [G']
-    simpa [hEq] using (measurable_const.mul hDer_meas).aestronglyMeasurable
+    change AEStronglyMeasurable (fun x => G' 0 x) (gaussianReal 0 v)
+    rw [hEq]
+    exact (measurable_const.mul hDer_meas).aestronglyMeasurable
   have h_bound :
       ∀ᵐ x ∂ gaussianReal 0 v,
         ∀ t ∈ Metric.ball (0 : ℝ) (1 : ℝ), ‖G' t x‖
@@ -2699,7 +2711,10 @@ lemma gaussianTilt_hasDerivAt_right_aux
       hInner0.const_add x
     have hOuter : HasDerivAt F (deriv F (x + (v : ℝ) * t)) (x + (v : ℝ) * t) :=
       (hF.differentiable one_ne_zero _).hasDerivAt
-    simpa [G, G', mul_comm] using hOuter.comp t hInner
+    change HasDerivAt
+      (F ∘ fun s : ℝ => x + (v : ℝ) * s)
+      ((v : ℝ) * deriv F (x + (v : ℝ) * t)) t
+    simpa only [mul_comm] using hOuter.comp t hInner
   have hDer :=
     hasDerivAt_integral_of_dominated_loc_of_deriv_le
       (μ              := gaussianReal 0 v)
@@ -2912,7 +2927,9 @@ theorem gaussian_integration_by_parts_general
     have hmap :
         Measure.map (fun ω => g ω - μ) ℙ
           = (Measure.map g ℙ).map (fun x : ℝ => x - μ) := by
-      simpa [Y, Function.comp] using
+      change Measure.map ((fun x : ℝ => x - μ) ∘ g) ℙ
+        = (Measure.map g ℙ).map (fun x : ℝ => x - μ)
+      exact
         (Measure.map_map
           (hf := hgMeas)
           (hg := (measurable_id.sub measurable_const))

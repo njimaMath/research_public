@@ -49,7 +49,9 @@ lemma contDiff_Z (N : ℕ) : ContDiff ℝ (∞) (fun H : EnergySpace N => Z N H)
       ∀ σ : Config N, ContDiff ℝ (∞) (fun H : EnergySpace N => Real.exp (-H σ)) := by
     intro σ
     -- `H ↦ H σ` is smooth (continuous linear), so `H ↦ exp(-H σ)` is smooth by composition.
-    simpa using (contDiff_exp.comp (contDiff_neg.comp (evalCLM (N := N) σ).contDiff))
+    change ContDiff ℝ ∞
+      (Real.exp ∘ (fun x : ℝ => -x) ∘ (evalCLM (N := N) σ))
+    exact contDiff_exp.comp (contDiff_neg.comp (evalCLM (N := N) σ).contDiff)
   simpa [Z] using
     (ContDiff.sum (𝕜 := ℝ) (n := (∞))
       (s := (Finset.univ : Finset (Config N)))
@@ -64,11 +66,16 @@ lemma contDiff_gibbs_pmf (N : ℕ) (σ : Config N) :
   classical
   have hnum :
       ContDiff ℝ (∞) (fun H : EnergySpace N => Real.exp (-H σ)) := by
-    simpa using (contDiff_exp.comp (contDiff_neg.comp (evalCLM (N := N) σ).contDiff))
+    change ContDiff ℝ ∞
+      (Real.exp ∘ (fun x : ℝ => -x) ∘ (evalCLM (N := N) σ))
+    exact contDiff_exp.comp (contDiff_neg.comp (evalCLM (N := N) σ).contDiff)
   have hZ : ContDiff ℝ (∞) (fun H : EnergySpace N => Z N H) := contDiff_Z (N := N)
   have hZne : ∀ H : EnergySpace N, Z N H ≠ 0 := fun H =>
     (Z_pos (N := N) (H := H)).ne'
-  simpa [gibbs_pmf] using hnum.div hZ hZne
+  change ContDiff ℝ ∞
+    ((fun H : EnergySpace N => Real.exp (-H σ)) /
+      (fun H : EnergySpace N => Z N H))
+  exact hnum.div hZ hZne
 
 /--
 `Z(H) > 0` for every Hamiltonian `H`.

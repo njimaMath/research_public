@@ -667,7 +667,8 @@ lemma integrable_norm_pow_nat_of_onb_sum
           refine measurable_pi_iff.mpr ?_
           intro i
           simpa [cvec] using hc_meas i
-        simpa [Φ, cvec] using hΦ_cont.measurable.comp hcvec_meas
+        change Measurable (Φ ∘ cvec)
+        exact hΦ_cont.measurable.comp hcvec_meas
       have h_measL : AEStronglyMeasurable (fun ω => ‖∑ i, c i ω • w i‖ ^ n) (ℙ : Measure Ω) := by
         have : Measurable (fun ω => ‖∑ i, c i ω • w i‖) := h_meas_sum.norm
         exact (this.pow_const n).aestronglyMeasurable
@@ -749,7 +750,7 @@ lemma add_rpow_le_mul_rpow_add_rpow {a b p : ℝ}
     (a + b) ^ p ≤ (2 : ℝ) ^ (p - 1) * (a ^ p + b ^ p) := by
   lift a to NNReal using ha
   lift b to NNReal using hb
-  simpa using NNReal.rpow_add_le_mul_rpow_add_rpow a b hp1
+  exact_mod_cast NNReal.rpow_add_le_mul_rpow_add_rpow a b hp1
 
 /-- Nat-exponent version: for `a, b ≥ 0` and `n ≥ 1`,
     `(a + b)^n ≤ 2^(n - 1) * (a^n + b^n)`. -/
@@ -1362,8 +1363,9 @@ lemma sum_split_along [DecidableEq ι] (i : ι) (a : ι → ℝ) :
   have htransport :
       (∑ j : {j // j ∈ (Finset.univ.erase i)}, (a j.1) • w j.1)
         = ∑ j : Comp ι i, (a j.1) • w j.1 := by
-    simpa [e] using
-      (e.symm.sum_comp (fun j => (a j.1) • w j.1))
+    refine Fintype.sum_equiv e.symm _ _ ?_
+    intro j
+    rfl
   have hsub :
       (∑ j ∈ (Finset.univ.erase i), (a j) • w j)
         = ∑ j : Comp ι i, (a j.1) • w j.1 := by
@@ -1650,7 +1652,10 @@ lemma deriv_F_along (F : H → ℝ) (hF : ContDiff ℝ 1 F) (z : H) :
       HasDerivAt (fun t => F (line (w := w) (i := i) z t))
         (((fderiv ℝ F (line (w := w) (i := i) z x)).comp
             (lineCLM (w := w) (i := i))) 1) x := by
-    simpa using hcomp.hasDerivAt
+    change HasDerivAt (F ∘ line (w := w) (i := i) z)
+      (((fderiv ℝ F (line (w := w) (i := i) z x)).comp
+          (lineCLM (w := w) (i := i))) 1) x
+    exact hcomp.hasDerivAt
   have hCLM1 : (lineCLM (w := w) (i := i)) 1 = w i := by
     simp [lineCLM]
   simpa [ContinuousLinearMap.comp_apply, hCLM1] using hderiv.deriv
@@ -1986,13 +1991,18 @@ lemma buildAlong_continuous
         (f := fun (j : Comp ι i) (y : Comp ι i → ℝ) => (y j) • w j.1)
         ?_
     intro j hj
-    simpa using (continuous_apply j).smul continuous_const
+    change Continuous
+      ((fun y : Comp ι i → ℝ => y j) • (fun _ : Comp ι i → ℝ => w j.1))
+    exact (continuous_apply j).smul continuous_const
   have h1 : Continuous (fun p : (Comp ι i → ℝ) × ℝ =>
       ∑ j : Comp ι i, (p.1 j) • w j.1) :=
     h_eval_sum.comp continuous_fst
   have h2 : Continuous (fun p : (Comp ι i → ℝ) × ℝ => p.2 • w i) :=
     continuous_snd.smul continuous_const
-  simpa [buildAlong, add_comm, add_left_comm, add_assoc] using h1.add h2
+  change Continuous
+    ((fun p : (Comp ι i → ℝ) × ℝ => ∑ j : Comp ι i, p.1 j • w j.1) +
+      (fun p : (Comp ι i → ℝ) × ℝ => p.2 • w i))
+  exact h1.add h2
 
 section meas
 variable [MeasurableSpace H] [BorelSpace H]
@@ -2458,8 +2468,9 @@ lemma integrable_coord_mul_F_of_gauss_and_aeConstY
     have hmap_int :
         Integrable (fun x : ℝ => x * F (z0 + x • w i)) (Measure.map X μ) := by
       simpa [hX_gauss] using hint_gauss
-    simpa [CoordLine.buildAlong, z0, add_comm, add_left_comm, add_assoc] using
-      hmap_int.comp_measurable hX_meas
+    change Integrable
+      ((fun x : ℝ => x * F ((∑ j : CoordLine.Comp ι i, y0 j • w j.1) + x • w i)) ∘ X) μ
+    exact hmap_int.comp_measurable hX_meas
   exact (integrable_congr_ae hae).2 this
 
 omit [CompleteSpace H] [MeasurableSpace H] [BorelSpace H] in
@@ -2497,8 +2508,10 @@ lemma integrable_deriv_F_along_coord_of_gauss_and_aeConstY
         Integrable (fun x : ℝ =>
           deriv (fun t => F (z0 + t • w i)) x) (Measure.map X μ) := by
       simpa [hX_gauss] using hint_gauss
-    simpa [CoordLine.buildAlong, z0, add_comm, add_left_comm, add_assoc] using
-      hmap_int.comp_measurable hX_meas
+    change Integrable
+      ((fun x : ℝ => deriv
+        (fun t => F ((∑ j : CoordLine.Comp ι i, y0 j • w j.1) + t • w i)) x) ∘ X) μ
+    exact hmap_int.comp_measurable hX_meas
   exact (integrable_congr_ae hae).2 this
 
 end Pullback_to_Omega
@@ -2643,7 +2656,7 @@ lemma map_eq_dirac_of_ae_eq_const_zero
     intro ω hω
     have hiff : (ω ∈ X ⁻¹' s) ↔ (ω ∈ ((fun _ : Ω => (0 : ℝ)) ⁻¹' s)) := by
       simp [Set.mem_preimage, hω]
-    simpa using (propext hiff)
+    exact propext hiff
   have hEq : μ (X ⁻¹' s) = μ ((fun _ : Ω => (0 : ℝ)) ⁻¹' s) :=
     measure_congr hpreimage_ae
   have hEq : μ (X ⁻¹' s) = μ ((fun _ : Ω => (0 : ℝ)) ⁻¹' s) :=
@@ -2762,9 +2775,11 @@ lemma indep_coord_complement
     (PhysLean.Probability.GaussianIBP.coord_isGaussian_and_indep (g := g) hg).2
   have hf : ∀ j, Measurable (coord hg.w g j) :=
     PhysLean.Probability.GaussianIBP.coord_measurable (g := g) hg
-  simpa [CoordLine.Comp] using
-    (ProbabilityTheory.iIndepFun.indepFun_subtype_prod_singleton
-      (μ := ℙ) (f := coord hg.w g) hind hf i)
+  change ProbabilityTheory.IndepFun
+    (fun (ω : Ω) (j : {j // j ≠ i}) => ⟪g ω, hg.w j.1⟫_ℝ)
+    (fun ω : Ω => ⟪g ω, hg.w i⟫_ℝ) ℙ
+  exact ProbabilityTheory.iIndepFun.indepFun_subtype_prod_singleton
+    (μ := ℙ) (f := coord hg.w g) hind hf i
 
 lemma stein_coord_with_param_of_indep
   (w : OrthonormalBasis ι ℝ H) (i : ι)
@@ -2796,13 +2811,19 @@ lemma stein_coord_with_param_of_indep
           (f := fun (j : CoordLine.Comp ι i) (y : CoordLine.Comp ι i → ℝ) => (y j) • w j.1)
           ?_
       intro j _
-      simpa using (continuous_apply j).smul continuous_const
+      change Continuous
+        ((fun y : CoordLine.Comp ι i → ℝ => y j) •
+          (fun _ : CoordLine.Comp ι i → ℝ => w j.1))
+      exact (continuous_apply j).smul continuous_const
     have h1 : Continuous (fun p : P => ∑ j : CoordLine.Comp ι i, (p.1 j) • w j.1) :=
       h_eval_sum.comp continuous_fst
     have h2 : Continuous (fun p : P => p.2 • w i) := continuous_snd.smul continuous_const
     have h_build_cont : Continuous (fun p : P =>
         CoordLine.buildAlong (w := w) (i := i) p.1 p.2) := by
-      simpa [CoordLine.buildAlong, add_comm, add_left_comm, add_assoc] using h1.add h2
+      change Continuous
+        ((fun p : P => ∑ j : CoordLine.Comp ι i, p.1 j • w j.1) +
+          (fun p : P => p.2 • w i))
+      exact h1.add h2
     have hFcont : Continuous (fun p : P =>
         F (CoordLine.buildAlong (w := w) (i := i) p.1 p.2)) :=
       hF_diff.continuous.comp h_build_cont
@@ -2818,7 +2839,10 @@ lemma stein_coord_with_param_of_indep
           (f := fun (j : CoordLine.Comp ι i) (y : CoordLine.Comp ι i → ℝ) => (y j) • w j.1)
           ?_
       intro j _
-      simpa using (continuous_apply j).smul continuous_const
+      change Continuous
+        ((fun y : CoordLine.Comp ι i → ℝ => y j) •
+          (fun _ : CoordLine.Comp ι i → ℝ => w j.1))
+      exact (continuous_apply j).smul continuous_const
     have h1 : Continuous (fun p : P => ∑ j : CoordLine.Comp ι i, (p.1 j) • w j.1) :=
       h_eval_sum.comp continuous_fst
     have h2 : Continuous (fun p : P => p.2 • w i) := continuous_snd.smul continuous_const
@@ -2826,7 +2850,10 @@ lemma stein_coord_with_param_of_indep
         CoordLine.buildAlong (w := w) (i := i) p.1 p.2) := by
       have h_build_cont : Continuous (fun p : P =>
           CoordLine.buildAlong (w := w) (i := i) p.1 p.2) := by
-        simpa [CoordLine.buildAlong, add_comm, add_left_comm, add_assoc] using h1.add h2
+        change Continuous
+          ((fun p : P => ∑ j : CoordLine.Comp ι i, p.1 j • w j.1) +
+            (fun p : P => p.2 • w i))
+        exact h1.add h2
       exact h_build_cont.measurable
     have hFderiv_meas :
         Measurable (fun p : P =>
@@ -2867,11 +2894,13 @@ lemma stein_coord_with_param_of_indep
   have hchg_φ :
       ∫ ω, φ (Y ω, X ω) ∂ℙ
         = ∫ p, φ p ∂((Measure.map Y ℙ).prod (Measure.map X ℙ)) := by
-    simpa [hmap_pair] using hchg_pair_φ
+    rw [hmap_pair] at hchg_pair_φ
+    exact hchg_pair_φ
   have hchg_ψ :
       ∫ ω, ψ (Y ω, X ω) ∂ℙ
         = ∫ p, ψ p ∂((Measure.map Y ℙ).prod (Measure.map X ℙ)) := by
-    simpa [hmap_pair] using hchg_pair_ψ
+    rw [hmap_pair] at hchg_pair_ψ
+    exact hchg_pair_ψ
   have hX_law : Measure.map X ℙ = ProbabilityTheory.gaussianReal 0 vτ := hX_gauss
   have hInt_φΩ :
       Integrable (fun ω =>
@@ -2906,17 +2935,15 @@ lemma stein_coord_with_param_of_indep
         (μY := Measure.map Y ℙ) (vτ := vτ)
         (hμY_sfinite := inferInstance)
         (hInt_left := by
-          simpa [hX_law, φ] using
-            (integrable_phi_on_mapY_prod_gauss (Y := Y) (X := X)
-              (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
-              (v := vτ) (hXlaw := hX_law) (hφ_meas := hφ_meas)
-              (hInt := hInt_φΩ)))
+          exact integrable_phi_on_mapY_prod_gauss (Y := Y) (X := X)
+            (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
+            (v := vτ) (hXlaw := hX_law) (hφ_meas := hφ_meas)
+            (hInt := hInt_φΩ))
         (hInt_right₀ := by
-          simpa [hX_law, ψ] using
-            (integrable_psi_on_mapY_prod_gauss (Y := Y) (X := X)
-              (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
-              (v := vτ) (hXlaw := hX_law) (hψ_meas := hψ_meas)
-              (hInt := hInt_ψΩ)))
+          exact integrable_psi_on_mapY_prod_gauss (Y := Y) (X := X)
+            (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
+            (v := vτ) (hXlaw := hX_law) (hψ_meas := hψ_meas)
+            (hInt := hInt_ψΩ))
     simpa [φ, ψ, hX_law] using h
   calc
     ∫ ω, X ω * F (CoordLine.buildAlong (w := w) (i := i) (Y ω) (X ω)) ∂ℙ
@@ -3002,7 +3029,10 @@ lemma stein_coord_with_param'
                        (y j) • hg.w j.1)
           ?_
       intro j _
-      simpa using (continuous_apply j).smul continuous_const
+      change Continuous
+        ((fun y : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i → ℝ => y j) •
+          (fun _ : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i → ℝ => hg.w j.1))
+      exact (continuous_apply j).smul continuous_const
     have h1 : Continuous (fun p : P =>
         ∑ j : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i, (p.1 j) • hg.w j.1) :=
       h_eval_sum.comp continuous_fst
@@ -3010,8 +3040,11 @@ lemma stein_coord_with_param'
       continuous_snd.smul continuous_const
     have h_build_cont : Continuous (fun p : P =>
         PhysLean.Probability.GaussianIBP.CoordLine.buildAlong (w := hg.w) (i := i) p.1 p.2) := by
-      simpa [PhysLean.Probability.GaussianIBP.CoordLine.buildAlong,
-             add_comm, add_left_comm, add_assoc] using h1.add h2
+      change Continuous
+        ((fun p : P => ∑ j : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i,
+            p.1 j • hg.w j.1) +
+          (fun p : P => p.2 • hg.w i))
+      exact h1.add h2
     have hFcont : Continuous (fun p : P =>
         F (PhysLean.Probability.GaussianIBP.CoordLine.buildAlong (w := hg.w) (i := i) p.1 p.2)) :=
       hF_diff.continuous.comp h_build_cont
@@ -3029,7 +3062,10 @@ lemma stein_coord_with_param'
                        (y j) • hg.w j.1)
           ?_
       intro j _
-      simpa using (continuous_apply j).smul continuous_const
+      change Continuous
+        ((fun y : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i → ℝ => y j) •
+          (fun _ : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i → ℝ => hg.w j.1))
+      exact (continuous_apply j).smul continuous_const
     have h1 : Continuous (fun p : P =>
         ∑ j : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i, (p.1 j) • hg.w j.1) :=
       h_eval_sum.comp continuous_fst
@@ -3039,8 +3075,11 @@ lemma stein_coord_with_param'
         PhysLean.Probability.GaussianIBP.CoordLine.buildAlong (w := hg.w) (i := i) p.1 p.2) := by
       have h_build_cont : Continuous (fun p : P =>
           PhysLean.Probability.GaussianIBP.CoordLine.buildAlong (w := hg.w) (i := i) p.1 p.2) := by
-        simpa [PhysLean.Probability.GaussianIBP.CoordLine.buildAlong,
-               add_comm, add_left_comm, add_assoc] using h1.add h2
+        change Continuous
+          ((fun p : P => ∑ j : PhysLean.Probability.GaussianIBP.CoordLine.Comp hg.ι i,
+              p.1 j • hg.w j.1) +
+            (fun p : P => p.2 • hg.w i))
+        exact h1.add h2
       exact h_build_cont.measurable
     have hFderiv_meas :
         Measurable (fun p : P =>
@@ -3089,11 +3128,13 @@ lemma stein_coord_with_param'
   have hchg_φ :
       ∫ ω, φ (Y ω, X ω) ∂ℙ
         = ∫ p, φ p ∂((Measure.map Y ℙ).prod (Measure.map X ℙ)) := by
-    simpa [hmap_pair] using hchg_pair_φ
+    rw [hmap_pair] at hchg_pair_φ
+    exact hchg_pair_φ
   have hchg_ψ :
       ∫ ω, ψ (Y ω, X ω) ∂ℙ
         = ∫ p, ψ p ∂((Measure.map Y ℙ).prod (Measure.map X ℙ)) := by
-    simpa [hmap_pair] using hchg_pair_ψ
+    rw [hmap_pair] at hchg_pair_ψ
+    exact hchg_pair_ψ
   have hInt_φΩ :
       Integrable (fun ω =>
         φ (Y ω, X ω)) ℙ := by
@@ -3126,7 +3167,8 @@ lemma stein_coord_with_param'
       funext ω
       simp [ψ]
       exact h_deriv_pointwise ω
-    simpa [h_eq_fun] using hInt_fderiv
+    rw [h_eq_fun]
+    exact hInt_fderiv
   have hX_law : Measure.map X ℙ = ProbabilityTheory.gaussianReal 0 (hg.τ i) := hX_gauss
   have hprod' :
       ∫ p, φ p ∂((Measure.map Y ℙ).prod (Measure.map X ℙ))
@@ -3140,17 +3182,15 @@ lemma stein_coord_with_param'
         (μY := Measure.map Y ℙ) (vτ := hg.τ i)
         (hμY_sfinite := inferInstance)
         (hInt_left := by
-          simpa [hX_law, φ] using
-            (integrable_phi_on_mapY_prod_gauss (Y := Y) (X := X)
-              (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
-              (v := hg.τ i) (hXlaw := hX_law) (hφ_meas := hφ_meas)
-              (hInt := hInt_φΩ)))
+          exact integrable_phi_on_mapY_prod_gauss (Y := Y) (X := X)
+            (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
+            (v := hg.τ i) (hXlaw := hX_law) (hφ_meas := hφ_meas)
+            (hInt := hInt_φΩ))
         (hInt_right₀ := by
-          simpa [hX_law, ψ] using
-            (integrable_psi_on_mapY_prod_gauss (Y := Y) (X := X)
-              (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
-              (v := hg.τ i) (hXlaw := hX_law) (hψ_meas := hψ_meas)
-              (hInt := hInt_ψΩ)))
+          exact integrable_psi_on_mapY_prod_gauss (Y := Y) (X := X)
+            (hY := hY_meas) (hX := hX_meas) (hIndep := hIndep)
+            (v := hg.τ i) (hXlaw := hX_law) (hψ_meas := hψ_meas)
+            (hInt := hInt_ψΩ))
     simpa [φ, ψ, hX_law] using h
   calc
     ∫ ω, X ω * F (g ω) ∂ℙ
