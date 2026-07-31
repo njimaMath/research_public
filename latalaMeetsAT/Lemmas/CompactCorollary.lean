@@ -47,16 +47,46 @@ theorem uniformATData_of_compact_strictAT (K : Set (ℝ × ℝ))
     (hh : ∀ p ∈ K, 0 < p.2)
     (hAT : ∀ p ∈ K, atParameter p.1 p.2 < 1) :
     Nonempty (UniformATData K) := by
-  -- Paper route, equations (delta)--(qcompact): continuity and compactness give
-  -- a positive minimum of `q` and of `1-atParameter`, plus a finite maximum of
-  -- `β`.  Choose `qmin`, `gap`, and `βmax` from those extrema and populate the
-  -- structure.  Pointwise positivity of `q` comes from `rsQ_pos`; strict
-  -- positivity of the minimum follows because a continuous positive function
-  -- on a compact set has positive minimum.  Likewise `hAT` makes the minimum
-  -- of `1-atParameter` positive.  Handle `K = ∅` separately by choosing all
-  -- three constants as `1`, since the boundedness fields are then vacuous.
-  -- Use continuity-within results on the positive domain together with `hβ`
-  -- and `hh`; global continuity is unnecessary for this corollary.
-  sorry
+  classical
+  by_cases hK : K.Nonempty
+  · obtain ⟨pβ, hpβ, hβmax⟩ :=
+      hKcompact.exists_isMaxOn hK continuous_fst.continuousOn
+    obtain ⟨pq, hpq, hqmin⟩ :=
+      hKcompact.exists_isMinOn hK continuous_rsQ.continuousOn
+    obtain ⟨pg, hpg, hgapmin⟩ := hKcompact.exists_isMinOn hK
+      (continuous_const.sub continuous_atParameter).continuousOn
+    refine ⟨{
+      βmax := pβ.1
+      qmin := rsQ pq.1 pq.2
+      gap := 1 - atParameter pg.1 pg.2
+      βmax_pos := hβ pβ hpβ
+      qmin_pos := rsQ_pos (hβ pq hpq) (hh pq hpq)
+      gap_pos := sub_pos.mpr (hAT pg hpg)
+      β_pos := hβ
+      h_pos := hh
+      β_bound := ?_
+      q_lower := ?_
+      strictAT := ?_ }⟩
+    · intro p hp
+      exact hβmax hp
+    · intro p hp
+      exact hqmin hp
+    · intro p hp
+      have hg := hgapmin hp
+      dsimp at hg ⊢
+      linarith
+  · refine ⟨{
+      βmax := 1
+      qmin := 1
+      gap := 1
+      βmax_pos := zero_lt_one
+      qmin_pos := zero_lt_one
+      gap_pos := zero_lt_one
+      β_pos := ?_
+      h_pos := ?_
+      β_bound := ?_
+      q_lower := ?_
+      strictAT := ?_ }⟩ <;>
+      intro p hp <;> exact (hK ⟨p, hp⟩).elim
 
 end SpinGlass.AT
