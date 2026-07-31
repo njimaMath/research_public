@@ -54,7 +54,8 @@ theorem uniformATData_of_compact_strictAT (K : Set (ℝ × ℝ))
     obtain ⟨pq, hpq, hqmin⟩ :=
       hKcompact.exists_isMinOn hK continuous_rsQ.continuousOn
     obtain ⟨pg, hpg, hgapmin⟩ := hKcompact.exists_isMinOn hK
-      (continuous_const.sub continuous_atParameter).continuousOn
+      ((continuous_const : Continuous (fun _ : ℝ × ℝ => (1 : ℝ))).sub
+        continuous_atParameter).continuousOn
     refine ⟨{
       βmax := pβ.1
       qmin := rsQ pq.1 pq.2
