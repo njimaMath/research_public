@@ -184,7 +184,7 @@ The proof uses interpolation and replica calculus, not the cavity method.
 
 ## Type-checking
 
-The formalization targets Lean `v4.28.0` and mathlib `v4.28.0`. From the root
+The formalization targets Lean `v4.32.1` and mathlib `v4.32.1`. From the root
 of a compatible Lean project containing this directory, run
 
 ```powershell
