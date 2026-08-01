@@ -6,6 +6,8 @@ open PhysLean.Probability.GaussianIBP
 
 namespace SpinGlass
 
+universe u
+
 /-!
 # The Sherrington–Kirkpatrick (SK) model: disorder structures (finite `N`)
 
@@ -22,7 +24,7 @@ canonical basis `std_basis`.
 * D. Panchenko, *The Sherrington–Kirkpatrick Model*.
 -/
 
-variable {Ω : Type*} [MeasureSpace Ω] [IsProbabilityMeasure (ℙ : Measure Ω)]
+variable {Ω : Type u} [MeasureSpace Ω] [IsProbabilityMeasure (ℙ : Measure Ω)]
 
 variable (N : ℕ)
 
@@ -50,7 +52,7 @@ structure SKDisorder (β h : ℝ) where
   /-- The (random) Hamiltonian. -/
   U : Ω → EnergySpace N
   /-- Centered Gaussian structure in the Hilbert space `EnergySpace N`. -/
-  hU : IsGaussianHilbert U
+  hU : IsGaussianHilbert.{u, 0, 0} U
   /-- Covariance on the canonical basis. -/
   cov_eq : ∀ σ τ, inner ℝ ((covOp (g := U) hU)
     (std_basis N σ)) (std_basis N τ) =  sk_cov_kernel N β σ τ
@@ -65,7 +67,7 @@ structure SimpleDisorder (β q : ℝ) where
   /-- The (random) Hamiltonian. -/
   V : Ω → EnergySpace N
   /-- Centered Gaussian structure in the Hilbert space `EnergySpace N`. -/
-  hV : IsGaussianHilbert V
+  hV : IsGaussianHilbert.{u, 0, 0} V
   /-- Covariance on the canonical basis. -/
   cov_eq : ∀ σ τ, inner ℝ ((covOp (g := V) hV) (std_basis N σ))
     (std_basis N τ) = simple_cov_kernel N β (fun x => q * x) σ τ
