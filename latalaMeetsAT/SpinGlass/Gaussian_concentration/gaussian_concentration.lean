@@ -1,6 +1,6 @@
-import SYK.super_concentration.Gaussian_concentration.GaussianConcentrationAux
-import SYK.super_concentration.Gaussian_concentration.GaussianCovSmooth
-import SYK.super_concentration.Gaussian_concentration.GaussianCovMollify
+import GaussianConcentrationAux
+import GaussianCovSmooth
+import GaussianCovMollify
 
 open scoped BigOperators ENNReal NNReal
 open MeasureTheory
