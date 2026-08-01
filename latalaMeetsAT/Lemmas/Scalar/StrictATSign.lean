@@ -5,14 +5,25 @@ set_option autoImplicit false
 namespace SpinGlass.AT
 
 /-- $g_s(u)=\mathbb E[(\partial_x\Psi_s(u,X_u))^2]$ for the local-field
-diffusion in Proposition `pathRS`.  Its construction is one of the remaining
-stochastic-calculus obligations. -/
+diffusion in Proposition `pathRS`.  The lower branch uses the drift-free
+Gaussian representation up to `q`; the upper branch uses the Girsanov
+transition formula from the diffusion-comparison lemma. -/
 noncomputable def scalarOrderParameter (β h s u : ℝ) : ℝ :=
-  by
-    -- BLOCKED: the local-field diffusion has not been constructed in Lean.
-    -- NEEDED: the piecewise SDE solution and the expectation defining `g_s(u)`.
-    -- BLUEPRINT: equations `localfield`, `Xq`, and Proposition `pathRS`.
-    sorry
+  let q := rsQ β h
+  if u ≤ q then
+    standardGaussianExpectation (fun z₀ =>
+      standardGaussianExpectation (fun z =>
+        Real.tanh
+          (h + β * Real.sqrt ((1 - s) * q + s * u) * z₀ +
+            β * Real.sqrt (s * (q - u)) * z)) ^ 2)
+  else
+    let lam := s * β ^ 2 * (u - q)
+    standardGaussianExpectation (fun z₀ =>
+      let x := h + β * Real.sqrt q * z₀
+      Real.exp (-lam / 2) / Real.cosh x *
+        standardGaussianExpectation (fun z =>
+          Real.tanh (x + Real.sqrt lam * z) ^ 2 *
+            Real.cosh (x + Real.sqrt lam * z)))
 
 theorem strictAT_sign {K : Set (ℝ × ℝ)} (data : UniformATData K)
     {β h s : ℝ} (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
@@ -30,10 +41,9 @@ theorem strictAT_sign {K : Set (ℝ × ℝ)} (data : UniformATData K)
   -- `q`, the Latała kernel comparison gives
   -- `g_s'(u) ≤ s*atParameter < 1`, hence the negative sign.  Joint continuity
   -- and compactness give uniform `c` and `eps` near `q`.
-  -- BLOCKED: the theorem depends on the unconstructed local-field diffusion
-  -- and on the unfinished Latała reference-mean identity.
-  -- NEEDED: `g_s'` below `q`, the diffusion comparison above `q`, and compact
-  -- uniform continuity of those derivatives.
+  -- NEEDED: differentiate the two explicit Gaussian formulas defining
+  -- `scalarOrderParameter`, apply the diffusion comparison above `q`, and
+  -- prove compact-uniform continuity of the resulting derivatives.
   -- BLUEPRINT: Lemma `diffusioncomparison` and Proposition `pathRS`.
   sorry
 

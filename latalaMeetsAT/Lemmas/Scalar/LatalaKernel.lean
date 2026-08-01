@@ -213,14 +213,253 @@ theorem opposite_monotone_covariance_le
   dsimp [If, Ig, Ifg] at houter ⊢
   linarith
 
+private theorem latalaH_reference_integral (t : ℝ) (ht : 0 ≤ t) :
+    ∫ y in Set.Icc (0 : ℝ) 1, latalaH t y * referenceDensity y = 1 := by
+  let f : ℝ → ℝ := fun u => 1 - u ^ 2
+  let f' : ℝ → ℝ := fun u => -2 * u
+  let g : ℝ → ℝ := fun y => latalaH t y * referenceDensity y
+  have hsub := intervalIntegral.integral_comp_mul_deriv_of_deriv_nonpos
+    (a := (0 : ℝ)) (b := 1) (f := f) (f' := f') (g := g)
+    (by fun_prop)
+    (by
+      intro u hu
+      have hbase := (hasDerivAt_const u 1).sub ((hasDerivAt_id u).pow 2)
+      have hf_eq : f = (fun x : ℝ => 1) - id ^ 2 := by
+        funext x
+        simp [f]
+      have hfp_eq : f' u = (0 : ℝ) - 2 * id u ^ (2 - 1) * 1 := by
+        norm_num [f']
+      rw [hf_eq, hfp_eq]
+      exact hbase)
+    (by
+      intro u hu
+      norm_num at hu
+      dsimp [f']
+      linarith [hu.1])
+  have hcomp :
+      (∫ u in (0 : ℝ)..1, (g ∘ f) u * f' u) =
+        ∫ u in (0 : ℝ)..1, -latalaH t (1 - u ^ 2) := by
+    apply intervalIntegral.integral_congr_ae
+    filter_upwards [] with u
+    intro hu
+    have huIoc : u ∈ Set.Ioc (0 : ℝ) 1 := by
+      simpa [Set.uIoc_of_le zero_le_one] using hu
+    have huI : u ∈ Set.Icc (0 : ℝ) 1 := ⟨huIoc.1.le, huIoc.2⟩
+    have hu0 : u ≠ 0 := ne_of_gt huIoc.1
+    have hsqrt : Real.sqrt (u ^ 2) = u := by
+      rw [Real.sqrt_sq_eq_abs, abs_of_nonneg huI.1]
+    dsimp [g, f, f', referenceDensity]
+    rw [show 1 - (1 - u ^ 2) = u ^ 2 by ring, hsqrt]
+    field_simp
+  rw [hcomp] at hsub
+  dsimp [f, g] at hsub
+  norm_num at hsub
+  have hrat : (∫ u in (0 : ℝ)..1, latalaH t (1 - u ^ 2)) = 1 := by
+    let F : ℝ → ℝ := fun u => u / (1 + (1 - u ^ 2) * t) ^ 2
+    have hderiv : ∀ u ∈ Set.uIcc (0 : ℝ) 1,
+        HasDerivAt F (latalaH t (1 - u ^ 2)) u := by
+      intro u hu
+      have huI : u ∈ Set.Icc (0 : ℝ) 1 := by
+        simpa [Set.uIcc_of_le zero_le_one] using hu
+      have hdenpos : 0 < 1 + (1 - u ^ 2) * t := by
+        have husq : u ^ 2 ≤ 1 := by
+          nlinarith [mul_self_le_mul_self huI.1 huI.2]
+        nlinarith
+      have hden : 1 + (1 - u ^ 2) * t ≠ 0 := ne_of_gt hdenpos
+      let D : ℝ → ℝ := fun x => 1 + (1 - x ^ 2) * t
+      have hD : HasDerivAt D (-2 * u * t) u := by
+        have hraw := (hasDerivAt_const u 1).add
+          (((hasDerivAt_const u 1).sub ((hasDerivAt_id u).pow 2)).mul_const t)
+        convert hraw using 1
+        all_goals first | rfl | (
+          simp only [D, Pi.add_apply, Pi.sub_apply, Pi.pow_apply, id_eq,
+            zero_add, zero_sub, one_mul, pow_succ, pow_zero, mul_one]
+          ring)
+      have hbase : HasDerivAt (fun x => x / D x ^ 2)
+          ((1 * D u ^ 2 - u * (2 * D u * (-2 * u * t))) / (D u ^ 2) ^ 2) u := by
+        convert (hasDerivAt_id u).div (hD.pow 2) (pow_ne_zero 2 hden) using 1
+        all_goals first | rfl | (
+          simp only [Pi.div_apply, Pi.pow_apply, id_eq, one_mul, Nat.cast_ofNat,
+            pow_succ, pow_zero, mul_one])
+      have hvalue :
+          latalaH t (1 - u ^ 2) =
+            (1 * D u ^ 2 - u * (2 * D u * (-2 * u * t))) / (D u ^ 2) ^ 2 := by
+        dsimp [D]
+        unfold latalaH
+        field_simp [hden]
+        ring
+      change HasDerivAt (fun x => x / D x ^ 2) (latalaH t (1 - u ^ 2)) u
+      rw [hvalue]
+      exact hbase
+    have hcont : ContinuousOn (fun u : ℝ => latalaH t (1 - u ^ 2))
+        (Set.uIcc (0 : ℝ) 1) := by
+      intro u hu
+      have huI : u ∈ Set.Icc (0 : ℝ) 1 := by
+        simpa [Set.uIcc_of_le zero_le_one] using hu
+      unfold latalaH
+      apply ContinuousAt.continuousWithinAt
+      apply ContinuousAt.div
+      · fun_prop
+      · fun_prop
+      · apply pow_ne_zero
+        have husq : u ^ 2 ≤ 1 := by
+          nlinarith [mul_self_le_mul_self huI.1 huI.2]
+        have : 0 < 1 + (1 - u ^ 2) * t := by nlinarith
+        exact ne_of_gt this
+    have hint : IntervalIntegrable (fun u : ℝ => latalaH t (1 - u ^ 2)) volume 0 1 :=
+      ContinuousOn.intervalIntegrable hcont
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint]
+    simp [F]
+  rw [hrat] at hsub
+  rw [intervalIntegral.integral_symm] at hsub
+  rw [integral_Icc_eq_integral_Ioc,
+    ← intervalIntegral.integral_of_le zero_le_one]
+  linarith
+
+private theorem referenceDensity_integrable :
+    IntegrableOn referenceDensity (Set.Icc (0 : ℝ) 1) := by
+  let f : ℝ → ℝ := fun u => 1 - u ^ 2
+  let f' : ℝ → ℝ := fun u => -2 * u
+  have hiff := intervalIntegral.integrable_comp_mul_deriv_iff_of_deriv_nonpos
+    (a := (0 : ℝ)) (b := 1) (f := f) (f' := f') (g := referenceDensity)
+    (by fun_prop)
+    (by
+      intro u hu
+      have hbase := (hasDerivAt_const u 1).sub ((hasDerivAt_id u).pow 2)
+      have hf_eq : f = (fun x : ℝ => 1) - id ^ 2 := by
+        funext x
+        simp [f]
+      have hfp_eq : f' u = (0 : ℝ) - 2 * id u ^ (2 - 1) * 1 := by
+        norm_num [f']
+      rw [hf_eq, hfp_eq]
+      exact hbase)
+    (by
+      intro u hu
+      norm_num at hu
+      dsimp [f']
+      linarith [hu.1])
+  have hleft : IntervalIntegrable (fun u => (referenceDensity ∘ f) u * f' u)
+      volume 0 1 := by
+    apply (intervalIntegrable_const (μ := volume) (a := (0 : ℝ)) (b := 1)
+      (c := (-1 : ℝ))).congr_uIoo
+    intro u hu
+    norm_num at hu
+    have huI : u ∈ Set.Icc (0 : ℝ) 1 := ⟨hu.1.le, hu.2.le⟩
+    have hsqrt : Real.sqrt (u ^ 2) = u := by
+      rw [Real.sqrt_sq_eq_abs, abs_of_nonneg huI.1]
+    dsimp [referenceDensity, f, f']
+    rw [show 1 - (1 - u ^ 2) = u ^ 2 by ring, hsqrt]
+    field_simp [ne_of_gt hu.1]
+  have hright : IntervalIntegrable referenceDensity volume 0 1 := by
+    simpa [f] using (hiff.mp hleft).symm
+  exact (intervalIntegrable_iff_integrableOn_Icc_of_le zero_le_one).mp hright
+
 theorem latalaF_reference_mean_one {lam : ℝ} (hlam : 0 ≤ lam) :
     referenceExpectation (latalaF lam) = 1 := by
-  -- BLOCKED: the weighted substitution `y = 1 - u ^ 2` and interchange of
-  -- the singular reference integral with the Gaussian integral are missing.
-  -- NEEDED: the substitution identity integrating `latalaH t` to one, followed
-  -- by a proved Fubini argument under the existing domination estimate.
-  -- BLUEPRINT: equation `Fmeanone` in Lemma `diffusioncomparison`.
-  sorry
+  let I : Set ℝ := Set.Icc 0 1
+  let ν : Measure ℝ := volume.restrict I
+  let a := Real.sqrt lam
+  have hdom : Integrable (fun p : ℝ × ℝ => referenceDensity p.1 *
+      Real.cosh ((3 * a) * p.2)) (ν.prod (gaussianReal 0 1)) := by
+    exact (show Integrable referenceDensity ν from referenceDensity_integrable).mul_prod
+      (integrable_cosh_mul_gaussian (3 * a))
+  have hk : Integrable (Function.uncurry (fun y z => referenceDensity y *
+      (Real.cosh (a * z) * latalaH (Real.sinh (a * z) ^ 2) y)))
+      (ν.prod (gaussianReal 0 1)) := by
+    apply hdom.mono'
+    · apply Measurable.aestronglyMeasurable
+      dsimp [Function.uncurry, referenceDensity, latalaH]
+      fun_prop
+    · have hp : ∀ᵐ p ∂ν.prod (gaussianReal 0 1), p.1 ∈ I := by
+        rw [Measure.ae_prod_iff_ae_ae
+          (measurableSet_Icc.preimage measurable_fst)]
+        filter_upwards [MeasureTheory.ae_restrict_mem (μ := volume) measurableSet_Icc] with y hy
+        exact Filter.Eventually.of_forall fun _ => hy
+      filter_upwards [hp] with p hpI
+      have hb := latalaH_nonneg_le (sq_nonneg (Real.sinh (a * p.2))) hpI
+      have hw : 0 ≤ referenceDensity p.1 := by
+        dsimp [referenceDensity]
+        positivity
+      change |referenceDensity p.1 *
+          (Real.cosh (a * p.2) * latalaH (Real.sinh (a * p.2) ^ 2) p.1)| ≤
+        referenceDensity p.1 * Real.cosh ((3 * a) * p.2)
+      rw [abs_of_nonneg (mul_nonneg hw (mul_nonneg (Real.cosh_pos _).le hb.1))]
+      apply mul_le_mul_of_nonneg_left _ hw
+      calc
+        Real.cosh (a * p.2) * latalaH (Real.sinh (a * p.2) ^ 2) p.1 ≤
+            Real.cosh (a * p.2) * (1 + 4 * Real.sinh (a * p.2) ^ 2) :=
+          mul_le_mul_of_nonneg_left hb.2 (Real.cosh_pos _).le
+        _ = Real.cosh (3 * (a * p.2)) := cosh_mul_one_add_four_sinh_sq _
+        _ = Real.cosh ((3 * a) * p.2) := by ring_nf
+  have hswap := MeasureTheory.integral_integral_swap
+    (f := fun y z => referenceDensity y *
+      (Real.cosh (a * z) * latalaH (Real.sinh (a * z) ^ 2) y))
+    hk
+  dsimp [ν] at hswap
+  unfold referenceExpectation latalaF standardGaussianExpectation
+  calc
+    (∫ y in Set.Icc (0 : ℝ) 1,
+        (Real.exp (-lam / 2) *
+          ∫ z, Real.cosh (Real.sqrt lam * z) *
+            latalaH (Real.sinh (Real.sqrt lam * z) ^ 2) y
+            ∂gaussianReal 0 1) * referenceDensity y) =
+        Real.exp (-lam / 2) *
+          ∫ y in I, ∫ z, referenceDensity y *
+            (Real.cosh (a * z) * latalaH (Real.sinh (a * z) ^ 2) y)
+            ∂gaussianReal 0 1 := by
+      rw [← MeasureTheory.integral_const_mul]
+      apply MeasureTheory.integral_congr_ae
+      filter_upwards with y
+      rw [MeasureTheory.integral_const_mul]
+      dsimp [a]
+      ring
+    _ = Real.exp (-lam / 2) *
+        ∫ z, (∫ y in I, referenceDensity y *
+          (Real.cosh (a * z) * latalaH (Real.sinh (a * z) ^ 2) y))
+          ∂gaussianReal 0 1 := by rw [hswap]
+    _ = 1 := by
+      have hinner : ∀ z : ℝ,
+          (∫ y in I, referenceDensity y *
+            (Real.cosh (a * z) * latalaH (Real.sinh (a * z) ^ 2) y)) =
+            Real.cosh (a * z) := by
+        intro z
+        calc
+          (∫ y in I, referenceDensity y *
+              (Real.cosh (a * z) * latalaH (Real.sinh (a * z) ^ 2) y)) =
+              Real.cosh (a * z) * ∫ y in I,
+                latalaH (Real.sinh (a * z) ^ 2) y * referenceDensity y := by
+            rw [← MeasureTheory.integral_const_mul]
+            apply MeasureTheory.integral_congr_ae
+            filter_upwards with y
+            ring
+          _ = Real.cosh (a * z) := by
+            rw [latalaH_reference_integral _ (sq_nonneg _)]
+            ring
+      simp_rw [hinner]
+      have ha_sq : a ^ 2 = lam := by
+        dsimp [a]
+        exact Real.sq_sqrt hlam
+      have hexp (c : ℝ) :
+          (∫ z, Real.exp (c * z) ∂gaussianReal 0 1) = Real.exp (c ^ 2 / 2) := by
+        change ProbabilityTheory.mgf id (gaussianReal 0 1) c = Real.exp (c ^ 2 / 2)
+        rw [congrFun (mgf_id_gaussianReal (μ := 0) (v := 1)) c]
+        congr 1
+        norm_num
+      rw [show (∫ z, Real.cosh (a * z) ∂gaussianReal 0 1) = Real.exp (lam / 2) by
+        simp_rw [Real.cosh_eq]
+        rw [integral_div, integral_add
+          (integrable_exp_mul_gaussianReal a) (by
+            simpa only [neg_mul] using integrable_exp_mul_gaussianReal (-a))]
+        rw [hexp]
+        rw [show (fun z : ℝ => Real.exp (-(a * z))) =
+            fun z => Real.exp ((-a) * z) by
+          funext z
+          congr 1
+          ring, hexp]
+        rw [show (-a) ^ 2 = a ^ 2 by ring, ha_sq]
+        ring]
+      rw [← Real.exp_add]
+      rw [show -lam / 2 + lam / 2 = 0 by ring, Real.exp_zero]
 
 theorem latala_weighted_kernel_le {lam : ℝ} (hlam : 0 ≤ lam)
     {rho : ℝ → ℝ} (hrho : MonotoneOn rho (Set.Icc (0 : ℝ) 1))
