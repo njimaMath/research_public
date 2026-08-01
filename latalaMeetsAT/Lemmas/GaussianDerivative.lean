@@ -8,11 +8,16 @@ namespace SpinGlass.AT
 
 universe u
 
-/-- The derivative candidate for a finite replica expectation. -/
+/-- The covariance-derivative operator for a finite replica expectation.
+
+Its explicit replica formula is part of the Gaussian interpolation
+construction.  Keep it opaque until that construction is formalized instead
+of defining it circularly as `deriv`. -/
 noncomputable def replicaCovarianceOperator {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ) (s : ℝ) : ℝ :=
-  deriv (fun t => quenchedReplicaAverage (path.H t) F) s
+  by
+    sorry
 
 /-- Reusable finite-dimensional Gaussian differentiation interface. -/
 theorem quenchedGibbs_deriv_of_covariance_deriv {Ω : Type u} [MeasureSpace Ω]

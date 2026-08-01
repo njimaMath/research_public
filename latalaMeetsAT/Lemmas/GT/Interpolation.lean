@@ -20,7 +20,7 @@ noncomputable def gtSemigroupSolution
 
 /-- The specialized Guerra--Talagrand functional from the paper. -/
 noncomputable def gtFunctional (β h q s lam v : ℝ) : ℝ :=
-  standardGaussianExpectation (fun z =>
+  2 * Real.log 2 + standardGaussianExpectation (fun z =>
     gtSemigroupSolution β q s lam v 0
       (h + β * Real.sqrt ((1 - s) * q) * z)
       (h + β * Real.sqrt ((1 - s) * q) * z)) -

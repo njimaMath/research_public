@@ -9,16 +9,16 @@ namespace SpinGlass.AT
 universe u
 
 noncomputable def quadraticCoupledPartition {N : ℕ}
-    (H : EnergySpace N) (lam : ℝ) : ℝ :=
+    (H : EnergySpace N) (q lam : ℝ) : ℝ :=
   ∑ p : Config N × Config N,
     Real.exp (H p.1 + H p.2 +
-      lam * (N : ℝ) / 2 * configOverlap N p.1 p.2 ^ 2)
+      lam * (N : ℝ) / 2 * (configOverlap N p.1 p.2 - q) ^ 2)
 
 noncomputable def quadraticCoupledPressure {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (s lam : ℝ) : ℝ :=
   (1 / (2 * (N : ℝ))) * ∫ ω,
-    Real.log (quadraticCoupledPartition (fullPathHamiltonian path s ω) lam)
+    Real.log (quadraticCoupledPartition (fullPathHamiltonian path s ω) q lam)
       ∂(volume : Measure Ω)
 
 noncomputable def normalizedCouplingExcess {Ω : Type u} [MeasureSpace Ω]
