@@ -35,21 +35,25 @@ theorem cavity_thirdMoment_gronwall {Ω : Type u} [MeasureSpace Ω]
     ring]
   nlinarith
 
+/-- The last-spin cavity interpolation average `ν_{s,u}(F)` from the paper. -/
+noncomputable def cavityInterpolatedAverage {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
+    (s u : ℝ) : ℝ := by
+  sorry
+
+/-- Compact strict-AT second-derivative estimate for the last-spin cavity
+interpolation. -/
 theorem cavity_secondDerivative_bound {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) :
-    |deriv (fun t => A path t) s| ≤ 1 + thirdMoment path s := by
-  -- Statement/model repair required.  The paper's second-derivative bound
-  -- (cavitysecondderivativebound) concerns the last-spin interpolation
-  -- `u ↦ nu_{s,u}(F)`, not the smart-path derivative `s ↦ A_s`, and its
-  -- constant depends on the compact parameter set.  Define the cavity
-  -- Hamiltonian and operator `D_n` from equation (cavityderivative).  Applying
-  -- `D_n` twice yields finitely many bounded spin factors times three centered
-  -- cavity overlaps; Hölder, replica symmetry, and the cavity third-moment
-  -- Gronwall comparison give
-  -- `|d²/du² nu_{s,u}(F)| ≤ C_K*(thirdMoment path s + N⁻³)`.
-  -- The current bound, uniform in arbitrary `β,q,s` and about the wrong
-  -- derivative, is not supported by the paper.
+    [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) (C_K : ℝ) (hC_K : 0 < C_K)
+    {N n : ℕ} (hN : 0 < N) {β h q s u : ℝ}
+    (hp : (β, h) ∈ K) (hq : q = rsQ β h)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hu : u ∈ Set.Icc (0 : ℝ) 1)
+    (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
+    (hF : ∀ σs, |F σs| ≤ 1) :
+    |deriv (deriv (fun v => cavityInterpolatedAverage path F s v)) u| ≤
+      C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ)) := by
   sorry
 
 end SpinGlass.AT

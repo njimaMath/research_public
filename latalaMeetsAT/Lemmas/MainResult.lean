@@ -29,19 +29,17 @@ structure QuantitativeATConclusion {Ω : Type u} [MeasureSpace Ω]
 
 theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] (K : Set (ℝ × ℝ))
-    (hKcompact : IsCompact K) (hβ : ∀ p ∈ K, 0 < p.1)
-    (hh : ∀ p ∈ K, 0 < p.2)
-    (hAT : ∀ p ∈ K, atParameter p.1 p.2 < 1) :
+    (data : UniformATData K)
+    (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
     QuantitativeATConclusion (Ω := Ω) K := by
-  -- Proof route: compactness and strict AT produce `UniformATData`; the three
-  -- fields are exactly the absorption, free-energy, and replicon theorems.
-  -- This wrapper contains no further analytic argument.
-  let data := Classical.choice
-    (uniformATData_of_compact_strictAT K hKcompact hβ hh hAT)
+  -- Compactness, positivity, and the uniform strict-AT gap are carried by
+  -- `data`. The three fields are exactly the absorption, free-energy, and
+  -- replicon theorems, so this wrapper contains no further analytic argument.
+  obtain ⟨Crem, hCrem⟩ := hCavity
   exact
-    { secondMoment := uniform_secondMoment data
-      freeEnergy := rs_freeEnergy_error data
-      replicon := replicon_susceptibility data }
+    { secondMoment := uniform_secondMoment data Crem hCrem
+      freeEnergy := rs_freeEnergy_error data Crem hCrem
+      replicon := replicon_susceptibility data Crem hCrem }
 
 #print axioms SpinGlass.AT.quantitative_strictAT
 

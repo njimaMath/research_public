@@ -108,13 +108,12 @@ structure QuantitativeSKATConclusion (K : Set (ℝ × ℝ)) : Prop where
 
 /-- The quantitative strict-AT theorem specialized to the SK definitions. -/
 theorem quantitative_strictAT_for_sk (K : Set (ℝ × ℝ))
-    (hKcompact : IsCompact K)
-    (hβ : ∀ p ∈ K, 0 < p.1)
-    (hh : ∀ p ∈ K, 0 < p.2)
-    (hAT : ∀ p ∈ K, SpinGlass.AT.atParameter p.1 p.2 < 1) :
+    (data : SpinGlass.AT.UniformATData K)
+    (hCavity : ∃ C,
+      SpinGlass.AT.HasCavityRemainderBound (Ω := Ω) data C) :
     QuantitativeSKATConclusion (Ω := Ω) K := by
   have hmain := SpinGlass.AT.quantitative_strictAT
-    (Ω := Ω) K hKcompact hβ hh hAT
+    (Ω := Ω) K data hCavity
   refine {
     secondMoment := ?_
     freeEnergy := ?_

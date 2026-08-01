@@ -6,6 +6,7 @@ namespace SpinGlass.AT
 
 /-- Exactly the uniform numerical information consumed by the core proof. -/
 structure UniformATData (K : Set (ℝ × ℝ)) where
+  isCompact : IsCompact K
   βmax : ℝ
   qmin : ℝ
   gap : ℝ

@@ -17,7 +17,8 @@ noncomputable def skFreeEnergy {Ω : Type u} [MeasureSpace Ω]
 
 theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
+    (data : UniformATData K) (C : ℝ)
+    (hCavity : HasCavityRemainderBound (Ω := Ω) data C) :
     ∃ M, 0 ≤ M ∧ ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},
       (β, h) ∈ K → q = rsQ β h →
       ∀ path : RSSmartPathDisorder Ω N β h q,

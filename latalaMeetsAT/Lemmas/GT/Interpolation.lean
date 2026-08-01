@@ -9,11 +9,7 @@ namespace SpinGlass.AT
 universe u
 
 /-- The solution of the finite two-dimensional Parisi recursion associated to
-`signedMatrixPath v`, `gtMassParameter q v`, and `gtTerminal lam`.
-
-The construction will be supplied by the finite-cascade development.  A
-`sorry` here records precisely that missing construction without replacing it
-by a different functional. -/
+`signedMatrixPath v`, `gtMassParameter q v`, and `gtTerminal lam`. -/
 noncomputable def gtSemigroupSolution
     (β q s lam v u x₁ x₂ : ℝ) : ℝ := by
   sorry

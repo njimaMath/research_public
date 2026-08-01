@@ -10,13 +10,14 @@ universe u
 
 theorem thirdMoment_littleO {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
+    (data : UniformATData K) (Crem : ℝ)
+    (hCavity : HasCavityRemainderBound (Ω := Ω) data Crem) :
     ∀ eps > 0, ∃ N0, ∀ {N : ℕ}, N0 ≤ N → ∀ {β h q s : ℝ},
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
       ∀ path : RSSmartPathDisorder Ω N β h q,
       N * thirdMoment path s < eps := by
   intro eps heps
-  obtain ⟨M, hM, hsecond⟩ := uniform_secondMoment (Ω := Ω) data
+  obtain ⟨M, hM, hsecond⟩ := uniform_secondMoment (Ω := Ω) data Crem hCavity
   let eta : ℝ := eps / (4 * (M + 1))
   have hM1 : 0 < M + 1 := by linarith
   have heta : 0 < eta := by
@@ -85,7 +86,8 @@ theorem thirdMoment_littleO {Ω : Type u} [MeasureSpace Ω]
 
 theorem replicon_susceptibility {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
+    (data : UniformATData K) (Crem : ℝ)
+    (hCavity : HasCavityRemainderBound (Ω := Ω) data Crem) :
     ∀ eps > 0, ∃ N0, ∀ {N : ℕ}, N0 ≤ N → ∀ {β h q s : ℝ},
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
       ∀ path : RSSmartPathDisorder Ω N β h q,
@@ -101,11 +103,14 @@ theorem replicon_susceptibility {Ω : Type u} [MeasureSpace Ω]
   -- rearrange.  Translate the uniform little-o estimate into the requested
   -- `eps,N0` quantifiers exactly as in the final paragraph of the paper.
   intro eps heps
-  let δ : ℝ := eps * data.gap / 80
+  let δ : ℝ := eps * data.gap / (8 * (Crem + 1))
   have hδ : 0 < δ := by
     dsimp [δ]
-    nlinarith [data.gap_pos]
-  obtain ⟨Nthird, hNthird⟩ := thirdMoment_littleO (Ω := Ω) data δ hδ
+    have hCrem : 0 < Crem := hCavity.1
+    exact div_pos (mul_pos heps data.gap_pos)
+      (mul_pos (by norm_num) (by linarith))
+  obtain ⟨Nthird, hNthird⟩ :=
+    thirdMoment_littleO (Ω := Ω) data Crem hCavity δ hδ
   have hpowlim : Tendsto
       (fun N : ℕ => (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2))
       atTop (nhds 0) := by
@@ -176,14 +181,33 @@ theorem replicon_susceptibility {Ω : Type u} [MeasureSpace Ω]
       _ = |cavityRemainder path s 0| + 2 * |cavityRemainder path s 1| +
           |cavityRemainder path s 2| := by rw [abs_mul]; norm_num
       _ ≤ 4 * ‖cavityRemainder path s‖ := by linarith
-  have hRbound : |R| ≤ 40 *
+  have hRbound : |R| ≤ 4 * Crem *
       ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s) := by
-    have hr := cavityRemainder_bound (s := s) path
+    have hr := cavityRemainder_bound hCavity hNpos hp rfl hs path
     nlinarith [norm_nonneg (cavityRemainder path s)]
   have hNR : (N : ℝ) * |R| < eps * data.gap := by
     have hmul := mul_le_mul_of_nonneg_left hRbound (Nat.cast_nonneg N)
-    dsimp [δ] at hthird hpow
-    nlinarith
+    have hCrem : 0 < Crem := hCavity.1
+    have hCrem1 : 0 < Crem + 1 := by linarith
+    calc
+      (N : ℝ) * |R| ≤ (N : ℝ) *
+          (4 * Crem * ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s)) := hmul
+      _ = 4 * Crem * ((N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) +
+          (N : ℝ) * thirdMoment path s) := by ring
+      _ < 4 * Crem * (δ + δ) := by
+        gcongr
+      _ = eps * data.gap * (Crem / (Crem + 1)) := by
+        dsimp [δ]
+        field_simp [ne_of_gt hCrem1]
+        ring
+      _ < eps * data.gap := by
+        calc
+          eps * data.gap * (Crem / (Crem + 1)) <
+              eps * data.gap * 1 :=
+            mul_lt_mul_of_pos_left
+              ((div_lt_one hCrem1).2 (by linarith))
+              (mul_pos heps data.gap_pos)
+          _ = eps * data.gap := by ring
   have hgap : data.gap ≤ 1 - s * atParameter β h := path_gap data hp hs
   have hden : 0 < 1 - s * atParameter β h := lt_of_lt_of_le data.gap_pos hgap
   have hNne : (N : ℝ) ≠ 0 := by exact_mod_cast ne_of_gt hNpos
