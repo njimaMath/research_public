@@ -40,7 +40,7 @@
 \begin{center}
   {\LARGE State and proof roadmap for \lean{Lemmas}}\\[0.6em]
   {\large Quantitative strict-AT formalization}\\[0.4em]
-  Snapshot checked on 2 August 2026
+  Snapshot checked on 2 August 2026 at revision \lean{5d36554}
 \end{center}
 
 \section{Executive status}
@@ -68,10 +68,12 @@ The propositions \lean{HasFreeEnergyEndpointBridge} and
 \lean{HasCavityRemainderBound} remain useful interfaces for their proved
 downstream consequences.
 
-The successful build reports that \lean{SpinGlass.AT.quantitative_strictAT} depends on
-\lean{sorryAx}, along with the ordinary foundations \lean{propext},
-\lean{Classical.choice}, and \lean{Quot.sound}.  Thus the source is
-structurally build-complete but is not certified.
+Explicit \lean{\#print axioms} checks show that both
+\lean{SpinGlass.AT.quantitative_strictAT} and
+\lean{SpinGlass.AT.SK.quantitative_strictAT_for_sk} depend on exactly
+\lean{propext}, \lean{sorryAx}, \lean{Classical.choice}, and
+\lean{Quot.sound}.  Thus the source is structurally build-complete but neither
+public theorem is certified.
 
 The wrapper \lean{Latala_AT.lean} no longer assumes
 \lean{SmartPathBridge}.  Its endpoint overlap and free energy are defined
@@ -273,10 +275,11 @@ bridge-free theorem in \lean{Latala_AT.lean} already applies at the
 
 \item[Certification.] Run \lean{lake build LatalaMeetsAT}, search the Lean
 sources for \lean{sorry}, \lean{admit}, and project-specific \lean{axiom}, and
-inspect \lean{\#print axioms SpinGlass.AT.quantitative_strictAT}.  Certification
-requires a successful build and absence of \lean{sorryAx}; it also requires
-that the public theorem no longer obtains its analytic content from unproved
-assumptions.
+inspect \lean{\#print axioms SpinGlass.AT.quantitative_strictAT} and
+\lean{\#print axioms SpinGlass.AT.SK.quantitative_strictAT_for_sk}.
+Certification requires a successful build and absence of \lean{sorryAx}; it
+also requires that the public theorems no longer obtain their analytic content
+from unproved assumptions.
 \end{description}
 
 \section{Structural issues}

@@ -1,9 +1,10 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.1)  1 AUG 2026 22:50
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.1)  1 AUG 2026 22:57
 entering extended mode
  restricted \write18 enabled.
+ file:line:error style messages enabled.
  %&-line parsing enabled.
-**lean_states.tex
-(./lean_states.tex
+**c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex
+(c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
 (c:/texlive/2025/texmf-dist/tex/latex/base/article.cls
@@ -22,18 +23,14 @@ File: size11.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
 \abovecaptionskip=\skip49
 \belowcaptionskip=\skip50
 \bibindent=\dimen148
-)
-(c:/texlive/2025/texmf-dist/tex/latex/geometry/geometry.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/geometry/geometry.sty
 Package: geometry 2020/01/02 v5.9 Page Geometry
-
-(c:/texlive/2025/texmf-dist/tex/latex/graphics/keyval.sty
+ (c:/texlive/2025/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
 \KV@toks@=\toks17
-)
-(c:/texlive/2025/texmf-dist/tex/generic/iftex/ifvtex.sty
+) (c:/texlive/2025/texmf-dist/tex/generic/iftex/ifvtex.sty
 Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
-
-(c:/texlive/2025/texmf-dist/tex/generic/iftex/iftex.sty
+ (c:/texlive/2025/texmf-dist/tex/generic/iftex/iftex.sty
 Package: iftex 2024/12/12 v1.0g TeX engine tests
 ))
 \Gm@cnth=\count283
@@ -48,11 +45,9 @@ Package: iftex 2024/12/12 v1.0g TeX engine tests
 \Gm@layouthoffset=\dimen155
 \Gm@layoutvoffset=\dimen156
 \Gm@dimlist=\toks18
-)
-(c:/texlive/2025/texmf-dist/tex/latex/base/fontenc.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/base/fontenc.sty
 Package: fontenc 2025/07/18 v2.1d Standard LaTeX package
-)
-(c:/texlive/2025/texmf-dist/tex/latex/lm/lmodern.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/lm/lmodern.sty
 Package: lmodern 2015/05/01 v1.6.1 Latin Modern Fonts
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> OT1/lmr/m/n on input line 22.
@@ -86,11 +81,9 @@ LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
 (Font)                  OT1/cmr/bx/it --> OT1/lmr/bx/it on input line 37.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
 (Font)                  OT1/cmtt/m/n --> OT1/lmtt/m/n on input line 38.
-)
-(c:/texlive/2025/texmf-dist/tex/latex/microtype/microtype.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/microtype/microtype.sty
 Package: microtype 2025/07/09 v3.2b Micro-typographical refinements (RS)
-
-(c:/texlive/2025/texmf-dist/tex/latex/etoolbox/etoolbox.sty
+ (c:/texlive/2025/texmf-dist/tex/latex/etoolbox/etoolbox.sty
 Package: etoolbox 2025/10/02 v2.5m e-TeX tools for LaTeX (JAW)
 \etb@tempcnta=\count286
 )
@@ -106,22 +99,18 @@ LaTeX Info: Redefining \textls on input line 1449.
 LaTeX Info: Redefining \microtypecontext on input line 2053.
 LaTeX Info: Redefining \textmicrotypecontext on input line 2070.
 \MT@listname@count=\count288
-
-(c:/texlive/2025/texmf-dist/tex/latex/microtype/microtype-pdftex.def
+ (c:/texlive/2025/texmf-dist/tex/latex/microtype/microtype-pdftex.def
 File: microtype-pdftex.def 2025/07/09 v3.2b Definitions specific to pdftex (RS)
-
 LaTeX Info: Redefining \lsstyle on input line 944.
 LaTeX Info: Redefining \lslig on input line 944.
 \MT@outer@space=\skip51
 )
 Package microtype Info: Loading configuration file microtype.cfg.
-
-(c:/texlive/2025/texmf-dist/tex/latex/microtype/microtype.cfg
+ (c:/texlive/2025/texmf-dist/tex/latex/microtype/microtype.cfg
 File: microtype.cfg 2025/07/09 v3.2b microtype main configuration file (RS)
 )
 LaTeX Info: Redefining \microtypesetup on input line 3065.
-)
-(c:/texlive/2025/texmf-dist/tex/latex/tools/array.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/tools/array.sty
 Package: array 2025/09/25 v2.6n Tabular extension package (FMi)
 \col@sep=\dimen158
 \ar@mcellbox=\box54
@@ -130,8 +119,7 @@ Package: array 2025/09/25 v2.6n Tabular extension package (FMi)
 \extratabsurround=\skip52
 \backup@length=\skip53
 \ar@cellbox=\box55
-)
-(c:/texlive/2025/texmf-dist/tex/latex/tools/longtable.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/tools/longtable.sty
 Package: longtable 2025-10-13 v4.24 Multi-page Table package (DPC)
 \LTleft=\skip54
 \LTright=\skip55
@@ -149,8 +137,7 @@ Package: longtable 2025-10-13 v4.24 Multi-page Table package (DPC)
 \c@LT@tables=\count292
 \c@LT@chunks=\count293
 \LT@p@ftn=\toks22
-)
-(c:/texlive/2025/texmf-dist/tex/latex/booktabs/booktabs.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/booktabs/booktabs.sty
 Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \heavyrulewidth=\dimen161
 \lightrulewidth=\dimen162
@@ -169,25 +156,21 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count296
 \@lastruleclass=\count297
 \@thisrulewidth=\dimen173
-)
-(c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsmath.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsmath.sty
 Package: amsmath 2025/07/09 v2.17z AMS math features
 \@mathmargin=\skip58
 
 For additional information on amsmath, use the `?' option.
 (c:/texlive/2025/texmf-dist/tex/latex/amsmath/amstext.sty
 Package: amstext 2024/11/17 v2.01 AMS text
-
-(c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsgen.sty
+ (c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsgen.sty
 File: amsgen.sty 1999/11/30 v2.0 generic functions
 \@emptytoks=\toks23
 \ex@=\dimen174
-))
-(c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsbsy.sty
+)) (c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsbsy.sty
 Package: amsbsy 1999/11/29 v1.2d Bold Symbols
 \pmbraise@=\dimen175
-)
-(c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsopn.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/amsmath/amsopn.sty
 Package: amsopn 2022/04/08 v2.04 operator names
 )
 \inf@bad=\count298
@@ -237,27 +220,22 @@ LaTeX Info: Redefining \Relbar on input line 970.
 \mathdisplay@stack=\toks27
 LaTeX Info: Redefining \[ on input line 2950.
 LaTeX Info: Redefining \] on input line 2951.
-)
-(c:/texlive/2025/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/amsfonts/amsfonts.sty
 Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
 \symAMSa=\mathgroup4
 \symAMSb=\mathgroup5
 LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
 LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 (Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
-)
-(c:/texlive/2025/texmf-dist/tex/latex/xcolor/xcolor.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/xcolor/xcolor.sty
 Package: xcolor 2024/09/29 v3.02 LaTeX color extensions (UK)
-
-(c:/texlive/2025/texmf-dist/tex/latex/graphics-cfg/color.cfg
+ (c:/texlive/2025/texmf-dist/tex/latex/graphics-cfg/color.cfg
 File: color.cfg 2016/01/02 v1.6 sample color configuration
 )
 Package xcolor Info: Driver file: pdftex.def on input line 274.
-
-(c:/texlive/2025/texmf-dist/tex/latex/graphics-def/pdftex.def
+ (c:/texlive/2025/texmf-dist/tex/latex/graphics-def/pdftex.def
 File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
-)
-(c:/texlive/2025/texmf-dist/tex/latex/graphics/mathcolor.ltx)
+) (c:/texlive/2025/texmf-dist/tex/latex/graphics/mathcolor.ltx)
 Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1349.
 Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1353.
 Package xcolor Info: Model `RGB' extended on input line 1365.
@@ -267,22 +245,17 @@ Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1369.
 Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1370.
 Package xcolor Info: Model `Gray' substituted by `gray' on input line 1371.
 Package xcolor Info: Model `wave' substituted by `hsb' on input line 1372.
-)
-(c:/texlive/2025/texmf-dist/tex/latex/url/url.sty
+) (c:/texlive/2025/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip18
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 38
-.
-
-(c:/texlive/2025/texmf-dist/tex/latex/lm/t1lmr.fd
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 38.
+ (c:/texlive/2025/texmf-dist/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-(c:/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+) (c:/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count310
-)
-(./lean_states.aux)
+) (./lean_states.aux)
 \openout1 = `lean_states.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 38.
@@ -352,10 +325,8 @@ Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
 (c:/texlive/2025/texmf-dist/tex/latex/microtype/mt-cmr.cfg
-File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman 
-(RS)
-)
-(c:/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
+) (c:/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count311
 \scratchdimen=\dimen183
@@ -369,8 +340,7 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 \makeMPintoPDFobject=\count316
 \everyMPtoPDFconversion=\toks29
 )
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 4
-1.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 41.
  (c:/texlive/2025/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -378,28 +348,20 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 4
-1.
-
-(c:/texlive/2025/texmf-dist/tex/latex/lm/ot1lmr.fd
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 41.
+ (c:/texlive/2025/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 4
-1.
-
-(c:/texlive/2025/texmf-dist/tex/latex/lm/omllmm.fd
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 41.
+ (c:/texlive/2025/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-41.
-
-(c:/texlive/2025/texmf-dist/tex/latex/lm/omslmsy.fd
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 41.
+ (c:/texlive/2025/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-41.
-
-(c:/texlive/2025/texmf-dist/tex/latex/lm/omxlmex.fd
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 41.
+ (c:/texlive/2025/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
@@ -409,132 +371,110 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <10> on input line 41.
 LaTeX Font Info:    Trying to load font information for U+msa on input line 41.
-
-
-(c:/texlive/2025/texmf-dist/tex/latex/amsfonts/umsa.fd
+ (c:/texlive/2025/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-)
-(c:/texlive/2025/texmf-dist/tex/latex/microtype/mt-msa.cfg
+) (c:/texlive/2025/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
 LaTeX Font Info:    Trying to load font information for U+msb on input line 41.
-
-
-(c:/texlive/2025/texmf-dist/tex/latex/amsfonts/umsb.fd
+ (c:/texlive/2025/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-)
-(c:/texlive/2025/texmf-dist/tex/latex/microtype/mt-msb.cfg
+) (c:/texlive/2025/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 48.
+(Font)              <10.95> on input line 43.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 48.
+(Font)              <8> on input line 43.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 48.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 91.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 91.
+(Font)              <6> on input line 43.
 
-Underfull \hbox (badness 5504) in paragraph at lines 91--110
-[]$\T1/lmtt/m/n/10 Replicas$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 RSParameters
-$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 UniformData$ $\OMS/lmsy/m/n/10 !$ $\T1/
-lmtt/m/n/10 SmartPath$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 GaussianDerivative
-$ $\OMS/lmsy/m/n/10 !$
+Underfull \hbox (badness 3646) in paragraph at lines 71--77
+\T1/lmtt/m/n/10.95 SpinGlass . AT . SK . quantitative _ strictAT _ for _ sk$ \T1/lmr/m/n/10.95 (+20) de-pend on ex-actly $\T1/lmtt/m/n/10.95 propext$\T1/lmr/m/n/10.95 (+20) , $\T1/lmtt/m/n/10.95 sorryAx$\T1/lmr/m/n/10.95 (+20) ,
+ []
+
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <7> on input line 93.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 93.
+
+Underfull \hbox (badness 5504) in paragraph at lines 93--112
+[]$\T1/lmtt/m/n/10 Replicas$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 RSParameters$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 UniformData$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 SmartPath$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 GaussianDerivative$ $\OMS/lmsy/m/n/10 !$
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 130--131
-[]|\T1/lmr/m/n/10 (+20) Definitions and $\T1/lmtt/m/n/10 rsGap _ deriv$ \T1/lmr
-/m/n/10 (+20) are com-plete;
+Underfull \hbox (badness 10000) in paragraph at lines 132--133
+[]|\T1/lmr/m/n/10 (+20) Definitions and $\T1/lmtt/m/n/10 rsGap _ deriv$ \T1/lmr/m/n/10 (+20) are com-plete;
  []
 
 [1
 
-{c:/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2025/
-texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/texlive/2025/texmf-dist/fonts/enc/d
-vips/lm/lm-mathit.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}
-{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
-ignored error: Infinite glue shrinkage found in box being split [2]
-Underfull \hbox (badness 10000) in paragraph at lines 166--167
+{c:/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
+c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex:152: ignored error: Infinite glue shrinkage found in box being split [2]
+Underfull \hbox (badness 10000) in paragraph at lines 168--169
 []|\T1/lmr/m/n/10 (+20) The op-er-a-tor is writ-ten down, but
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 166--167
+Underfull \hbox (badness 10000) in paragraph at lines 168--169
 \T1/lmtt/m/n/10 quenchedGibbs _ deriv _ of _ covariance _
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 167--167
+Underfull \hbox (badness 10000) in paragraph at lines 169--169
 []|$\T1/lmtt/m/n/10 FreeEnergyDerivative .
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 168--168
+Underfull \hbox (badness 10000) in paragraph at lines 170--170
 []|$\T1/lmtt/m/n/10 Scalar / StrictATSign .
  []
 
 
-Underfull \hbox (badness 1953) in paragraph at lines 170--171
+Underfull \hbox (badness 1953) in paragraph at lines 172--173
 \T1/lmr/m/n/10 (+20) mul-ti-plier deriva-tives, a uni-form second-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 173--173
+Underfull \hbox (badness 10000) in paragraph at lines 175--175
 []|$\T1/lmtt/m/n/10 Cavity / Interpolation .
  []
 
 
-Underfull \hbox (badness 1173) in paragraph at lines 174--175
+Underfull \hbox (badness 1173) in paragraph at lines 176--177
 []|\T1/lmr/m/n/10 (+20) The fi-nal cal-cu-lus ar-gu-ment is com-plete.
  []
 
 
-Underfull \hbox (badness 6220) in paragraph at lines 174--175
-\T1/lmtt/m/n/10 freeEnergy _ endpoint _ bridge$ \T1/lmr/m/n/10 (+20) still need
-s
+Underfull \hbox (badness 6220) in paragraph at lines 176--177
+\T1/lmtt/m/n/10 freeEnergy _ endpoint _ bridge$ \T1/lmr/m/n/10 (+20) still needs
  []
 
 [3] [4]
-Underfull \hbox (badness 7256) in paragraph at lines 217--221
-[]$\T1/lmtt/m/n/10.95 strictAT _ sign _ of _ scalar _ linear _ bounds$ \T1/lmr/
-m/n/10.95 (+20) proves the re-quired sign
+Underfull \hbox (badness 7256) in paragraph at lines 219--223
+[]$\T1/lmtt/m/n/10.95 strictAT _ sign _ of _ scalar _ linear _ bounds$ \T1/lmr/m/n/10.95 (+20) proves the re-quired sign
  []
 
 [5]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 2
-96.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 299.
  (c:/texlive/2025/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [6{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [7] (./lean_sta
-tes.aux)
+) [6{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [7] (./lean_states.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 6074 strings out of 467533
- 94370 string characters out of 5423669
+ 6075 strings out of 467533
+ 94557 string characters out of 5423669
  566427 words of memory out of 5000000
  34771 multiletter control sequences out of 15000+600000
  682930 words of font info for 158 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,8n,65p,1008b,431s stack positions out of 10000i,1000n,20000p,200000b,200000s
-<c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/texlive/2025
-/texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/texlive/2025/texmf-dist/fonts/t
-ype1/public/lm/lmmi8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr1
-0.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/texlive/2
-025/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/texlive/2025/texmf-dist/font
-s/type1/public/lm/lmr6.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lm
-r8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/texlive
-/2025/texmf-dist/fonts/type1/public/lm/lmsy8.pfb><c:/texlive/2025/texmf-dist/fo
-nts/type1/public/lm/lmtt10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/l
-m/lmtt12.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/ms
-bm10.pfb>
-Output written on lean_states.pdf (7 pages, 220673 bytes).
+ 57i,8n,65p,1071b,431s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr6.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsy8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt12.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on lean_states.pdf (7 pages, 221505 bytes).
 PDF statistics:
  104 PDF objects out of 1000 (max. 8388607)
  66 compressed objects within 1 object stream
