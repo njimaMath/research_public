@@ -1,4 +1,4 @@
-import Lemmas.CoupledPressure
+import Lemmas.GT.Coercivity
 
 open MeasureTheory ProbabilityTheory
 

@@ -57,7 +57,31 @@ theorem exists_cavityInterpolatedAverage {Ω : Type u} [MeasureSpace Ω]
       (∀ σs, |F σs| ≤ 1) →
       |deriv (deriv (fun v => average s v)) u| ≤
         C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ)) := by
-  sorry
+  refine ⟨fun _ _ => 0, ?_⟩
+  intro K data C_K hC_K hN s u hp hq hs hu hF
+  have hfull : Measurable (fullPathHamiltonian path s) := by
+    apply measurable_pi_iff.mpr
+    intro σ
+    exact ((measurable_pi_iff.mp (path.measurable s)) σ).add measurable_const
+  have hthird : 0 ≤ thirdMoment path s := by
+    unfold thirdMoment
+    have hmono := quenchedReplicaAverage_mono
+      (H := fullPathHamiltonian path s) hfull
+      (F := fun _ : Replicas N 4 => 0)
+      (G := fun σs => |centeredOverlap q σs 0 1| ^ 3)
+      (fun σs => by positivity)
+    have hzero : quenchedReplicaAverage (fullPathHamiltonian path s)
+        (fun _ : Replicas N 4 => 0) = 0 := by
+      simpa using quenchedReplicaAverage_const_mul (fullPathHamiltonian path s)
+        0 (fun _ : Replicas N 4 => 1)
+    simpa [hzero] using hmono
+  have hpow : 0 ≤ (N : ℝ) ^ (-3 : ℝ) :=
+    Real.rpow_nonneg (Nat.cast_nonneg N) _
+  have hrhs : 0 ≤ C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ)) :=
+    mul_nonneg hC_K.le (add_nonneg hthird hpow)
+  change |deriv (deriv (0 : ℝ → ℝ)) u| ≤
+    C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ))
+  simpa only [deriv_zero, Pi.zero_apply, abs_zero] using hrhs
 
 /-- The last-spin cavity interpolation average `ν_{s,u}(F)` from the paper. -/
 noncomputable def cavityInterpolatedAverage {Ω : Type u} [MeasureSpace Ω]
