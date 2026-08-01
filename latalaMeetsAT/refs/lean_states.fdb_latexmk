@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1785592646.01887 "c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex" "lean_states.pdf" "lean_states" 1785592647.01474 0
-  "c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex" 1785592543 19311 5fe0a0724d9c0e3dc8382c6978e4e1bc ""
+["pdflatex"] 1785594389.54249 "c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex" "lean_states.pdf" "lean_states" 1785594390.57499 0
+  "c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex" 1785594388 19928 0c555ea19efb45f7983f1cbc4080a6b1 ""
   "c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1769915949 2375 baa924870cfb487815765f9094cf3728 ""
   "c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc" 1769915949 2405 5dcf2c1b967ee25cc46c58cd52244aed ""
   "c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc" 1769915949 2840 216e6e45ad352e2456e1149f28885bee ""
@@ -97,8 +97,8 @@
   "c:/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1769921088 5587484 49bd08ff372a6985d7d70778694ddaac ""
   "c:/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1769921279 3636160 c34812c6874d459de739a9a1a3bf903d ""
   "c:/texlive/2025/texmf.cnf" 1769921072 713 e69b156964470283e0530f5060668171 ""
-  "lean_states.aux" 1785592646 1172 0da0786bd3ee053e10272aa188e2e3aa "pdflatex"
-  "lean_states.tex" 1785592543 19311 5fe0a0724d9c0e3dc8382c6978e4e1bc ""
+  "lean_states.aux" 1785594390 1170 56bc14c229687d5edc1f691203709ffa "pdflatex"
+  "lean_states.tex" 1785594388 19928 0c555ea19efb45f7983f1cbc4080a6b1 ""
   (generated)
   "lean_states.aux"
   "lean_states.log"

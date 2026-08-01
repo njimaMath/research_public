@@ -40,7 +40,7 @@
 \begin{center}
   {\LARGE State and proof roadmap for \lean{Lemmas}}\\[0.6em]
   {\large Quantitative strict-AT formalization}\\[0.4em]
-  Snapshot checked on 2 August 2026 at revision \lean{5d36554}
+  Snapshot checked on 1 August 2026 at revision \lean{b241820}
 \end{center}
 
 \section{Executive status}
@@ -52,18 +52,21 @@ statement.  Its proof invokes the named existence theorems for the cavity
 remainder and free-energy endpoints, both of which currently contain
 \lean{sorry}.
 
-The directory \lean{Lemmas} contains 24 Lean files.  Seventeen files have
-no local \lean{sorry}; seven files contain seven occurrences in total.  There are
+The directory \lean{Lemmas} contains 24 Lean files.  Eighteen files have
+no local \lean{sorry}; six files contain six occurrences in total.  There are
 no project-specific \lean{axiom} declarations and no \lean{admit}s in this
 directory.  Every placeholder is now in an ordinary theorem; there are no
 placeholder definitions.
 
 The former analytic typeclasses have been removed.  Gaussian covariance
-differentiation, GT interpolation, GT functional coercivity, the last-spin
-construction, the cavity-remainder estimate, and the free-energy endpoint
-facts are now isolated as ordinary theorems with localized placeholders,
-except that the current cavity-interpolation existence statement is discharged
-by a zero witness because it does not encode the intended endpoint identities.
+differentiation, GT interpolation, the last-spin construction, the
+cavity-remainder estimate, and the free-energy endpoint facts are isolated as
+ordinary theorems with localized placeholders.  GT functional coercivity now
+has a proved algebraic assembly theorem consuming the explicit
+\lean{GTFunctionalAnalyticData} interface; its multiplier Taylor estimates and
+negative-range gap still require analytic proofs.  The current
+cavity-interpolation existence statement is discharged by a zero witness
+because it does not encode the intended endpoint identities.
 The propositions \lean{HasFreeEnergyEndpointBridge} and
 \lean{HasCavityRemainderBound} remain useful interfaces for their proved
 downstream consequences.
@@ -135,7 +138,7 @@ File & Local state & What is present or missing \\
 \lean{Scalar/StrictATSign.lean} & \conditional & \lean{scalarOrderParameterCorrect} is an explicit piecewise Gaussian formula.  The order-theoretic sign and local absolute-value estimate are proved from left and right linear bounds; the analytic derivation of those bounds is not supplied. \\
 \lean{GT/Defs.lean} & \done & Attainable overlaps, constrained free energy, signed matrix path, mass profile, correction, terminal condition, and endpoint identities. \\
 \lean{GT/Interpolation.lean} & \openstate{1} & Contains the zero, half, and one operators, the constant half-mass identity, explicit Gaussian recursion steps, \lean{gtSemigroupSolution}, and \lean{gtFunctional}.  The finite-volume theorem \lean{twoReplica_GT_bound} remains. \\
-\lean{GT/Coercivity.lean} & \openstate{1} & The local constant, abstract Taylor-loss lemma, overlap-range lemma, and composition theorem are proved.  The analytic estimate \lean{gtFunctional_coercivity} remains. \\
+\lean{GT/Coercivity.lean} & \conditional & The local constant, abstract Taylor-loss lemma, overlap-range lemma, and algebraic coercivity assembly are proved.  \lean{GTFunctionalAnalyticData} records the remaining Taylor and negative-range analytic inputs. \\
 \lean{CoupledPressure.lean} & \conditional & Correct quadratic pressure definitions are present.  The uniform sublinear overlap estimate is proved from \lean{fixedDeviation} by a supremum envelope and a small-tail argument. \\
 \lean{FixedDeviation.lean} & \openstate{1} & Exponentially small fixed-deviation tails remain. \\
 \lean{Cavity/Defs.lean} & \done & The observables $A,B,C$, the identity between $A$ and the overlap second moment, cavity vector, source vector, and $3\times3$ cavity matrix. \\
@@ -169,17 +172,17 @@ Gaussian covariance derivative & difficult & Codex & The operator is written dow
 \lean{FreeEnergyDerivative.lean} & difficult & Codex & The proof must apply Gaussian covariance differentiation, derive the diagonal correction and covariance cancellation, and normalize replica sums.  Focused algebraic sublemmas may then be handed off. \\
 \lean{Scalar/StrictATSign.lean} & difficult & Codex & The formula and order-theoretic closure are explicit.  The remaining analytic work is differentiation under Gaussian integrals and the left and right linear bounds. \\
 GT interpolation theorem & difficult & Codex & The explicit recursion exists, but \lean{twoReplica_GT_bound} still requires the finite-cascade interpolation, endpoint identifications, and derivative sign. \\
-GT coercivity theorem & difficult & Codex & Proving \lean{gtFunctional_coercivity} requires multiplier derivatives, a uniform second-derivative estimate, the scalar linear bounds, and signed far-from-$q$ estimates. \\
+GT functional analytic package & difficult & Codex & Construct \lean{GTFunctionalAnalyticData} by proving multiplier derivatives, a uniform Taylor bound, the scalar linear bounds, and the signed far-from-$q$ estimates.  The algebraic assembly \lean{gtFunctional_coercivity} is complete. \\
 \lean{CoupledPressure.lean} & moderate & Codex & The sublinear overlap estimate is locally complete from \lean{fixedDeviation}.  Recheck its supremum construction after the concentration theorem is proved. \\
 \lean{FixedDeviation.lean} & difficult & Codex & The covariance-only disorder still lacks the explicit coordinate or direct concentration interface needed for the gradient estimate. \\
 \lean{Cavity/Interpolation.lean} & difficult & Codex & The last-spin decomposition is absent, and the derivative expansion requires replica bookkeeping, endpoint identities, and uniform estimates. \\
 Free-energy endpoints & moderate & Codex & The final calculus argument is complete.  \lean{freeEnergy_endpoint_bridge} still needs continuity of the covariance-dependent free energy and the $s=0$ product endpoint identity. \\
-Top-level certification & moderate & Codex & The assembly and bridge-free endpoint wrapper build.  Certification requires replacing the seven theorem placeholders, repairing the cavity interpolation specification, and auditing the resulting axiom set. \\
+Top-level certification & moderate & Codex & The assembly and bridge-free endpoint wrapper build.  Certification requires replacing the six theorem placeholders, repairing the cavity interpolation specification, and auditing the resulting axiom set. \\
 \bottomrule
 \end{longtable}
 \normalsize
 
-\section{The seven remaining sorry obligations}
+\section{The six remaining sorry obligations}
 
 \begin{enumerate}
 \item \lean{GaussianDerivative.lean:quenchedGibbs_deriv_of_covariance_deriv}.
@@ -195,10 +198,6 @@ $\frac{\beta^2}{4}((1-q)^2-\mathbb E\langle(R_{12}-q)^2\rangle)$.
 \item \lean{GT/Interpolation.lean:twoReplica_GT_bound}.  Construct the
 finite-cascade Guerra--Talagrand interpolation for the explicit recursion and
 verify its endpoint and derivative identities.
-
-\item \lean{GT/Coercivity.lean:gtFunctional_coercivity}.  Prove multiplier
-differentiability, uniform Taylor control, and the signed estimates away from
-$q$.
 
 \item \lean{FixedDeviation.lean:fixedDeviation}.  Prove the uniform $O_K(N)$
 squared-gradient estimate and apply finite-Gaussian concentration compatible
@@ -230,10 +229,16 @@ localized placeholder that supplies it uniformly.
 \lean{HasCavityRemainderBound data C} is the analytic input to absorption and
 the final conclusions.  The theorem \lean{exists_cavityRemainder_bound} is the
 localized placeholder that supplies such a constant.
+
+\item[GT functional coercivity.]
+\lean{GTFunctionalAnalyticData} packages the multiplier Taylor estimate and
+the uniform negative-range gap required by the proved algebraic assembly
+\lean{gtFunctional_coercivity}.  The package itself still needs analytic
+construction from the explicit GT recursion.
 \end{description}
 
-These interfaces make dependencies visible, but their placeholder existence
-theorems must be proved before certification.
+These interfaces make dependencies visible.  Their placeholder existence
+theorems and the GT analytic package must be supplied before certification.
 
 \section{Recommended proof roadmap}
 
@@ -250,8 +255,9 @@ convolution identity, and Lata\l a kernel lemmas needed by this stage are
 complete.
 
 \item[GT package.] Prove \lean{twoReplica_GT_bound} for the explicit recursion,
-then prove \lean{gtFunctional_coercivity}.  Expose multiplier derivatives and
-factorization as reusable named lemmas.
+then construct \lean{GTFunctionalAnalyticData} by exposing multiplier
+derivatives, Taylor control, and factorization as reusable named lemmas.  The
+algebraic assembly \lean{gtFunctional_coercivity} is already complete.
 
 \item[Pressure and tails.] Prove \lean{fixedDeviation} using the common
 finite-Gaussian concentration interface, then audit the completed
@@ -301,11 +307,11 @@ last-spin interpolation.
 It does not yet prove Gaussian interpolation from the covariance assumptions
 in \lean{SmartPath.lean}.
 
-\item \lean{GT/Interpolation.lean:twoReplica_GT_bound} and
-\lean{GT/Coercivity.lean:gtFunctional_coercivity} are localized placeholders.
-The explicit recursion and the composition theorem
-\lean{gt_quadratic_coercivity} are present, but neither core analytic estimate
-has been proved.
+\item \lean{GT/Interpolation.lean:twoReplica_GT_bound} remains a localized
+placeholder.  In \lean{GT/Coercivity.lean}, the explicit recursion and the
+composition theorem \lean{gt_quadratic_coercivity} are present, and the
+coercivity assembly is proved under \lean{GTFunctionalAnalyticData}; the
+analytic package itself is not yet constructed.
 
 \item \lean{FreeEnergy.lean} contains the placeholder theorem
 \lean{freeEnergy_endpoint_bridge}.  The subsequent mean-value argument and

@@ -53,7 +53,7 @@ theorem taylor_quadratic_loss (H : ℝ → ℝ) (d M c lambda0 delta : ℝ)
       exact (div_le_div_iff_of_pos_right hden).2 (by linarith)
     _ = -(c ^ 2 / (2 * M)) * delta ^ 2 := by ring
 
-/- - The analytic input still missing from the explicit GT recursion.  Keeping
+/-- The analytic input still missing from the explicit GT recursion.  Keeping
 these estimates as a named interface lets the coercivity argument below be
 checked independently of the Gaussian differentiation proofs that establish
 them. -/
@@ -85,7 +85,7 @@ structure GTFunctionalAnalyticData {K : Set (ℝ × ℝ)}
   taylor_package : HasGTFunctionalTaylorPackage data
   negative_gap : HasGTFunctionalNegativeGap data
 
-/- - Analytic coercivity estimate on the explicit GT functional, assembled
+/-- Analytic coercivity estimate on the explicit GT functional, assembled
 from the multiplier Taylor package and the signed negative-range gap. -/
 theorem gtFunctional_coercivity {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (analytic : GTFunctionalAnalyticData data) :

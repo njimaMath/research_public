@@ -3,6 +3,8 @@ import SpinGlass.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
 import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Analysis.InnerProductSpace.Spectrum
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 open MeasureTheory ProbabilityTheory BigOperators
 
@@ -12,8 +14,57 @@ namespace SpinGlass.AT
 
 universe u
 
-open scoped RealInnerProductSpace NNReal
+open scoped RealInnerProductSpace NNReal ContDiff
 open PhysLean.Probability.GaussianIBP
+
+/-- The Euclidean realization of the finite Hamiltonian coordinate space. -/
+private abbrev HilbertEnergy (N : ℕ) := EuclideanSpace ℝ (Config N)
+
+/-- The finite-product sup norm and Euclidean norm give continuously equivalent
+models of the same coordinate vector. -/
+private noncomputable def hilbertEnergyEquiv (N : ℕ) :
+    HilbertEnergy N ≃L[ℝ] EnergySpace N :=
+  PiLp.continuousLinearEquiv 2 ℝ (fun _ : Config N => ℝ)
+
+/-- The finite-replica Gibbs observable, viewed on the Euclidean Hamiltonian
+coordinate space. -/
+private noncomputable def euclideanReplicaObservable {N n : ℕ}
+    (F : Replicas N n → ℝ) (H : HilbertEnergy N) : ℝ :=
+  replicaGibbsAverage (hilbertEnergyEquiv N H) F
+
+private theorem contDiff_euclideanReplicaObservable {N n : ℕ}
+    (F : Replicas N n → ℝ) :
+    ContDiff ℝ (∞) (euclideanReplicaObservable F) := by
+  classical
+  let ev : Config N → HilbertEnergy N →L[ℝ] ℝ := fun σ =>
+    PiLp.proj 2 (fun _ : Config N => ℝ) σ
+  have hev (σ : Config N) :
+      ContDiff ℝ (∞) (fun H : HilbertEnergy N => H σ) := (ev σ).contDiff
+  have hpart : ContDiff ℝ (∞)
+      (fun H : HilbertEnergy N => ∑ σ : Config N, Real.exp (H σ)) := by
+    apply ContDiff.sum
+    intro σ _
+    exact Real.contDiff_exp.comp (hev σ)
+  have hpart_ne (H : HilbertEnergy N) :
+      (∑ σ : Config N, Real.exp (H σ)) ≠ 0 := by
+    exact ne_of_gt (Finset.sum_pos (fun σ _ => Real.exp_pos (H σ)) Finset.univ_nonempty)
+  have hweight (σ : Config N) : ContDiff ℝ (∞)
+      (fun H : HilbertEnergy N =>
+        Real.exp (H σ) / ∑ τ : Config N, Real.exp (H τ)) := by
+    exact (Real.contDiff_exp.comp (hev σ)).div hpart hpart_ne
+  unfold euclideanReplicaObservable replicaGibbsAverage gibbsWeight partitionFunction
+  apply ContDiff.sum
+  intro σs _
+  apply ContDiff.mul
+  · have hp : ContDiff ℝ (∞) (fun H : HilbertEnergy N =>
+        ∏ a : Fin n, Real.exp (H (σs a)) / ∑ σ : Config N, Real.exp (H σ)) := by
+      simpa using (contDiff_prod
+        (t := (Finset.univ : Finset (Fin n)))
+        (f := fun (a : Fin n) (H : HilbertEnergy N) =>
+          Real.exp (H (σs a)) / ∑ σ : Config N, Real.exp (H σ))
+        (by intro a _; exact hweight (σs a)))
+    simpa [hilbertEnergyEquiv] using hp
+  · exact contDiff_const
 
 /-- A centered finite-dimensional Gaussian law admits the independent-coordinate
 model required by the Hilbert-space integration-by-parts theorem. -/
@@ -24,7 +75,7 @@ private noncomputable def gaussianHilbertOfCentered
     [SecondCountableTopology E] [CompleteSpace E]
     (g : Ω → E) (hg : Measurable g)
     (hgauss : IsGaussian (Measure.map g (ℙ : Measure Ω)))
-    (hmean : ∫ ω : Ω, g ω ∂(ℙ : Measure Ω) = 0) :
+    (hmean : ∫ sample : Ω, g sample ∂(ℙ : Measure Ω) = 0) :
     IsGaussianHilbert g := by
   classical
   let μ : Measure E := Measure.map g (ℙ : Measure Ω)
@@ -38,7 +89,7 @@ private noncomputable def gaussianHilbertOfCentered
   let w : OrthonormalBasis (Fin (Module.finrank ℝ E)) ℝ E :=
     hT.isSymmetric.eigenvectorBasis rfl
   let lam : Fin (Module.finrank ℝ E) → ℝ := hT.isSymmetric.eigenvalues rfl
-  let c : Fin (Module.finrank ℝ E) → Ω → ℝ := fun i ω => inner ℝ (g ω) (w i)
+  let c : Fin (Module.finrank ℝ E) → Ω → ℝ := fun i sample => inner ℝ (g sample) (w i)
   refine
     { ι := Fin (Module.finrank ℝ E)
       fintype_ι := inferInstance
@@ -72,17 +123,17 @@ private noncomputable def gaussianHilbertOfCentered
     rw [hmeanL, hvar] at hmap
     change Measure.map (c i) (ℙ : Measure Ω) = gaussianReal 0 (lam i).toNNReal
     rw [show c i = L ∘ g by
-      funext ω
-      simpa [c, L] using (real_inner_comm (g ω) (w i)).symm]
+      funext sample
+      simpa [c, L] using (real_inner_comm (g sample) (w i)).symm]
     rw [← Measure.map_map L.measurable hg]
     change Measure.map L μ = gaussianReal 0 (lam i).toNNReal
     exact hmap
   · let C : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
       ContinuousLinearMap.pi (fun i => InnerProductSpace.toDualMap ℝ E (w i))
     have hgLaw : HasGaussianLaw g (ℙ : Measure Ω) := hgauss.hasGaussianLaw
-    have hjoint : HasGaussianLaw (fun ω : Ω => C (g ω)) (ℙ : Measure Ω) := by
+    have hjoint : HasGaussianLaw (fun sample : Ω => C (g sample)) (ℙ : Measure Ω) := by
       simpa [Function.comp_def] using hgLaw.map C
-    have hi : iIndepFun (fun i ω => C (g ω) i) (ℙ : Measure Ω) := by
+    have hi : iIndepFun (fun i sample => C (g sample) i) (ℙ : Measure Ω) := by
       apply hjoint.iIndepFun_of_covariance_eq_zero
       intro i j hij
       let Xi : E → ℝ := fun x => C x i
@@ -162,18 +213,41 @@ theorem quenchedGibbs_deriv_of_covariance_deriv {Ω : Type u} [MeasureSpace Ω]
   have hone : (1 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := by norm_num
   letI hgauss0 : IsGaussian (Measure.map (path.H 0) volume) := path.gaussian 0 hzero
   letI hgauss1 : IsGaussian (Measure.map (path.H 1) volume) := path.gaussian 1 hone
-  have hmean0 : ∫ ω, path.H 0 ω ∂(volume : Measure Ω) = 0 := by
+  let e : EnergySpace N ≃L[ℝ] HilbertEnergy N := (hilbertEnergyEquiv N).symm
+  let g0 : Ω → HilbertEnergy N := fun sample => e (path.H 0 sample)
+  let g1 : Ω → HilbertEnergy N := fun sample => e (path.H 1 sample)
+  have g0meas : Measurable g0 := e.continuous.measurable.comp (path.measurable 0)
+  have g1meas : Measurable g1 := e.continuous.measurable.comp (path.measurable 1)
+  have hgauss0' : IsGaussian (Measure.map g0 volume) := by
+    rw [show Measure.map g0 volume =
+      Measure.map e (Measure.map (path.H 0) volume) by
+        simpa [g0, Function.comp_def] using
+          (Measure.map_map e.continuous.measurable (path.measurable 0)).symm]
+    infer_instance
+  have hgauss1' : IsGaussian (Measure.map g1 volume) := by
+    rw [show Measure.map g1 volume =
+      Measure.map e (Measure.map (path.H 1) volume) by
+        simpa [g1, Function.comp_def] using
+          (Measure.map_map e.continuous.measurable (path.measurable 1)).symm]
+    infer_instance
+  letI hg0law : IsGaussian (Measure.map g0 volume) := hgauss0'
+  letI hg1law : IsGaussian (Measure.map g1 volume) := hgauss1'
+  have g0int : Integrable g0 (volume : Measure Ω) :=
+    IsGaussian.integrable_id.comp_measurable g0meas
+  have g1int : Integrable g1 (volume : Measure Ω) :=
+    IsGaussian.integrable_id.comp_measurable g1meas
+  have hmean0 : ∫ sample, g0 sample ∂(volume : Measure Ω) = 0 := by
     ext σ
-    rw [ContinuousLinearMap.integral_comp_comm]
-    exact path.centered 0 hzero σ
-  have hmean1 : ∫ ω, path.H 1 ω ∂(volume : Measure Ω) = 0 := by
+    rw [eval_integral_piLp (fun i => g0int.eval_piLp i) σ]
+    simpa [g0, e, hilbertEnergyEquiv] using path.centered 0 hzero σ
+  have hmean1 : ∫ sample, g1 sample ∂(volume : Measure Ω) = 0 := by
     ext σ
-    rw [ContinuousLinearMap.integral_comp_comm]
-    exact path.centered 1 hone σ
-  let hg0 : IsGaussianHilbert (path.H 0) :=
-    gaussianHilbertOfCentered (path.H 0) (path.measurable 0) hgauss0 hmean0
-  let hg1 : IsGaussianHilbert (path.H 1) :=
-    gaussianHilbertOfCentered (path.H 1) (path.measurable 1) hgauss1 hmean1
+    rw [eval_integral_piLp (fun i => g1int.eval_piLp i) σ]
+    simpa [g1, e, hilbertEnergyEquiv] using path.centered 1 hone σ
+  let hg0 : IsGaussianHilbert g0 :=
+    gaussianHilbertOfCentered g0 g0meas hgauss0' hmean0
+  let hg1 : IsGaussianHilbert g1 :=
+    gaussianHilbertOfCentered g1 g1meas hgauss1' hmean1
   sorry
 
 end SpinGlass.AT

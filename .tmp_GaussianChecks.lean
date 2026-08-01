@@ -22,6 +22,15 @@ import Mathlib.Analysis.InnerProductSpace.Spectrum
 #check MeasureTheory.integral_map
 #check MeasureTheory.Measure.map_map
 #check ProbabilityTheory.covariance_map
+#check PiLp.continuousLinearEquiv
+#check WithLp.toLp
+#check WithLp.ofLp
+#check contDiff_prod'
+#check contDiff_sum
+#check ContDiff.prod
+#check ContDiff.sum
+#check contDiff_exp
+#check Real.contDiff_exp
 
 open MeasureTheory ProbabilityTheory
 open scoped ProbabilityTheory RealInnerProductSpace NNReal

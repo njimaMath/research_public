@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.1)  1 AUG 2026 22:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2026.2.1)  1 AUG 2026 23:26
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -389,92 +389,116 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <6> on input line 43.
 
-Underfull \hbox (badness 3646) in paragraph at lines 71--77
+Underfull \hbox (badness 3646) in paragraph at lines 74--80
 \T1/lmtt/m/n/10.95 SpinGlass . AT . SK . quantitative _ strictAT _ for _ sk$ \T1/lmr/m/n/10.95 (+20) de-pend on ex-actly $\T1/lmtt/m/n/10.95 propext$\T1/lmr/m/n/10.95 (+20) , $\T1/lmtt/m/n/10.95 sorryAx$\T1/lmr/m/n/10.95 (+20) ,
  []
 
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 93.
+(Font)              <7> on input line 96.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 93.
+(Font)              <5> on input line 96.
 
-Underfull \hbox (badness 5504) in paragraph at lines 93--112
+Underfull \hbox (badness 5504) in paragraph at lines 96--115
 []$\T1/lmtt/m/n/10 Replicas$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 RSParameters$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 UniformData$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 SmartPath$ $\OMS/lmsy/m/n/10 !$ $\T1/lmtt/m/n/10 GaussianDerivative$ $\OMS/lmsy/m/n/10 !$
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 132--133
+Underfull \hbox (badness 10000) in paragraph at lines 135--136
 []|\T1/lmr/m/n/10 (+20) Definitions and $\T1/lmtt/m/n/10 rsGap _ deriv$ \T1/lmr/m/n/10 (+20) are com-plete;
  []
 
 [1
 
 {c:/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
-c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex:152: ignored error: Infinite glue shrinkage found in box being split [2]
-Underfull \hbox (badness 10000) in paragraph at lines 168--169
+c:/Users/Public/Github/Lean/research_public/latalaMeetsAT/refs/lean_states.tex:155: ignored error: Infinite glue shrinkage found in box being split [2]
+Underfull \hbox (badness 10000) in paragraph at lines 171--172
 []|\T1/lmr/m/n/10 (+20) The op-er-a-tor is writ-ten down, but
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 168--169
+Underfull \hbox (badness 10000) in paragraph at lines 171--172
 \T1/lmtt/m/n/10 quenchedGibbs _ deriv _ of _ covariance _
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 169--169
+Underfull \hbox (badness 10000) in paragraph at lines 172--172
 []|$\T1/lmtt/m/n/10 FreeEnergyDerivative .
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 170--170
+Underfull \hbox (badness 10000) in paragraph at lines 173--173
 []|$\T1/lmtt/m/n/10 Scalar / StrictATSign .
  []
 
 
-Underfull \hbox (badness 1953) in paragraph at lines 172--173
-\T1/lmr/m/n/10 (+20) mul-ti-plier deriva-tives, a uni-form second-
+Underfull \hbox (badness 10000) in paragraph at lines 175--175
+[]|\T1/lmr/m/n/10 (+20) GT func-tional an-a-lytic
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 175--175
+Underfull \hbox (badness 2644) in paragraph at lines 175--176
+[]|\T1/lmr/m/n/10 (+20) Construct $\T1/lmtt/m/n/10 GTFunctionalAnalyticData$ \T1/lmr/m/n/10 (+20) by
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 178--178
 []|$\T1/lmtt/m/n/10 Cavity / Interpolation .
  []
 
 
-Underfull \hbox (badness 1173) in paragraph at lines 176--177
+Underfull \hbox (badness 1173) in paragraph at lines 179--180
 []|\T1/lmr/m/n/10 (+20) The fi-nal cal-cu-lus ar-gu-ment is com-plete.
  []
 
 
-Underfull \hbox (badness 6220) in paragraph at lines 176--177
+Underfull \hbox (badness 6220) in paragraph at lines 179--180
 \T1/lmtt/m/n/10 freeEnergy _ endpoint _ bridge$ \T1/lmr/m/n/10 (+20) still needs
  []
 
 [3] [4]
-Underfull \hbox (badness 7256) in paragraph at lines 219--223
+Underfull \hbox (badness 7256) in paragraph at lines 218--222
 []$\T1/lmtt/m/n/10.95 strictAT _ sign _ of _ scalar _ linear _ bounds$ \T1/lmr/m/n/10.95 (+20) proves the re-quired sign
  []
 
 [5]
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 299.
- (c:/texlive/2025/texmf-dist/tex/latex/lm/ts1lmr.fd
+Overfull \hbox (62.16592pt too wide) in paragraph at lines 257--261
+[]\T1/lmr/m/n/10.95 (-20) Prove $\T1/lmtt/m/n/10.95 twoReplica _ GT _ bound$ \T1/lmr/m/n/10.95 (-20) for the ex-plicit re-cur-sion, then con-struct $\T1/lmtt/m/n/10.95 GTFunctionalAnalyticData$
+ []
+
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 305.
+(c:/texlive/2025/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-) [6{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [7] (./lean_states.aux)
+)
+Underfull \hbox (badness 10000) in paragraph at lines 310--315
+[]$\T1/lmtt/m/n/10.95 GT / Interpolation . lean : twoReplica _ GT _ bound$ \T1/lmr/m/n/10.95 (+20) re-mains a lo-cal-ized place-holder.
+ []
+
+
+Underfull \hbox (badness 2401) in paragraph at lines 310--315
+\T1/lmr/m/n/10.95 (+20) In $\T1/lmtt/m/n/10.95 GT / Coercivity . lean$\T1/lmr/m/n/10.95 (+20) , the ex-plicit re-cur-sion and the com-po-si-tion the-o-rem $\T1/lmtt/m/n/10.95 gt _
+ []
+
+
+Underfull \hbox (badness 2478) in paragraph at lines 310--315
+\T1/lmtt/m/n/10.95 quadratic _ coercivity$ \T1/lmr/m/n/10.95 (+20) are present, and the co-er-civ-ity as-sem-bly is proved un-der
+ []
+
+[6{c:/texlive/2025/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}] [7] (./lean_states.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 6075 strings out of 467533
- 94557 string characters out of 5423669
- 566427 words of memory out of 5000000
+ 6073 strings out of 467533
+ 94531 string characters out of 5423669
+ 567427 words of memory out of 5000000
  34771 multiletter control sequences out of 15000+600000
- 682930 words of font info for 158 fonts, out of 8000000 for 9000
+ 682847 words of font info for 157 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  57i,8n,65p,1071b,431s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi7.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmmi8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr12.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr17.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr6.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmr8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsy10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmsy8.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt10.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/lm/lmtt12.pfb><c:/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on lean_states.pdf (7 pages, 221505 bytes).
+Output written on lean_states.pdf (7 pages, 222154 bytes).
 PDF statistics:
  104 PDF objects out of 1000 (max. 8388607)
  66 compressed objects within 1 object stream
