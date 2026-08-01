@@ -12,6 +12,7 @@ universe u
 
 variable {Ω : Type u} [MeasureSpace Ω]
   [IsProbabilityMeasure (volume : Measure Ω)]
+  [SpinGlass.AT.FreeEnergyEndpointBridge Ω]
 
 /-!
 # Strict-AT conclusions for the SK model

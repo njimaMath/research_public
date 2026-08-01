@@ -1,4 +1,5 @@
 import Lemmas.Absorption
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 
 open MeasureTheory ProbabilityTheory
 
@@ -13,10 +14,152 @@ noncomputable def rsFreeEnergy (β h : ℝ) : ℝ :=
 
 noncomputable def skFreeEnergy {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) : ℝ := pathFreeEnergy path 1
+    (path : RSSmartPathDisorder Ω N β h q) : ℝ :=
+  pathFreeEnergy path 1
 
-theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
+/-- The endpoint/continuity input needed to pass from the open-interval
+derivative identity `rsGap_deriv` to a closed-interval free-energy estimate.
+
+For the covariance-only `RSSmartPathDisorder` API, this is the missing
+Gaussian-law bridge: one must show that the quenched free energy depends
+continuously on the affine covariance kernel and identify the `s = 0`
+Gaussian law with the independent one-site field. -/
+def HasFreeEnergyEndpointBridge {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) : Prop :=
+  ContinuousOn
+      (fun s => rsPathValue β h q s - pathFreeEnergy path s)
+      (Set.Icc (0 : ℝ) 1) ∧
+    rsPathValue β h q 0 - pathFreeEnergy path 0 = 0
+
+/-- Uniform contract for the endpoint facts in
+`blueprint_at.tex`, equation `freeenergyidentity`.
+
+The covariance-only smart-path API determines each marginal Gaussian law but
+does not yet provide the continuity and endpoint-identification theorem needed
+to pass from the open-interval derivative identity to the closed interval. -/
+class FreeEnergyEndpointBridge (Ω : Type u) [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] : Prop where
+  bridge :
+    ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},
+      ∀ path : RSSmartPathDisorder Ω N β h q,
+        HasFreeEnergyEndpointBridge path
+
+/-- The final free-energy argument, with the currently missing endpoint bridge
+made explicit.
+
+Once `HasFreeEnergyEndpointBridge path` is proved for every positive-size
+smart path, this theorem is a direct replacement for `rs_freeEnergy_error`.
+It contains no `sorry`: the proof uses the mean-value theorem, positivity of
+the overlap second moment, `uniform_secondMoment`, and the compact-set bound
+on `β`. -/
+theorem rs_freeEnergy_error_of_endpoint_bridge
+    {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) (C : ℝ)
+    (hCavity : HasCavityRemainderBound (Ω := Ω) data C)
+    (hBridge :
+      ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},
+        ∀ path : RSSmartPathDisorder Ω N β h q,
+          HasFreeEnergyEndpointBridge path) :
+    ∃ M, 0 ≤ M ∧ ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},
+      (β, h) ∈ K → q = rsQ β h →
+      ∀ path : RSSmartPathDisorder Ω N β h q,
+      0 ≤ rsFreeEnergy β h - skFreeEnergy path ∧
+      rsFreeEnergy β h - skFreeEnergy path ≤ M / N := by
+  obtain ⟨M₀, hM₀, hsecond⟩ :=
+    uniform_secondMoment (Ω := Ω) data C hCavity
+  let M : ℝ := data.βmax ^ 2 * M₀ / 4
+  refine ⟨M, ?_, ?_⟩
+  · dsimp [M]
+    positivity
+  intro N hN β h q hp hq path
+  subst q
+
+  let G : ℝ → ℝ :=
+    fun s =>
+      rsPathValue β h (rsQ β h) s - pathFreeEnergy path s
+
+  have hbridge :
+      ContinuousOn G (Set.Icc (0 : ℝ) 1) ∧ G 0 = 0 := by
+    simpa [G, HasFreeEnergyEndpointBridge] using
+      (hBridge hN path)
+
+  have hderiv :
+      ∀ s ∈ Set.Ioo (0 : ℝ) 1,
+        HasDerivAt G
+          (β ^ 2 / 4 * overlapSecondMoment path s) s := by
+    intro s hs
+    simpa [G] using rsGap_deriv path hs
+
+  obtain ⟨s, hs, hslope⟩ :=
+    exists_hasDerivAt_eq_slope
+      G
+      (fun t => β ^ 2 / 4 * overlapSecondMoment path t)
+      (by norm_num : (0 : ℝ) < 1)
+      hbridge.1
+      hderiv
+
+  have hG :
+      G 1 = β ^ 2 / 4 * overlapSecondMoment path s := by
+    simpa [hbridge.2] using hslope.symm
+
+  have hsIcc : s ∈ Set.Icc (0 : ℝ) 1 :=
+    ⟨le_of_lt hs.1, le_of_lt hs.2⟩
+
+  have hover_nonneg : 0 ≤ overlapSecondMoment path s := by
+    rw [← A_eq_overlapSecondMoment path s]
+    exact A_nonneg path
+
+  have hNreal : (0 : ℝ) < (N : ℝ) := by
+    exact_mod_cast hN
+
+  have hNA :
+      (N : ℝ) * A path s ≤ M₀ :=
+    hsecond hN hp rfl hsIcc path
+
+  have hover_le :
+      overlapSecondMoment path s ≤ M₀ / (N : ℝ) := by
+    rw [← A_eq_overlapSecondMoment path s]
+    apply (le_div_iff₀ hNreal).2
+    simpa [mul_comm] using hNA
+
+  have hβpos : 0 < β := data.β_pos (β, h) hp
+  have hβle : β ≤ data.βmax := data.β_bound (β, h) hp
+  have hβsq : β ^ 2 ≤ data.βmax ^ 2 := by
+    nlinarith [data.βmax_pos]
+
+  have hcoef :
+      β ^ 2 / 4 ≤ data.βmax ^ 2 / 4 := by
+    nlinarith
+
+  have hproduct :
+      β ^ 2 / 4 * overlapSecondMoment path s ≤
+        (data.βmax ^ 2 / 4) * (M₀ / (N : ℝ)) := by
+    exact mul_le_mul hcoef hover_le hover_nonneg (by positivity)
+
+  have hlower : 0 ≤ G 1 := by
+    rw [hG]
+    exact mul_nonneg (by positivity) hover_nonneg
+
+  have hupper : G 1 ≤ M / (N : ℝ) := by
+    rw [hG]
+    calc
+      β ^ 2 / 4 * overlapSecondMoment path s
+          ≤ (data.βmax ^ 2 / 4) * (M₀ / (N : ℝ)) := hproduct
+      _ = M / (N : ℝ) := by
+        dsimp [M]
+        ring
+
+  simpa [G, rsFreeEnergy, skFreeEnergy] using And.intro hlower hupper
+
+/-- Uniform free-energy error from equation `freeenergyidentity` in the
+blueprint.  The endpoint Gaussian-law argument is recorded by
+`FreeEnergyEndpointBridge`; the remaining proof is
+`rs_freeEnergy_error_of_endpoint_bridge`. -/
+theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [FreeEnergyEndpointBridge Ω] {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (C : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data C) :
     ∃ M, 0 ≤ M ∧ ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},
@@ -24,25 +167,8 @@ theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
       ∀ path : RSSmartPathDisorder Ω N β h q,
       0 ≤ rsFreeEnergy β h - skFreeEnergy path ∧
       rsFreeEnergy β h - skFreeEnergy path ≤ M / N := by
-  -- Paper route, equation (freeenergyidentity): integrate
-  -- `smartPath_freeEnergy_deriv` from `0` to `1` and use the product endpoint
-  -- identity
-  -- `pathFreeEnergy path 0 = log 2 + E log cosh (h + β*sqrt q*Z)`.
-  -- Rearrangement gives exactly
-  -- `rsFreeEnergy - skFreeEnergy =
-  --   β^2/4 * ∫ s in 0..1, overlapSecondMoment path s`.
-  -- Nonnegativity of the integrand proves the lower bound.  Apply
-  -- `uniform_secondMoment`, the uniform bound on `β`, and interval length one
-  -- for the upper bound.
-  --
-  -- `fullPathHamiltonian` now includes the deterministic external field, but
-  -- the endpoint factorization and closed-interval derivative extension are
-  -- not yet proved.
-  -- BLOCKED: the open-interval derivative theorem is unfinished and neither
-  -- endpoint identity has a proved continuity extension.
-  -- NEEDED: `D_N(0)=0`, endpoint continuity, and the interval fundamental
-  -- theorem of calculus applied to `rsGap_deriv`.
-  -- BLUEPRINT: equation `freeenergyidentity`.
-  sorry
+  apply rs_freeEnergy_error_of_endpoint_bridge data C hCavity
+  intro N hN β h q path
+  exact FreeEnergyEndpointBridge.bridge hN path
 
 end SpinGlass.AT

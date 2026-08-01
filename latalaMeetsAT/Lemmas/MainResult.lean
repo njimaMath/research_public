@@ -28,10 +28,12 @@ structure QuantitativeATConclusion {Ω : Type u} [MeasureSpace Ω]
         rsA β h / (1 - s * atParameter β h)| < eps
 
 /-- Assembly of the three conclusions once the analytic cavity-remainder
-estimate has been supplied.  This is the current compatibility endpoint;
-the blueprint's final theorem must discharge `hCavity` internally. -/
+estimate and the free-energy endpoint bridge have been supplied.  This is the
+current compatibility endpoint; the blueprint's final theorem must construct
+both dependencies internally. -/
 theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] (K : Set (ℝ × ℝ))
+    [IsProbabilityMeasure (volume : Measure Ω)] [FreeEnergyEndpointBridge Ω]
+    (K : Set (ℝ × ℝ))
     (data : UniformATData K)
     (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
     QuantitativeATConclusion (Ω := Ω) K := by
@@ -46,7 +48,8 @@ theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω
 
 /-- Compatibility name retained for `Latala_AT.lean`. -/
 theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] (K : Set (ℝ × ℝ))
+    [IsProbabilityMeasure (volume : Measure Ω)] [FreeEnergyEndpointBridge Ω]
+    (K : Set (ℝ × ℝ))
     (data : UniformATData K)
     (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
     QuantitativeATConclusion (Ω := Ω) K :=
