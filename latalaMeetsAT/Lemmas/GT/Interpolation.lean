@@ -1,4 +1,4 @@
-import Lemmas.GT.HalfCascade
+import Lemmas.GT.Defs
 
 open MeasureTheory ProbabilityTheory
 
@@ -7,6 +7,22 @@ set_option autoImplicit false
 namespace SpinGlass.AT
 
 universe u
+
+noncomputable def Tzero (f : ℝ → ℝ) (x : ℝ) : ℝ := f x
+
+noncomputable def Thalf (f : ℝ → ℝ) (x : ℝ) : ℝ :=
+  2 * Real.log (standardGaussianExpectation (fun z => Real.exp (f (x + z) / 2)))
+
+noncomputable def Tone (f : ℝ → ℝ) (x : ℝ) : ℝ :=
+  Real.log (standardGaussianExpectation (fun z => Real.exp (f (x + z))))
+
+theorem Tzero_continuous {f : ℝ → ℝ} (hf : Continuous f) : Continuous (Tzero f) := by
+  simpa [Tzero]
+
+/-- The sole half-mass identity required by the specialized GT recursion. -/
+theorem poissonDirichlet_half_identity (x : ℝ) : Thalf (fun _ => x) 0 = x := by
+  simp [Thalf, standardGaussianExpectation]
+  ring
 
 /-- A function of the two local fields in the specialized GT recursion. -/
 abbrev GTTwoField := ℝ → ℝ → ℝ
