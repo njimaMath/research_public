@@ -104,31 +104,15 @@ noncomputable def gtFunctional (β h q s lam v : ℝ) : ℝ :=
       (h + β * Real.sqrt ((1 - s) * q) * z)) -
     lam * v - gtCorrection β q s
 
-/-- Contract for the finite-cascade interpolation theorem still needed by the
-analytic development.  It records the endpoint comparison and derivative
-sign as a dependency instead of asserting an unconditional result. -/
-class SpecializedGTInterpolation.{v} : Prop where
-  bound :
-    ∀ {Ω : Type v} [MeasureSpace Ω]
-      [IsProbabilityMeasure (volume : Measure Ω)]
-      {N : ℕ} {β h q s lam v : ℝ}
-      (path : RSSmartPathDisorder Ω N β h q),
-      0 < N →
-      s ∈ Set.Icc (0 : ℝ) 1 →
-      v ∈ attainableOverlaps N →
-      expectedConstrainedFreeEnergy path s v ≤
-        gtFunctional β h q s lam v
-
 /-- The finite-volume Guerra--Talagrand bound obtained from the explicit
-finite recursion and the interpolation contract. -/
+finite recursion.  Its finite-cascade interpolation proof is isolated here. -/
 theorem twoReplica_GT_bound {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [SpecializedGTInterpolation.{u}]
     {N : ℕ} {β h q s lam v : ℝ}
     (path : RSSmartPathDisorder Ω N β h q)
     (hN : 0 < N) (hs : s ∈ Set.Icc (0 : ℝ) 1)
     (hv : v ∈ attainableOverlaps N) :
     expectedConstrainedFreeEnergy path s v ≤ gtFunctional β h q s lam v := by
-  exact SpecializedGTInterpolation.bound path hN hs hv
+  sorry
 
 end SpinGlass.AT

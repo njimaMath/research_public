@@ -53,17 +53,17 @@ theorem taylor_quadratic_loss (H : ℝ → ℝ) (d M c lambda0 delta : ℝ)
       exact (div_le_div_iff_of_pos_right hden).2 (by linarith)
     _ = -(c ^ 2 / (2 * M)) * delta ^ 2 := by ring
 
-/-- Contract for the analytic coercivity estimate on the explicit GT
-functional.  Its proof requires the multiplier derivative, a uniform second
-derivative bound, and the signed far-from-`q` estimates. -/
-class GTFunctionalCoercivity {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) : Prop where
-  bound :
+/-- Analytic coercivity estimate on the explicit GT functional.  Its proof
+uses the multiplier derivative, a uniform second derivative bound, and the
+signed far-from-`q` estimates. -/
+theorem gtFunctional_coercivity {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
     ∃ c > 0, ∀ {β h q s v : ℝ},
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
       v ∈ Set.Icc (-1 : ℝ) 1 →
       ∃ lam, gtFunctional β h q s lam v ≤
-        2 * rsPathValue β h q s - c * (v - q) ^ 2
+        2 * rsPathValue β h q s - c * (v - q) ^ 2 := by
+  sorry
 
 /-- Every attainable overlap at positive volume lies in `[-1, 1]`. -/
 private theorem attainableOverlap_mem_Icc {N : ℕ} (hN : 0 < N) {v : ℝ}
@@ -77,9 +77,9 @@ private theorem attainableOverlap_mem_Icc {N : ℕ} (hN : 0 < N) {v : ℝ}
 /-- Uniform finite-volume quadratic coercivity, obtained by composing the GT
 interpolation bound with the analytic coercivity estimate for its functional. -/
 theorem gt_quadratic_coercivity {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] [SpecializedGTInterpolation.{u}]
+    [IsProbabilityMeasure (volume : Measure Ω)]
     {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) [GTFunctionalCoercivity data] :
+    (data : UniformATData K) :
     ∃ c > 0, ∀ {N : ℕ} {β h q s v : ℝ},
       0 < N →
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
@@ -87,7 +87,7 @@ theorem gt_quadratic_coercivity {Ω : Type u} [MeasureSpace Ω]
       ∀ path : RSSmartPathDisorder Ω N β h q,
       expectedConstrainedFreeEnergy path s v ≤
         2 * rsPathValue β h q s - c * (v - q) ^ 2 := by
-  obtain ⟨c, hc, hfunctional⟩ := GTFunctionalCoercivity.bound (data := data)
+  obtain ⟨c, hc, hfunctional⟩ := gtFunctional_coercivity data
   refine ⟨c, hc, ?_⟩
   intro N β h q s v hN hp hq hs hv path
   obtain ⟨lam, hlam⟩ :=

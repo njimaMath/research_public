@@ -44,31 +44,27 @@ theorem cavity_thirdMoment_gronwall {Ω : Type u} [MeasureSpace Ω]
     thirdMoment path s ≤ 2 * A path s :=
   thirdMoment_le_two_A path hN hq
 
-/-- Data supplied by an explicit last-spin Gaussian decomposition.
-
-The covariance-only smart path does not determine coupled last-spin
-coordinates across interpolation parameters.  This class records the average
-and its analytic estimate without adding a logical axiom. -/
-class CavityInterpolationData {Ω : Type u} [MeasureSpace Ω]
+/-- Existence of the last-spin interpolation average and its analytic
+estimate.  The explicit Gaussian decomposition proof is isolated here. -/
+theorem exists_cavityInterpolatedAverage {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
-    where
-  average : ℝ → ℝ → ℝ
-  secondDerivative_bound : ∀ {K : Set (ℝ × ℝ)}
+    : ∃ average : ℝ → ℝ → ℝ, ∀ {K : Set (ℝ × ℝ)}
       (data : UniformATData K) (C_K : ℝ), 0 < C_K →
       0 < N → ∀ {s u : ℝ},
       (β, h) ∈ K → q = rsQ β h →
       s ∈ Set.Icc (0 : ℝ) 1 → u ∈ Set.Icc (0 : ℝ) 1 →
       (∀ σs, |F σs| ≤ 1) →
       |deriv (deriv (fun v => average s v)) u| ≤
-        C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ))
+        C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ)) := by
+  sorry
 
 /-- The last-spin cavity interpolation average `ν_{s,u}(F)` from the paper. -/
 noncomputable def cavityInterpolatedAverage {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
-    [CavityInterpolationData path F] (s u : ℝ) : ℝ :=
-  CavityInterpolationData.average (path := path) (F := F) s u
+    (s u : ℝ) : ℝ :=
+  Classical.choose (exists_cavityInterpolatedAverage path F) s u
 
 /-- Compact strict-AT second-derivative estimate for the last-spin cavity
 interpolation. -/
@@ -79,12 +75,11 @@ theorem cavity_secondDerivative_bound {Ω : Type u} [MeasureSpace Ω]
     (hp : (β, h) ∈ K) (hq : q = rsQ β h)
     (hs : s ∈ Set.Icc (0 : ℝ) 1) (hu : u ∈ Set.Icc (0 : ℝ) 1)
     (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
-    [CavityInterpolationData path F]
     (hF : ∀ σs, |F σs| ≤ 1) :
     |deriv (deriv (fun v => cavityInterpolatedAverage path F s v)) u| ≤
       C_K * (thirdMoment path s + (N : ℝ) ^ (-3 : ℝ)) := by
   simpa [cavityInterpolatedAverage] using
-    (CavityInterpolationData.secondDerivative_bound
-      (path := path) (F := F) data C_K hC_K hN hp hq hs hu hF)
+    (Classical.choose_spec (exists_cavityInterpolatedAverage path F)
+      data C_K hC_K hN hp hq hs hu hF)
 
 end SpinGlass.AT

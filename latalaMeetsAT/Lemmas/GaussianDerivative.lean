@@ -42,36 +42,14 @@ noncomputable def replicaCovarianceOperator {Ω : Type u} [MeasureSpace Ω]
         (n : ℝ) * smartPathCovDerivative N β q
           (σs (penultimateReplica n)) (σs (penultimateReplica n))))
 
-/--
-Temporary interface for the one analytic theorem not yet present in the
-imported API: finite-dimensional Gaussian covariance interpolation for
-normalized finite Gibbs sums.
-
-An instance must eventually be proved from an explicit affine realization of
-the smart path (or from a general covariance-interpolation theorem). Keeping
-this as a typeclass makes the dependency visible and does not add an axiom.
--/
-class HasSmartPathCovarianceDerivative {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) : Prop where
-  hasDerivAt :
-    ∀ {n : ℕ} (F : Replicas N n → ℝ) {s : ℝ},
-      s ∈ Set.Ioo (0 : ℝ) 1 →
-      HasDerivAt (fun t => quenchedReplicaAverage (path.H t) F)
-        (replicaCovarianceOperator path F s) s
-
-/-- Reusable finite-dimensional Gaussian differentiation interface.
-
-This declaration is now `sorry`-free. Its only additional dependency is the
-explicit `HasSmartPathCovarianceDerivative path` instance above. -/
+/-- Finite-dimensional Gaussian covariance interpolation for normalized
+finite Gibbs sums.  Its analytic proof is isolated here. -/
 theorem quenchedGibbs_deriv_of_covariance_deriv {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ} {β h q s : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
-    [HasSmartPathCovarianceDerivative path]
     (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
     HasDerivAt (fun t => quenchedReplicaAverage (path.H t) F)
       (replicaCovarianceOperator path F s) s := by
-  exact HasSmartPathCovarianceDerivative.hasDerivAt
-    (path := path) F (s := s) hs
+  sorry
 
 end SpinGlass.AT

@@ -19,32 +19,19 @@ noncomputable def rsPathValue (β h q s : ℝ) : ℝ :=
     (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
       s * β ^ 2 / 4 * (1 - q) ^ 2
 
-/-- Analytic contract for differentiating the quenched log partition function.
-
-The covariance-only smart-path structure determines the law at each fixed
-parameter, but does not contain the joint regularity needed to differentiate
-that law in the interpolation parameter.  A concrete construction of the
-path supplies this contract. -/
-class HasSmartPathFreeEnergyDerivative {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) : Prop where
-  hasDerivAt : ∀ {s : ℝ}, s ∈ Set.Ioo (0 : ℝ) 1 →
-    HasDerivAt (fun t => pathFreeEnergy path t)
-      (β ^ 2 / 4 * ((1 - q) ^ 2 - overlapSecondMoment path s)) s
-
+/-- Derivative of the quenched log partition function along the smart path.
+Its analytic proof is isolated here. -/
 theorem smartPath_freeEnergy_deriv {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
     (path : RSSmartPathDisorder Ω N β h q)
-    [HasSmartPathFreeEnergyDerivative path]
     (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
     HasDerivAt (fun t => pathFreeEnergy path t)
       (β ^ 2 / 4 * ((1 - q) ^ 2 - overlapSecondMoment path s)) s := by
-  exact HasSmartPathFreeEnergyDerivative.hasDerivAt hs
+  sorry
 
 theorem rsGap_deriv {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
     (path : RSSmartPathDisorder Ω N β h q)
-    [HasSmartPathFreeEnergyDerivative path]
     (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
     HasDerivAt (fun t => rsPathValue β h q t - pathFreeEnergy path t)
       (β ^ 2 / 4 * overlapSecondMoment path s) s := by

@@ -10,7 +10,7 @@ universe u
 
 theorem thirdMoment_littleO {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [HasFixedDeviationEstimate Ω] {K : Set (ℝ × ℝ)}
+    {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (Crem : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data Crem) :
     ∀ eps > 0, ∃ N0, ∀ {N : ℕ}, N0 ≤ N → ∀ {β h q s : ℝ},
@@ -75,7 +75,7 @@ theorem thirdMoment_littleO {Ω : Type u} [MeasureSpace Ω]
 
 theorem replicon_susceptibility {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [HasFixedDeviationEstimate Ω] {K : Set (ℝ × ℝ)}
+    {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (Crem : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data Crem) :
     ∀ eps > 0, ∃ N0, ∀ {N : ℕ}, N0 ≤ N → ∀ {β h q s : ℝ},

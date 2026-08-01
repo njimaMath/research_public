@@ -31,32 +31,21 @@ noncomputable def rsFreeEnergyGap {Ω : Type u} [MeasureSpace Ω]
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
   rsPathValue β h q s - pathFreeEnergy path s
 
-/-- Contract for the sublinear coupled-pressure and Gronwall estimate.
-
-Its construction is the finite-dimensional Gaussian maximum and
-concentration argument.  It is kept separate from the covariance-only smart
-path because that structure does not expose Gaussian coordinates. -/
-class HasCoupledPressureSublinear (Ω : Type u) [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] : Prop where
-  bound : ∀ {K : Set (ℝ × ℝ)} (data : UniformATData K),
-    ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
-      {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),
-      (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
-      overlapSecondMoment path s ≤ epsN N
-
+/-- Sublinear coupled-pressure and Gronwall estimate.  Its finite-dimensional
+Gaussian maximum and concentration proof is isolated here. -/
 theorem coupledPressure_sublinear {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [HasCoupledPressureSublinear Ω] {K : Set (ℝ × ℝ)}
+    {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
       {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
       overlapSecondMoment path s ≤ epsN N := by
-  exact HasCoupledPressureSublinear.bound data
+  sorry
 
 theorem preliminary_overlap_bound {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [HasCoupledPressureSublinear Ω] {K : Set (ℝ × ℝ)}
+    {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
       {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),

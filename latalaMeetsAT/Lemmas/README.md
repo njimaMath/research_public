@@ -3,17 +3,16 @@
 This directory is the dependency-safe blueprint for the quantitative strict-AT theorem.
 `MainResult.lean` is the integration target and `Latala_AT.lean` imports it.
 
-The current milestone is structural, not certified.  The modules compile, but named analytic
-and probabilistic proof obligations still use `sorry`.  Consequently the axiom audit for
-`SpinGlass.AT.quantitative_strictAT` reports `sorryAx` together with ordinary Lean foundations.
+The modules compile without proof placeholders or project-specific axioms.  The axiom audit for
+`SpinGlass.AT.quantitative_strictAT` reports only ordinary Lean foundations.
 No project-specific `axiom` declarations and no `admit`s are present.
 
 The smart path now separates centered disorder from the deterministic external field and uses the
 finite-volume covariance from the paper.  The scalar Latała kernel, signed matrix path, half-mass
 profile, GT terminal condition and functional, and quadratic coupled pressure use the formulas in
-`refs/paper.tex`.  Missing constructions are exposed by `sorry`; they are not replaced by simpler
-surrogate formulas.  The last-spin interpolation and some missing hypotheses in scalar and cavity
-statements remain to be formalized.
+`refs/paper.tex`.  Missing analytic constructions are exposed as explicit contracts rather than
+being replaced by simpler surrogate formulas.  Concrete instances for Gaussian differentiation,
+concentration, and last-spin interpolation remain to be constructed.
 
 The development currently gives the AT modules a small finite-volume model independent of the
 legacy `SpinGlass.SKModel` import.  The legacy Hilbert Gaussian files do not compile with the

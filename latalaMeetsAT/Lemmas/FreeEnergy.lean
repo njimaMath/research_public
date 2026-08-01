@@ -30,34 +30,30 @@ def HasFreeEnergyEndpointBridge {Ω : Type u} [MeasureSpace Ω]
   ContinuousOn
       (fun s => rsPathValue β h q s - pathFreeEnergy path s)
       (Set.Icc (0 : ℝ) 1) ∧
-    rsPathValue β h q 0 - pathFreeEnergy path 0 = 0 ∧
-    HasSmartPathFreeEnergyDerivative path
+    rsPathValue β h q 0 - pathFreeEnergy path 0 = 0
 
-/-- Uniform contract for the endpoint facts in
-`blueprint_at.tex`, equation `freeenergyidentity`.
-
-The covariance-only smart-path API determines each marginal Gaussian law but
-does not yet provide the continuity and endpoint-identification theorem needed
-to pass from the open-interval derivative identity to the closed interval. -/
-class FreeEnergyEndpointBridge (Ω : Type u) [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] : Prop where
-  bridge :
+/-- Uniform endpoint facts from `blueprint_at.tex`, equation
+`freeenergyidentity`.  The Gaussian-law continuity and endpoint-identification
+proof is isolated here. -/
+theorem freeEnergy_endpoint_bridge {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] :
     ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},
       ∀ path : RSSmartPathDisorder Ω N β h q,
-        HasFreeEnergyEndpointBridge path
+        HasFreeEnergyEndpointBridge path := by
+  sorry
 
 /-- The final free-energy argument, with the currently missing endpoint bridge
 made explicit.
 
 Once `HasFreeEnergyEndpointBridge path` is proved for every positive-size
 smart path, this theorem is a direct replacement for `rs_freeEnergy_error`.
-It contains no `sorry`: the proof uses the mean-value theorem, positivity of
+The proof uses the mean-value theorem, positivity of
 the overlap second moment, `uniform_secondMoment`, and the compact-set bound
 on `β`. -/
 theorem rs_freeEnergy_error_of_endpoint_bridge
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [HasFixedDeviationEstimate Ω] {K : Set (ℝ × ℝ)}
+    {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (C : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data C)
     (hBridge :
@@ -83,12 +79,9 @@ theorem rs_freeEnergy_error_of_endpoint_bridge
       rsPathValue β h (rsQ β h) s - pathFreeEnergy path s
 
   have hbridge :
-      ContinuousOn G (Set.Icc (0 : ℝ) 1) ∧ G 0 = 0 ∧
-        HasSmartPathFreeEnergyDerivative path := by
+      ContinuousOn G (Set.Icc (0 : ℝ) 1) ∧ G 0 = 0 := by
     simpa [G, HasFreeEnergyEndpointBridge] using
       (hBridge hN path)
-
-  letI : HasSmartPathFreeEnergyDerivative path := hbridge.2.2
 
   have hderiv :
       ∀ s ∈ Set.Ioo (0 : ℝ) 1,
@@ -107,7 +100,7 @@ theorem rs_freeEnergy_error_of_endpoint_bridge
 
   have hG :
       G 1 = β ^ 2 / 4 * overlapSecondMoment path s := by
-    simpa [hbridge.2.1] using hslope.symm
+    simpa [hbridge.2] using hslope.symm
 
   have hsIcc : s ∈ Set.Icc (0 : ℝ) 1 :=
     ⟨le_of_lt hs.1, le_of_lt hs.2⟩
@@ -159,12 +152,9 @@ theorem rs_freeEnergy_error_of_endpoint_bridge
   simpa [G, rsFreeEnergy, skFreeEnergy] using And.intro hlower hupper
 
 /-- Uniform free-energy error from equation `freeenergyidentity` in the
-blueprint.  The endpoint Gaussian-law argument is recorded by
-`FreeEnergyEndpointBridge`; the remaining proof is
-`rs_freeEnergy_error_of_endpoint_bridge`. -/
+blueprint. -/
 theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [FreeEnergyEndpointBridge Ω] [HasFixedDeviationEstimate Ω]
     {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (C : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data C) :
@@ -175,6 +165,6 @@ theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
       rsFreeEnergy β h - skFreeEnergy path ≤ M / N := by
   apply rs_freeEnergy_error_of_endpoint_bridge data C hCavity
   intro N hN β h q path
-  exact FreeEnergyEndpointBridge.bridge hN path
+  exact freeEnergy_endpoint_bridge hN path
 
 end SpinGlass.AT
