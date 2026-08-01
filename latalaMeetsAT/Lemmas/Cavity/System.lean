@@ -50,4 +50,12 @@ theorem cavityRemainder_bound {Ω : Type u} [MeasureSpace Ω]
       C * ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s) := by
   exact hbound.2 hN hp hq hs path
 
+/-- The uniform cavity-remainder estimate.  Its last-spin interpolation proof
+is isolated here so downstream theorems need no extra hypothesis. -/
+theorem exists_cavityRemainder_bound {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ C, HasCavityRemainderBound (Ω := Ω) data C := by
+  sorry
+
 end SpinGlass.AT

@@ -12,8 +12,6 @@ universe u
 
 variable {Ω : Type u} [MeasureSpace Ω]
   [IsProbabilityMeasure (volume : Measure Ω)]
-  [SpinGlass.AT.FreeEnergyEndpointBridge Ω]
-  [SpinGlass.AT.HasFixedDeviationEstimate Ω]
 
 /-!
 # Strict-AT conclusions for the SK model
@@ -110,12 +108,10 @@ structure QuantitativeSKATConclusion (K : Set (ℝ × ℝ)) : Prop where
 
 /-- The quantitative strict-AT theorem specialized to the SK definitions. -/
 theorem quantitative_strictAT_for_sk (K : Set (ℝ × ℝ))
-    (data : SpinGlass.AT.UniformATData K)
-    (hCavity : ∃ C,
-      SpinGlass.AT.HasCavityRemainderBound (Ω := Ω) data C) :
+    (data : SpinGlass.AT.UniformATData K) :
     QuantitativeSKATConclusion (Ω := Ω) K := by
   have hmain := SpinGlass.AT.quantitative_strictAT
-    (Ω := Ω) K data hCavity
+    (Ω := Ω) K data
   refine {
     secondMoment := ?_
     freeEnergy := ?_

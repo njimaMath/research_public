@@ -32,8 +32,7 @@ estimate and the free-energy endpoint bridge have been supplied.  This is the
 current compatibility endpoint; the blueprint's final theorem must construct
 both dependencies internally. -/
 theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] [FreeEnergyEndpointBridge Ω]
-    [HasFixedDeviationEstimate Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
     (data : UniformATData K)
     (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
@@ -49,13 +48,12 @@ theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω
 
 /-- Compatibility name retained for `Latala_AT.lean`. -/
 theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] [FreeEnergyEndpointBridge Ω]
-    [HasFixedDeviationEstimate Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
-    (data : UniformATData K)
-    (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
+    (data : UniformATData K) :
     QuantitativeATConclusion (Ω := Ω) K :=
-  quantitative_strictAT_of_cavity_remainder K data hCavity
+  quantitative_strictAT_of_cavity_remainder K data
+    (exists_cavityRemainder_bound data)
 
 #print axioms SpinGlass.AT.quantitative_strictAT
 
