@@ -27,10 +27,8 @@ structure QuantitativeATConclusion {Ω : Type u} [MeasureSpace Ω]
       |N * (A path s - 2 * B path s + C path s) -
         rsA β h / (1 - s * atParameter β h)| < eps
 
-/-- Assembly of the three conclusions once the analytic cavity-remainder
-estimate and the free-energy endpoint bridge have been supplied.  This is the
-current compatibility endpoint; the blueprint's final theorem must construct
-both dependencies internally. -/
+/-- Assembly of the three conclusions from an explicit cavity-remainder
+estimate.  This helper is useful when a stronger estimate is available. -/
 theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
@@ -46,7 +44,8 @@ theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω
       freeEnergy := rs_freeEnergy_error data Crem hCrem
       replicon := replicon_susceptibility data Crem hCrem }
 
-/-- Compatibility name retained for `Latala_AT.lean`. -/
+/-- Quantitative strict-AT theorem with all analytic inputs supplied by named
+lemmas rather than project-specific typeclass assumptions. -/
 theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
