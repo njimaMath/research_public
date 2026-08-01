@@ -36,7 +36,7 @@ noncomputable def rsFreeEnergyGap {Ω : Type u} [MeasureSpace Ω]
 Its construction is the finite-dimensional Gaussian maximum and
 concentration argument.  It is kept separate from the covariance-only smart
 path because that structure does not expose Gaussian coordinates. -/
-class HasCoupledPressureSublinear {Ω : Type u} [MeasureSpace Ω]
+class HasCoupledPressureSublinear (Ω : Type u) [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] : Prop where
   bound : ∀ {K : Set (ℝ × ℝ)} (data : UniformATData K),
     ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}

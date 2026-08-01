@@ -17,7 +17,7 @@ noncomputable def quenchedTail {Ω : Type u} [MeasureSpace Ω]
 /-- Contract for the uniform Gaussian concentration estimate used in the
 fixed-deviation tail bound.  A finite Gaussian-coordinate realization of the
 smart path supplies this contract. -/
-class HasFixedDeviationEstimate {Ω : Type u} [MeasureSpace Ω]
+class HasFixedDeviationEstimate (Ω : Type u) [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] : Prop where
   bound : ∀ {K : Set (ℝ × ℝ)} (data : UniformATData K)
       (eps : ℝ), 0 < eps →

@@ -68,7 +68,7 @@ noncomputable def cavityInterpolatedAverage {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (F : Replicas N n → ℝ)
     [CavityInterpolationData path F] (s u : ℝ) : ℝ :=
-  CavityInterpolationData.average s u
+  CavityInterpolationData.average (path := path) (F := F) s u
 
 /-- Compact strict-AT second-derivative estimate for the last-spin cavity
 interpolation. -/
