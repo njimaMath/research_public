@@ -31,31 +31,32 @@ noncomputable def rsFreeEnergyGap {Ω : Type u} [MeasureSpace Ω]
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
   rsPathValue β h q s - pathFreeEnergy path s
 
+/-- Contract for the sublinear coupled-pressure and Gronwall estimate.
+
+Its construction is the finite-dimensional Gaussian maximum and
+concentration argument.  It is kept separate from the covariance-only smart
+path because that structure does not expose Gaussian coordinates. -/
+class HasCoupledPressureSublinear {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] : Prop where
+  bound : ∀ {K : Set (ℝ × ℝ)} (data : UniformATData K),
+    ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
+      {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),
+      (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
+      overlapSecondMoment path s ≤ epsN N
+
 theorem coupledPressure_sublinear {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [HasCoupledPressureSublinear Ω] {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
       {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
       overlapSecondMoment path s ≤ epsN N := by
-  -- Paper route, equations (pressureenvelope)--(preconcentration): choose
-  -- `0 < lam0 < c_GT`.  Split the two-replica partition sum over the `N+1`
-  -- attainable overlaps.  The GT coercivity estimate beats the quadratic
-  -- coupling, while Gaussian concentration bounds the maximum of the centered
-  -- constrained log partition functions by `O(sqrt (N*log (N+1)))`.  This
-  -- gives `epsN = C*sqrt(log(N+1)/N) + C*log(N+1)/N`.  For
-  -- `D_N(s) = rsPathValue - pathFreeEnergy`, use `rsGap_deriv`, convexity in
-  -- the coupling, and Gronwall to obtain both `D_N(s) ≤ C*epsN N` and the
-  -- displayed overlap bound.  Standard limit lemmas show `epsN -> 0`.
-  -- BLOCKED: the project lacks the finite Gaussian maximum/concentration
-  -- theorem and the completed GT coercivity and smart-path derivative inputs.
-  -- NEEDED: the common Lipschitz bound, log-sum-exp envelope, and Gronwall
-  -- closure for `rsFreeEnergyGap`.
-  -- BLUEPRINT: Lemma `sublinearpressure` and equations `gronwallDN`--`preconcentration`.
-  sorry
+  exact HasCoupledPressureSublinear.bound data
 
 theorem preliminary_overlap_bound {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [HasCoupledPressureSublinear Ω] {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
       {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),

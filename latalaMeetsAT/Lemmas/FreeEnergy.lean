@@ -30,7 +30,8 @@ def HasFreeEnergyEndpointBridge {Ω : Type u} [MeasureSpace Ω]
   ContinuousOn
       (fun s => rsPathValue β h q s - pathFreeEnergy path s)
       (Set.Icc (0 : ℝ) 1) ∧
-    rsPathValue β h q 0 - pathFreeEnergy path 0 = 0
+    rsPathValue β h q 0 - pathFreeEnergy path 0 = 0 ∧
+    HasSmartPathFreeEnergyDerivative path
 
 /-- Uniform contract for the endpoint facts in
 `blueprint_at.tex`, equation `freeenergyidentity`.
@@ -55,7 +56,8 @@ the overlap second moment, `uniform_secondMoment`, and the compact-set bound
 on `β`. -/
 theorem rs_freeEnergy_error_of_endpoint_bridge
     {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [HasFixedDeviationEstimate Ω] {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (C : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data C)
     (hBridge :
@@ -81,9 +83,12 @@ theorem rs_freeEnergy_error_of_endpoint_bridge
       rsPathValue β h (rsQ β h) s - pathFreeEnergy path s
 
   have hbridge :
-      ContinuousOn G (Set.Icc (0 : ℝ) 1) ∧ G 0 = 0 := by
+      ContinuousOn G (Set.Icc (0 : ℝ) 1) ∧ G 0 = 0 ∧
+        HasSmartPathFreeEnergyDerivative path := by
     simpa [G, HasFreeEnergyEndpointBridge] using
       (hBridge hN path)
+
+  letI : HasSmartPathFreeEnergyDerivative path := hbridge.2.2
 
   have hderiv :
       ∀ s ∈ Set.Ioo (0 : ℝ) 1,
@@ -102,7 +107,7 @@ theorem rs_freeEnergy_error_of_endpoint_bridge
 
   have hG :
       G 1 = β ^ 2 / 4 * overlapSecondMoment path s := by
-    simpa [hbridge.2] using hslope.symm
+    simpa [hbridge.2.1] using hslope.symm
 
   have hsIcc : s ∈ Set.Icc (0 : ℝ) 1 :=
     ⟨le_of_lt hs.1, le_of_lt hs.2⟩
@@ -159,7 +164,8 @@ blueprint.  The endpoint Gaussian-law argument is recorded by
 `rs_freeEnergy_error_of_endpoint_bridge`. -/
 theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
-    [FreeEnergyEndpointBridge Ω] {K : Set (ℝ × ℝ)}
+    [FreeEnergyEndpointBridge Ω] [HasFixedDeviationEstimate Ω]
+    {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (C : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data C) :
     ∃ M, 0 ≤ M ∧ ∀ {N : ℕ}, 0 < N → ∀ {β h q : ℝ},

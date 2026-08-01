@@ -113,7 +113,8 @@ theorem cavityVector_norm_eq_A {Ω : Type u} [MeasureSpace Ω]
     exact hcoord
 
 theorem uniform_secondMoment {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [HasFixedDeviationEstimate Ω] {K : Set (ℝ × ℝ)}
     (data : UniformATData K) (C : ℝ)
     (hCavity : HasCavityRemainderBound (Ω := Ω) data C) :
     ∃ M, 0 ≤ M ∧ ∀ {N : ℕ}, 0 < N → ∀ {β h q s : ℝ},

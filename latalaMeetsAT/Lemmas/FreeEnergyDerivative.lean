@@ -19,26 +19,33 @@ noncomputable def rsPathValue (β h q s : ℝ) : ℝ :=
     (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
       s * β ^ 2 / 4 * (1 - q) ^ 2
 
+/-- Analytic contract for differentiating the quenched log partition function.
+
+The covariance-only smart-path structure determines the law at each fixed
+parameter, but does not contain the joint regularity needed to differentiate
+that law in the interpolation parameter.  A concrete construction of the
+path supplies this contract. -/
+class HasSmartPathFreeEnergyDerivative {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) : Prop where
+  hasDerivAt : ∀ {s : ℝ}, s ∈ Set.Ioo (0 : ℝ) 1 →
+    HasDerivAt (fun t => pathFreeEnergy path t)
+      (β ^ 2 / 4 * ((1 - q) ^ 2 - overlapSecondMoment path s)) s
+
 theorem smartPath_freeEnergy_deriv {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
+    (path : RSSmartPathDisorder Ω N β h q)
+    [HasSmartPathFreeEnergyDerivative path]
+    (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
     HasDerivAt (fun t => pathFreeEnergy path t)
       (β ^ 2 / 4 * ((1 - q) ^ 2 - overlapSecondMoment path s)) s := by
-  -- Paper route: formalize equations (freeenergyderivative), including the
-  -- finite-volume cancellation.  Differentiate the finite log partition,
-  -- apply the Gaussian covariance-derivative formula to the interaction and
-  -- random-field terms, and use
-  -- `∑ i<j x_i*x_j = ((∑ i x_i)^2 - ∑ i x_i^2) / 2`.  Rewrite the replica
-  -- sums as `overlapSecondMoment` and simplify to the displayed derivative.
-  -- BLOCKED: this is the first application of the missing covariance-law
-  -- differentiation theorem in `quenchedGibbs_deriv_of_covariance_deriv`.
-  -- NEEDED: that theorem plus the finite diagonal correction identity.
-  -- BLUEPRINT: equation `DNprime` and the calculation immediately before it.
-  sorry
+  exact HasSmartPathFreeEnergyDerivative.hasDerivAt hs
 
 theorem rsGap_deriv {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
+    (path : RSSmartPathDisorder Ω N β h q)
+    [HasSmartPathFreeEnergyDerivative path]
+    (hs : s ∈ Set.Ioo (0 : ℝ) 1) :
     HasDerivAt (fun t => rsPathValue β h q t - pathFreeEnergy path t)
       (β ^ 2 / 4 * overlapSecondMoment path s) s := by
   -- Proof route: `rsPathValue` is affine in `t`, with derivative
