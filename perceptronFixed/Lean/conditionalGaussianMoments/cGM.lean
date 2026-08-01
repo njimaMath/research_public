@@ -65,14 +65,28 @@ def d (u : ℝ) : ℝ :=
 -/
 
 /-- Derivative identity for the standard normal density: φ' = -x φ. -/
-lemma deriv_φ (x : ℝ) : deriv φ x = -x * φ x := by
-  -- Fill in with calculus:
-  --   φ(x) = c * exp (-(x^2)/2), c = 1/sqrt(2π).
-  -- Use:
-  --   `by simp [φ]` will not finish by itself; you will likely need `simp` + `ring`
-  --   and lemmas about `deriv` of `Real.exp` and polynomials.
-  unfold TruncatedNormalMoments.φ;
-  norm_num ; ring
+lemma hasDerivAt_φ (x : ℝ) : HasDerivAt φ (-x * φ x) x := by
+  have hinner : HasDerivAt (fun u : ℝ => -(u ^ 2) / 2) (-x) x := by
+    have hpow : HasDerivAt (fun u : ℝ => u ^ 2) (2 * x) x := by
+      simpa using hasDerivAt_pow (n := 2) (x := x)
+    simpa [div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using
+      hpow.neg.div_const (2 : ℝ)
+  have hexp :
+      HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2) / 2))
+        (-(x * Real.exp (-(x ^ 2) / 2))) x := by
+    have h := (Real.hasDerivAt_exp (x := (-(x ^ 2) / 2))).comp x hinner
+    change HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2) / 2))
+      (Real.exp (-(x ^ 2) / 2) * -x) x at h
+    convert h using 1 <;> ring
+  unfold φ
+  have h := hexp.div_const (Real.sqrt (2 * Real.pi))
+  change HasDerivAt
+    (fun u : ℝ => Real.exp (-(u ^ 2) / 2) / Real.sqrt (2 * Real.pi))
+    (-(x * Real.exp (-(x ^ 2) / 2)) / Real.sqrt (2 * Real.pi)) x at h
+  convert h using 1 <;> ring
+
+lemma deriv_φ (x : ℝ) : deriv φ x = -x * φ x :=
+  (hasDerivAt_φ x).deriv
 
 /-- Positivity of the tail integral, hence `tail u ≠ 0`. -/
 lemma tail_pos (u : ℝ) : 0 < tail u := by
@@ -141,10 +155,12 @@ lemma integrable_pow_sub_mul_φ (k : ℕ) (u : ℝ) :
         simp_all +decide [ Polynomial.eval_eq_sum_range ];
         simp_all +decide [ div_eq_inv_mul, Finset.sum_mul _ _ _ ];
         exact MeasureTheory.integrable_finset_sum _ fun i hi => by simpa [ mul_assoc ] using MeasureTheory.Integrable.const_mul ( this ( show 0 < ( 2⁻¹ : ℝ ) by norm_num ) ( show -1 < ( i : ℝ ) by linarith ) ) ( p.coeff i ) ;
-      convert h_gauss_integrable ( ( Polynomial.X - Polynomial.C u ) ^ k ) using 1 ; norm_num;
+      exact (h_gauss_integrable ((Polynomial.X - Polynomial.C u) ^ k)).congr
+        (ae_of_all _ fun x => by simp)
     exact h_integrable.mono_set <| Set.subset_univ _;
-  simp_all +decide [ TruncatedNormalMoments.φ ];
-  simpa only [ mul_div ] using h_integrable.div_const _
+  unfold TruncatedNormalMoments.φ
+  exact (h_integrable.div_const (Real.sqrt (2 * Real.pi))).congr
+    (ae_of_all _ fun x => by ring)
 
 /-! ### Core recursion for J and μ -/
 
@@ -180,8 +196,17 @@ Compute the derivative of (x-u)^k * φ(x).
 lemma TruncatedNormalMoments.deriv_pow_sub_mul_phi (k : ℕ) (u x : ℝ) (hk : 1 ≤ k) :
     deriv (fun x => (x - u) ^ k * TruncatedNormalMoments.φ x) x =
     k * (x - u) ^ (k - 1) * TruncatedNormalMoments.φ x - x * (x - u) ^ k * TruncatedNormalMoments.φ x := by
-      unfold TruncatedNormalMoments.φ;
-      norm_num ; ring
+  have hpow :
+      HasDerivAt (fun y : ℝ => (y - u) ^ k) (k * (x - u) ^ (k - 1)) x := by
+    have h := ((hasDerivAt_id x).sub_const u).pow k
+    change HasDerivAt (fun y : ℝ => (y - u) ^ k)
+      (k * (x - u) ^ (k - 1) * 1) x at h
+    convert h using 1 <;> ring
+  have h := hpow.mul (TruncatedNormalMoments.hasDerivAt_φ x)
+  change HasDerivAt (fun y : ℝ => (y - u) ^ k * TruncatedNormalMoments.φ y)
+    (k * (x - u) ^ (k - 1) * TruncatedNormalMoments.φ x +
+      (x - u) ^ k * (-x * TruncatedNormalMoments.φ x)) x at h
+  convert h.deriv using 1 <;> ring
 
 /-
 The integral of the derivative of (x-u)^k φ(x) over [u, ∞) is 0.
@@ -274,9 +299,10 @@ lemma J_rec (k : ℕ) (u : ℝ) (hk : 1 ≤ k) :
     simpa only [ mul_assoc ] using this.const_mul _;
   · have h_integrable : MeasureTheory.IntegrableOn (fun x => (x - u) ^ (k + 1) * TruncatedNormalMoments.φ x) (Set.Ici u) ∧ MeasureTheory.IntegrableOn (fun x => (x - u) ^ k * TruncatedNormalMoments.φ x) (Set.Ici u) := by
       exact ⟨ TruncatedNormalMoments.integrable_pow_sub_mul_φ _ _, TruncatedNormalMoments.integrable_pow_sub_mul_φ _ _ ⟩;
-    convert h_integrable.1.add ( h_integrable.2.const_mul u ) using 2 ; ring;
-    norm_num ; ring;
-    norm_num
+    have hsum := h_integrable.1.add (h_integrable.2.const_mul u)
+    exact hsum.congr (Filter.Eventually.of_forall fun x => by
+      simp only [Pi.add_apply]
+      ring)
 
 /-- Convert the J recursion into the μ recursion by dividing by tail(u). -/
 lemma μ_rec (k : ℕ) (u : ℝ) (hk : 1 ≤ k) :

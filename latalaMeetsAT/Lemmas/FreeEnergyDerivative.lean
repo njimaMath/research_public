@@ -14,12 +14,6 @@ noncomputable def pathFreeEnergy {Ω : Type u} [MeasureSpace Ω]
   (1 / (N : ℝ)) * ∫ ω, Real.log (partitionFunction (fullPathHamiltonian path s ω))
     ∂(volume : Measure Ω)
 
-noncomputable def overlapSecondMoment {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
-  quenchedReplicaAverage (fullPathHamiltonian path s)
-    (fun σs : Replicas N 2 => centeredOverlap q σs 0 1 ^ 2)
-
 noncomputable def rsPathValue (β h q s : ℝ) : ℝ :=
   Real.log 2 + standardGaussianExpectation
     (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
@@ -36,6 +30,10 @@ theorem smartPath_freeEnergy_deriv {Ω : Type u} [MeasureSpace Ω]
   -- random-field terms, and use
   -- `∑ i<j x_i*x_j = ((∑ i x_i)^2 - ∑ i x_i^2) / 2`.  Rewrite the replica
   -- sums as `overlapSecondMoment` and simplify to the displayed derivative.
+  -- BLOCKED: this is the first application of the missing covariance-law
+  -- differentiation theorem in `quenchedGibbs_deriv_of_covariance_deriv`.
+  -- NEEDED: that theorem plus the finite diagonal correction identity.
+  -- BLUEPRINT: equation `DNprime` and the calculation immediately before it.
   sorry
 
 theorem rsGap_deriv {Ω : Type u} [MeasureSpace Ω]

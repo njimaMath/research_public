@@ -39,6 +39,14 @@ noncomputable def fullPathHamiltonian {Ω : Type u} [MeasureSpace Ω]
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) (ω : Ω) : EnergySpace N :=
   fun σ => path.H s ω σ + h * ∑ i, spin σ i
 
+/-- The common four-replica encoding of the smart-path second moment
+`A_s = ν_s[Q₁₂²]`. -/
+noncomputable def overlapSecondMoment {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
+  quenchedReplicaAverage (fullPathHamiltonian path s)
+    (fun σs : Replicas N 4 => centeredOverlap q σs 0 1 ^ 2)
+
 noncomputable def pathATParameter (β h s : ℝ) : ℝ := s * atParameter β h
 
 theorem smartPath_atParameter_eq (β h s : ℝ) :

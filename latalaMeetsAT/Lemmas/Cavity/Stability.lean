@@ -1,4 +1,4 @@
-import Lemmas.Cavity.System
+import Lemmas.Cavity.Coefficients
 
 set_option autoImplicit false
 
@@ -6,6 +6,66 @@ namespace SpinGlass.AT
 
 def stabilityOperator (β q r s : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
   1 - s • cavityMatrix β q r
+
+/-- The fixed change of basis which separates the anomalous Jordan block
+from the replicon direction. -/
+def cavityChangeMatrix : Matrix (Fin 3) (Fin 3) ℝ :=
+  !![0, 2, -3;
+     1, -4, 3;
+     1, -2, 1]
+
+/-- Explicit inverse of `cavityChangeMatrix`. -/
+noncomputable def cavityChangeMatrixInv : Matrix (Fin 3) (Fin 3) ℝ :=
+  !![-1, -2, 3;
+     -1, -(3 / 2 : ℝ), 3 / 2;
+     -1, -1, 1]
+
+theorem cavityChangeMatrix_mul_inv :
+    cavityChangeMatrix * cavityChangeMatrixInv = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [cavityChangeMatrix, cavityChangeMatrixInv, Matrix.mul_apply,
+      Fin.sum_univ_three] <;> norm_num
+
+theorem cavityChangeMatrix_inv_mul :
+    cavityChangeMatrixInv * cavityChangeMatrix = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [cavityChangeMatrix, cavityChangeMatrixInv, Matrix.mul_apply,
+      Fin.sum_univ_three] <;> norm_num
+
+/-- Exact upper-triangular normal form of the cavity coefficient matrix.
+The off-diagonal entry records the possible Jordan contribution. -/
+theorem cavityMatrix_triangular (β q r : ℝ) :
+    cavityChangeMatrix * cavityMatrix β q r * cavityChangeMatrixInv =
+      !![β ^ 2 * (1 - 4 * q + 3 * r),
+          β ^ 2 * (2 * q + q ^ 2 - 3 * r), 0;
+         0, β ^ 2 * (1 - 4 * q + 3 * r), 0;
+         0, 0, β ^ 2 * (1 - 2 * q + r)] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [cavityChangeMatrix, cavityChangeMatrixInv, cavityMatrix,
+      Matrix.mul_apply, Fin.sum_univ_three] <;> ring
+
+def repliconRow : Fin 3 → ℝ := ![1, -2, 1]
+
+theorem repliconRow_mul_cavityMatrix (β q r : ℝ) :
+    Matrix.vecMul repliconRow (cavityMatrix β q r) =
+      (β ^ 2 * (1 - 2 * q + r)) • repliconRow := by
+  funext j
+  fin_cases j <;>
+    simp [repliconRow, cavityMatrix, Matrix.vecMul_eq_sum, Fin.sum_univ_three] <;>
+    ring
+
+theorem repliconRow_dot_theta (β q r : ℝ) :
+    β ^ 2 * dotProduct repliconRow (theta q r) =
+      β ^ 2 * (1 - 2 * q + r) := by
+  calc
+    β ^ 2 * dotProduct repliconRow (theta q r) =
+        β ^ 2 * ((1 - q ^ 2) + -2 * (q - q ^ 2) + (r - q ^ 2)) := by
+      congr 1
+      simp [repliconRow, theta, dotProduct, Fin.sum_univ_three]
+    _ = β ^ 2 * (1 - 2 * q + r) := by ring
 
 theorem cavityMatrix_determinant {β h s : ℝ} :
     Matrix.det (stabilityOperator β (rsQ β h) (rsR β h) s) =
@@ -19,9 +79,19 @@ theorem cavityMatrix_determinant {β h s : ℝ} :
 theorem one_sub_anomalous_lower_bound {K : Set (ℝ × ℝ)}
     (data : UniformATData K) {β h s : ℝ}
     (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
-    data.gap ≤ 1 - s * atParameter β h := by
-  -- Proof route: this is the uniform path gap already proved in `UniformData`.
-  exact path_gap data hp hs
+    data.gap ≤
+      1 - s * (β ^ 2 * (1 - 4 * rsQ β h + 3 * rsR β h)) := by
+  have hβ : 0 < β := data.β_pos (β, h) hp
+  have hh : 0 < h := data.h_pos (β, h) hp
+  have hgap := path_gap data hp hs
+  have hle := anomalous_eigenvalue_le_replicon hβ hh
+  nlinarith [mul_nonneg hs.1 (sub_nonneg.mpr hle)]
+
+theorem one_sub_replicon_lower_bound {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) {β h s : ℝ}
+    (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
+    data.gap ≤ 1 - s * atParameter β h :=
+  path_gap data hp hs
 
 set_option maxHeartbeats 800000 in
 theorem cavityMatrix_inverse_uniform {K : Set (ℝ × ℝ)}
@@ -102,9 +172,7 @@ theorem cavityMatrix_inverse_uniform {K : Set (ℝ × ℝ)}
   have hrep : data.gap ≤ 1 - s * atParameter β h := path_gap data hp hs
   have hanom0 : data.gap ≤
       1 - s * (β ^ 2 * (1 - 4 * q + 3 * r)) := by
-    dsimp [q, r]
-    nlinarith [mul_nonneg hs.1
-      (sub_nonneg.mpr (anomalous_eigenvalue_le_replicon hβ hh))]
+    simpa [q, r] using one_sub_anomalous_lower_bound data hp hs
   have hdet : data.gap ^ 3 ≤ Matrix.det S := by
     rw [show Matrix.det S =
         (1 - s * atParameter β h) *

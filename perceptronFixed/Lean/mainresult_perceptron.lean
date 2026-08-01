@@ -176,8 +176,9 @@ private lemma hasDerivAt_φ (u : ℝ) : HasDerivAt φ (-u * φ u) u := by
   have h_exp :
       HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2) / 2))
         (Real.exp (-(u ^ 2) / 2) * (-u)) u := by
-    simpa [Function.comp, mul_assoc, mul_left_comm, mul_comm] using
-      (Real.hasDerivAt_exp (x := (-(u ^ 2) / 2))).comp u h_inner
+    change HasDerivAt (Real.exp ∘ fun x : ℝ => -(x ^ 2) / 2)
+      (Real.exp (-(u ^ 2) / 2) * (-u)) u
+    exact (Real.hasDerivAt_exp (x := (-(u ^ 2) / 2))).comp u h_inner
   have h_div :
       HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2) / 2) / Real.sqrt (2 * Real.pi))
         (Real.exp (-(u ^ 2) / 2) * (-u) / Real.sqrt (2 * Real.pi)) u := by

@@ -33,6 +33,11 @@ theorem fixedDeviation {Ω : Type u} [MeasureSpace Ω]
   -- This proof depends on the corrected coupled-pressure definition and on an
   -- explicit finite Gaussian realization of `RSSmartPathDisorder` so that the
   -- Lipschitz/concentration theorem applies.
+  -- BLOCKED: `RSSmartPathDisorder` supplies a Gaussian law but no coordinate
+  -- realization to which the available Lipschitz concentration API applies.
+  -- NEEDED: a finite Gaussian concentration theorem stated directly for this
+  -- pushforward law, with the computed `O(N)` squared Lipschitz constant.
+  -- BLUEPRINT: Corollary `tail`.
   sorry
 
 end SpinGlass.AT

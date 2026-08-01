@@ -27,7 +27,10 @@ structure QuantitativeATConclusion {Ω : Type u} [MeasureSpace Ω]
       |N * (A path s - 2 * B path s + C path s) -
         rsA β h / (1 - s * atParameter β h)| < eps
 
-theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
+/-- Assembly of the three conclusions once the analytic cavity-remainder
+estimate has been supplied.  This is the current compatibility endpoint;
+the blueprint's final theorem must discharge `hCavity` internally. -/
+theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] (K : Set (ℝ × ℝ))
     (data : UniformATData K)
     (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
@@ -40,6 +43,14 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     { secondMoment := uniform_secondMoment data Crem hCrem
       freeEnergy := rs_freeEnergy_error data Crem hCrem
       replicon := replicon_susceptibility data Crem hCrem }
+
+/-- Compatibility name retained for `Latala_AT.lean`. -/
+theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] (K : Set (ℝ × ℝ))
+    (data : UniformATData K)
+    (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
+    QuantitativeATConclusion (Ω := Ω) K :=
+  quantitative_strictAT_of_cavity_remainder K data hCavity
 
 #print axioms SpinGlass.AT.quantitative_strictAT
 

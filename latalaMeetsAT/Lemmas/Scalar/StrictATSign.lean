@@ -9,6 +9,9 @@ diffusion in Proposition `pathRS`.  Its construction is one of the remaining
 stochastic-calculus obligations. -/
 noncomputable def scalarOrderParameter (β h s u : ℝ) : ℝ :=
   by
+    -- BLOCKED: the local-field diffusion has not been constructed in Lean.
+    -- NEEDED: the piecewise SDE solution and the expectation defining `g_s(u)`.
+    -- BLUEPRINT: equations `localfield`, `Xq`, and Proposition `pathRS`.
     sorry
 
 theorem strictAT_sign {K : Set (ℝ × ℝ)} (data : UniformATData K)
@@ -27,6 +30,11 @@ theorem strictAT_sign {K : Set (ℝ × ℝ)} (data : UniformATData K)
   -- `q`, the Latała kernel comparison gives
   -- `g_s'(u) ≤ s*atParameter < 1`, hence the negative sign.  Joint continuity
   -- and compactness give uniform `c` and `eps` near `q`.
+  -- BLOCKED: the theorem depends on the unconstructed local-field diffusion
+  -- and on the unfinished Latała reference-mean identity.
+  -- NEEDED: `g_s'` below `q`, the diffusion comparison above `q`, and compact
+  -- uniform continuity of those derivatives.
+  -- BLUEPRINT: Lemma `diffusioncomparison` and Proposition `pathRS`.
   sorry
 
 end SpinGlass.AT

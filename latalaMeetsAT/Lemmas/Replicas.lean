@@ -19,6 +19,10 @@ abbrev EnergySpace (N : ℕ) := Config N → ℝ
 
 def spin {N : ℕ} (σ : Config N) (i : Fin N) : ℝ := if σ i then 1 else -1
 
+@[simp] theorem spin_sq {N : ℕ} (σ : Config N) (i : Fin N) :
+    spin σ i ^ 2 = 1 := by
+  simp [spin]
+
 /-- The normalized overlap of two configurations. -/
 noncomputable def configOverlap (N : ℕ) (σ τ : Config N) : ℝ :=
   (1 / (N : ℝ)) * ∑ i, spin σ i * spin τ i
@@ -38,12 +42,49 @@ noncomputable def replicaGibbsAverage {N n : ℕ}
     (H : EnergySpace N) (F : Replicas N n → ℝ) : ℝ :=
   ∑ σs, (∏ a, gibbsWeight H (σs a)) * F σs
 
+/-- A finite replica Gibbs average is invariant under permutation of replica
+labels. -/
+theorem replicaGibbsAverage_perm {N n : ℕ} (H : EnergySpace N)
+    (perm : Equiv.Perm (Fin n)) (F : Replicas N n → ℝ) :
+    replicaGibbsAverage H (fun σs => F (fun a => σs (perm a))) =
+      replicaGibbsAverage H F := by
+  let e : Replicas N n ≃ Replicas N n :=
+    { toFun := fun σs a => σs (perm a)
+      invFun := fun σs a => σs (perm.symm a)
+      left_inv := by
+        intro σs
+        funext a
+        simp
+      right_inv := by
+        intro σs
+        funext a
+        simp }
+  unfold replicaGibbsAverage
+  apply Fintype.sum_equiv e
+  intro σs
+  change (∏ a, gibbsWeight H (σs a)) * F (e σs) =
+    (∏ a, gibbsWeight H (e σs a)) * F (e σs)
+  congr 1
+  simpa [e] using
+    (Equiv.prod_comp perm (fun a => gibbsWeight H (σs a))).symm
+
 /-- Disorder-averaged replica expectation. -/
 noncomputable def quenchedReplicaAverage {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N n : ℕ} (H : Ω → EnergySpace N)
     (F : Replicas N n → ℝ) : ℝ :=
   ∫ ω, replicaGibbsAverage (H ω) F ∂(volume : Measure Ω)
+
+/-- Disorder averaging preserves replica-label invariance. -/
+theorem quenchedReplicaAverage_perm {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ}
+    (H : Ω → EnergySpace N) (perm : Equiv.Perm (Fin n))
+    (F : Replicas N n → ℝ) :
+    quenchedReplicaAverage H (fun σs => F (fun a => σs (perm a))) =
+      quenchedReplicaAverage H F := by
+  unfold quenchedReplicaAverage
+  apply integral_congr_ae
+  exact ae_of_all _ fun ω => replicaGibbsAverage_perm (H ω) perm F
 
 /-- The overlap of two selected replicas. -/
 noncomputable def overlap {N n : ℕ} (σs : Replicas N n) (a b : Fin n) : ℝ :=
@@ -103,20 +144,26 @@ theorem abs_centeredOverlap_le_two {N n : ℕ} (hN : 0 < N)
   rw [abs_le]
   constructor <;> unfold centeredOverlap <;> linarith [hq.1, hq.2, hover.1, hover.2]
 
-private theorem partitionFunction_pos {N : ℕ} (H : EnergySpace N) :
+theorem partitionFunction_pos {N : ℕ} (H : EnergySpace N) :
     0 < partitionFunction H := by
   unfold partitionFunction
   exact Finset.sum_pos (fun σ _ => Real.exp_pos (H σ)) Finset.univ_nonempty
 
-private theorem gibbsWeight_nonneg {N : ℕ} (H : EnergySpace N) (σ : Config N) :
+theorem gibbsWeight_nonneg {N : ℕ} (H : EnergySpace N) (σ : Config N) :
     0 ≤ gibbsWeight H σ := by
   exact div_nonneg (Real.exp_pos _).le (partitionFunction_pos H).le
 
-private theorem gibbsWeight_le_one {N : ℕ} (H : EnergySpace N) (σ : Config N) :
+theorem gibbsWeight_le_one {N : ℕ} (H : EnergySpace N) (σ : Config N) :
     gibbsWeight H σ ≤ 1 := by
   apply (div_le_one (partitionFunction_pos H)).2
   unfold partitionFunction
   exact Finset.single_le_sum (fun τ _ => (Real.exp_pos (H τ)).le) (Finset.mem_univ σ)
+
+theorem sum_gibbsWeight {N : ℕ} (H : EnergySpace N) :
+    ∑ σ, gibbsWeight H σ = 1 := by
+  unfold gibbsWeight partitionFunction
+  rw [← Finset.sum_div]
+  exact div_self (ne_of_gt (partitionFunction_pos H))
 
 private theorem measurable_replicaGibbsAverage {Ω : Type u} [MeasurableSpace Ω]
     {N n : ℕ} {H : Ω → EnergySpace N} (hH : Measurable H)

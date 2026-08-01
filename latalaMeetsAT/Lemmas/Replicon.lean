@@ -58,20 +58,8 @@ theorem thirdMoment_littleO {Ω : Type u} [MeasureSpace Ω]
     intro σs
     let X := centeredOverlap (rsQ β h) σs (0 : Fin 4) (1 : Fin 4)
     have hX : |X| ≤ 2 := abs_centeredOverlap_le_two hNpos hqmem σs 0 1
-    have hXsq : 0 ≤ X ^ 2 := sq_nonneg X
     change |X| ^ 3 ≤ eta * X ^ 2 + 8 * (if eta ≤ |X| then 1 else 0)
-    by_cases hlarge : eta ≤ |X|
-    · simp only [if_pos hlarge, mul_one]
-      have hcub : |X| ^ 3 ≤ 8 := by
-        nlinarith [abs_nonneg X, sq_nonneg (|X|),
-          mul_self_le_mul_self (abs_nonneg X) hX]
-      nlinarith [mul_nonneg heta.le hXsq]
-    · simp only [if_neg hlarge, mul_zero, add_zero]
-      have hsmall : |X| < eta := lt_of_not_ge hlarge
-      rw [show |X| ^ 3 = |X| * X ^ 2 by
-        rw [pow_succ, sq_abs]
-        ring]
-      exact mul_le_mul_of_nonneg_right hsmall.le hXsq
+    exact abs_cube_le_epsilon_sq_add_indicator heta.le hX
   have hsecondN : (N : ℝ) * A path s ≤ M :=
     hsecond hNpos hp rfl hs path
   have htailN : quenchedTail path s eta ≤ C * Real.exp (-c * (N : ℝ)) :=

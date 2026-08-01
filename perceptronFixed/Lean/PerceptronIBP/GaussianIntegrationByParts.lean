@@ -75,8 +75,10 @@ lemma gaussianReal_integration_by_parts_of_integrable
     have hexp :
         HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2) / 2))
           (-(x * Real.exp (-(x ^ 2) / 2))) x := by
-      simpa [Function.comp, mul_assoc, mul_left_comm, mul_comm] using
-        (Real.hasDerivAt_exp (x := (-(x ^ 2) / 2))).comp x hinner
+      have h := (Real.hasDerivAt_exp (x := (-(x ^ 2) / 2))).comp x hinner
+      change HasDerivAt (fun u : ℝ => Real.exp (-(u ^ 2) / 2))
+        (Real.exp (-(x ^ 2) / 2) * -x) x at h
+      convert h using 1 <;> ring
     have hmul :=
       hexp.const_mul (1 / Real.sqrt (2 * Real.pi))
     simpa [φ, mul_assoc, mul_left_comm, mul_comm] using hmul
@@ -93,7 +95,7 @@ lemma gaussianReal_integration_by_parts_of_integrable
     simpa using
       (integral_mul_deriv_eq_deriv_mul_of_integrable
         (u := F) (v := φ) (u' := fun x => deriv F x) (v' := fun x => -x * φ x)
-        hu hvφ huv' hF'φ hFφ)
+        (fun x _ => hu x) (fun x _ => hvφ x) huv' hF'φ hFφ)
   have hibp' :
       (∫ x : ℝ, (x * F x) * φ x) =
         ∫ x : ℝ, deriv F x * φ x := by

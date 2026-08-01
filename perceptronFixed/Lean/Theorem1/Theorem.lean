@@ -10,6 +10,11 @@ import uniform_bound_of_g.uniform_bound_of_g
 
 import Batteries.Tactic.GeneralizeProofs
 
+set_option linter.unnecessarySimpa false
+set_option linter.unusedSimpArgs false
+set_option linter.unreachableTactic false
+set_option linter.unusedTactic false
+set_option linter.unusedVariables false
 
 
 /-!
@@ -201,7 +206,9 @@ private lemma hasDerivAt_tanh (x : ℝ) :
   have hq :
       HasDerivAt (fun y : ℝ => Real.sinh y / Real.cosh y)
         ((Real.cosh x * Real.cosh x - Real.sinh x * Real.sinh x) / (Real.cosh x) ^ 2) x := by
-    simpa using hs.div hc hcosh_ne
+    change HasDerivAt (Real.sinh / Real.cosh)
+      ((Real.cosh x * Real.cosh x - Real.sinh x * Real.sinh x) / (Real.cosh x) ^ 2) x
+    exact hs.div hc hcosh_ne
   have hEq :
       (fun y : ℝ => Real.tanh y) =ᶠ[𝓝 x] (fun y : ℝ => Real.sinh y / Real.cosh y) := by
     refine Filter.Eventually.of_forall (fun y => ?_)
@@ -305,13 +312,21 @@ private lemma tendsto_tanh_atTop : Tendsto Real.tanh atTop (𝓝 (1 : ℝ)) := b
             simp [hnum, hden]
   have hcont : ContinuousAt (fun y : ℝ => (1 - y) / (1 + y)) 0 := by
     have : (1 + (0 : ℝ)) ≠ 0 := by norm_num
-    simpa using (continuousAt_const.sub continuousAt_id).div (continuousAt_const.add continuousAt_id) this
+    change ContinuousAt (((fun _ : ℝ => 1) - id) / ((fun _ : ℝ => 1) + id)) 0
+    exact (continuousAt_const.sub continuousAt_id).div
+      (continuousAt_const.add continuousAt_id) this
   have hEq :
       (fun x : ℝ => (1 - Real.exp (-(2 * x))) / (1 + Real.exp (-(2 * x)))) =ᶠ[atTop] Real.tanh := by
     refine Filter.Eventually.of_forall (fun x => (hform x).symm)
   have h' :
       Tendsto (fun x : ℝ => (1 - Real.exp (-(2 * x))) / (1 + Real.exp (-(2 * x)))) atTop (𝓝 (1 : ℝ)) := by
-    simpa [Function.comp] using (hcont.tendsto.comp h_exp)
+    have hcomp := hcont.tendsto.comp h_exp
+    have hcomp' : Tendsto
+        ((fun y : ℝ => (1 - y) / (1 + y)) ∘ fun x => Real.exp (-(2 * x)))
+        atTop (𝓝 (1 : ℝ)) := by
+      simpa using hcomp
+    refine hcomp'.congr' (Filter.Eventually.of_forall fun x => ?_)
+    rfl
   exact Filter.Tendsto.congr' hEq h'
 
 private lemma tendsto_tanh_atBot : Tendsto Real.tanh atBot (𝓝 (-1 : ℝ)) := by
@@ -501,7 +516,8 @@ lemma P_lt_one (r : ℝ) : P r < 1 := by
       simpa [Real.norm_eq_abs, abs_of_nonneg hnonneg] using hle
     exact h1.mono' hmeas hbound
   have hg_int : Integrable g γ := by
-    simpa [g, f] using (integrable_const (1 : ℝ)).sub hf_int
+    change Integrable ((fun _ : ℝ => 1) - f) γ
+    exact (integrable_const (1 : ℝ)).sub hf_int
   have hg_nonneg : 0 ≤ᵐ[γ] g := by
     refine ae_of_all _ (fun z => ?_)
     have hle : f z ≤ (1 : ℝ) := le_of_lt (tanh_sq_lt_one (Real.sqrt r * z))
@@ -567,18 +583,21 @@ lemma P_continuous : Continuous P := by
     have htanh : ContinuousAt (fun r : ℝ => Real.tanh (Real.sqrt r * z)) r0 := by
       have hg : ContinuousAt Real.tanh ((fun r : ℝ => Real.sqrt r * z) r0) :=
         continuous_tanh.continuousAt
-      simpa [Function.comp] using
-        (ContinuousAt.comp (x := r0) (f := fun r : ℝ => Real.sqrt r * z) (g := Real.tanh) hg hmul)
+      change ContinuousAt (Real.tanh ∘ fun r : ℝ => Real.sqrt r * z) r0
+      exact ContinuousAt.comp (x := r0) (f := fun r : ℝ => Real.sqrt r * z)
+        (g := Real.tanh) hg hmul
     exact (htanh.pow 2).tendsto
   have h :=
     MeasureTheory.tendsto_integral_filter_of_dominated_convergence (μ := γ) (l := 𝓝 r0)
       (F := fun r : ℝ => fun z : ℝ => (Real.tanh (Real.sqrt r * z)) ^ 2)
       (f := fun z : ℝ => (Real.tanh (Real.sqrt r0 * z)) ^ 2) (bound := fun _z : ℝ => (1 : ℝ))
       h_meas h_bound h_int h_lim
-  simpa [P, Expect] using h
+  change Tendsto (fun r : ℝ => ∫ z : ℝ, (Real.tanh (Real.sqrt r * z)) ^ 2 ∂γ)
+    (𝓝 r0) (𝓝 (∫ z : ℝ, (Real.tanh (Real.sqrt r0 * z)) ^ 2 ∂γ))
+  exact h
 
 lemma P_continuousOn_Ici : ContinuousOn P (Set.Ici (0 : ℝ)) := by
-  simpa [ContinuousOn] using P_continuous.continuousOn
+  exact P_continuous.continuousOn
 
 lemma P_monotoneOn_Ici : MonotoneOn P (Set.Ici (0 : ℝ)) := by
   intro r₁ hr₁ r₂ hr₂ hr
@@ -678,7 +697,8 @@ lemma P_strictMonoOn_Ici : StrictMonoOn P (Set.Ici (0 : ℝ)) := by
       simpa [Real.norm_eq_abs, abs_of_nonneg hnonneg] using hle
     exact h1.mono' hmeas hbound
   have hh_int : Integrable h γ := by
-    simpa [h, f₁, f₂] using hf₂.sub hf₁
+    change Integrable (f₂ - f₁) γ
+    exact hf₂.sub hf₁
   have hh_nonneg : 0 ≤ᵐ[γ] h := by
     refine ae_of_all _ (fun z => ?_)
     have : f₁ z ≤ f₂ z := by
@@ -834,7 +854,9 @@ lemma tendsto_P_atTop : Tendsto P atTop (𝓝 (1 : ℝ)) := by
     MeasureTheory.tendsto_integral_filter_of_dominated_convergence (μ := γ) (l := atTop)
       (F := fun r : ℝ => fun z : ℝ => (Real.tanh (Real.sqrt r * z)) ^ 2) (f := fun _z : ℝ => (1 : ℝ))
       (bound := fun _z : ℝ => (1 : ℝ)) h_meas h_bound h_int h_lim
-  simpa [P, Expect, MeasureTheory.integral_const, MeasureTheory.probReal_univ] using h
+  change Tendsto (fun r : ℝ => ∫ z : ℝ, (Real.tanh (Real.sqrt r * z)) ^ 2 ∂γ)
+    atTop (𝓝 1)
+  simpa [MeasureTheory.integral_const, MeasureTheory.probReal_univ] using h
 
 end P_lemmas
 
@@ -885,10 +907,11 @@ lemma A_zero : A 0 = 0 := by
 
 lemma A_continuous : Continuous A := by
   unfold A
-  simpa [sub_eq_add_neg] using (continuous_id.mul ((continuous_const.sub P_continuous).pow 2))
+  change Continuous (id * (((fun _ : ℝ => 1) - P) ^ 2))
+  exact continuous_id.mul ((continuous_const.sub P_continuous).pow 2)
 
 lemma A_continuousOn_Ici : ContinuousOn A (Set.Ici (0 : ℝ)) := by
-  simpa [ContinuousOn] using A_continuous.continuousOn
+  exact A_continuous.continuousOn
 
 lemma A_nonneg (r : ℝ) (hr : 0 ≤ r) : 0 ≤ A r := by
   unfold A
@@ -904,9 +927,11 @@ lemma integral_sech_sq : (∫ y : ℝ, (sech y) ^ 2) = (2 : ℝ) := by
   have hcont_sech : Continuous sech := by
     have hcosh_ne : ∀ x : ℝ, Real.cosh x ≠ 0 := fun x => (Real.cosh_pos x).ne'
     unfold sech
-    simpa [one_div] using (Continuous.inv₀ Real.continuous_cosh hcosh_ne)
+    change Continuous ((fun _ : ℝ => 1) / Real.cosh)
+    exact continuous_const.div Real.continuous_cosh hcosh_ne
   have hcont : Continuous fun y : ℝ => (sech y) ^ 2 := by
-    simpa using hcont_sech.pow 2
+    change Continuous (sech ^ 2)
+    exact hcont_sech.pow 2
   have hderiv : deriv Real.tanh = fun y : ℝ => (sech y) ^ 2 := by
     funext y
     simp [deriv_tanh, sech]
@@ -1053,10 +1078,14 @@ lemma strictMonoOn_I : StrictMonoOn I (Set.Ioi (0 : ℝ)) := by
       have hcont_sech : Continuous sech := by
         have hcosh_ne : ∀ x : ℝ, Real.cosh x ≠ 0 := fun x => (Real.cosh_pos x).ne'
         unfold sech
-        simpa [one_div] using (Continuous.inv₀ Real.continuous_cosh hcosh_ne)
+        change Continuous ((fun _ : ℝ => 1) / Real.cosh)
+        exact continuous_const.div Real.continuous_cosh hcosh_ne
+      have hcont_sech_sq : Continuous (fun y : ℝ => (sech y) ^ 2) := by
+        change Continuous (sech ^ 2)
+        exact hcont_sech.pow 2
       have hcont : Continuous fun y : ℝ =>
           (sech y) ^ 2 * (Real.exp (-(y ^ 2) / (2 * r₂)) - Real.exp (-(y ^ 2) / (2 * r₁))) := by
-        fun_prop [hcont_sech]
+        exact hcont_sech_sq.mul (by fun_prop)
       exact hcont.measurable.aestronglyMeasurable
     have hbound : ∀ᵐ y : ℝ ∂(volume : Measure ℝ), ‖F y‖ ≤ (sech y) ^ 2 := by
       refine ae_of_all _ (fun y => ?_)
@@ -1130,9 +1159,13 @@ lemma strictMonoOn_I : StrictMonoOn I (Set.Ioi (0 : ℝ)) := by
         have hcont_sech : Continuous sech := by
           have hcosh_ne : ∀ x : ℝ, Real.cosh x ≠ 0 := fun x => (Real.cosh_pos x).ne'
           unfold sech
-          simpa [one_div] using (Continuous.inv₀ Real.continuous_cosh hcosh_ne)
+          change Continuous ((fun _ : ℝ => 1) / Real.cosh)
+          exact continuous_const.div Real.continuous_cosh hcosh_ne
+        have hcont_sech_sq : Continuous (fun y : ℝ => (sech y) ^ 2) := by
+          change Continuous (sech ^ 2)
+          exact hcont_sech.pow 2
         have hcont : Continuous fun y : ℝ => (sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r₂)) := by
-          fun_prop [hcont_sech]
+          exact hcont_sech_sq.mul (by fun_prop)
         exact hcont.measurable.aestronglyMeasurable
       have hbound :
           ∀ᵐ y : ℝ ∂(volume : Measure ℝ),
@@ -1157,9 +1190,13 @@ lemma strictMonoOn_I : StrictMonoOn I (Set.Ioi (0 : ℝ)) := by
         have hcont_sech : Continuous sech := by
           have hcosh_ne : ∀ x : ℝ, Real.cosh x ≠ 0 := fun x => (Real.cosh_pos x).ne'
           unfold sech
-          simpa [one_div] using (Continuous.inv₀ Real.continuous_cosh hcosh_ne)
+          change Continuous ((fun _ : ℝ => 1) / Real.cosh)
+          exact continuous_const.div Real.continuous_cosh hcosh_ne
+        have hcont_sech_sq : Continuous (fun y : ℝ => (sech y) ^ 2) := by
+          change Continuous (sech ^ 2)
+          exact hcont_sech.pow 2
         have hcont : Continuous fun y : ℝ => (sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r₁)) := by
-          fun_prop [hcont_sech]
+          exact hcont_sech_sq.mul (by fun_prop)
         exact hcont.measurable.aestronglyMeasurable
       have hbound :
           ∀ᵐ y : ℝ ∂(volume : Measure ℝ),
@@ -1207,9 +1244,13 @@ lemma tendsto_I_atTop : Tendsto I atTop (𝓝 (2 : ℝ)) := by
     have hcont_sech : Continuous sech := by
       have hcosh_ne : ∀ x : ℝ, Real.cosh x ≠ 0 := fun x => (Real.cosh_pos x).ne'
       unfold sech
-      simpa [one_div] using (Continuous.inv₀ Real.continuous_cosh hcosh_ne)
+      change Continuous ((fun _ : ℝ => 1) / Real.cosh)
+      exact continuous_const.div Real.continuous_cosh hcosh_ne
+    have hcont_sech_sq : Continuous (fun y : ℝ => (sech y) ^ 2) := by
+      change Continuous (sech ^ 2)
+      exact hcont_sech.pow 2
     have hcont : Continuous fun y : ℝ => (sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r)) := by
-      fun_prop [hcont_sech]
+      exact hcont_sech_sq.mul (by fun_prop)
     exact hcont.measurable.aestronglyMeasurable
   have h_bound :
       ∀ᶠ r : ℝ in atTop, ∀ᵐ y : ℝ ∂(volume : Measure ℝ),
@@ -1241,15 +1282,18 @@ lemma tendsto_I_atTop : Tendsto I atTop (𝓝 (2 : ℝ)) := by
       (F := fun r : ℝ => fun y : ℝ => (sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r)))
       (f := fun y : ℝ => (sech y) ^ 2) (bound := fun y : ℝ => (sech y) ^ 2)
       h_meas h_bound h_int h_lim
-  simpa [I, integral_sech_sq] using h
+  change Tendsto (fun r : ℝ => ∫ y : ℝ,
+    (sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r))) atTop (𝓝 2)
+  simpa [integral_sech_sq] using h
 
 lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
     A r = (1 / (2 * Real.pi)) * (I r) ^ 2 := by
   have hA : A r = r * (S r) ^ 2 := A_eq_r_mul_S_sq r
   let rNN : ℝ≥0 := ⟨r, le_of_lt hr⟩
   have hv : (rNN : ℝ≥0) ≠ 0 := by
-    have : (rNN : ℝ) ≠ 0 := by simpa [rNN] using (ne_of_gt hr)
-    exact (NNReal.coe_ne_zero).1 this
+    apply ne_of_gt
+    change (0 : ℝ) < r
+    exact hr
   let φ : ℝ → ℝ := fun x => Real.sqrt r * x
   let f : ℝ → ℝ := fun y => (sech y) ^ 2
   have hφ_meas : AEMeasurable φ γ := (measurable_const.mul measurable_id).aemeasurable
@@ -1257,9 +1301,11 @@ lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
     have hcont_sech : Continuous sech := by
       have hcosh_ne : ∀ x : ℝ, Real.cosh x ≠ 0 := fun x => (Real.cosh_pos x).ne'
       unfold sech
-      simpa [one_div] using (Continuous.inv₀ Real.continuous_cosh hcosh_ne)
+      change Continuous ((fun _ : ℝ => 1) / Real.cosh)
+      exact continuous_const.div Real.continuous_cosh hcosh_ne
     have hcont : Continuous fun y : ℝ => (sech y) ^ 2 := by
-      simpa using hcont_sech.pow 2
+      change Continuous (sech ^ 2)
+      exact hcont_sech.pow 2
     exact hcont.measurable.aestronglyMeasurable
   have hS_map : S r = ∫ y : ℝ, f y ∂(Measure.map φ γ) := by
     have hmap := (MeasureTheory.integral_map (μ := γ) (φ := φ) hφ_meas hf_meas (f := f)).symm
@@ -1273,7 +1319,15 @@ lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
     have h :=
       (ProbabilityTheory.gaussianReal_map_const_mul (μ := (0 : ℝ)) (v := (1 : ℝ≥0))
           (c := Real.sqrt r))
-    simpa [γ, φ, hvar] using h
+    change Measure.map (fun x : ℝ => Real.sqrt r * x)
+      (ProbabilityTheory.gaussianReal 0 1) = ProbabilityTheory.gaussianReal 0 rNN
+    rw [← hvar]
+    have hvareq : NNReal.mk (Real.sqrt r ^ 2) (sq_nonneg (Real.sqrt r)) =
+        (⟨Real.sqrt r ^ 2, sq_nonneg (Real.sqrt r)⟩ : ℝ≥0) := by
+      apply Subtype.ext
+      rfl
+    rw [← hvareq]
+    simpa using h
   have hS_density :
       S r = ∫ y : ℝ, ProbabilityTheory.gaussianPDFReal (0 : ℝ) rNN y * (sech y) ^ 2 := by
     have hgauss :
@@ -1297,8 +1351,12 @@ lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
           fun y : ℝ =>
             (Real.sqrt (2 * Real.pi * r))⁻¹ * ((sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r))) := by
       funext y
-      simp [ProbabilityTheory.gaussianPDFReal, rNN, hr0, pow_two, mul_assoc, mul_left_comm, mul_comm,
-        sub_eq_add_neg, div_eq_mul_inv]
+      simp only [ProbabilityTheory.gaussianPDFReal, sub_zero]
+      change (Real.sqrt (2 * Real.pi * r))⁻¹ * Real.exp (-(y ^ 2) / (2 * r)) *
+          (sech y) ^ 2 =
+        (Real.sqrt (2 * Real.pi * r))⁻¹ *
+          ((sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r)))
+      ring
     have :
         ∫ y : ℝ, ProbabilityTheory.gaussianPDFReal (0 : ℝ) rNN y * (sech y) ^ 2 =
           (Real.sqrt (2 * Real.pi * r))⁻¹ *
@@ -1506,11 +1564,13 @@ lemma integral_E_sq_continuousAt (κ : ℝ) (q₀ : ℝ) (hq₀ : q₀ < 1) :
         continuous_const.sub (continuous_const.mul continuous_id)
       simpa using hnum.div_const (Real.sqrt (1 - q))
     have hcont : Continuous (fun z : ℝ => (E (U κ q z)) ^ 2) := by
-      simpa using (hcontE.comp hcontU).pow 2
+      change Continuous ((E ∘ fun z : ℝ => U κ q z) ^ 2)
+      exact (hcontE.comp hcontU).pow 2
     exact hcont.aestronglyMeasurable
 
   have hZ2 : Integrable (fun z : ℝ => z ^ 2) γ := by
     have h : MemLp (fun z : ℝ => z) 2 γ := by
+      change MemLp id 2 γ
       simpa [γ, Theorem1.γ] using
         (ProbabilityTheory.memLp_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (2 : ℝ≥0)))
     simpa using h.integrable_sq
@@ -1552,7 +1612,8 @@ lemma integral_E_sq_continuousAt (κ : ℝ) (q₀ : ℝ) (hq₀ : q₀ < 1) :
       have : 0 < δ := hδ
       linarith
     have hq_event : ∀ᶠ q in nhds q₀, q < q₀ + δ := by
-      simpa [Filter.Eventually, Set.mem_Iio] using (Iio_mem_nhds hqmax)
+      filter_upwards [Iio_mem_nhds hqmax] with q hq
+      exact hq
     filter_upwards [hq_event] with q hq
     refine ae_of_all _ (fun z => ?_)
     have hden : Real.sqrt (1 - q) ≥ Real.sqrt δ := by
@@ -1632,9 +1693,15 @@ lemma integral_E_sq_continuousAt (κ : ℝ) (q₀ : ℝ) (hq₀ : q₀ < 1) :
       have hnum : Tendsto (fun q => κ - Real.sqrt q * z) (nhds q₀) (nhds (κ - Real.sqrt q₀ * z)) := by
         exact tendsto_const_nhds.sub ((Real.continuous_sqrt.tendsto q₀).mul tendsto_const_nhds)
       have hden : Tendsto (fun q => Real.sqrt (1 - q)) (nhds q₀) (nhds (Real.sqrt (1 - q₀))) := by
-        simpa using (Real.continuous_sqrt.tendsto (1 - q₀)).comp (tendsto_const_nhds.sub tendsto_id)
+        have hcomp := (Real.continuous_sqrt.tendsto (1 - q₀)).comp
+          (tendsto_const_nhds.sub tendsto_id)
+        refine hcomp.congr' (Filter.Eventually.of_forall fun q => ?_)
+        rfl
       have := hnum.div hden hden0
-      simpa [U] using this
+      change Tendsto
+        ((fun q => κ - Real.sqrt q * z) / (fun q => Real.sqrt (1 - q)))
+        (nhds q₀) (nhds ((κ - Real.sqrt q₀ * z) / Real.sqrt (1 - q₀)))
+      exact this
     have hcomp : Tendsto (fun q => E (U κ q z)) (nhds q₀) (𝓝 (E (U κ q₀ z))) :=
       (hcontE.tendsto _).comp hcontU
     simpa using (hcomp.pow 2)
@@ -1744,8 +1811,21 @@ lemma Theorem1.tendsto_E_atBot : Filter.Tendsto Theorem1.E Filter.atBot (nhds 0)
 lemma Theorem1.tendsto_U_atTop (κ z : ℝ) (h : z < κ) :
     Filter.Tendsto (fun q => Theorem1.U κ q z) (nhdsWithin 1 (Set.Iio 1)) Filter.atTop := by
       have h_sqrt : Filter.Tendsto (fun q => Real.sqrt (1 - q)) (𝓝[<] 1) (nhdsWithin 0 (Set.Ioi 0)) := by
-        refine' Filter.Tendsto.inf _ _ <;> norm_num;
-        convert Filter.Tendsto.sqrt ( tendsto_const_nhds.sub Filter.tendsto_id ) using 2 ; norm_num;
+        rw [tendsto_nhdsWithin_iff]
+        constructor
+        · have hsub : Filter.Tendsto (fun q : ℝ => 1 - q) (𝓝[<] 1) (𝓝 0) := by
+            have hc : ContinuousAt (fun q : ℝ => 1 - q) 1 := by fun_prop
+            have hb := hc.tendsto.mono_left
+              (show (𝓝[<] (1 : ℝ)) ≤ 𝓝 (1 : ℝ) from inf_le_left)
+            simpa only [sub_self] using hb
+          have hs := (Real.continuous_sqrt.tendsto 0).comp hsub
+          have hs' : Filter.Tendsto
+              (Real.sqrt ∘ fun q : ℝ => 1 - q) (𝓝[<] 1) (𝓝 0) := by
+            simpa using hs
+          refine hs'.congr' (Filter.Eventually.of_forall fun q => ?_)
+          rfl
+        · filter_upwards [self_mem_nhdsWithin] with q hq
+          exact Real.sqrt_pos.2 (sub_pos.2 hq)
       have h_num : Filter.Tendsto (fun q => κ - Real.sqrt q * z) (𝓝[<] 1) (nhds (κ - z)) := by
         convert tendsto_const_nhds.sub ( Filter.Tendsto.mul ( Real.continuous_sqrt.continuousWithinAt ) tendsto_const_nhds ) using 2 ; norm_num;
       apply_rules [ Filter.Tendsto.pos_mul_atTop, h_num ];
@@ -1786,10 +1866,18 @@ lemma Theorem1.integrand_limit_of_lt (κ z : ℝ) (h : κ < z) :
           have h_E_zero : Filter.Tendsto (fun q => Theorem1.E (Theorem1.U κ q z)) (nhdsWithin 1 (Set.Iio 1)) (nhds 0) := by
             have h_U_neg_inf : Filter.Tendsto (fun q => Theorem1.U κ q z) (nhdsWithin 1 (Set.Iio 1)) Filter.atBot := by
               exact Theorem1.tendsto_U_atBot κ z h
-            convert Theorem1.tendsto_E_atBot.comp h_U_neg_inf using 1;
-          convert h_E_zero using 1
-        convert Filter.Tendsto.mul ( tendsto_const_nhds.sub ( Filter.tendsto_id.mono_left inf_le_left ) ) ( h_E_zero.pow 2 ) using 2 ; norm_num;
-      convert h_combined using 1 ; ring
+            change Filter.Tendsto
+              (Theorem1.E ∘ fun q => Theorem1.U κ q z) (𝓝[<] 1) (𝓝 0)
+            exact Theorem1.tendsto_E_atBot.comp h_U_neg_inf
+          exact h_E_zero
+        have h_one_sub : Filter.Tendsto (fun q : ℝ => 1 - q) (𝓝[<] 1) (𝓝 0) := by
+          have hc : ContinuousAt (fun q : ℝ => 1 - q) 1 := by fun_prop
+          have hb := hc.tendsto.mono_left
+            (show (𝓝[<] (1 : ℝ)) ≤ 𝓝 (1 : ℝ) from inf_le_left)
+          simpa only [sub_self] using hb
+        have hmul := h_one_sub.mul (h_E_zero.pow 2)
+        simpa using hmul
+      simpa using h_combined
 
 lemma Theorem1.integrand_limit_of_eq (κ z : ℝ) (h : κ = z) :
     Filter.Tendsto (fun q => (1 - q) * (Theorem1.E (Theorem1.U κ q z))^2) (nhdsWithin 1 (Set.Iio 1)) (nhds 0) := by
@@ -1799,13 +1887,32 @@ lemma Theorem1.integrand_limit_of_eq (κ z : ℝ) (h : κ = z) :
             suffices h_suff : Filter.Tendsto (fun q => Real.sqrt (1 - q) / (1 + Real.sqrt q)) (nhdsWithin 1 (Set.Iio 1)) (nhds 0) by
               refine' Filter.Tendsto.congr' _ h_suff;
               filter_upwards [ Ioo_mem_nhdsLT zero_lt_one ] with q hq using by rw [ div_eq_div_iff ] <;> nlinarith [ Real.sqrt_nonneg q, Real.sq_sqrt ( show 0 ≤ q by linarith [ hq.1 ] ), Real.sqrt_nonneg ( 1 - q ), Real.sq_sqrt ( show 0 ≤ 1 - q by linarith [ hq.2 ] ), hq.1, hq.2 ] ;
-            exact tendsto_nhdsWithin_of_tendsto_nhds ( by simpa using Filter.Tendsto.div ( Continuous.tendsto ( show Continuous fun q => Real.sqrt ( 1 - q ) from Real.continuous_sqrt.comp <| continuous_const.sub continuous_id' ) 1 ) ( Continuous.tendsto ( show Continuous fun q => 1 + Real.sqrt q from continuous_const.add <| Real.continuous_sqrt ) 1 ) <| by norm_num );
+            apply tendsto_nhdsWithin_of_tendsto_nhds
+            have hdiv := Filter.Tendsto.div
+              (Continuous.tendsto
+                (show Continuous fun q => Real.sqrt (1 - q) from
+                  Real.continuous_sqrt.comp (continuous_const.sub continuous_id')) 1)
+              (Continuous.tendsto
+                (show Continuous fun q => 1 + Real.sqrt q from
+                  continuous_const.add Real.continuous_sqrt) 1) (by norm_num)
+            have hdiv' : Filter.Tendsto
+                ((fun q : ℝ => Real.sqrt (1 - q)) / fun q => 1 + Real.sqrt q)
+                (𝓝 1) (𝓝 0) := by
+              simpa using hdiv
+            refine hdiv'.congr' (Filter.Eventually.of_forall fun q => ?_)
+            rfl
           convert h_U_zero.const_mul κ using 2 <;> push_cast [ h, Theorem1.U ] <;> ring;
         have h_E_cont : Continuous E := by
           simpa [Theorem1.E, UniformBoundOfG.E] using
             (UniformBoundOfG.E_continuous : Continuous UniformBoundOfG.E);
         exact h_E_cont.continuousAt.tendsto.comp h_E_lim;
-      convert Filter.Tendsto.mul ( tendsto_const_nhds.sub ( Filter.tendsto_id.mono_left inf_le_left ) ) ( h_E_lim.pow 2 ) using 2 ; norm_num
+      have h_one_sub : Filter.Tendsto (fun q : ℝ => 1 - q) (𝓝[<] 1) (𝓝 0) := by
+        have hc : ContinuousAt (fun q : ℝ => 1 - q) 1 := by fun_prop
+        have hb := hc.tendsto.mono_left
+          (show (𝓝[<] (1 : ℝ)) ≤ 𝓝 (1 : ℝ) from inf_le_left)
+        simpa only [sub_self] using hb
+      have hmul := h_one_sub.mul (h_E_lim.pow 2)
+      simpa using hmul
 
 lemma Theorem1.tendsto_U_zero_of_eq (κ z : ℝ) (h : κ = z) :
     Filter.Tendsto (fun q => Theorem1.U κ q z) (nhdsWithin 1 (Set.Iio 1)) (nhds 0) := by
@@ -1858,28 +1965,38 @@ end AristotleLemmas
 
 lemma tendsto_B_atOne_left (κ : ℝ) :
     Tendsto (fun q => B κ q) (𝓝[<] (1 : ℝ)) (𝓝 (Cκ κ)) := by
-  convert MeasureTheory.tendsto_integral_filter_of_dominated_convergence _ _ _ _ _ using 1;
-  rotate_left;
-  infer_instance;
-  use fun q z => ( 1 - q ) * ( Theorem1.E ( Theorem1.U κ q z ) ) ^ 2;
-  use fun z => 4 * ( κ^2 + z^2 ) + 100;
-  · refine' Filter.eventually_of_mem self_mem_nhdsWithin fun n hn => Measurable.aestronglyMeasurable _;
-    refine' Measurable.const_mul _ _;
-    refine' Measurable.pow_const _ _;
-    refine' Measurable.div _ _;
-    · refine' Measurable.div _ _;
-      · refine' Measurable.exp _;
-        exact Measurable.div_const ( Measurable.neg ( Measurable.pow_const ( by exact Measurable.div ( by exact measurable_const.sub ( by exact measurable_id'.const_mul _ ) ) ( by exact measurable_const.sqrt ) ) _ ) ) _;
-      · exact measurable_const;
-    ·
-      have h_cont : Continuous (fun z => DecreasingG.Φbar (Theorem1.U κ n z)) := by
-        have h_cont : Continuous (fun u => DecreasingG.Φbar u) := by
-          simpa [UniformBoundOfG.Φbar] using
-            (UniformBoundOfG.Φbar_continuous : Continuous UniformBoundOfG.Φbar);
-        refine' h_cont.comp _;
-        exact Continuous.div ( continuous_const.sub ( continuous_const.mul continuous_id' ) ) ( continuous_const ) fun x => ne_of_gt ( Real.sqrt_pos.mpr ( by linarith [ hn.out ] ) );
-      exact h_cont.measurable;
-  · filter_upwards [ Ioo_mem_nhdsLT zero_lt_one ] with q hq using Filter.Eventually.of_forall fun z => by rw [ Real.norm_of_nonneg ( mul_nonneg ( sub_nonneg.2 hq.2.le ) ( sq_nonneg _ ) ) ] ; exact (by
+  suffices hconv : Tendsto
+      (fun q : ℝ => ∫ z : ℝ, (1 - q) * (Theorem1.E (Theorem1.U κ q z)) ^ 2 ∂Theorem1.γ)
+      (𝓝[<] (1 : ℝ))
+      (𝓝 (∫ z : ℝ, (max (κ - z) 0) ^ 2 ∂Theorem1.γ)) by
+    simpa [B, Cκ, Expect, mul_assoc, MeasureTheory.integral_const_mul] using hconv
+  refine MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+    (μ := Theorem1.γ) (l := 𝓝[<] (1 : ℝ))
+    (F := fun q z => (1 - q) * (Theorem1.E (Theorem1.U κ q z)) ^ 2)
+    (f := fun z => (max (κ - z) 0) ^ 2)
+    (bound := fun z => 4 * (κ ^ 2 + z ^ 2) + 100) ?_ ?_ ?_ ?_
+  · show ∀ᶠ q : ℝ in 𝓝[<] (1 : ℝ),
+      AEStronglyMeasurable
+        (fun z : ℝ => (1 - q) * (Theorem1.E (Theorem1.U κ q z)) ^ 2) Theorem1.γ
+    filter_upwards [self_mem_nhdsWithin] with q hq
+    have hcontE : Continuous Theorem1.E := by
+      simpa [Theorem1.E, UniformBoundOfG.E] using
+        (UniformBoundOfG.E_continuous : Continuous UniformBoundOfG.E)
+    have hcontU : Continuous (fun z : ℝ => Theorem1.U κ q z) := by
+      unfold Theorem1.U
+      exact (continuous_const.sub (continuous_const.mul continuous_id)).div_const
+        (Real.sqrt (1 - q))
+    have hsq : Continuous
+        ((Theorem1.E ∘ fun z : ℝ => Theorem1.U κ q z) ^ 2) :=
+      (hcontE.comp hcontU).pow 2
+    change AEStronglyMeasurable
+      ((fun _ : ℝ => 1 - q) *
+        ((Theorem1.E ∘ fun z : ℝ => Theorem1.U κ q z) ^ 2)) Theorem1.γ
+    exact (continuous_const.mul hsq).aestronglyMeasurable
+  · show ∀ᶠ q : ℝ in 𝓝[<] (1 : ℝ), ∀ᵐ z : ℝ ∂Theorem1.γ,
+      ‖(1 - q) * (Theorem1.E (Theorem1.U κ q z)) ^ 2‖ ≤
+        4 * (κ ^ 2 + z ^ 2) + 100
+    filter_upwards [ Ioo_mem_nhdsLT zero_lt_one ] with q hq using Filter.Eventually.of_forall fun z => by rw [ Real.norm_of_nonneg ( mul_nonneg ( sub_nonneg.2 hq.2.le ) ( sq_nonneg _ ) ) ] ; exact (by
     have h_E_bound : ∀ u : ℝ, Theorem1.E u ≤ max u 0 + 2 := by
       exact Theorem1.E_le_max_u_zero_add_two;
     have h_subst : (1 - q) * (max (Theorem1.U κ q z) 0 + 2) ^ 2 ≤ 4 * (κ ^ 2 + z ^ 2) + 100 := by
@@ -1906,7 +2023,7 @@ lemma tendsto_B_atOne_left (κ : ℝ) :
             2)
           (by linarith [hq.1, hq.2]))
         h_subst);
-  ·
+  · show MeasureTheory.Integrable (fun z : ℝ => 4 * (κ ^ 2 + z ^ 2) + 100) Theorem1.γ
     have h_poly_integrable : MeasureTheory.Integrable (fun z => z^2) Theorem1.γ := by
       have h_gauss_moment : ∫ z, z^2 * (Real.exp (-z^2 / 2)) ∂MeasureTheory.volume = Real.sqrt (2 * Real.pi) := by
         have := @integral_rpow_mul_exp_neg_mul_rpow;
@@ -1934,8 +2051,10 @@ lemma tendsto_B_atOne_left (κ : ℝ) :
       · exact Measurable.ennreal_ofReal ( by exact Measurable.mul ( by exact measurable_const ) ( by exact Real.continuous_exp.measurable.comp ( by exact Continuous.measurable ( by continuity ) ) ) );
       · norm_num [ ProbabilityTheory.gaussianPDF ];
     apply_rules [ MeasureTheory.Integrable.add, MeasureTheory.Integrable.const_mul, MeasureTheory.integrable_const ];
-  · exact Filter.Eventually.of_forall fun x => Theorem1.integrand_limit κ x |> Filter.Tendsto.mono_left <| nhdsWithin_mono _ <| Set.Iio_subset_Iio <| by norm_num;
-  · exact funext fun q => by rw [ Theorem1.B ] ; simp +decide [ mul_assoc, MeasureTheory.integral_const_mul ] ;
+  · show ∀ᵐ x : ℝ ∂Theorem1.γ,
+      Tendsto (fun q : ℝ => (1 - q) * (Theorem1.E (Theorem1.U κ q x)) ^ 2)
+        (𝓝[<] (1 : ℝ)) (𝓝 ((max (κ - x) 0) ^ 2))
+    exact Filter.Eventually.of_forall fun x => Theorem1.integrand_limit κ x
 
 /-!
 The strict monotonicity of `B` is the main technical ingredient.
@@ -1980,10 +2099,26 @@ lemma bridge_E_eq (u : ℝ) : MillsBlueprint.Proof.E u = DecreasingG.E u := by
     · norm_num [ MeasureTheory.integral_const_mul, MeasureTheory.integral_mul_const ] at * ; aesop;
     · exact MeasureTheory.Integrable.integrableOn ( by exact MeasureTheory.Integrable.const_mul ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact by simpa [ div_eq_inv_mul ] using ( integrable_exp_neg_mul_sq ( by positivity ) ) ) ) ) ) ) ) ) ) ) ) ) ) _ );
     · exact MeasureTheory.Integrable.integrableOn ( by exact MeasureTheory.Integrable.const_mul ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact by simpa [ div_eq_inv_mul ] using ( integrable_exp_neg_mul_sq ( by positivity ) ) ) ) ) ) ) ) ) ) ) ) ) ) _ );
-  convert congr_arg ( fun x : ℝ => ( 1 / Real.sqrt ( 2 * Real.pi ) ) * Real.exp ( -u ^ 2 / 2 ) / ( 1 - x ) ) h_gauss_split using 1 ; ring!;
-  unfold DecreasingG.E; ring;
-  unfold DecreasingG.φ DecreasingG.Φbar; norm_num [ div_eq_inv_mul, mul_assoc, mul_comm, mul_left_comm, Real.pi_pos.le ] ;
-  unfold DecreasingG.φ; norm_num [ div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm, MeasureTheory.integral_Ici_eq_integral_Ioi ] ;
+  have hφ : MillsBlueprint.Proof.φ u = DecreasingG.φ u := by
+    unfold MillsBlueprint.Proof.φ DecreasingG.φ
+    ring
+  have htail : MillsBlueprint.Proof.Φbar u = DecreasingG.Φbar u := by
+    unfold MillsBlueprint.Proof.Φbar MillsBlueprint.Proof.Φ DecreasingG.Φbar
+    have hMφ : (fun x : ℝ => MillsBlueprint.Proof.φ x) =
+        fun x => (1 / Real.sqrt (2 * Real.pi)) * Real.exp (-x ^ 2 / 2) := by
+      funext x
+      unfold MillsBlueprint.Proof.φ
+      ring
+    have hDφ : (fun x : ℝ => DecreasingG.φ x) =
+        fun x => (1 / Real.sqrt (2 * Real.pi)) * Real.exp (-x ^ 2 / 2) := by
+      funext x
+      unfold DecreasingG.φ
+      ring
+    rw [hMφ, hDφ, h_gauss_split]
+    simp only [sub_sub_cancel]
+    rw [MeasureTheory.integral_Ici_eq_integral_Ioi]
+  unfold MillsBlueprint.Proof.E DecreasingG.E
+  rw [hφ, htail]
 
 /-
 The function B defined in Theorem1 is equal to the function B defined in MillsBlueprint (with appropriate parameters).
@@ -2110,38 +2245,68 @@ lemma g_bound_poly : ∃ C, ∀ u, |DecreasingG.g u| ≤ C * (1 + |u|^4) := by
 /-
 g(U) is integrable with respect to the Gaussian measure.
 -/
+private lemma integrable_abs_pow_linear_aux (n : ℕ) (a b : ℝ) :
+    MeasureTheory.Integrable (fun z => |a + b * z| ^ n) Theorem1.γ := by
+  by_cases hn : n = 0
+  · subst hn
+    simpa using (integrable_const (μ := Theorem1.γ) (c := (1 : ℝ)))
+  · have hid : MeasureTheory.MemLp (fun z : ℝ => z) (p := (n : ℝ≥0)) Theorem1.γ := by
+      change MeasureTheory.MemLp id (p := (n : ℝ≥0)) Theorem1.γ
+      simpa [Theorem1.γ] using
+        ProbabilityTheory.memLp_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (n : ℝ≥0))
+    have hmul : MeasureTheory.MemLp (fun z : ℝ => b * z) (p := (n : ℝ≥0)) Theorem1.γ :=
+      hid.const_mul b
+    have hconst : MeasureTheory.MemLp (fun _z : ℝ => a) (p := (n : ℝ≥0)) Theorem1.γ := by
+      simpa using (MeasureTheory.memLp_const (μ := Theorem1.γ) (p := (n : ℝ≥0∞)) (c := a))
+    have hlin : MeasureTheory.MemLp (fun z : ℝ => a + b * z) (p := (n : ℝ≥0)) Theorem1.γ := by
+      change MeasureTheory.MemLp ((fun _z : ℝ => a) + fun z : ℝ => b * z)
+        (p := (n : ℝ≥0)) Theorem1.γ
+      exact hconst.add hmul
+    have hnorm : MeasureTheory.Integrable
+        (fun z : ℝ => ‖a + b * z‖ ^ ((n : ℝ≥0∞)).toReal) Theorem1.γ := by
+      have hmem1 : MeasureTheory.MemLp
+          (fun z : ℝ => ‖a + b * z‖ ^ ((n : ℝ≥0∞)).toReal) 1 Theorem1.γ := by
+        refine hlin.norm_rpow ?_ ?_
+        · simpa [hn]
+        · simp
+      exact (MeasureTheory.memLp_one_iff_integrable).1 hmem1
+    simpa [Real.norm_eq_abs, Real.rpow_natCast] using hnorm
+
 lemma integrable_g_U (κ : ℝ) (q : ℝ) (hq : q ∈ Set.Ioo 0 1) :
     MeasureTheory.Integrable (fun z => DecreasingG.g (Theorem1.U κ q z)) Theorem1.γ := by
-  obtain ⟨C, hC⟩ : ∃ C, ∀ u, |DecreasingG.g u| ≤ C * (1 + |u|^4) := g_bound_poly;
-  refine' MeasureTheory.Integrable.mono' _ _ _;
-  refine' fun z => C * ( 1 + |( κ - Real.sqrt q * z ) / Real.sqrt ( 1 - q )| ^ 4 );
-  · refine' MeasureTheory.Integrable.const_mul _ _;
-    refine' MeasureTheory.Integrable.add _ _;
-    · norm_num [ Theorem1.γ ];
-    ·
-      have h_poly_integrable : ∀ n : ℕ, MeasureTheory.Integrable (fun z => z ^ n) Theorem1.γ := by
-        intro n
-        have h_gauss_moment : MeasureTheory.Integrable (fun z => z^n) (MeasureTheory.Measure.map (fun z => z) (ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)))) := by
-          simp +decide [ ProbabilityTheory.gaussianReal ];
-          have h_gauss_moment : MeasureTheory.Integrable (fun z => z^n * Real.exp (-z^2 / 2)) MeasureTheory.volume := by
-            have := @integrable_rpow_mul_exp_neg_mul_sq;
-            convert @this ( 1 / 2 ) ( by norm_num ) ( n : ℝ ) ( by linarith ) using 3 ; ring;
-            · norm_cast;
-            · ring;
-          rw [ MeasureTheory.integrable_withDensity_iff ];
-          · convert h_gauss_moment.div_const ( Real.sqrt ( 2 * Real.pi ) ) using 2 ; norm_num [ ProbabilityTheory.gaussianPDF ] ; ring;
-            rw [ ProbabilityTheory.gaussianPDFReal ] ; norm_num [ Real.exp_neg, mul_assoc, mul_comm, mul_left_comm, Real.sqrt_ne_zero'.mpr Real.pi_pos ];
-            rw [ ENNReal.toReal_ofReal ( by positivity ) ] ; rw [ ← Real.exp_neg ] ; ring ; norm_num;
-          · exact ProbabilityTheory.measurable_gaussianPDF (μ := (0 : ℝ)) (v := (1 : ℝ≥0));
-          · norm_num [ ProbabilityTheory.gaussianPDF ];
-        aesop;
-      convert MeasureTheory.Integrable.abs ( h_poly_integrable 4 |> fun h => h.const_mul ( ( Real.sqrt ( 1 - q ) ) ⁻¹ ^ 4 ) |> fun h => h.const_mul ( ( -Real.sqrt q ) ^ 4 ) |> fun h => h.add ( h_poly_integrable 3 |> fun h => h.const_mul ( ( Real.sqrt ( 1 - q ) ) ⁻¹ ^ 4 ) |> fun h => h.const_mul ( ( -Real.sqrt q ) ^ 3 * κ * 4 ) |> fun h => h.add ( h_poly_integrable 2 |> fun h => h.const_mul ( ( Real.sqrt ( 1 - q ) ) ⁻¹ ^ 4 ) |> fun h => h.const_mul ( ( -Real.sqrt q ) ^ 2 * κ ^ 2 * 6 ) |> fun h => h.add ( h_poly_integrable 1 |> fun h => h.const_mul ( ( Real.sqrt ( 1 - q ) ) ⁻¹ ^ 4 ) |> fun h => h.const_mul ( ( -Real.sqrt q ) * κ ^ 3 * 4 ) |> fun h => h.add ( h_poly_integrable 0 |> fun h => h.const_mul ( ( Real.sqrt ( 1 - q ) ) ⁻¹ ^ 4 ) |> fun h => h.const_mul ( κ ^ 4 ) ) ) ) ) ) using 1 ; ring;
-      ext; norm_num; ring;
-      rw [ ← abs_pow ] ; ring;
-  · have h_measurable : Measurable (fun u => DecreasingG.g u) := by
-      exact Continuous.measurable ( UniformBoundOfG.g_continuous );
-    exact h_measurable.aestronglyMeasurable.comp_aemeasurable ( by exact Measurable.aemeasurable ( by exact Measurable.div_const ( by exact Measurable.sub ( measurable_const ) ( measurable_const.mul measurable_id' ) ) _ ) );
-  · exact Filter.Eventually.of_forall fun x => hC _
+  obtain ⟨C, hC⟩ := g_bound_poly
+  have hden : Real.sqrt (1 - q) ≠ 0 :=
+    (Real.sqrt_pos.2 (sub_pos.2 hq.2)).ne'
+  let a : ℝ := κ / Real.sqrt (1 - q)
+  let b : ℝ := -Real.sqrt q / Real.sqrt (1 - q)
+  have hU : ∀ z : ℝ, Theorem1.U κ q z = a + b * z := by
+    intro z
+    dsimp [a, b]
+    unfold Theorem1.U
+    field_simp [hden]
+    ring
+  have hpow : MeasureTheory.Integrable (fun z => |a + b * z| ^ 4) Theorem1.γ :=
+    integrable_abs_pow_linear_aux 4 a b
+  have hsum : MeasureTheory.Integrable (fun z => 1 + |a + b * z| ^ 4) Theorem1.γ := by
+    change MeasureTheory.Integrable
+      ((fun _z : ℝ => (1 : ℝ)) + fun z => |a + b * z| ^ 4) Theorem1.γ
+    exact (integrable_const (μ := Theorem1.γ) (c := (1 : ℝ))).add hpow
+  have hdom : MeasureTheory.Integrable
+      (fun z => C * (1 + |a + b * z| ^ 4)) Theorem1.γ :=
+    hsum.const_mul C
+  have hmeas : MeasureTheory.AEStronglyMeasurable
+      (fun z => DecreasingG.g (Theorem1.U κ q z)) Theorem1.γ := by
+    have hg : Continuous DecreasingG.g := by
+      simpa [UniformBoundOfG.g] using
+        (UniformBoundOfG.g_continuous : Continuous UniformBoundOfG.g)
+    have hUcont : Continuous (fun z : ℝ => Theorem1.U κ q z) := by
+      unfold Theorem1.U
+      exact (continuous_const.sub (continuous_const.mul continuous_id)).div_const _
+    exact (hg.comp hUcont).aestronglyMeasurable
+  refine MeasureTheory.Integrable.mono' hdom hmeas ?_
+  exact Filter.Eventually.of_forall fun z => by
+    rw [Real.norm_eq_abs, hU z]
+    exact hC (a + b * z)
 
 /-
 The function |a + bz|^n is integrable with respect to the standard Gaussian measure.
@@ -2224,6 +2389,7 @@ lemma integrable_abs_pow_linear (n : ℕ) (a b : ℝ) :
   · subst hn
     simpa using (integrable_const (μ := Theorem1.γ) (c := (1 : ℝ)))
   · have hid : MeasureTheory.MemLp (fun z : ℝ => z) (p := (n : ℝ≥0)) Theorem1.γ := by
+      change MeasureTheory.MemLp id (p := (n : ℝ≥0)) Theorem1.γ
       simpa [Theorem1.γ] using
         ProbabilityTheory.memLp_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (n : ℝ≥0))
     have hmul : MeasureTheory.MemLp (fun z : ℝ => b * z) (p := (n : ℝ≥0)) Theorem1.γ :=
@@ -2231,7 +2397,9 @@ lemma integrable_abs_pow_linear (n : ℕ) (a b : ℝ) :
     have hconst : MeasureTheory.MemLp (fun _z : ℝ => a) (p := (n : ℝ≥0)) Theorem1.γ := by
       simpa using (MeasureTheory.memLp_const (μ := Theorem1.γ) (p := (n : ℝ≥0∞)) (c := a))
     have hlin : MeasureTheory.MemLp (fun z : ℝ => a + b * z) (p := (n : ℝ≥0)) Theorem1.γ := by
-      simpa using (hconst.add hmul)
+      change MeasureTheory.MemLp ((fun _z : ℝ => a) + fun z : ℝ => b * z)
+        (p := (n : ℝ≥0)) Theorem1.γ
+      exact hconst.add hmul
     have hnorm : MeasureTheory.Integrable (fun z : ℝ => ‖a + b * z‖ ^ ((n : ℝ≥0∞)).toReal) Theorem1.γ := by
       have hmem1 :
           MeasureTheory.MemLp (fun z : ℝ => ‖a + b * z‖ ^ ((n : ℝ≥0∞)).toReal) 1 Theorem1.γ := by
@@ -2429,9 +2597,11 @@ lemma tendsto_f_atTop (κ α : ℝ) :
     refine' hB_cont.comp _;
     rw [ tendsto_nhdsWithin_iff ];
     exact ⟨ hP_lim, Filter.eventually_atTop.mpr ⟨ 0, fun r hr => by exact lt_of_lt_of_le ( P_lt_one r ) ( by norm_num ) ⟩ ⟩;
-  field_simp;
-  convert hA_lim.sub ( hB_lim.const_mul α ) using 2 ; ring;
-  norm_num [ mul_assoc, mul_comm Real.pi _, Real.pi_ne_zero ]
+  change Tendsto (fun r => A r - α * B κ (P r)) atTop
+    (𝓝 ((2 : ℝ) / Real.pi - α * Cκ κ))
+  have hlim := hA_lim.sub (hB_lim.const_mul α)
+  refine hlim.congr' (Filter.Eventually.of_forall fun r => ?_)
+  rfl
 
 /- Aristotle found this block to be false. Here is a proof of the negation:
 
@@ -2952,6 +3122,7 @@ lemma RSFunctional_eq_split (κ α q r : ℝ) :
     have hint_cosh : Integrable (fun z : ℝ => Real.log (Real.cosh (Real.sqrt r * z))) γ := by
       have h1 : Integrable (fun z : ℝ => |Real.sqrt r * z|) γ := by
         have hint_z : Integrable (fun z : ℝ => z) γ := by
+          change Integrable id γ
           simpa [γ, Theorem1.γ] using
             (ProbabilityTheory.memLp_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (1 : ℝ≥0)))
               |>.integrable
@@ -2978,7 +3149,8 @@ lemma RSFunctional_eq_split (κ α q r : ℝ) :
       have hmeas :
           AEStronglyMeasurable (fun z : ℝ => Real.log (Real.cosh (Real.sqrt r * z))) γ := by
         have hmul : Measurable (fun z : ℝ => Real.sqrt r * z) := by
-          simpa using (measurable_const.mul measurable_id)
+          change Measurable ((fun _ : ℝ => Real.sqrt r) * id)
+          exact measurable_const.mul measurable_id
         have hmeas' : Measurable (fun z : ℝ => Real.log (Real.cosh (Real.sqrt r * z))) := by
           simpa using (hmul.cosh.log)
         exact hmeas'.aestronglyMeasurable
@@ -3013,7 +3185,9 @@ private lemma hasDerivAt_tanh (x : ℝ) :
   have hq :
       HasDerivAt (fun y : ℝ => Real.sinh y / Real.cosh y)
         ((Real.cosh x * Real.cosh x - Real.sinh x * Real.sinh x) / (Real.cosh x) ^ 2) x := by
-    simpa using hs.div hc hcosh_ne
+    change HasDerivAt (Real.sinh / Real.cosh)
+      ((Real.cosh x * Real.cosh x - Real.sinh x * Real.sinh x) / (Real.cosh x) ^ 2) x
+    exact hs.div hc hcosh_ne
   have hEq :
       (fun y : ℝ => Real.tanh y) =ᶠ[𝓝 x] (fun y : ℝ => Real.sinh y / Real.cosh y) := by
     refine Filter.Eventually.of_forall (fun y => ?_)
@@ -3080,21 +3254,28 @@ lemma log_cosh_le_mul_tanh (x : ℝ) : Real.log (Real.cosh x) ≤ x * Real.tanh 
   have hasDerivAt_f : ∀ y : ℝ, HasDerivAt f (y * (sech y) ^ 2) y := by
     intro y
     have hid : HasDerivAt (fun x : ℝ => x) 1 y := by
-      simpa using (hasDerivAt_id y)
+      change HasDerivAt id 1 y
+      exact hasDerivAt_id y
     have htanh : HasDerivAt Real.tanh ((sech y) ^ 2) y := by
       simpa [sech, Theorem1.sech] using (hasDerivAt_tanh y)
     have hmul :
         HasDerivAt (fun x : ℝ => x * Real.tanh x) (Real.tanh y + y * (sech y) ^ 2) y := by
-      simpa [one_mul, mul_assoc, add_assoc] using
-        (hid.mul htanh)
+      change HasDerivAt ((fun x : ℝ => x) * Real.tanh)
+        (Real.tanh y + y * (sech y) ^ 2) y
+      simpa [one_mul, mul_assoc, add_assoc] using hid.mul htanh
     have hlog : HasDerivAt (fun x : ℝ => Real.log (Real.cosh x)) (Real.tanh y) y := by
       have hcosh : HasDerivAt Real.cosh (Real.sinh y) y := Real.hasDerivAt_cosh y
       have hlog : HasDerivAt Real.log ((Real.cosh y)⁻¹) (Real.cosh y) :=
         Real.hasDerivAt_log (Real.cosh_pos y).ne'
       have hcomp := hlog.comp y hcosh
-      simpa [Real.tanh_eq_sinh_div_cosh, div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using hcomp
+      change HasDerivAt (Real.log ∘ Real.cosh) (Real.tanh y) y
+      simpa [Real.tanh_eq_sinh_div_cosh, div_eq_mul_inv, mul_assoc, mul_comm,
+        mul_left_comm] using hcomp
     have hf : HasDerivAt f ((Real.tanh y + y * (sech y) ^ 2) - Real.tanh y) y := by
-      simpa [f] using hmul.sub hlog
+      change HasDerivAt
+        ((fun x : ℝ => x * Real.tanh x) - fun x => Real.log (Real.cosh x))
+        ((Real.tanh y + y * (sech y) ^ 2) - Real.tanh y) y
+      exact hmul.sub hlog
     simpa [f, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using hf
 
   have hderiv : ∀ y : ℝ, deriv f y = y * (sech y) ^ 2 := fun y => (hasDerivAt_f y).deriv
@@ -3104,7 +3285,9 @@ lemma log_cosh_le_mul_tanh (x : ℝ) : Real.log (Real.cosh x) ≤ x * Real.tanh 
       (Real.continuous_cosh.log (fun x => (Real.cosh_pos x).ne'))
     have htanh : Continuous Real.tanh := continuous_tanh
     have hmul : Continuous (fun x : ℝ => x * Real.tanh x) := continuous_id.mul htanh
-    simpa [f, sub_eq_add_neg] using hmul.sub hlogcosh
+    change Continuous
+      ((fun x : ℝ => x * Real.tanh x) - fun x => Real.log (Real.cosh x))
+    exact hmul.sub hlogcosh
 
   have hf_mon : MonotoneOn f (Set.Ici (0 : ℝ)) := by
     refine monotoneOn_of_deriv_nonneg (D := Set.Ici (0 : ℝ)) (convex_Ici 0) (hf_cont.continuousOn) ?_ ?_
@@ -3151,14 +3334,16 @@ lemma spin_term_bound (r : ℝ) :
 
   have hf_meas : AEStronglyMeasurable f γ := by
     have hmul : Measurable (fun z : ℝ => Real.sqrt r * z) := by
-      simpa using (measurable_const.mul measurable_id)
+      change Measurable ((fun _ : ℝ => Real.sqrt r) * id)
+      exact measurable_const.mul measurable_id
     have hmeas : Measurable (fun z : ℝ => Real.log (Real.cosh (Real.sqrt r * z))) := by
       simpa using (hmul.cosh.log)
     simpa [f] using hmeas.aestronglyMeasurable
 
   have hh_meas : AEStronglyMeasurable h γ := by
     have hmul : Measurable (fun z : ℝ => Real.sqrt r * z) := by
-      simpa using (measurable_const.mul measurable_id)
+      change Measurable ((fun _ : ℝ => Real.sqrt r) * id)
+      exact measurable_const.mul measurable_id
     have ht : Measurable (fun z : ℝ => Real.tanh (Real.sqrt r * z)) := measurable_tanh.comp hmul
     have hmeas : Measurable (fun z : ℝ => Real.tanh (Real.sqrt r * z) * z) := ht.mul measurable_id
     simpa [h] using hmeas.aestronglyMeasurable
@@ -3172,6 +3357,7 @@ lemma spin_term_bound (r : ℝ) :
 
   have hh_int : Integrable h γ := by
     have hz : Integrable (fun z : ℝ => z) γ := by
+      change Integrable id γ
       simpa [γ, Theorem1.γ] using
         (ProbabilityTheory.memLp_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (1 : ℝ≥0)))
           |>.integrable
@@ -3292,7 +3478,9 @@ lemma gaussian_integration_by_parts_tanh (r : ℝ) :
     have hexp :
         HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2) / (2 : ℝ)))
           (Real.exp (-(x ^ 2) / (2 : ℝ)) * (-x)) x := by
-      simpa using (Real.hasDerivAt_exp (-(x ^ 2) / (2 : ℝ))).comp x hinner
+      change HasDerivAt (Real.exp ∘ fun x : ℝ => -(x ^ 2) / (2 : ℝ))
+        (Real.exp (-(x ^ 2) / (2 : ℝ)) * (-x)) x
+      exact (Real.hasDerivAt_exp (-(x ^ 2) / (2 : ℝ))).comp x hinner
     have hmul :
         HasDerivAt (fun x : ℝ => (√(2 * π))⁻¹ * Real.exp (-(x ^ 2) / (2 : ℝ)))
           ((√(2 * π))⁻¹ * (Real.exp (-(x ^ 2) / (2 : ℝ)) * (-x))) x :=
@@ -3311,7 +3499,8 @@ lemma gaussian_integration_by_parts_tanh (r : ℝ) :
     have h1 : Integrable (fun _x : ℝ => (1 : ℝ)) γ := integrable_const 1
     have hu_meas : AEStronglyMeasurable u γ := by
       have hmul : Measurable (fun x : ℝ => Real.sqrt r * x) := by
-        simpa using (measurable_const.mul measurable_id)
+        change Measurable ((fun _ : ℝ => Real.sqrt r) * id)
+        exact measurable_const.mul measurable_id
       have ht : Measurable (fun x : ℝ => Real.tanh (Real.sqrt r * x)) := measurable_tanh.comp hmul
       simpa [u] using ht.aestronglyMeasurable
     have hbound : ∀ᵐ x ∂γ, ‖u x‖ ≤ (1 : ℝ) := by
@@ -3321,6 +3510,7 @@ lemma gaussian_integration_by_parts_tanh (r : ℝ) :
 
   have huz_int : Integrable (fun x : ℝ => u x * x) γ := by
     have hx : Integrable (fun x : ℝ => x) γ := by
+      change Integrable id γ
       simpa [γ, Theorem1.γ] using
         (ProbabilityTheory.memLp_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (1 : ℝ≥0)))
           |>.integrable
@@ -3328,9 +3518,12 @@ lemma gaussian_integration_by_parts_tanh (r : ℝ) :
     have hmeas : AEStronglyMeasurable (fun x : ℝ => u x * x) γ := by
       have hu_meas : Measurable u := by
         have hmul' : Measurable (fun x : ℝ => Real.sqrt r * x) := by
-          simpa using (measurable_const.mul measurable_id)
-        simpa [u] using (measurable_tanh.comp hmul')
-      simpa using (hu_meas.mul measurable_id).aestronglyMeasurable
+          change Measurable ((fun _ : ℝ => Real.sqrt r) * id)
+          exact measurable_const.mul measurable_id
+        change Measurable (Real.tanh ∘ fun x : ℝ => Real.sqrt r * x)
+        exact measurable_tanh.comp hmul'
+      change AEStronglyMeasurable (u * id) γ
+      exact (hu_meas.mul measurable_id).aestronglyMeasurable
     have hbound : ∀ᵐ x ∂γ, ‖u x * x‖ ≤ ‖x‖ := by
       refine ae_of_all _ (fun x => ?_)
       have ht : ‖u x‖ ≤ (1 : ℝ) := by
@@ -3359,7 +3552,8 @@ lemma gaussian_integration_by_parts_tanh (r : ℝ) :
     have h1 : Integrable (fun _x : ℝ => (1 : ℝ)) γ := integrable_const 1
     have hmeas : AEStronglyMeasurable (fun x : ℝ => (sech (Real.sqrt r * x)) ^ 2) γ := by
       have hmul : Measurable (fun x : ℝ => Real.sqrt r * x) := by
-        simpa using (measurable_const.mul measurable_id)
+        change Measurable ((fun _ : ℝ => Real.sqrt r) * id)
+        exact measurable_const.mul measurable_id
       have hcosh : Measurable (fun x : ℝ => Real.cosh (Real.sqrt r * x)) := by
         simpa using hmul.cosh
       have hsech : Measurable (fun x : ℝ => sech (Real.sqrt r * x)) := by
@@ -3396,7 +3590,8 @@ lemma gaussian_integration_by_parts_tanh (r : ℝ) :
     simpa [this] using huvx_pdf.neg'
 
   have hibp : (∫ x : ℝ, u x * v' x) = -∫ x : ℝ, u' x * vfun x :=
-    MeasureTheory.integral_mul_deriv_eq_deriv_mul_of_integrable hu hv' huv' hu'v huv
+    MeasureTheory.integral_mul_deriv_eq_deriv_mul_of_integrable
+      (fun x _ => hu x) (fun x _ => hv' x) huv' hu'v huv
 
   have hibp_neg : -(∫ x : ℝ, (u x * x) * pdf x) = -∫ x : ℝ, u' x * pdf x := by
     have : (∫ x : ℝ, u x * v' x) = ∫ x : ℝ, -((u x * x) * pdf x) := by
@@ -3471,7 +3666,8 @@ lemma spin_term_bound_RS (r : ℝ) (hr : 0 ≤ r) :
 
   have hP : Expect (fun z : ℝ => (sech (Real.sqrt r * z)) ^ 2) =
       1 - Expect (fun z : ℝ => (Real.tanh (Real.sqrt r * z)) ^ 2) := by
-    simpa [S, P] using (S_eq_one_sub_P r)
+    change S r = 1 - P r
+    exact S_eq_one_sub_P r
 
   have hsqr : (Real.sqrt r) * (Real.sqrt r) = r := by
     simpa [pow_two] using (Real.sq_sqrt hr)
@@ -3534,7 +3730,8 @@ lemma spin_term_bound_RSStar (κ α q r : ℝ) (hr : 0 ≤ r) (hq : q = P r) :
               _ = r * Expect (fun z : ℝ => (sech (Real.sqrt r * z)) ^ 2) := by
                     simp [hsqr, mul_assoc]
     have hS : Expect (fun z : ℝ => (sech (Real.sqrt r * z)) ^ 2) = 1 - q := by
-      simpa [S, P, hq] using (S_eq_one_sub_P r)
+      change S r = 1 - q
+      simpa [hq] using S_eq_one_sub_P r
     simpa [hS] using hle
 
   unfold RSFunctionalSplit
@@ -4177,7 +4374,9 @@ private lemma integrable_log_Φbar_Un (n : ℕ) :
           have h1 : Integrable (fun _z : ℝ => (2 * |a| ^ 2 : ℝ)) γ := integrable_const _
           have h2 : Integrable (fun z : ℝ => (2 * |b| ^ 2) * ‖z‖ ^ 2) γ :=
             (hnorm_int.const_mul (2 * |b| ^ 2))
-          simpa [add_comm, add_left_comm, add_assoc] using h1.add h2
+          change Integrable ((fun _z : ℝ => 2 * |a| ^ 2) +
+            fun z : ℝ => 2 * |b| ^ 2 * ‖z‖ ^ 2) γ
+          exact h1.add h2
         exact Integrable.mono' hpoly_int' (by fun_prop) hbound''
       simpa [add_comm, add_left_comm, add_assoc] using hlinear_int.add hconst_int
     exact Integrable.mono' hpoly_int (by fun_prop) hbound'
@@ -4294,7 +4493,9 @@ lemma tendsto_εn_zero (hlim : Tendsto α atTop (𝓝 (αc κ))) :
     tendsto_qn_one (κ := κ) (hκ := hκ) (α := α) (hα := hα) hlim
   have h1 : Tendsto (fun _n : ℕ => (1 : ℝ)) atTop (𝓝 (1 : ℝ)) := tendsto_const_nhds
   have hsub := h1.sub hq
-  simpa [εn, sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using hsub
+  change Tendsto (fun n => 1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n)
+    atTop (𝓝 0)
+  simpa using hsub
 
 lemma qn_eq_P_rn (n : ℕ) :
     qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n =
@@ -4397,7 +4598,7 @@ lemma RSStarSeq_le_main_bound
       (q := qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n)
       (r := rn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n)
       hr_nonneg hqPr
-    simpa [Un, U] using h
+    simpa only [Un, U, Theorem1.U] using h
   have hspin :
       RSStarSeq (κ := κ) (hκ := hκ) (α := α) (hα := hα) n ≤
         Real.log 2 +
@@ -4522,7 +4723,7 @@ lemma RSStarSeq_le_main_bound
           have : 0 < (κ - Real.sqrt (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) * z) /
               Real.sqrt (εn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) := by
             exact div_pos hnum' hden
-          simpa [Un, U] using this
+          simpa only [Un, U, Theorem1.U] using this
         have hlog := log_Φbar_le_neg_sq_div_two_sub_log (u := Un (κ := κ) (hκ := hκ) (α := α)
           (hα := hα) n z) hUpos
         have hmax : max (Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) 0 =
@@ -4729,6 +4930,7 @@ lemma RSStarSeq_le_main_bound
       exact le_trans h1 h4
 
     have hmem : MeasureTheory.MemLp (fun z : ℝ => z) (2 : ℝ≥0) γ := by
+      change MeasureTheory.MemLp id (2 : ℝ≥0) γ
       simpa [γ, Theorem1.γ] using
         (ProbabilityTheory.memLp_id_gaussianReal
           (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (2 : ℝ≥0)))
@@ -5237,6 +5439,7 @@ lemma RSStarSeq_le_main_bound
               0 ≤ εn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n :=
             le_of_lt hεpos
           have hmem : MeasureTheory.MemLp (fun z : ℝ => z) (2 : ℝ≥0) γ := by
+            change MeasureTheory.MemLp id (2 : ℝ≥0) γ
             simpa [γ, Theorem1.γ] using
               (ProbabilityTheory.memLp_id_gaussianReal
                 (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (p := (2 : ℝ≥0)))
@@ -5278,16 +5481,20 @@ lemma RSStarSeq_le_main_bound
                             (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) *
                           z) :=
                 continuous_const.sub (continuous_const.mul continuous_id)
-              simpa using
-                hnum.div_const
-                  (Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
+              change Continuous (fun z : ℝ =>
+                (κ - Real.sqrt (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) * z) /
+                  Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
+              exact hnum.div_const
+                (Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
             have hmax :
                 Continuous
                   (fun z : ℝ =>
                     max (Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) 0) :=
               hcontUn.max continuous_const
             have hcont : Continuous f2 := by
-              simpa [f2] using hmax.pow 2
+              change Continuous ((fun z : ℝ =>
+                max (Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) 0) ^ 2)
+              exact hmax.pow 2
             exact hcont.aestronglyMeasurable
           have hbound :
               ∀ᵐ z ∂γ,
@@ -5398,12 +5605,16 @@ lemma RSStarSeq_le_main_bound
                           (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) *
                         z) :=
               continuous_const.sub (continuous_const.mul continuous_id)
-            simpa using
-              hnum.div_const
-                (Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
+            change Continuous (fun z : ℝ =>
+              (κ - Real.sqrt (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) * z) /
+                Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
+            exact hnum.div_const
+              (Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
           have hmeas : AEStronglyMeasurable f1 γ := by
             have hcont : Continuous f1 := by
-              simpa [f1] using (hcontE.comp hcontUn).pow 2
+              change Continuous ((E ∘ fun z : ℝ =>
+                Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) ^ 2)
+              exact (hcontE.comp hcontUn).pow 2
             exact hcont.aestronglyMeasurable
           have hbound : ∀ᵐ z ∂γ, ‖f1 z‖ ≤ f2 z + Cgap := by
             refine ae_of_all _ (fun z => ?_)
@@ -5470,14 +5681,18 @@ lemma RSStarSeq_le_main_bound
                           (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) *
                         z) :=
               continuous_const.sub (continuous_const.mul continuous_id)
-            simpa using
-              hnum.div_const
-                (Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
+            change Continuous (fun z : ℝ =>
+              (κ - Real.sqrt (qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n) * z) /
+                Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
+            exact hnum.div_const
+              (Real.sqrt (1 - qn (κ := κ) (hκ := hκ) (α := α) (hα := hα) n))
           have hcont1 :
               Continuous
                 (fun z : ℝ =>
                   (E (Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z)) ^ 2) := by
-            simpa using (hcontE.comp hcontUn).pow 2
+            change Continuous ((E ∘ fun z : ℝ =>
+              Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) ^ 2)
+            exact (hcontE.comp hcontUn).pow 2
           have hcont2 :
               Continuous
                 (fun z : ℝ =>
@@ -5487,7 +5702,9 @@ lemma RSStarSeq_le_main_bound
                   (fun z : ℝ =>
                     max (Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) 0) :=
               hcontUn.max continuous_const
-            simpa using hmax.pow 2
+            change Continuous ((fun z : ℝ =>
+              max (Un (κ := κ) (hκ := hκ) (α := α) (hα := hα) n z) 0) ^ 2)
+            exact hmax.pow 2
           have hcont :
               Continuous
                 (fun z : ℝ =>

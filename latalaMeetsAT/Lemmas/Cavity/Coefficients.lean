@@ -1,4 +1,4 @@
-import Lemmas.Cavity.Interpolation
+import Lemmas.Cavity.Defs
 
 set_option autoImplicit false
 

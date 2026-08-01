@@ -71,7 +71,10 @@ lemma sech_sq_eq_one_sub_tanh_sq (x : ℝ) : (sech x) ^ 2 = 1 - (Real.tanh x) ^ 
 @[continuity, fun_prop]
 lemma continuous_sech : Continuous sech := by
   -- `sech x = (cosh x)⁻¹`, and `cosh` never vanishes.
-  simpa [sech] using (Continuous.inv₀ Real.continuous_cosh cosh_ne_zero)
+  unfold sech
+  have h := Continuous.inv₀ Real.continuous_cosh cosh_ne_zero
+  change Continuous (fun x : ℝ => (Real.cosh x)⁻¹) at h
+  exact h
 
 @[continuity, fun_prop]
 lemma continuous_tanh : Continuous Real.tanh := by
@@ -100,7 +103,10 @@ lemma hasDerivAt_tanh (x : ℝ) :
     simpa [Pi.div_apply] using (Real.tanh_eq_sinh_div_cosh x)
   -- Convert the statement from `sinh/cosh` to `tanh`.
   have h : HasDerivAt Real.tanh ((Real.cosh x * Real.cosh x - Real.sinh x * Real.sinh x) / (Real.cosh x) ^ 2) x := by
-    simpa [htanh] using h'
+    rw [htanh]
+    change HasDerivAt (fun x : ℝ => Real.sinh x / Real.cosh x)
+      ((Real.cosh x * Real.cosh x - Real.sinh x * Real.sinh x) / Real.cosh x ^ 2) x at h'
+    exact h'
   simpa [hnum, pow_two, one_div] using h
 
 lemma deriv_tanh (x : ℝ) : deriv Real.tanh x = 1 / (Real.cosh x) ^ 2 :=
@@ -143,10 +149,19 @@ lemma tendsto_tanh_atTop : Tendsto Real.tanh atTop (𝓝 (1 : ℝ)) := by
   have hcont : ContinuousAt (fun t : ℝ => (1 - t) / (1 + t)) 0 := by
     have : (1 + (0 : ℝ)) ≠ 0 := by norm_num
     -- `div` is continuous when the denominator is nonzero.
-    simpa using (continuousAt_const.sub continuousAt_id).div
-      (continuousAt_const.add continuousAt_id) this
+    have hone : ContinuousAt (fun _ : ℝ => (1 : ℝ)) 0 := continuousAt_const
+    have hid : ContinuousAt (fun t : ℝ => t) 0 := continuousAt_id
+    have h := (hone.sub hid).div (hone.add hid) this
+    change ContinuousAt (fun t : ℝ => (1 - t) / (1 + t)) 0 at h
+    exact h
   -- Finish.
-  simpa [hform] using (hcont.tendsto.comp hexp0)
+  change Tendsto (fun x : ℝ => Real.tanh x) atTop (𝓝 (1 : ℝ))
+  rw [hform]
+  have h := hcont.tendsto.comp hexp0
+  change Tendsto (fun x : ℝ => (1 - Real.exp (-(2 * x))) / (1 + Real.exp (-(2 * x))))
+    atTop (𝓝 ((1 - 0) / (1 + 0))) at h
+  norm_num at h
+  exact h
 
 lemma tendsto_tanh_atBot : Tendsto Real.tanh atBot (𝓝 (-1 : ℝ)) := by
   -- Use oddness: `tanh(-x) = -tanh(x)`.
@@ -167,7 +182,9 @@ lemma measurable_tanh_sq (r : ℝ≥0) :
   have hcont : Continuous fun z : ℝ => (Real.tanh (Real.sqrt (r : ℝ) * z)) ^ 2 := by
     have h1 : Continuous fun z : ℝ => Real.tanh (Real.sqrt (r : ℝ) * z) :=
       continuous_tanh.comp (continuous_const.mul continuous_id')
-    simpa using h1.pow 2
+    have h := h1.pow 2
+    change Continuous (fun z : ℝ => Real.tanh (Real.sqrt (r : ℝ) * z) ^ 2) at h
+    exact h
   exact hcont.measurable
 
 lemma tanh_sq_ae_stronglyMeasurable (r : ℝ≥0) :
@@ -348,9 +365,9 @@ lemma P_strictMonoOn_Ici : StrictMonoOn P (Set.Ici (0 : ℝ≥0)) := by
     simpa [γ] using
       (inferInstance :
         IsProbabilityMeasure (ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0))))
-  haveI : NoAtoms γ := by
+  haveI : NullSingletonClass γ := by
     simpa [γ] using
-      (ProbabilityTheory.noAtoms_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (by simp))
+      (ProbabilityTheory.nullSingletonClass_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (by simp))
   let f₁ : ℝ → ℝ := fun z => (Real.tanh (Real.sqrt (r₁ : ℝ) * z)) ^ 2
   let f₂ : ℝ → ℝ := fun z => (Real.tanh (Real.sqrt (r₂ : ℝ) * z)) ^ 2
   have hnonneg : 0 ≤ᵐ[γ] fun z => f₂ z - f₁ z := by
@@ -374,7 +391,8 @@ lemma P_strictMonoOn_Ici : StrictMonoOn P (Set.Ici (0 : ℝ≥0)) := by
     have : γ (({0} : Set ℝ)ᶜ) = 1 := by
       have h0 : γ ({0} : Set ℝ) = 0 := by simp
       exact (MeasureTheory.prob_compl_eq_one_iff (μ := γ) (s := ({0} : Set ℝ)) (by simp)).2 h0
-    simpa [this]
+    rw [this]
+    simp
   have hsupp_pos : 0 < γ (Function.support fun z => f₂ z - f₁ z) :=
     lt_of_lt_of_le hcomp (measure_mono hsupp)
   have hint : 0 < ∫ z, (f₂ z - f₁ z) ∂γ :=
@@ -424,10 +442,14 @@ theorem continuous_P : Continuous P := by
       have hsqrt : Continuous fun r : ℝ≥0 => Real.sqrt (r : ℝ) :=
         Real.continuous_sqrt.comp NNReal.continuous_coe
       have harg : Continuous fun r : ℝ≥0 => Real.sqrt (r : ℝ) * z := by
-        simpa using hsqrt.mul (continuous_const : Continuous fun _ : ℝ≥0 => z)
+        have h := hsqrt.mul (continuous_const : Continuous fun _ : ℝ≥0 => z)
+        change Continuous (fun r : ℝ≥0 => Real.sqrt (r : ℝ) * z) at h
+        exact h
       have ht : Continuous fun r : ℝ≥0 => Real.tanh (Real.sqrt (r : ℝ) * z) :=
         continuous_tanh.comp harg
-      simpa using ht.pow 2
+      have h := ht.pow 2
+      change Continuous (fun r : ℝ≥0 => Real.tanh (Real.sqrt (r : ℝ) * z) ^ 2) at h
+      exact h
     simpa using (hcont.tendsto r₀)
   have h_tendsto :
       Tendsto
@@ -437,7 +459,11 @@ theorem continuous_P : Continuous P := by
       (F := fun r z => (Real.tanh (Real.sqrt (r : ℝ) * z)) ^ 2)
       (f := fun z => (Real.tanh (Real.sqrt (r₀ : ℝ) * z)) ^ 2) (bound := fun _ : ℝ => (1 : ℝ))
       h_meas h_bound h_bound_int h_lim
-  simpa [P] using h_tendsto
+  unfold P
+  change Tendsto
+    (fun r : ℝ≥0 => ∫ z : ℝ, Real.tanh (Real.sqrt (r : ℝ) * z) ^ 2 ∂γ) (𝓝 r₀)
+    (𝓝 (∫ z : ℝ, Real.tanh (Real.sqrt (r₀ : ℝ) * z) ^ 2 ∂γ))
+  exact h_tendsto
 
 theorem strictMono_P : StrictMono P := by
   -- Steps P2–P3 (blueprint):
@@ -471,7 +497,11 @@ theorem P_lt_one (r : ℝ≥0) : P r < 1 := by
         f = fun z : ℝ => (1 : ℝ) - (Real.tanh (Real.sqrt (r : ℝ) * z)) ^ 2 := by
       funext z
       simpa [f] using (sech_sq_eq_one_sub_tanh_sq (Real.sqrt (r : ℝ) * z))
-    simpa [hf_eq] using h1.sub h2
+    rw [hf_eq]
+    have h := h1.sub h2
+    change Integrable
+      (fun z : ℝ => (1 : ℝ) - Real.tanh (Real.sqrt (r : ℝ) * z) ^ 2) γ at h
+    exact h
   have hf_ne : ∀ z : ℝ, f z ≠ 0 := by
     intro z
     have hcosh : Real.cosh (Real.sqrt (r : ℝ) * z) ≠ 0 := cosh_ne_zero (Real.sqrt (r : ℝ) * z)
@@ -504,9 +534,9 @@ theorem tendsto_P_atTop : Filter.Tendsto P Filter.atTop (𝓝 (1 : ℝ)) := by
       (inferInstance :
         IsProbabilityMeasure (ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0))))
   haveI : IsFiniteMeasure γ := by infer_instance
-  haveI : NoAtoms γ := by
+  haveI : NullSingletonClass γ := by
     simpa [γ] using
-      (ProbabilityTheory.noAtoms_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (by simp))
+      (ProbabilityTheory.nullSingletonClass_gaussianReal (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (by simp))
   -- First show that `√r` tends to `+∞` as `r → ∞` in `ℝ≥0`.
   have hsqrt : Tendsto (fun r : ℝ≥0 => Real.sqrt (r : ℝ)) atTop atTop := by
     refine (Filter.tendsto_atTop_atTop).2 ?_
@@ -520,7 +550,8 @@ theorem tendsto_P_atTop : Filter.Tendsto P Filter.atTop (𝓝 (1 : ℝ)) := by
       refine ⟨i, ?_⟩
       intro r hr
       have hir : (i : ℝ) ≤ (r : ℝ) := by exact_mod_cast hr
-      have hb2 : b ^ 2 ≤ (r : ℝ) := by simpa [i] using hir
+      change b ^ 2 ≤ (r : ℝ) at hir
+      have hb2 : b ^ 2 ≤ (r : ℝ) := hir
       exact Real.le_sqrt_of_sq_le hb2
   have h_meas :
       ∀ᶠ r : ℝ≥0 in (atTop : Filter ℝ≥0),
@@ -576,7 +607,8 @@ theorem tendsto_P_atTop : Filter.Tendsto P Filter.atTop (𝓝 (1 : ℝ)) := by
     MeasureTheory.tendsto_integral_filter_of_dominated_convergence (μ := γ) (l := atTop)
       (F := fun (r : ℝ≥0) z => (Real.tanh (Real.sqrt (r : ℝ) * z)) ^ 2) (f := fun _ : ℝ => (1 : ℝ))
       (bound := fun _ : ℝ => (1 : ℝ)) h_meas h_bound h_bound_int (by simpa using h_lim)
-  simpa [P] using h_tendsto
+  unfold P
+  simpa using h_tendsto
 
 /-! ## Change-of-variables integral `I(r)` (main.tex Eq. `A_as_I`) -/
 
@@ -675,7 +707,9 @@ lemma tendsto_exp_neg_sq_div_atTop (y : ℝ) :
 theorem integral_sech_sq : (∫ y : ℝ, (sech y) ^ 2) = (2 : ℝ) := by
   -- Compute the integral as an improper integral over `Ioc (-n) n`.
   have hcont : Continuous fun y : ℝ => (sech y) ^ 2 := by
-    simpa using continuous_sech.pow 2
+    have h := continuous_sech.pow 2
+    change Continuous (fun y : ℝ => sech y ^ 2) at h
+    exact h
   have hderiv : deriv Real.tanh = fun y : ℝ => (sech y) ^ 2 := by
     funext y
     -- `deriv tanh = 1/cosh^2` and `sech^2 = (1/cosh)^2`.
@@ -779,16 +813,18 @@ lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
     intro h
     have : (r : ℝ) = 0 := by
       have := congrArg (fun x : ℝ≥0 => (x : ℝ)) h
-      simpa [rNN] using this
+      change r = 0 at this
+      exact this
     exact hr.ne' this
   -- Start from `A(r) = r * S(r)^2`.
   have hA : A rNN = (r : ℝ) * (S rNN) ^ 2 := by
-    simpa [rNN] using (A_eq_r_mul_S_sq (r := rNN))
+    change A rNN = (rNN : ℝ) * S rNN ^ 2
+    exact A_eq_r_mul_S_sq (r := rNN)
   -- Rewrite `S(r)` as an integral under the mapped Gaussian measure.
   have hS_gauss :
       S rNN =
         ∫ y : ℝ, (sech y) ^ 2 ∂(ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := rNN)) := by
-    let φ : ℝ → ℝ := fun x => Real.sqrt r * x
+    let φ : ℝ → ℝ := fun x => Real.sqrt (rNN : ℝ) * x
     let f : ℝ → ℝ := fun y => (sech y) ^ 2
     have hφ_meas : AEMeasurable φ γ := (measurable_const.mul measurable_id').aemeasurable
     have hf_meas : AEStronglyMeasurable f (Measure.map φ γ) :=
@@ -797,15 +833,15 @@ lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
       (MeasureTheory.integral_map (μ := γ) (φ := φ) hφ_meas hf_meas (f := f))
     have hS_map : S rNN = ∫ y : ℝ, f y ∂Measure.map φ γ := by
       simpa [S, f, φ, rNN] using hmap.symm
-    have hvar : (⟨(Real.sqrt r) ^ 2, sq_nonneg (Real.sqrt r)⟩ : ℝ≥0) = rNN := by
+    have hvar : (⟨(Real.sqrt (rNN : ℝ)) ^ 2, sq_nonneg (Real.sqrt (rNN : ℝ))⟩ : ℝ≥0) = rNN := by
       apply Subtype.ext
-      simp [rNN, Real.sq_sqrt (le_of_lt hr)]
+      simp [Real.sq_sqrt rNN.coe_nonneg]
     have hmap_measure :
         Measure.map φ γ = ProbabilityTheory.gaussianReal (μ := (0 : ℝ)) (v := rNN) := by
       have h :=
         (ProbabilityTheory.gaussianReal_map_const_mul (μ := (0 : ℝ)) (v := (1 : ℝ≥0))
-            (c := Real.sqrt r))
-      simpa [γ, φ, hvar] using h
+            (c := Real.sqrt (rNN : ℝ)))
+      simpa [γ, φ] using h
     simpa [hS_map, f, hmap_measure]
   -- Rewrite `S` as a Lebesgue integral with the Gaussian density.
   have hS_density :
@@ -829,7 +865,11 @@ lemma A_eq_const_I_sq (r : ℝ) (hr : 0 < r) :
           ProbabilityTheory.gaussianPDFReal (μ := (0 : ℝ)) (v := rNN) y =
             (Real.sqrt (2 * Real.pi * r))⁻¹ * Real.exp (-(y ^ 2) / (2 * r)) := by
       intro y
-      simp [ProbabilityTheory.gaussianPDFReal, rNN, sub_eq_add_neg]
+      rw [ProbabilityTheory.gaussianPDFReal_def]
+      change
+        (Real.sqrt (2 * Real.pi * r))⁻¹ * Real.exp (-(y - 0) ^ 2 / (2 * r)) =
+          (Real.sqrt (2 * Real.pi * r))⁻¹ * Real.exp (-(y ^ 2) / (2 * r))
+      ring_nf
     calc
       S rNN
           = ∫ y : ℝ, ProbabilityTheory.gaussianPDFReal (μ := (0 : ℝ)) (v := rNN) y * (sech y) ^ 2 := hS_density
@@ -959,7 +999,8 @@ theorem tendsto_I_atTop : Filter.Tendsto I Filter.atTop (𝓝 (2 : ℝ)) := by
     MeasureTheory.tendsto_integral_filter_of_dominated_convergence (μ := volume) (l := atTop)
       (F := fun r y => (sech y) ^ 2 * Real.exp (-(y ^ 2) / (2 * r))) (f := fun y => (sech y) ^ 2)
       (bound := fun y => (sech y) ^ 2) h_meas h_bound (integrable_sech_sq) h_lim
-  simpa [I, integral_sech_sq] using h_tendsto
+  unfold I
+  simpa [integral_sech_sq] using h_tendsto
 
 /-! ## Properties of `A` (main.tex Lemma `A`) -/
 
@@ -970,8 +1011,14 @@ theorem tendsto_I_atTop : Filter.Tendsto I Filter.atTop (𝓝 (2 : ℝ)) := by
 theorem continuous_A : Continuous A := by
   -- Continuity follows from continuity of `P` plus algebraic operations.
   unfold A
-  simpa [sub_eq_add_neg] using
-    (NNReal.continuous_coe.mul ((continuous_const.sub continuous_P).pow 2))
+  have hone : Continuous (fun _ : ℝ≥0 => (1 : ℝ)) := continuous_const
+  have hsub : Continuous (fun r : ℝ≥0 => 1 - P r) := by
+    have h := hone.sub continuous_P
+    change Continuous (fun r : ℝ≥0 => 1 - P r) at h
+    exact h
+  have h := NNReal.continuous_coe.mul (hsub.pow 2)
+  change Continuous (fun r : ℝ≥0 => (r : ℝ) * (1 - P r) ^ 2) at h
+  exact h
 
 theorem strictMonoOn_A : StrictMonoOn A (Set.Ioi (0 : ℝ≥0)) := by
   -- Use `A(r) = (1/(2π)) * I(r)^2` and strict monotonicity of `I`.

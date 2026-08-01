@@ -47,6 +47,11 @@ theorem coupledPressure_sublinear {Ω : Type u} [MeasureSpace Ω]
   -- `D_N(s) = rsPathValue - pathFreeEnergy`, use `rsGap_deriv`, convexity in
   -- the coupling, and Gronwall to obtain both `D_N(s) ≤ C*epsN N` and the
   -- displayed overlap bound.  Standard limit lemmas show `epsN -> 0`.
+  -- BLOCKED: the project lacks the finite Gaussian maximum/concentration
+  -- theorem and the completed GT coercivity and smart-path derivative inputs.
+  -- NEEDED: the common Lipschitz bound, log-sum-exp envelope, and Gronwall
+  -- closure for `rsFreeEnergyGap`.
+  -- BLUEPRINT: Lemma `sublinearpressure` and equations `gronwallDN`--`preconcentration`.
   sorry
 
 theorem preliminary_overlap_bound {Ω : Type u} [MeasureSpace Ω]

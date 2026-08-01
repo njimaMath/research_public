@@ -215,6 +215,11 @@ theorem opposite_monotone_covariance_le
 
 theorem latalaF_reference_mean_one {lam : ℝ} (hlam : 0 ≤ lam) :
     referenceExpectation (latalaF lam) = 1 := by
+  -- BLOCKED: the weighted substitution `y = 1 - u ^ 2` and interchange of
+  -- the singular reference integral with the Gaussian integral are missing.
+  -- NEEDED: the substitution identity integrating `latalaH t` to one, followed
+  -- by a proved Fubini argument under the existing domination estimate.
+  -- BLUEPRINT: equation `Fmeanone` in Lemma `diffusioncomparison`.
   sorry
 
 theorem latala_weighted_kernel_le {lam : ℝ} (hlam : 0 ≤ lam)
@@ -227,6 +232,105 @@ theorem latala_weighted_kernel_le {lam : ℝ} (hlam : 0 ≤ lam)
     (hInt : IntegrableOn (fun y => rho y * latalaF lam y * referenceDensity y)
       (Set.Icc (0 : ℝ) 1)) :
     referenceExpectation (fun y => rho y * latalaF lam y) ≤ 1 := by
-  sorry
+  let I : Set ℝ := Set.Icc 0 1
+  let w : ℝ → ℝ := referenceDensity
+  let μ : Measure ℝ :=
+    (volume.restrict I).withDensity (fun y => ENNReal.ofReal (w y))
+  have hw : Measurable w := by
+    dsimp [w, referenceDensity]
+    exact measurable_const.div
+      (measurable_const.mul (Real.continuous_sqrt.measurable.comp
+        (measurable_const.sub measurable_id)))
+  have hw0 : ∀ y ∈ I, 0 ≤ w y := by
+    intro y hy
+    dsimp [w, referenceDensity]
+    positivity
+  have hint (f : ℝ → ℝ) :
+      (∫ y, f y ∂μ) = ∫ y in I, f y * w y := by
+    dsimp [μ]
+    rw [integral_withDensity_eq_integral_toReal_smul hw.ennreal_ofReal
+      (ae_of_all _ fun y => ENNReal.ofReal_ne_top.lt_top)]
+    apply integral_congr_ae
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    rw [ENNReal.toReal_ofReal (hw0 y hy)]
+    simp [smul_eq_mul, mul_comm]
+  have hFzero : ∀ y, latalaF 0 y = 1 := by
+    intro y
+    simp [latalaF, standardGaussianExpectation, latalaH]
+  have hmass : μ Set.univ = 1 := by
+    have hzero := latalaF_reference_mean_one (lam := 0) (by norm_num)
+    rw [show referenceExpectation (latalaF 0) =
+        referenceExpectation (fun _ => 1) by
+      congr 1
+      funext y
+      exact hFzero y] at hzero
+    have hone : (∫ _y, (1 : ℝ) ∂μ) = 1 := by
+      rw [hint]
+      simpa [referenceExpectation, I, w, mul_comm] using hzero
+    exact (ENNReal.toReal_eq_one_iff (μ Set.univ)).mp (by
+      rw [← measureReal_def]
+      simpa using hone)
+  letI : IsProbabilityMeasure μ := ⟨hmass⟩
+  let clamp : ℝ → ℝ := fun y =>
+    (Set.projIcc 0 1 zero_le_one y : ℝ)
+  let f : ℝ → ℝ := fun y => rho (clamp y)
+  let g : ℝ → ℝ := fun y => latalaF lam (clamp y)
+  have hclamp_mem (y : ℝ) : clamp y ∈ I := by
+    exact (Set.projIcc 0 1 zero_le_one y).property
+  have hclamp_mono : Monotone clamp := by
+    exact fun _ _ hxy => Set.monotone_projIcc zero_le_one hxy
+  have hf : Monotone f := fun x y hxy =>
+    hrho (hclamp_mem x) (hclamp_mem y) (hclamp_mono hxy)
+  have hg : Antitone g := fun x y hxy =>
+    latalaF_antitone hlam (hclamp_mem x) (hclamp_mem y) (hclamp_mono hxy)
+  have hclamp_eq : ∀ y ∈ I, clamp y = y := by
+    intro y hy
+    simp [clamp, Set.coe_projIcc, min_eq_right hy.2, max_eq_right hy.1]
+  have hfi : Integrable f μ := by
+    dsimp [μ]
+    rw [integrable_withDensity_iff hw.ennreal_ofReal
+      (ae_of_all _ fun y => ENNReal.ofReal_ne_top.lt_top)]
+    apply hRhoInt.congr
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    dsimp [f, w]
+    rw [ENNReal.toReal_ofReal (hw0 y hy), hclamp_eq y hy]
+  have hgi : Integrable g μ := by
+    dsimp [μ]
+    rw [integrable_withDensity_iff hw.ennreal_ofReal
+      (ae_of_all _ fun y => ENNReal.ofReal_ne_top.lt_top)]
+    apply hFInt.congr
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    dsimp [g, w]
+    rw [ENNReal.toReal_ofReal (hw0 y hy), hclamp_eq y hy]
+  have hfgi : Integrable (fun y => f y * g y) μ := by
+    dsimp [μ]
+    rw [integrable_withDensity_iff hw.ennreal_ofReal
+      (ae_of_all _ fun y => ENNReal.ofReal_ne_top.lt_top)]
+    apply hInt.congr
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    dsimp [f, g, w]
+    rw [ENNReal.toReal_ofReal (hw0 y hy), hclamp_eq y hy]
+  have hcov := opposite_monotone_covariance_le hf hg hfi hgi hfgi
+  rw [hint, hint, hint] at hcov
+  have hrho_eq : (∫ y in I, f y * w y) = referenceExpectation rho := by
+    apply integral_congr_ae
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    dsimp [f, w]
+    rw [hclamp_eq y hy]
+  have hF_eq : (∫ y in I, g y * w y) =
+      referenceExpectation (latalaF lam) := by
+    apply integral_congr_ae
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    dsimp [g, w]
+    rw [hclamp_eq y hy]
+  have hprod_eq : (∫ y in I, (f y * g y) * w y) =
+      referenceExpectation (fun y => rho y * latalaF lam y) := by
+    apply integral_congr_ae
+    filter_upwards [ae_restrict_mem measurableSet_Icc] with y hy
+    dsimp [f, g, w]
+    rw [hclamp_eq y hy]
+  rw [hrho_eq, hF_eq, hprod_eq, hprob,
+    latalaF_reference_mean_one hlam] at hcov
+  simpa using hcov
 
 end SpinGlass.AT

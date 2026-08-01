@@ -1,4 +1,4 @@
-import Lemmas.FixedDeviation
+import Lemmas.SmartPath
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 open MeasureTheory ProbabilityTheory
@@ -14,6 +14,11 @@ noncomputable def A {Ω : Type u} [MeasureSpace Ω]
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
   quenchedReplicaAverage (fullPathHamiltonian path s)
     (fun σs : Replicas N 4 => centeredOverlap q σs 0 1 ^ 2)
+
+theorem A_eq_overlapSecondMoment {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) :
+    A path s = overlapSecondMoment path s := rfl
 
 noncomputable def B {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}

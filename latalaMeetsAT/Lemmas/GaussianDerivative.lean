@@ -62,6 +62,10 @@ theorem quenchedGibbs_deriv_of_covariance_deriv {Ω : Type u} [MeasureSpace Ω]
   -- uniqueness/interpolation lemma, or strengthen the structure with an
   -- explicit affine realization.  Without such a lemma, `HasDerivAt f
   -- (deriv f s) s` cannot be concluded merely from the definition of `deriv`.
+  -- BLOCKED: Mathlib has no theorem in the imported API differentiating a
+  -- finite Gaussian pushforward law from a differentiable covariance matrix.
+  -- NEEDED: finite Gaussian covariance interpolation for normalized Gibbs sums.
+  -- BLUEPRINT: equations `gaussianinterpolation` and `cavityderivative`.
   sorry
 
 end SpinGlass.AT

@@ -35,10 +35,14 @@ theorem rs_freeEnergy_error {Ω : Type u} [MeasureSpace Ω]
   -- `uniform_secondMoment`, the uniform bound on `β`, and interval length one
   -- for the upper bound.
   --
-  -- The product endpoint identity is false for the present centered-only
-  -- `path.H`, which omits the deterministic external field.  Repair the smart
-  -- path model as noted in `FreeEnergyDerivative`, then add endpoint continuity
-  -- so the fundamental theorem of calculus applies on the closed interval.
+  -- `fullPathHamiltonian` now includes the deterministic external field, but
+  -- the endpoint factorization and closed-interval derivative extension are
+  -- not yet proved.
+  -- BLOCKED: the open-interval derivative theorem is unfinished and neither
+  -- endpoint identity has a proved continuity extension.
+  -- NEEDED: `D_N(0)=0`, endpoint continuity, and the interval fundamental
+  -- theorem of calculus applied to `rsGap_deriv`.
+  -- BLUEPRINT: equation `freeenergyidentity`.
   sorry
 
 end SpinGlass.AT

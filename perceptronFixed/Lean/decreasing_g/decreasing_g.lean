@@ -134,8 +134,10 @@ private lemma hasDerivAt_φ (u : ℝ) : HasDerivAt φ (-u * φ u) u := by
   have h_exp :
       HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2) / 2))
         (Real.exp (-(u ^ 2) / 2) * (-u)) u := by
-    simpa [Function.comp, mul_assoc, mul_left_comm, mul_comm] using
-      (Real.hasDerivAt_exp (x := (-(u ^ 2) / 2))).comp u h_inner
+    have h := (Real.hasDerivAt_exp (x := (-(u ^ 2) / 2))).comp u h_inner
+    change HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2) / 2))
+      (Real.exp (-(u ^ 2) / 2) * -u) u at h
+    exact h
   have h_div :
       HasDerivAt (fun x : ℝ => Real.exp (-(x ^ 2) / 2) / Real.sqrt (2 * Real.pi))
         (Real.exp (-(u ^ 2) / 2) * (-u) / Real.sqrt (2 * Real.pi)) u := by
@@ -176,7 +178,7 @@ private lemma integral_mul_φ_eq (u : ℝ) : (∫ x in Set.Ici u, x * φ x) = φ
     simpa [MeasureTheory.integral_neg, neg_mul] using this
   simpa [MeasureTheory.integral_Ici_eq_integral_Ioi] using hIoi'
 
-  lemma d_pos (u : ℝ) : 0 < d u := by
+lemma d_pos (u : ℝ) : 0 < d u := by
   -- `d(u) > 0` for all `u`.
   have hΦbar : 0 < Φbar u := Φbar_pos u
 
@@ -215,7 +217,8 @@ private lemma integral_mul_φ_eq (u : ℝ) : (∫ x in Set.Ici u, x * φ x) = φ
       refine ae_of_all _ (fun x hx => ?_)
       exact mul_nonneg (sub_nonneg.2 hx) (le_of_lt (hφpos x))
     have hint : Integrable (fun x : ℝ => (x - u) * φ x) μ := by
-      simpa [μ, φ, TruncatedNormalMoments.φ, pow_one] using
+      change IntegrableOn (fun x : ℝ => (x - u) * φ x) (Set.Ici u) volume
+      simpa [φ, TruncatedNormalMoments.φ, pow_one] using
         (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 1) u)
     have hsupp : 0 < μ (Function.support fun x : ℝ => (x - u) * φ x) := by
       have hsub : Set.Ioc u (u + 1) ⊆ Function.support fun x : ℝ => (x - u) * φ x := by
@@ -376,7 +379,11 @@ private lemma integral_mul_φ_eq (u : ℝ) : (∫ x in Set.Ici u, x * φ x) = φ
     have h_div :
         deriv E u =
           (deriv φ u * Φbar u - φ u * deriv Φbar u) / (Φbar u) ^ 2 := by
-      simpa [E] using (deriv_div hφ hΦbar (Φbar_pos u).ne')
+      unfold E
+      have h := deriv_div hφ hΦbar (Φbar_pos u).ne'
+      change deriv (fun x : ℝ => φ x / Φbar x) u =
+        (deriv φ u * Φbar u - φ u * deriv Φbar u) / Φbar u ^ 2 at h
+      exact h
     -- Substitute derivatives and simplify.
     rw [h_div, deriv_φ (u := u), deriv_Φbar (u := u)]
     have hΦ : Φbar u ≠ 0 := (Φbar_pos u).ne'
@@ -677,20 +684,20 @@ lemma H_neg_of_F_neg {u : ℝ} (hd : 0 < d u) (hF : F (x u) (y u) < 0) : H u < 0
       let f4 : ℝ → ℝ := fun t => (c ^ 2) * ((t - u) ^ 4 * TruncatedNormalMoments.φ t)
 
       have hf0 : IntegrableOn f0 (Set.Ici u) := by
-        simpa [f0] using
-          (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 0) u).const_mul (a ^ 2)
+        change Integrable f0 (volume.restrict (Set.Ici u))
+        exact (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 0) u).const_mul (a ^ 2)
       have hf1 : IntegrableOn f1 (Set.Ici u) := by
-        simpa [f1] using
-          (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 1) u).const_mul (2 * a * b)
+        change Integrable f1 (volume.restrict (Set.Ici u))
+        exact (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 1) u).const_mul (2 * a * b)
       have hf2 : IntegrableOn f2 (Set.Ici u) := by
-        simpa [f2] using
-          (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 2) u).const_mul (b ^ 2 + 2 * a * c)
+        change Integrable f2 (volume.restrict (Set.Ici u))
+        exact (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 2) u).const_mul (b ^ 2 + 2 * a * c)
       have hf3 : IntegrableOn f3 (Set.Ici u) := by
-        simpa [f3] using
-          (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 3) u).const_mul (2 * b * c)
+        change Integrable f3 (volume.restrict (Set.Ici u))
+        exact (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 3) u).const_mul (2 * b * c)
       have hf4 : IntegrableOn f4 (Set.Ici u) := by
-        simpa [f4] using
-          (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 4) u).const_mul (c ^ 2)
+        change Integrable f4 (volume.restrict (Set.Ici u))
+        exact (TruncatedNormalMoments.integrable_pow_sub_mul_φ (k := 4) u).const_mul (c ^ 2)
       have hf01 : IntegrableOn (fun t => f0 t + f1 t) (Set.Ici u) := hf0.add hf1
       have hf012 : IntegrableOn (fun t => f0 t + f1 t + f2 t) (Set.Ici u) := hf01.add hf2
       have hf0123 : IntegrableOn (fun t => f0 t + f1 t + f2 t + f3 t) (Set.Ici u) := hf012.add hf3
@@ -1022,9 +1029,11 @@ lemma d_le_d0_of_nonneg {u : ℝ} (hu : 0 ≤ u) : d u ≤ d 0 := by
     have hdt : deriv d t = x t + y t - 1 := by
       have hsub :
           deriv d t = deriv E t - deriv (fun s : ℝ => s) t := by
-        simpa [d] using
-          (deriv_fun_sub (f := E) (g := fun s : ℝ => s) (x := t) hE
-            differentiableAt_id)
+        unfold d
+        have h := deriv_fun_sub (f := E) (g := fun s : ℝ => s) (x := t) hE
+          differentiableAt_id
+        change deriv (fun s : ℝ => E s - s) t = deriv E t - deriv (fun s : ℝ => s) t at h
+        exact h
       have hxy : x t + y t = (E t) ^ 2 - t * E t := by
         simp [x, y, d]
         ring
@@ -1110,7 +1119,9 @@ lemma g_deriv_eq (u : ℝ) : deriv g u = 2 * (E u) ^ 2 * H u := by
   set A : ℝ → ℝ := fun t => (E t) ^ 2
   set B : ℝ → ℝ := fun t => 3 * (E t) ^ 2 - 4 * t * E t + t ^ 2 - 2
   have hA : DifferentiableAt ℝ A u := by
-    simpa [A] using (hE.pow 2)
+    have h := hE.pow 2
+    change DifferentiableAt ℝ (fun t : ℝ => E t ^ 2) u at h
+    simpa only [A] using h
   have hB : DifferentiableAt ℝ B u := by
     -- `B` is built from `E` and polynomials by ring operations.
     fun_prop (disch := assumption)
@@ -1126,7 +1137,9 @@ lemma g_deriv_eq (u : ℝ) : deriv g u = 2 * (E u) ^ 2 * H u := by
     -- Expand `B` as `((3*(E t)^2 - 4*t*E t) + t^2) - 2` and differentiate termwise.
     have h1 : DifferentiableAt ℝ (fun t => 3 * (E t) ^ 2) u := by
       -- constant multiple of `A`
-      simpa [A] using (differentiableAt_const (c := (3 : ℝ))).mul (hE.pow 2)
+      have h := (differentiableAt_const (c := (3 : ℝ))).mul (hE.pow 2)
+      change DifferentiableAt ℝ (fun t : ℝ => 3 * E t ^ 2) u at h
+      exact h
     have h2 : DifferentiableAt ℝ (fun t => 4 * t * E t) u := by
       have : DifferentiableAt ℝ (fun t => (4 : ℝ) * (t * E t)) u :=
         (differentiableAt_const (c := (4 : ℝ))).mul (differentiableAt_id.mul hE)
@@ -1158,7 +1171,11 @@ lemma g_deriv_eq (u : ℝ) : deriv g u = 2 * (E u) ^ 2 * H u := by
       _ =
           deriv (fun t => 3 * (E t) ^ 2 - 4 * t * E t) u +
             deriv (fun t : ℝ => t ^ 2) u := by
-            simpa using (deriv_add h12 h3)
+            have h := deriv_add h12 h3
+            change deriv (fun t : ℝ => (3 * E t ^ 2 - 4 * t * E t) + t ^ 2) u =
+              deriv (fun t : ℝ => 3 * E t ^ 2 - 4 * t * E t) u +
+                deriv (fun t : ℝ => t ^ 2) u at h
+            exact h
       _ =
           (deriv (fun t => 3 * (E t) ^ 2) u - deriv (fun t => 4 * t * E t) u) +
             deriv (fun t : ℝ => t ^ 2) u := by
@@ -1188,7 +1205,12 @@ lemma g_deriv_eq (u : ℝ) : deriv g u = 2 * (E u) ^ 2 * H u := by
   calc
     deriv g u =
         deriv A u * B u + A u * deriv B u := by
-          simpa [g, A, B] using (deriv_fun_mul (c := A) (d := B) (x := u) hA hB)
+          unfold g
+          have h := deriv_fun_mul (c := A) (d := B) (x := u) hA hB
+          change deriv (fun y : ℝ => E y ^ 2 *
+            (3 * E y ^ 2 - 4 * y * E y + y ^ 2 - 2)) u =
+              deriv A u * B u + A u * deriv B u at h
+          exact h
     _ =
         (2 * E u * deriv E u) * (3 * (E u) ^ 2 - 4 * u * E u + u ^ 2 - 2) +
           (E u) ^ 2 * (6 * E u * deriv E u - 4 * (E u + u * deriv E u) + 2 * u) := by

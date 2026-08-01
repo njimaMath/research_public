@@ -1,0 +1,3804 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+
+\definecolor{leankeyword}{RGB}{32,74,135}
+\definecolor{leancomment}{RGB}{78,120,78}
+\definecolor{leanstring}{RGB}{150,55,55}
+\definecolor{leanbackground}{RGB}{248,248,248}
+\lstdefinelanguage{Lean}{
+  morekeywords={abbrev,by,case,class,def,deriving,else,end,example,
+    export,extends,for,fun,if,import,in,inductive,instance,let,match,
+    namespace,noncomputable,open,private,protected,section,set_option,
+    simp,structure,then,theorem,variable,where,with},
+  sensitive=true,
+  morecomment=[l]{--},
+  morecomment=[s]{/-}{-/},
+  morestring=[b]"
+}
+\lstset{
+  language=Lean,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{leankeyword},
+  commentstyle=\color{leancomment},
+  stringstyle=\color{leanstring},
+  backgroundcolor=\color{leanbackground},
+  frame=single,
+  rulecolor=\color{black!20},
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+  literate=
+    {⁻¹}{{$^{-1}$}}2
+    {×}{{$\times$}}1
+    {ˢ}{{$^{s}$}}1
+    {•}{{$\mathbin{\cdot}$}}1
+    {∈}{{$\in$}}1
+    {∧}{{$\land$}}1
+    {⊆}{{$\subseteq$}}1
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{remark}[theorem]{Remark}
+\numberwithin{equation}{section}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Pbb}{\mathbb{P}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\1}{\mathbf 1}
+\newcommand{\sech}{\operatorname{sech}}
+\newcommand{\cP}{\mathcal P}
+\newcommand{\cK}{\mathcal K}
+\newcommand{\cR}{\mathcal R}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\sgn}{\operatorname{sgn}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\e}{\mathrm e}
+\newcommand{\braket}[1]{\left\langle #1\right\rangle}
+
+\title{A quantitative replica-symmetric bound in strict AT region}
+\author{
+  Seiichiro Kusuoka\thanks{Department of Mathematics and Mathematical Sciences, Graduate School of Science, Kyoto University. E-mail: \texttt{kusuoka@math.kyoto-u.ac.jp}}
+  \and
+  Shuta Nakajima\thanks{Department of Mathematics, Keio University. E-mail: \texttt{njima@keio.jp}}
+}
+\date{}
+
+\begin{document}
+\subsection{Model and the strict AT region}
+
+Let $\Sigma_N\coloneqq\{-1,1\}^N$.  For $\beta>0$ and $h>0$, let
+\[
+ H_N(\sigma)
+ \coloneqq
+ \frac{\beta}{\sqrt N}\sum_{1\le i<j\le N}g_{ij}\sigma_i\sigma_j
+ +h\sum_{i=1}^N\sigma_i ,
+\]
+where the $g_{ij}$ are independent standard normal random variables.
+For replicas $\sigma^1,\sigma^2,\ldots$ sampled independently from the
+Gibbs measure for fixed disorder, put
+\[
+ R_{ab}\coloneqq\frac1N\sum_{i=1}^N\sigma_i^a\sigma_i^b.
+\]
+
+Let $q(\beta,h)$ be the unique solution of
+\begin{equation}
+ q=\E\tanh^2\bigl(h+\beta\sqrt q\,Z\bigr),
+ \qquad Z\sim N(0,1).
+ \label{eq:q}
+\end{equation}
+and write $q\coloneqq q(\beta,h)$ when the parameters are fixed.
+Existence and uniqueness for $h>0$ are standard; see, for example,
+\cite[Proposition~1.3.8]{Talagrand}.  Continuity follows directly from
+uniqueness: if $(\beta_n,h_n)\to(\beta,h)$, every convergent
+subsequence of $q(\beta_n,h_n)\in[0,1]$ has, by dominated convergence
+in \eqref{eq:q}, a limit solving the fixed-point equation at
+$(\beta,h)$.  Uniqueness identifies that limit with $q(\beta,h)$, so
+the entire sequence converges.
+Set
+\begin{equation}
+ r\coloneqq\E\tanh^4\bigl(h+\beta\sqrt q\,Z\bigr),
+ \label{eq:ra}
+\end{equation}
+and let
+\begin{equation}
+ \alpha\coloneqq\beta^2(1-2q+r)
+ =\beta^2\E\sech^4\bigl(h+\beta\sqrt q\,Z\bigr).
+ \label{eq:alpha}
+\end{equation}
+We work on a fixed compact set
+\begin{equation}
+ \cK\Subset\{(\beta,h):\beta>0,\ h>0,\ \alpha(\beta,h)<1\}.
+ \label{eq:K}
+\end{equation}
+Thus, for some $\delta_{\cK}>0$,
+\begin{equation}
+ 1-\alpha\ge\delta_{\cK}
+ \qquad\text{on }\cK.
+ \label{eq:delta}
+\end{equation}
+The maps $q,r,\alpha$ are therefore continuous on $\cK$.  In
+particular, compactness and $h>0$ imply
+\begin{equation}
+ 0<q_{\cK}\coloneqq\inf_{(\beta,h)\in\cK}q
+ \le \sup_{(\beta,h)\in\cK}q<1.
+ \label{eq:qcompact}
+\end{equation}
+Indeed, $q=0$ would contradict \eqref{eq:q} and $h>0$, while
+$q<1$ because $\tanh^2(h+\beta\sqrt q\,Z)<1$ a.s.
+
+\subsection{The replica-symmetric smart path}
+
+For $0\le s\le1$, define the smart-path Hamiltonian
+\begin{equation}
+ H_{N,s}(\sigma)
+ \coloneqq
+ \frac{\beta\sqrt s}{\sqrt N}
+ \sum_{1\le i<j\le N}g_{ij}\sigma_i\sigma_j
+ +\sum_{i=1}^N
+ \bigl(h+\beta\sqrt{(1-s)q}\,z_i\bigr)\sigma_i,
+ \label{eq:path}
+\end{equation}
+where $(z_i)$ is an independent standard Gaussian family.  We write
+$\braket{\cdot}_s$ for the Gibbs expectation and
+\[
+ \nu_s[f]\coloneqq\E\braket{f}_s,\qquad
+ Q_{ab}\coloneqq R_{ab}-q.
+\]
+We also write
+\begin{equation}
+ \phi_N(s)\coloneqq\frac1N\E\log
+ \sum_{\sigma\in\Sigma_N}e^{H_{N,s}(\sigma)}.
+ \label{eq:pathfreeenergy}
+\end{equation}
+
+\subsection{Main result}
+
+Define
+\begin{equation}
+ A_s\coloneqq\nu_s[Q_{12}^2],\qquad
+ B_s\coloneqq\nu_s[Q_{12}Q_{13}],\qquad
+ C_s\coloneqq\nu_s[Q_{12}Q_{34}].
+ \label{eq:ABC}
+\end{equation}
+
+\begin{theorem}
+\label{thm:main}
+There is a constant $C_{\cK}<\infty$ such that, for every $N\ge1$,
+\[
+ \sup_{\substack{(\beta,h)\in\cK\\0\le s\le1}}
+ N\,\nu_s[Q_{12}^2]\le C_{\cK}.
+\]
+Consequently, if
+\[
+ \phi_N(\beta,h)\coloneqq
+ \frac1N\E\log\sum_{\sigma\in\Sigma_N}e^{H_N(\sigma)}
+\]
+and
+\[
+ \phi^{\mathrm{RS}}(\beta,h)
+ \coloneqq
+ \log2+\E\log\cosh(h+\beta\sqrt q\,Z)
+ +\frac{\beta^2}{4}(1-q)^2,
+\]
+then
+\[
+ 0\le\phi^{\mathrm{RS}}(\beta,h)-\phi_N(\beta,h)
+ \le\frac{C_{\cK}}N
+\]
+uniformly on $\cK$.
+
+Moreover, uniformly for $(\beta,h,s)\in\cK\times[0,1]$,
+\[
+ N\bigl(A_s-2B_s+C_s\bigr)
+ =
+ \frac{\alpha}{\beta^2(1-s\alpha)}+o_{\cK}(1).
+\]
+Here and below, $o_{\cK}(1)\to0$ as $N\to\infty$, uniformly over the
+ compact set $\mathcal K$.
+\end{theorem}
+
+\subsection{Proof strategy}
+
+The proof is divided into the following steps.  First, the scalar
+finite-step PDE is solved explicitly, and the strict AT sign is proved
+uniformly along the smart path.  Second, the specialized two-replica
+Guerra--Talagrand upper bound is established in
+Appendix~\ref{app:specialGT}, while the main text derives from it and
+the strict AT sign a uniform quadratic bound for the constrained
+pressure.  Third, a quadratically
+coupled pressure and Gronwall's inequality produce an $o(1)$ overlap
+bound, and Gaussian concentration gives fixed-deviation exponential
+tails.  Fourth, a cavity expansion gives a three-dimensional linear
+system for $A_s,B_s,C_s$ with a cubic remainder.  Uniform invertibility
+of the cavity matrix and the fixed-deviation estimate allow that
+remainder to be absorbed.  The free-energy estimate follows by
+integrating the exact smart-path identity, and the replicon
+susceptibility follows from the replicon row of the same cavity system.
+
+\section{Replica-symmetric coercivity}\label{sec:coercivity}
+
+\subsection{Gaussian calculus}\label{subsec:gaussian}
+
+We record Gaussian integration by parts, which is used below.  Let
+$G\coloneqq(G_1,\ldots,G_m)$ be centered Gaussian with covariance
+matrix $C$.
+If $F$ is continuously differentiable with bounded first derivatives,
+then Gaussian integration by parts gives
+\begin{equation}
+ \E[G_iF(G)]=\sum_{j=1}^m C_{ij}\E[\partial_jF(G)].
+ \label{eq:GIBP}
+\end{equation}
+
+We also use the following standard consequence of Gaussian concentration.
+Let \(G\) be a standard Gaussian vector, and suppose that, for each
+\(v\in I\), the random variable \(F_v\coloneqq F_v(G)\) is an
+\(L\)-Lipschitz
+function of \(G\), where \(I\) is finite. Then
+\begin{equation}
+ \E\max_{v\in I}\{F_v-\E F_v\}
+ \le L\sqrt{2\log|I|}.
+ \label{eq:gaussianmaxgeneral}
+\end{equation}
+Indeed, the Gaussian concentration inequality (see, for example,
+\cite{Ledoux}) gives, for every \(t>0\)
+and every \(v\in I\),
+\[
+ \E\exp\bigl\{t(F_v-\E F_v)\bigr\}
+ \le \exp\left(\frac{t^2L^2}{2}\right).
+\]
+\[
+\begin{aligned}
+ \E\max_{v\in I}(F_v-\E F_v)
+ &\le\frac1t\log\sum_{v\in I}
+ \E e^{t(F_v-\E F_v)}
+ \le\frac{\log|I|}{t}+\frac{tL^2}{2}.
+\end{aligned}
+\]
+For $|I|\ge2$ and $L>0$, optimize at
+$t=\sqrt{2\log|I|}/L$.  The cases $|I|=1$ and $L=0$ are immediate.
+
+
+\subsection{The scalar replica-symmetric PDE and the strict AT sign}\label{subsec:ATsign}
+
+For fixed $(\beta,h,s)\in\cK\times[0,1]$, put
+\begin{equation}
+ x_q(u)\coloneqq\1_{[q,1]}(u),\qquad
+ \xi_s(u)\coloneqq\beta^2(1-s)q\,u+\frac{s\beta^2}{2}u^2.
+ \label{eq:xqxi}
+\end{equation}
+Let $\Psi:[0,1]\times\mathbb R\to\mathbb R$ solve
+\begin{equation}
+ \partial_u\Psi+\frac{s\beta^2}{2}
+ \bigl(\partial_{xx}\Psi+x_q(u)(\partial_x\Psi)^2\bigr)=0,
+ \qquad \Psi(1,x)=\log\cosh x.
+ \label{eq:parisipde}
+\end{equation}
+This finite-step equation has the explicit semigroup representation
+\begin{align}
+ \Psi(u,x)
+ &=\log\cosh x+\frac{s\beta^2}{2}(1-u), &&q\le u\le1,
+ \label{eq:PDEupper}\\
+ \Psi(u,x)
+ &=\E\Psi\bigl(q,x+\beta\sqrt{s}\sqrt{q-u}\,Z\bigr)\notag\\
+ &=\E\log\cosh\bigl(x+\beta\sqrt{s}\sqrt{q-u}\,Z\bigr)
+   +\frac{s\beta^2}{2}(1-q), &&0\le u\le q.
+ \label{eq:PDElower}
+\end{align}
+Indeed, on $[q,1]$ the Cole--Hopf transform $\exp\Psi$ solves the
+backward heat equation, and on $[0,q]$ the equation itself is the
+backward heat equation.  These formulas prove existence, uniqueness,
+and all differentiability statements used below.
+
+Let $Z_0$ and a Brownian motion $W$ be independent and define the local
+field process by
+\begin{equation}
+ \dd X_u=s\beta^2x_q(u)\partial_x\Psi(u,X_u)\,\dd u
+ +\beta\sqrt{s}\,\dd W_u,
+ \qquad X_0=h+\beta\sqrt{(1-s)q}\,Z_0.
+ \label{eq:localfield}
+\end{equation}
+The replica-symmetric trial value along the path is
+\begin{equation}
+ P_s^*\coloneqq\log2+
+ \E\Psi(0,h+\beta\sqrt{(1-s)q}\,Z_0)
+ -\frac{s\beta^2}{2}\int_q^1u\,\dd u.
+ \label{eq:scalartrial}
+\end{equation}
+Using \eqref{eq:PDEupper}--\eqref{eq:PDElower} and
+$\beta^2(1-s)q+s\beta^2q=\beta^2q$, this reduces to
+\begin{equation}
+ P_s^*=\log2+\E\log\cosh(h+\beta\sqrt q\,Z)
+ +\frac{s\beta^2}{4}(1-q)^2.
+ \label{eq:RSpathvalue}
+\end{equation}
+
+\begin{lemma}[Diffusion comparison]
+\label{lem:diffusioncomparison}
+Suppose $s\beta^2(1-q)>1$.  Let $(m_u)_{q\le u\le1}$ solve
+\[
+ \dd m_u=\beta\sqrt{s}(1-m_u^2)\,\dd W_u,
+ \qquad m_q\stackrel d=\tanh(h+\beta\sqrt q\,Z),
+\]
+with the initial variable independent of the Brownian increments after
+time $q$.  Then
+\begin{equation}
+ \beta^2\E[(1-m_u^2)^2]\le\alpha,qquad q\le u\le1.
+ \label{eq:strictATdiffusion}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Put $\sigma^2\coloneqq\beta^2q$.  We first show that
+$h<\sigma^2$.  The function
+$c\mapsto\E\sech^2(c+\sigma Z)$ is nonincreasing on $[0,\infty)$.
+Indeed, if $f(x)\coloneqq\sech^2x$ and $\varphi_\sigma$ is the centered
+Gaussian density, then for $c\ge0$,
+\[
+ \frac{\dd}{\dd c}(f*\varphi_\sigma)(c)
+ =\int_0^\infty f'(x)
+   \{\varphi_\sigma(x-c)-\varphi_\sigma(x+c)\}\,\dd x\le0.
+\]
+If $h\ge\sigma^2$, the fixed-point equation gives
+\[
+ 1-q=\E\sech^2(h+\sigma Z)
+ \le\E\sech^2(\sigma^2+\sigma Z).
+\]
+For a symmetric $\{-1,1\}$-valued variable $\varepsilon$, set
+$Y\coloneqq\sigma\varepsilon+Z$.  Since
+$\E[\varepsilon\mid Y]=\tanh(\sigma Y)$, conditional expectation and
+the best linear estimator of $\varepsilon$ from $Y$ give
+\[
+ \E\sech^2(\sigma^2+\sigma Z)
+ =\E\bigl[(\varepsilon-\E[\varepsilon\mid Y])^2\bigr]
+ \le(1+\sigma^2)^{-1}.
+\]
+It would follow that $\beta^2(1-q)\le1$, a contradiction.  Hence
+$h<\sigma^2$.
+
+Use the time variable $\lambda\coloneqq s\beta^2(u-q)$ and set
+$v_\lambda\coloneqq1-m_{q+\lambda/(s\beta^2)}^2$.
+Conditional on $m_q=\tanh x$, Girsanov's formula gives
+\[
+ \E[\psi(X_{q+\lambda/(s\beta^2)})\mid X_q=x]
+ =
+ \frac{\E[\psi(x+\sqrt\lambda G)\cosh(x+\sqrt\lambda G)]}
+      {\E[\cosh(x+\sqrt\lambda G)]},
+\]
+where $m_u=\tanh X_u$.  Writing $S\coloneqq\sech^2X_q$ and taking
+$\psi=\sech^4$ gives
+\[
+ \E[v_\lambda^2\mid X_q=x]
+ =\frac{e^{-\lambda/2}\sech x}{2}\E_G
+ \bigl[\sech^3(x+\sqrt\lambda G)
+       +\sech^3(x-\sqrt\lambda G)\bigr].
+\]
+For $y\in\mathbb R$ and $S=\sech^2x$,
+\[
+ \frac{\sech x}{2}\{\sech^3(x+y)+\sech^3(x-y)\}
+ =S^2\cosh y\,
+ \frac{1+(4-3S)\sinh^2y}{(1+S\sinh^2y)^3}.
+\]
+Consequently,
+\begin{equation}
+ \E v_\lambda^2=\E[S^2F_\lambda(S)],
+ \label{eq:Flambda-representation}
+\end{equation}
+where
+\[
+ F_\lambda(y)\coloneqq e^{-\lambda/2}\E\left[
+ \cosh(\sqrt\lambda G)
+ \frac{1+(4-3y)\sinh^2(\sqrt\lambda G)}
+      {(1+y\sinh^2(\sqrt\lambda G))^3}\right].
+\]
+For $t\coloneqq\sinh^2(\sqrt\lambda G)$, put
+\[
+ H_t(y)\coloneqq\frac{1+(4-3y)t}{(1+yt)^3}.
+\]
+Then
+\[
+ H_t'(y)=-\frac{6t\{1+(2-y)t\}}{(1+yt)^4}\le0,
+\]
+so $F_\lambda$ is decreasing.  Moreover, with $y=1-u^2$,
+\[
+ \int_0^1H_t(y)\frac{\dd y}{2\sqrt{1-y}}
+ =\left[\frac{u}{(1+t-tu^2)^2}\right]_{0}^{1}=1.
+\]
+Since $e^{-\lambda/2}\E\cosh(\sqrt\lambda G)=1$,
+\begin{equation}
+ \int_0^1F_\lambda(y)\frac{\dd y}{2\sqrt{1-y}}=1.
+ \label{eq:Fmeanone}
+\end{equation}
+
+Let $\mu_0(\dd y)\coloneqq\dd y/(2\sqrt{1-y})$ and
+$x(y)\coloneqq\operatorname{arcosh}(y^{-1/2})$.  Since
+$X_q\sim N(h,\sigma^2)$, the density of
+$\E[S^2\1_{\{S\in\dd y\}}]$ with respect to $\mu_0$, up to a positive
+constant, is
+\[
+ \rho(y)\coloneqq y\exp\left\{-\frac{x(y)^2+h^2}{2\sigma^2}\right\}
+ \cosh\left(\frac{h x(y)}{\sigma^2}\right).
+\]
+As a function of $x\ge0$, its logarithmic derivative is
+\[
+ -2\tanh x-\frac{x}{\sigma^2}
+ +\frac{h}{\sigma^2}\tanh\left(\frac{hx}{\sigma^2}\right)<0,
+\]
+because $h\le\sigma^2$.  Thus $\rho$ is increasing in $y$.
+The opposite-monotonicity inequality, followed by
+\eqref{eq:Fmeanone}, now gives
+\[
+ \beta^2\E v_\lambda^2
+ \le\left(\int F_\lambda\,\dd\mu_0\right)
+       \left(\beta^2\int\rho\,\dd\mu_0\right)
+ =\beta^2\E S^2=\alpha.
+\]
+This is \eqref{eq:strictATdiffusion}.
+\end{proof}
+
+
+\begin{proposition}
+\label{prop:pathRS}
+Set
+\[
+ g_s(u)\coloneqq\E\bigl[\partial_x\Psi(u,X_u)^2\bigr].
+\]
+Uniformly on $\cK\times[0,1]$,
+\begin{equation}
+ g_s(u)-u
+ \begin{cases}
+ >0,&0\le u<q,\\
+ =0,&u=q,\\
+ <0,&q<u\le1.
+ \end{cases}
+ \label{eq:ATsign}
+\end{equation}
+Moreover, there are $c_{\cK},\varepsilon_{\cK}>0$ such that
+\begin{equation}
+ |g_s(u)-u|\ge c_{\cK}|u-q|
+ \qquad\text{whenever }|u-q|\le\varepsilon_{\cK}.
+ \label{eq:linearATsign}
+\end{equation}
+The sign is uniform away from $q$ on the compact family.
+\end{proposition}
+
+\begin{proof}
+Differentiating \eqref{eq:PDEupper} in $u$ and $x$ shows that, for
+$u\ge q$,
+\begin{align*}
+ \partial_x\Psi(u,x)&=\tanh x,
+ &\partial_{xx}\Psi(u,x)&=\sech^2x,\\
+ \partial_{ux}\Psi(u,x)&=0,
+ &\partial_{xxx}\Psi(u,x)&=-2\tanh x\,\sech^2x.
+\end{align*}
+For $u\le q$, we may differentiate \eqref{eq:PDElower} under the
+expectation, since the first two derivatives of $\log\cosh$ are bounded.
+Using the preceding identities at time $q$ gives
+\begin{align*}
+ \partial_x\Psi(u,x)
+ &=\E\tanh\bigl(x+\beta\sqrt{s}\sqrt{q-u}\,Z\bigr),\\
+ \partial_{xx}\Psi(u,x)
+ &=\E\sech^2\bigl(x+\beta\sqrt{s}\sqrt{q-u}\,Z\bigr),\\
+ \partial_{ux}\Psi(u,x)
+ &=s\beta^2\E\bigl[\tanh(Y_{u,x})\sech^2(Y_{u,x})\bigr],\\
+ \partial_{xxx}\Psi(u,x)
+ &=-2\E\bigl[\tanh(Y_{u,x})\sech^2(Y_{u,x})\bigr],
+ \qquad
+ Y_{u,x}\coloneqq x+\beta\sqrt{s}\sqrt{q-u}\,Z.
+ \end{align*}
+On $[0,q]$ the drift in \eqref{eq:localfield} vanishes, because
+$x_q=0$ there up to the immaterial endpoint $q$.  Consequently,
+\[
+ X_q=X_u+\beta\sqrt{s}(W_q-W_u).
+\]
+With $\mathcal F_u\coloneqq\sigma(Z_0,W_r:0\le r\le u)$, the increment
+$W_q-W_u$ is independent of $\mathcal F_u$ and has law
+$\sqrt{q-u}\,Z$.  Substituting $x=X_u$ in the last two semigroup
+identities therefore proves
+\[
+ \partial_x\Psi(u,X_u)=\E[\tanh(X_q)\mid\mathcal F_u],
+ \qquad
+ \partial_{xx}\Psi(u,X_u)=\E[\sech^2(X_q)\mid\mathcal F_u].
+\]
+Indeed, on $[0,q]$ the drift-free representation gives
+\[
+ X_q=h+\beta\sqrt{(1-s)q}\,Z_0+\beta\sqrt{s}\,W_q.
+\]
+The two Gaussian terms on the right are independent, and their variances
+sum to $\beta^2(1-s)q+s\beta^2q=\beta^2q$.  Hence
+\begin{equation}
+ X_q\stackrel d=h+\beta\sqrt q\,Z,
+ \label{eq:Xq}
+\end{equation}
+as claimed.  To compute $g_s'$, set
+$M_u\coloneqq\partial_x\Psi(u,X_u)$.  Differentiating the heat equation on
+$[0,q]$ in $x$ and applying Ito's formula yield
+\begin{align*}
+ \dd M_u
+ &=\left(\partial_{ux}\Psi(u,X_u)
+   +\frac{s\beta^2}{2}\partial_{xxx}\Psi(u,X_u)\right)\dd u
+   +\beta\sqrt{s}\,\partial_{xx}\Psi(u,X_u)\,\dd W_u\\
+ &=\beta\sqrt{s}\,\partial_{xx}\Psi(u,X_u)\,\dd W_u.
+\end{align*}
+A second application of Ito's formula, now to $M_u^2$, gives
+\[
+ \dd(M_u^2)
+ =2\beta\sqrt{s}\,M_u\partial_{xx}\Psi(u,X_u)\,\dd W_u
+  +s\beta^2\partial_{xx}\Psi(u,X_u)^2\,\dd u.
+\]
+All coefficients here are bounded, so the stochastic integral has mean
+zero.  Consequently, for $u<q$,
+\[
+ g_s'(u)
+ =s\beta^2\E[\partial_{xx}\Psi(u,X_u)^2].
+\]
+Moreover, the conditional representation above and conditional Jensen
+give
+\begin{align*}
+ \E[\partial_{xx}\Psi(u,X_u)^2]
+ &=\E\left[\E[\sech^2(X_q)\mid\mathcal F_u]^2\right]\\
+ &\le \E\left[\E[\sech^4(X_q)\mid\mathcal F_u]\right]
+ =\E\sech^4(X_q).
+\end{align*}
+Together with \eqref{eq:Xq} and \eqref{eq:ra}--\eqref{eq:alpha}, this
+proves
+\[
+ g_s'(u)\le s\beta^2\E\sech^4(X_q)=s\alpha,
+ \qquad 0\le u<q.
+\]
+Since $g_s(q)=q$,
+\begin{equation}
+ g_s(u)-u\ge(1-s\alpha)(q-u)
+ \qquad(0\le u<q).
+ \label{eq:leftstrict}
+\end{equation}
+
+For $u\ge q$, put $m_u\coloneqq\tanh X_u$.  The drift cancels:
+\begin{equation}
+ \dd m_u=\beta\sqrt{s}(1-m_u^2)\,\dd W_u.
+ \label{eq:mdiffusion}
+\end{equation}
+Thus, if $f(u)\coloneqq\E m_u^2-u$,
+\begin{equation}
+ f(q)=0,\qquad f'(u)=s\beta^2\E[(1-m_u^2)^2]-1,
+ \qquad f'(q)=s\alpha-1.
+ \label{eq:fprime}
+\end{equation}
+If $s\beta^2(1-q)\le1$, then
+$f'(q)=s\alpha-1\le-\delta_{\cK}<0$, so $f<0$ immediately to the
+right of $q$.  If $f$ ever returned to zero, let $u_0>q$ be its first
+zero after this initial negative interval.  Then differentiability
+would give $f'(u_0)\ge0$.  On the other hand,
+\[
+ \E[(1-m_{u_0}^2)^2]\le1-\E m_{u_0}^2=1-u_0,
+\]
+so $f'(u_0)\le s\beta^2(1-u_0)-1
+<s\beta^2(1-q)-1\le0$, a contradiction.  Hence $f(u)<0$ for every
+$u>q$.
+
+If $s\beta^2(1-q)>1$, Lemma~\ref{lem:diffusioncomparison} and
+\eqref{eq:fprime} give $f'(u)\le s\alpha-1<0$.  This proves the
+right-hand sign in the remaining case.
+
+Finally, \eqref{eq:leftstrict} and
+$f'(q)=-(1-s\alpha)\le-\delta_{\cK}$ give
+\eqref{eq:linearATsign} by uniform continuity.  Compactness gives
+uniform strictness away from $q$.  This completes the proof.
+\end{proof}
+
+\subsection{Two-replica Guerra--Talagrand coercivity}\label{subsec:GT}
+
+For an attainable overlap $v\in\mathcal R_N
+\coloneqq\{-1,-1+2/N,\ldots,1\}$, define
+\begin{equation}
+ Z^{(2)}_{N,s}(v)
+ \coloneqq
+ \sum_{\substack{\sigma^1,\sigma^2\in\Sigma_N\\R_{12}=v}}
+ e^{H_{N,s}(\sigma^1)+H_{N,s}(\sigma^2)}
+ \label{eq:constrainedZ}
+\end{equation}
+and retain the notation $P_s^*$ from \eqref{eq:RSpathvalue}.  For
+$\lambda\in\mathbb R$, define
+\begin{equation}
+ f_\lambda(x_1,x_2)
+ \coloneqq\log\left(\frac14\sum_{\varepsilon_1,\varepsilon_2=\pm1}
+ \exp\{\varepsilon_1x_1+\varepsilon_2x_2
+       +\lambda\varepsilon_1\varepsilon_2\}\right).
+ \label{eq:GTterminal}
+\end{equation}
+
+For $(\beta,h,s)\in\cK\times[0,1]$, retain $x_q$ and $\xi_s$ from
+\eqref{eq:xqxi}.  Given $v\in[-1,1]$, write
+$r_v\coloneqq|v|$ and put $\iota_v\coloneqq1$ for $v\ge0$ and
+$\iota_v\coloneqq-1$ for $v<0$.  Define
+\begin{align}
+ Q^v_u
+ &\coloneqq
+ \begin{cases}
+  \begin{pmatrix}u&\iota_vu\\ \iota_vu&u\end{pmatrix},
+       &0\le u\le r_v,\\[2mm]
+  \begin{pmatrix}u&v\\v&u\end{pmatrix},
+       &r_v\le u\le1,
+ \end{cases}
+ \label{eq:GTpath}\\
+ \gamma_v(u)
+ &\coloneqq
+ \begin{cases}
+  \frac12x_q(u),&0\le u<r_v,\\
+  x_q(u),&r_v\le u\le1.
+ \end{cases}
+ \label{eq:halfparameter}
+\end{align}
+Both $Q^v$ and
+\begin{equation}
+ A^v_s(u)\coloneqq\frac{\dd}{\dd u}\xi_s'(Q^v_u)
+ =
+ \begin{cases}
+ s\beta^2\begin{pmatrix}1&\iota_v\\\iota_v&1\end{pmatrix},&u<r_v,\\[2mm]
+ s\beta^2I_2,&u>r_v
+ \end{cases}
+ \label{eq:GTspeed}
+\end{equation}
+are positive semidefinite.  Scalar functions are applied entrywise to
+matrices.  Let $U^{\lambda,v}_s$ be the finite-semigroup solution of
+\begin{equation}
+ \partial_uU+\frac12\left(
+   \langle A^v_s,D^2U\rangle
+   +\gamma_v(u)\langle A^v_s\nabla U,\nabla U\rangle
+ \right)=0
+ \label{eq:2DParisiPDE}
+\end{equation}
+with terminal condition $f_\lambda$ from \eqref{eq:GTterminal}.  With
+$Y_0=h+\beta\sqrt{(1-s)q}\,Z_0$, set
+\begin{align}
+ \mathcal L_s(v)
+ &\coloneqq\frac12\int_0^1\gamma_v(u)
+   \sum_{a,b=1}^2 A^v_{s,ab}(u)Q^v_{u,ab}\,\dd u,
+ \label{eq:GTcorrectiondef}\\
+ \mathfrak P_s(\lambda,v)
+ &\coloneqq2\log2+\E U^{\lambda,v}_s(0,Y_0,Y_0)
+   -\lambda v-\mathcal L_s(v).
+ \label{eq:GTfunctional}
+\end{align}
+Below $r_v$, all four summands in \eqref{eq:GTcorrectiondef} equal
+$s\beta^2u$; above $r_v$, only the two diagonal summands remain.  Hence
+\begin{equation}
+ \mathcal L_s(v)
+ =s\beta^2\int_0^1x_q(u)u\,\dd u
+ =\frac{s\beta^2}{2}(1-q^2),
+ \label{eq:GTcorrection}
+\end{equation}
+independently of $v$.
+
+The required finite-volume Guerra--Talagrand upper bound is the
+specialization proved in Appendix~\ref{app:specialGT}; it is an instance
+of the general two-dimensional bound of Talagrand and Chen
+\cite{Talagrand,ChenGT}.  In the present notation, it gives
+\begin{equation}
+ \frac1N\E\log Z^{(2)}_{N,s}(v)
+ \le \mathfrak P_s(\lambda,v),
+ \qquad \lambda\in\mathbb R.
+ \label{eq:GTfunctionalbound}
+\end{equation}
+
+\begin{lemma}
+\label{lem:GTcontinuity}
+On every compact set on which $\lambda$ is bounded, the maps
+\[
+ (\beta,h,s,\lambda,v)\longmapsto
+ \mathfrak P_s(\lambda,v)-2P_s^*,
+ \qquad
+ (\beta,h,s,\lambda,v)\longmapsto
+ \partial_\lambda\mathfrak P_s(\lambda,v)
+\]
+are jointly continuous for
+$(\beta,h,s,v)\in\cK\times[0,1]\times[-1,1]$.
+\end{lemma}
+
+\begin{proof}
+Split $[0,1]$ at $q$ and $|v|$.  On each resulting interval the
+solution is obtained by one of the three Gaussian recursion operators
+\[
+ \mathcal T_mF(x)\coloneqq m^{-1}\log\E e^{mF(x+G)},
+ \qquad m\in\{1/2,1\},
+ \qquad
+ \mathcal T_0F(x)\coloneqq\E F(x+G),
+\]
+where the covariance of $G$ is the integral of $A_s^v$ over that
+interval.  These covariances depend continuously on the parameters.
+At $v=0$, at $v=\pm q$, or when another interval collapses, the
+corresponding covariance tends to zero and its operator tends to the
+identity.  The same holds at $s=0$, since every $s\beta^2$ covariance
+vanishes.  The terminal function has uniformly linear growth on
+bounded $\lambda$-sets, so Gaussian exponential integrability and
+dominated convergence prove continuity of the finite composition.
+For the multiplier derivative, differentiate the terminal function
+and propagate it through the same tilted Gaussian expectations; its
+absolute value is at most one.  Dominated convergence applies again.
+Finally, $q$, $Y_0$, \eqref{eq:GTcorrection}, and $P_s^*$ depend
+continuously on the parameters.  This proves both assertions.
+\end{proof}
+
+\begin{lemma}[Uniform Taylor coercivity]
+\label{lem:Taylorcoercivity}
+Let $p$ range over a compact set, let $q_p\in[-1,1]$, and let
+$H_p(\lambda,v)$ be continuous for $|\lambda|\le\lambda_0$ and
+$-1\le v\le1$.  Suppose it is twice differentiable in $\lambda$ and
+\[
+ |\partial_{\lambda\lambda}H_p(\lambda,v)|\le M.
+\]
+Assume that, whenever $|v-q_p|\le\varepsilon$,
+\[
+ H_p(0,v)\le0,\qquad
+ \partial_\lambda H_p(0,v)(v-q_p)
+ \le-c|v-q_p|^2,
+ \qquad
+ |\partial_\lambda H_p(0,v)|\le M\lambda_0,
+\]
+and that
+\[
+ \inf_{|\lambda|\le\lambda_0}H_p(\lambda,v)\le-\kappa
+ \qquad\text{if }|v-q_p|\ge\varepsilon.
+\]
+Then, for a constant $c'>0$ independent of $p$,
+\[
+ \inf_{|\lambda|\le\lambda_0}H_p(\lambda,v)
+ \le-c'|v-q_p|^2.
+\]
+\end{lemma}
+
+\begin{proof}
+In the local region, set
+$\lambda=-\partial_\lambda H_p(0,v)/M$.  Taylor's theorem gives
+\[
+ H_p(\lambda,v)
+ \le-\frac{|\partial_\lambda H_p(0,v)|^2}{2M}
+ \le-\frac{c^2}{2M}|v-q_p|^2.
+\]
+Outside that region use the fixed loss and $|v-q_p|\le2$.
+\end{proof}
+
+\begin{proposition}
+\label{prop:GTcoercivity}
+There is a constant $c_{\cK}>0$ such that
+\begin{equation}
+ \frac1N\E\log Z^{(2)}_{N,s}(v)
+ \le 2P_s^*-c_{\cK}(v-q)^2
+ \label{eq:GTcoercivity}
+\end{equation}
+for all $(\beta,h,s)\in\cK\times[0,1]$, all $N$, and all
+$v\in\mathcal R_N$.
+\end{proposition}
+
+\begin{proof}
+We give the normalization in full.  This is important here: with a
+different factor in either the two-dimensional cumulative parameter
+or the Lagrange term, the mixed derivative below would not be the AT
+replicon.
+
+Recall $\xi_s$ from \eqref{eq:xqxi}.
+The covariance of the centered Gaussian part of \eqref{eq:path} is
+\begin{equation}
+ \E H_{N,s}^{\rm cen}(\sigma)H_{N,s}^{\rm cen}(\tau)
+ =N\xi_s(R(\sigma,\tau))-\frac{s\beta^2}{2}.
+ \label{eq:GTcovariance}
+\end{equation}
+If $G\sim N(0,s\beta^2/2)$ is independent and is added to every
+configuration, the covariance becomes exactly $N\xi_s(R)$.  The
+one-replica log partition function is shifted by $G$, and the
+two-replica log partition function by $2G$; their disorder
+expectations are unchanged.  Define
+\[
+ \widetilde H_{N,s}^{\rm cen}(\sigma)
+ \coloneqq H_{N,s}^{\rm cen}(\sigma)+G.
+\]
+For the remainder of this application we denote
+$\widetilde H_{N,s}^{\rm cen}$ again by $H_{N,s}^{\rm cen}$.  Thus its
+covariance is exactly $N\xi_s(R)$, and the normalization used in
+Appendix~\ref{app:specialGT} introduces no finite-$N$ error.
+
+After the harmless covariance normalization above, the specialized
+Guerra--Talagrand bound from Appendix~\ref{app:specialGT} gives
+\eqref{eq:GTfunctionalbound}.
+The statement is finite-volume and includes the rank-one pieces of the
+path; no limiting argument in $N$ is involved.
+
+We next identify the zero-source derivatives.  Suppose first that
+$v\ge0$.  On $[v,1]$, the PDE at $\lambda=0$ factorizes as
+\[
+ U^{0,v}_s(u,x_1,x_2)=\Psi(u,x_1)+\Psi(u,x_2).
+\]
+On $[0,v]$, set $V(u,x)\coloneqq U^{0,v}_s(u,x,x)$.  From
+\eqref{eq:2DParisiPDE},
+\[
+ \partial_uV+\frac{s\beta^2}{2}
+ \left(V_{xx}+\frac{x_q(u)}2V_x^2\right)=0,
+ \qquad V(v,x)=2\Psi(v,x).
+\]
+Hence $V=2\Psi$.  Combining this identity with
+\eqref{eq:GTcorrection} and the scalar trial value
+\eqref{eq:scalartrial} gives the exact flatness identity
+\begin{equation}
+ \mathfrak P_s(0,v)=2P_s^*,
+ \qquad 0\le v\le1.
+ \label{eq:GTflat}
+\end{equation}
+We now derive the multiplier derivative explicitly.  Set
+\[
+ W^{v}_s(u,x_1,x_2)
+ \coloneqq\left.\partial_\lambda
+ U^{\lambda,v}_s(u,x_1,x_2)\right|_{\lambda=0}.
+\]
+Direct differentiation of the terminal function gives
+\begin{equation}
+ f_0(x_1,x_2)=\log\cosh x_1+\log\cosh x_2,\qquad
+ \left.\partial_\lambda f_\lambda(x_1,x_2)\right|_{\lambda=0}
+ =\tanh x_1\tanh x_2.
+ \label{eq:GTterminalderivative}
+\end{equation}
+On $[v,1]$, $A_s^v=s\beta^2I_2$ and
+$U_s^{0,v}=\Psi(x_1)+\Psi(x_2)$.  Differentiating
+\eqref{eq:2DParisiPDE} gives
+\begin{align}
+ \partial_uW_s^v+\frac{s\beta^2}{2}\bigl\{
+ \partial_{11}W_s^v+\partial_{22}W_s^v
+ +2x_q(u)[\Psi_x(u,x_1)\partial_1W_s^v
+          +\Psi_x(u,x_2)\partial_2W_s^v]\bigr\}=0.
+ \label{eq:GTlinearizedupper}
+\end{align}
+Differentiating the scalar PDE in $x$ verifies that the solution with
+terminal data \eqref{eq:GTterminalderivative} is
+\begin{equation}
+ W_s^v(u,x_1,x_2)
+ =\Psi_x(u,x_1)\Psi_x(u,x_2),\qquad v\le u\le1.
+ \label{eq:GTlinearizedproduct}
+\end{equation}
+On $[0,v]$, put $\overline W(u,x)\coloneqq W_s^v(u,x,x)$.  Since
+$A_s^v=s\beta^2\begin{psmallmatrix}1&1\\1&1\end{psmallmatrix}$ and
+$U_s^{0,v}(u,x,x)=2\Psi(u,x)$, the restricted linearized equation is
+\begin{equation}
+ \partial_u\overline W+\frac{s\beta^2}{2}\overline W_{xx}
+ +s\beta^2x_q(u)\Psi_x(u,x)\overline W_x=0,\qquad
+ \overline W(v,x)=\Psi_x(v,x)^2.
+ \label{eq:GTlinearizedlower}
+\end{equation}
+The backward Kolmogorov formula for \eqref{eq:localfield} yields
+\[
+ \E W_s^v(0,Y_0,Y_0)=\E\Psi_x(v,X_v)^2=g_s(v).
+\]
+The correction $\mathcal L_s(v)$ is independent of $\lambda$, while
+$\partial_\lambda(-\lambda v)=-v$.  We have therefore proved
+\begin{equation}
+ \partial_\lambda\mathfrak P_s(0,v)=g_s(v)-v.
+ \label{eq:GTfirstderivative}
+\end{equation}
+In particular,
+\begin{equation}
+ \partial_v\partial_\lambda\mathfrak P_s(0,q)
+ =s\beta^2\E[\partial_{xx}\Psi(q,X_q)^2]-1
+ =s\alpha-1.
+ \label{eq:GTmixedderivative}
+\end{equation}
+This is the replicon mixed derivative with all normalizing factors
+displayed.
+
+The differentiated PDE also gives a constant $M_{\cK}>0$ such that
+\begin{equation}
+ \sup_{\substack{(\beta,h,s)\in\cK\times[0,1]\\
+                  -1\le v\le1,\ \lambda\in\mathbb R}}
+ |\partial_{\lambda\lambda}\mathfrak P_s(\lambda,v)|
+ \le M_{\cK}.
+ \label{eq:GTsecondderivative}
+\end{equation}
+This bound follows directly from the finite-step semigroup formula.
+For a Gaussian vector $G$ and $m>0$, write
+\[
+ \mathcal T_mF(x)=m^{-1}\log\E\exp\{mF(x+G)\},
+ \qquad \mathcal T_0F(x)=\E F(x+G).
+\]
+Then
+\begin{align*}
+ \partial_\lambda\mathcal T_mF
+ &=\E_m[\partial_\lambda F],\\
+ \partial_{\lambda\lambda}\mathcal T_mF
+ &=\E_m[\partial_{\lambda\lambda}F]
+   +m\Var_m(\partial_\lambda F),
+\end{align*}
+where $\E_m$ denotes the exponentially tilted expectation.  At the
+terminal time, $|\partial_\lambda f_\lambda|\le1$ and
+$0\le\partial_{\lambda\lambda}f_\lambda\le1$.  For every signed path
+$-1\le v\le1$, the only positive semigroup parameters are $1/2$ and
+$1$; splitting at $q$ and $|v|$ therefore creates at most two
+nonzero levels.  The zero level is an ordinary Gaussian expectation.
+Iterating the displayed identities gives
+$|\partial_\lambda U|\le1$ and, for example,
+$0\le\partial_{\lambda\lambda}U\le3$.  Averaging the base Gaussian and
+differentiating $-\lambda v$ do not change the second derivative.
+This proves \eqref{eq:GTsecondderivative} on the full signed range,
+uniformly in all parameters.
+
+We next compute the signed derivative by the same semigroups.  Suppose
+$-q\le v\le q$, put $r\coloneqq|v|$ and
+$\iota\coloneqq\operatorname{sgn}(v)$, with $\iota\coloneqq1$ when
+$v=0$.  The
+rank-one interval $[0,r]$ lies below the first mass $q$.  At
+$\lambda=0$, the $m=1$ recursion on $[q,1]$ and the diagonal heat
+recursion on $[r,q]$ give
+\[
+ U_s^{0,v}(r,x_1,x_2)=\Psi(r,x_1)+\Psi(r,x_2).
+\]
+The remaining $m=0$ recursion is linear.  Starting it from
+$(Y_0,Y_0)$ gives the pair
+\[
+ X_1\coloneqq Y_0+\beta\sqrt{s}\sqrt r\,Z,\qquad
+ X_2\coloneqq Y_0+\iota\beta\sqrt{s}\sqrt r\,Z
+\]
+at time $r$.  Each marginal is the scalar heat evolution, so
+\[
+ \E U_s^{0,v}(0,Y_0,Y_0)=2\E\Psi(0,Y_0).
+\]
+Together with \eqref{eq:GTcorrection}, this proves the flatness
+identity in \eqref{eq:signedflat}.
+
+For the derivative, \eqref{eq:GTterminalderivative} and
+\eqref{eq:GTlinearizedproduct} give
+$W_s^v(r,x_1,x_2)=\Psi_x(r,x_1)\Psi_x(r,x_2)$.  The explicit scalar
+heat semigroup gives
+\[
+ \Psi_x(r,x)=\E_G\tanh(x+\beta\sqrt{s}\sqrt{q-r}\,G).
+\]
+Introduce independent $G_1,G_2$, also independent of $(Y_0,Z)$, and
+put
+\[
+ Y_1\coloneqq Y_0+\beta\sqrt{s}\sqrt r\,Z
+ +\beta\sqrt{s}\sqrt{q-r}\,G_1,\qquad
+ Y_2\coloneqq Y_0+\iota\beta\sqrt{s}\sqrt r\,Z
+ +\beta\sqrt{s}\sqrt{q-r}\,G_2.
+\]
+Then both means are $h$, both variances are
+$\beta^2(1-s)q+s\beta^2q=\beta^2q$, and their covariance is
+$\beta^2(1-s)q+\iota s\beta^2r
+=\beta^2(1-s)q+s\beta^2v$.  It follows that
+\[
+ \E W_s^v(0,Y_0,Y_0)=\E\tanh(Y_1)\tanh(Y_2)=f_s(v).
+\]
+After differentiating $-\lambda v$, we have proved, rather than
+assumed,
+\begin{equation}
+ \mathfrak P_s(0,v)=2P_s^*,\qquad
+ \partial_\lambda\mathfrak P_s(0,v)=f_s(v)-v,
+ \label{eq:signedflat}
+\end{equation}
+where
+\begin{equation}
+ f_s(v)\coloneqq\E\tanh(Y_1(v))\tanh(Y_2(v)),
+ \quad
+ \begin{cases}
+ \operatorname{Var}Y_1(v)=\operatorname{Var}Y_2(v)=\beta^2q,\\
+ \operatorname{Cov}(Y_1(v),Y_2(v))
+ =\beta^2(1-s)q+s\beta^2v,
+ \end{cases}
+ \label{eq:signedf}
+\end{equation}
+and both Gaussian variables have mean $h$.  Gaussian differentiation
+and Cauchy--Schwarz give
+\begin{equation}
+ f_s'(v)=s\beta^2\E[\sech^2Y_1(v)\sech^2Y_2(v)]
+ \le s\alpha.
+ \label{eq:signedcontraction}
+\end{equation}
+Since $f_s(q)=q$, it follows that
+\begin{equation}
+ f_s(v)-v\ge(1-s\alpha)(q-v)
+ \qquad(-q\le v<q).
+ \label{eq:signedslope}
+\end{equation}
+Together with \eqref{eq:GTfirstderivative}, define on $[-q,1]$
+\begin{equation}
+ \eta_s(v)\coloneqq\partial_\lambda\mathfrak P_s(0,v)
+ =
+ \begin{cases}
+  f_s(v)-v,&-q\le v\le q,\\
+  g_s(v)-v,&q\le v\le1.
+ \end{cases}
+ \label{eq:GTeta}
+\end{equation}
+Equations \eqref{eq:signedslope} and \eqref{eq:linearATsign} show that,
+in a uniform neighborhood of $q$,
+\begin{equation}
+ \eta_s(v)(v-q)\le-c_{\cK}|v-q|^2.
+ \label{eq:GTetaslope}
+\end{equation}
+
+For $v<-q$, the strict signed gap can be computed directly.  Write
+$r\coloneqq|v|$ and $t\coloneqq s\beta^2(r-q)$.  When $s>0$, one has
+$t>0$.
+On $[r,1]$
+the zero-source PDE factorizes, and since
+\[
+ \Psi(u,x)=\log\cosh x+\frac{s\beta^2}{2}(1-u),
+ \qquad q\le u\le1,
+\]
+its value at time $r$ is
+\[
+ U_s^{0,v}(r,x_1,x_2)
+ =\log\cosh x_1+\log\cosh x_2+s\beta^2(1-r).
+\]
+On $[q,r]$,
+$A_s^v=s\beta^2\begin{psmallmatrix}1&-1\\-1&1\end{psmallmatrix}$
+and $\gamma_v=1/2$.  Thus $W\coloneqq\exp(U_s^{0,v}/2)$ solves the linear
+backward heat equation in the direction $(1,-1)$, and
+\begin{align}
+ U_s^{0,v}(q,x_1,x_2)
+ ={}&s\beta^2(1-r)\nonumber\\
+ &+2\log\E\sqrt{
+   \cosh(x_1+\sqrt t\,Z)\cosh(x_2-\sqrt t\,Z)}.
+ \label{eq:signedhopfcole}
+\end{align}
+Cauchy--Schwarz and
+$\E\cosh(x+\sqrt t\,Z)=e^{t/2}\cosh x$ give
+\begin{equation}
+ U_s^{0,v}(q,x_1,x_2)
+ \le \Psi(q,x_1)+\Psi(q,x_2).
+ \label{eq:signedCS}
+\end{equation}
+Equality in Cauchy--Schwarz would require
+$\cosh(x_1+y)$ and $\cosh(x_2-y)$ to be proportional for every
+$y\in\mathbb R$, which is equivalent to $x_1=-x_2$.
+
+Below $q$, the PDE is linear.  Starting from $(Y_0,Y_0)$, its two
+coordinates at time $q$ are
+\[
+ (Y_0+\beta\sqrt{s}\sqrt q\,Z,\;
+  Y_0-\beta\sqrt{s}\sqrt q\,Z).
+\]
+Their sum is $2Y_0$.  Since $h>0$, one has
+$\mathbb P(Y_0=0)=0$ (also when $s=1$, because then $Y_0=h$).
+Therefore \eqref{eq:signedCS} is strict after averaging.  Its two
+marginals both have the scalar local-field law, so
+\begin{equation}
+ \E U_s^{0,v}(0,Y_0,Y_0)<2\E\Psi(0,Y_0),
+ \qquad v<-q, s>0.
+ \label{eq:signedstrictPDE}
+\end{equation}
+The correction identity \eqref{eq:GTcorrection} now yields
+\begin{equation}
+ \mathfrak P_s(0,v)<2P_s^*,
+ \qquad v<-q, s>0.
+ \label{eq:signedpositivity}
+\end{equation}
+This is the signed GT positivity step in the present RS
+normalization, derived without a Parisi free-energy formula.
+
+We now prove the required uniformity, paying particular attention to
+$s\downarrow0$.  At $s=0$ the interaction coefficient
+$\beta\sqrt{s}$ vanishes, and
+\[
+ \mathfrak P_0(\lambda,v)
+ =2\log2+\E f_\lambda(Y_0,Y_0)-\lambda v.
+\]
+The first derivative at zero is $q-v$, and the second derivative is
+the variance, under the one-site coupled measure, of
+$\varepsilon_1\varepsilon_2$; it is at most one.  Taylor's theorem
+therefore gives, for every $\lambda\in\mathbb R$,
+\begin{equation}
+ \mathfrak P_0(\lambda,v)
+ \le2P_0^*+\lambda(q-v)+\frac{\lambda^2}{2}.
+ \label{eq:GTendpoint}
+\end{equation}
+For $v\le-q$, take $\lambda=v-q$.  By \eqref{eq:qcompact},
+\begin{equation}
+ \mathfrak P_0(v-q,v)
+ \le2P_0^*-\frac12(v-q)^2
+ \le2P_0^*-2q_{\cK}^2.
+ \label{eq:GTsmallsgapzero}
+\end{equation}
+By Lemma~\ref{lem:GTcontinuity},
+$\mathfrak P_s(\lambda,v)-2P_s^*$ is jointly continuous in
+$(\beta,h,s,\lambda,v)$ on compact sets, including at $s=0$, $v=0$,
+and $v=\pm q$.  Applying this continuity to
+$\lambda=v-q$ and the compact set
+\[
+ \{(\beta,h,v):(\beta,h)\in\cK,\ -1\le v\le-q(\beta,h)\}
+\]
+shows that there exists $s_0>0$ such that
+\begin{equation}
+ \mathfrak P_s(v-q,v)\le2P_s^*-q_{\cK}^2,
+ \qquad 0\le s\le s_0,\quad v\le-q.
+ \label{eq:GTsmallsgap}
+\end{equation}
+
+It remains to treat $s\in[s_0,1]$.  At $v=-q$,
+\eqref{eq:signedslope} gives
+\[
+ \partial_\lambda\mathfrak P_s(0,-q)
+ \ge2\delta_{\cK}q_{\cK}.
+\]
+Joint continuity of this derivative from Lemma~\ref{lem:GTcontinuity} and
+\eqref{eq:GTsecondderivative} yield $\eta_{\cK}>0$ such that, for
+$-q-\eta_{\cK}\le v\le-q$ and $s\in[s_0,1]$,
+\[
+ \partial_\lambda\mathfrak P_s(0,v)
+ \ge\delta_{\cK}q_{\cK}.
+\]
+The Cauchy--Schwarz argument above gives
+$\mathfrak P_s(0,v)\le2P_s^*$ throughout this strip.  Taylor's theorem,
+with
+\[
+ \ell_{\cK}\coloneqq
+ \frac{\delta_{\cK}q_{\cK}}{M_{\cK}},
+ \qquad\lambda\coloneqq-\ell_{\cK},
+\]
+therefore gives
+\[
+ \mathfrak P_s(-\ell_{\cK},v)
+ \le2P_s^*-\frac12\delta_{\cK}q_{\cK}\ell_{\cK}.
+\]
+On the remaining compact set
+\[
+ \{(\beta,h,s,v):(\beta,h)\in\cK,\ s_0\le s\le1,\
+                 -1\le v\le-q-\eta_{\cK}\},
+\]
+\eqref{eq:signedpositivity} is strict and continuous, so its minimum
+gap is also positive.  Combining this with
+\eqref{eq:GTsmallsgap} proves that, for some
+$\kappa_{\cK}>0$,
+\begin{equation}
+ \inf_{\lambda\in\mathbb R}\mathfrak P_s(\lambda,v)
+ \le2P_s^*-\kappa_{\cK},\qquad v\le-q,
+ \label{eq:GTuniformnegativegap}
+\end{equation}
+uniformly on $\cK\times[0,1]$.
+
+We finish with one Taylor argument.  Put
+\[
+ H_{(\beta,h,s)}(\lambda,v)
+ \coloneqq\mathfrak P_s(\lambda,v)-2P_s^*.
+\]
+In a uniform neighborhood of $q$, the flatness identities
+\eqref{eq:GTflat} and \eqref{eq:signedflat}, together with
+\eqref{eq:GTetaslope}, verify the local hypotheses of
+Lemma~\ref{lem:Taylorcoercivity}; shrink the neighborhood if necessary.
+Outside that neighborhood, \eqref{eq:signedslope} on $[-q,q)$ and
+\eqref{eq:ATsign} on $(q,1]$ give a fixed loss by a bounded multiplier,
+using \eqref{eq:GTsecondderivative} and compactness.  The range
+$v\le-q$ is covered by \eqref{eq:GTuniformnegativegap}; all the
+multipliers used in its proof lie in a fixed compact interval.
+Lemma~\ref{lem:Taylorcoercivity} therefore yields
+\[
+ \inf_{\lambda\in\mathbb R}\mathfrak P_s(\lambda,v)
+ \le2P_s^*-c_{\cK}(v-q)^2.
+\]
+Combining this with \eqref{eq:GTfunctionalbound} proves
+\eqref{eq:GTcoercivity}.
+\end{proof}
+
+\begin{remark}
+The additional parameter \eqref{eq:halfparameter} is the missing
+parameter in the scalar Lata\l a interpolation.  If it is omitted, the
+mixed derivative contains anomalous and longitudinal fluctuations.
+With it, \eqref{eq:GTmixedderivative} is exactly
+$-(1-s\alpha)$.
+\end{remark}
+
+\section{Preliminary overlap concentration}\label{sec:concentration}
+
+\subsection{Finite-volume Gronwall closure}\label{subsec:gronwall}
+
+Choose once and for all
+\begin{equation}
+ 0<\lambda_0<c_{\cK}.
+ \label{eq:lambda0}
+\end{equation}
+Define the quadratically coupled pressure and its normalized excess by
+\begin{align}
+ p^{(2)}_{N,s}(\lambda_0)
+ &\coloneqq
+ \frac1{2N}\E\log
+ \sum_{\sigma^1,\sigma^2}
+ \exp\left\{
+ H_{N,s}(\sigma^1)+H_{N,s}(\sigma^2)
+ +\frac{\lambda_0N}{2}Q_{12}^2\right\},
+ \label{eq:quadraticpressure}\\
+ F_{N,s}(\lambda_0)
+ &\coloneqq
+ p^{(2)}_{N,s}(\lambda_0)-\phi_N(s)
+ =
+ \frac1{2N}\E\log
+ \braket{e^{\lambda_0NQ_{12}^2/2}}_s.
+ \label{eq:normalizedcoupling}
+\end{align}
+
+\begin{lemma}
+\label{lem:sublinearpressure}
+With
+\[
+ \epsilon_N\coloneqq C_{\cK}
+ \sqrt{\frac{\log(N+1)}N}+\frac{C_{\cK}\log(N+1)}N,
+\]
+one has
+\begin{equation}
+ p^{(2)}_{N,s}(\lambda_0)\le P_s^*+\epsilon_N
+ \label{eq:pressureenvelope}
+\end{equation}
+uniformly on $\cK\times[0,1]$.
+\end{lemma}
+
+\begin{proof}
+Let $L_v\coloneqq\log Z^{(2)}_{N,s}(v)$.  Each $L_v$ is a Lipschitz function
+of the Gaussian disorder with squared Lipschitz constant at most
+$C_{\cK}N$.  Indeed,
+\[
+ \left|\partial_{g_{ij}}L_v\right|
+ \le\frac{2\beta\sqrt s}{\sqrt N},\qquad
+ \left|\partial_{z_i}L_v\right|
+ \le2\beta\sqrt{(1-s)q},
+\]
+and summing the squares over $i<j$ and $i$ gives the claim.  Hence
+\begin{equation}
+ \E\max_{v\in\mathcal R_N}(L_v-\E L_v)
+ \le C_{\cK}\sqrt{N\log(N+1)}.
+ \label{eq:gaussianmax}
+\end{equation}
+Using $|\mathcal R_N|=N+1$, \eqref{eq:GTcoercivity}, and
+$\lambda_0<c_{\cK}$,
+\begin{align*}
+ 2Np^{(2)}_{N,s}(\lambda_0)
+ &=
+ \E\log\sum_{v\in\mathcal R_N}
+ \exp\left\{L_v+\frac{\lambda_0N}{2}(v-q)^2\right\}\\
+ &\le
+ \log(N+1)+
+ \max_v\left\{\E L_v+\frac{\lambda_0N}{2}(v-q)^2\right\}
+ +C_{\cK}\sqrt{N\log(N+1)}\\
+ &\le2NP_s^*+2N\epsilon_N.
+\end{align*}
+This proves \eqref{eq:pressureenvelope}.
+\end{proof}
+
+Put
+\begin{equation}
+ D_N(s)\coloneqq P_s^*-\phi_N(s).
+ \label{eq:DN}
+\end{equation}
+At $s=0$, $D_N(0)=0$.  For $0<s<1$, differentiating under the
+expectation and applying \eqref{eq:GIBP} to the variables $g_{ij}$ and
+$z_i$ gives
+\begin{align*}
+ \phi_N'(s)
+ ={}&\frac{\beta^2}{2N^2}\sum_{i<j}
+ \E\left[1-\braket{\sigma_i\sigma_j}_s^2\right]
+ -\frac{\beta^2q}{2N}\sum_i
+ \E\left[1-\braket{\sigma_i}_s^2\right]\\
+ ={}&\frac{\beta^2}{4}
+ \left((1-q)^2-\nu_s[Q_{12}^2]\right).
+\end{align*}
+Here we used
+\[
+ \sum_{i<j}\sigma_i^1\sigma_j^1\sigma_i^2\sigma_j^2
+ =\frac12(N^2R_{12}^2-N),
+ \qquad
+ \frac1N\sum_i\E\braket{\sigma_i^1\sigma_i^2}_s
+ =\nu_s[R_{12}].
+\]
+Combining this identity with \eqref{eq:RSpathvalue} yields
+\begin{equation}
+ D_N'(s)=\frac{\beta^2}{4}A_s.
+ \label{eq:DNprime}
+\end{equation}
+Both sides extend continuously to $s=0,1$ by finite-dimensional
+Gaussian dominated convergence, so the identity also holds for the
+one-sided endpoint derivatives.
+On the other hand, convexity in the quadratic-coupling parameter gives
+\[
+ \frac14A_s
+ =\left.\partial_\lambda F_{N,s}(\lambda)\right|_{\lambda=0+}
+ \le\frac{F_{N,s}(\lambda_0)}{\lambda_0}.
+\]
+By \eqref{eq:pressureenvelope},
+\[
+ F_{N,s}(\lambda_0)
+ \le D_N(s)+\epsilon_N.
+\]
+Consequently,
+\begin{equation}
+ D_N'(s)
+ \le\frac{\beta^2}{\lambda_0}
+ \bigl(D_N(s)+\epsilon_N\bigr).
+ \label{eq:gronwallDN}
+\end{equation}
+Gronwall's inequality and compactness of $\cK$ imply
+\begin{equation}
+ \sup_{\cK\times[0,1]}D_N(s)\le C_{\cK}\epsilon_N,
+ \qquad
+ \sup_{\cK\times[0,1]}A_s\le C_{\cK}\epsilon_N.
+ \label{eq:preconcentration}
+\end{equation}
+This is the first, deliberately nonoptimal, concentration estimate.
+Its role is to normalize the coupled pressure without invoking the
+Parisi formula.
+
+\subsection{Fixed-deviation overlap concentration}\label{subsec:tails}
+
+\begin{corollary}
+\label{cor:tail}
+For every $\varepsilon>0$, there are constants
+$c_{\cK,\varepsilon},C_{\cK,\varepsilon}>0$ such that
+\begin{equation}
+ \sup_{\substack{(\beta,h)\in\cK\\0\le s\le1}}
+ \nu_s\bigl[|Q_{12}|\ge\varepsilon\bigr]
+ \le C_{\cK,\varepsilon}e^{-c_{\cK,\varepsilon}N}.
+ \label{eq:tail}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+Let
+\[
+ Y_{N,s}
+ \coloneqq\log\braket{e^{\lambda_0NQ_{12}^2/2}}_s.
+\]
+By \eqref{eq:normalizedcoupling},
+\eqref{eq:pressureenvelope}, and
+\eqref{eq:preconcentration},
+\[
+ \E Y_{N,s}=2NF_{N,s}(\lambda_0)
+ \le C_{\cK}N\epsilon_N=o(N)
+\]
+uniformly.  As a difference of one coupled and two uncoupled log
+partition functions, $Y_{N,s}$ has squared Gaussian Lipschitz constant
+at most $C_{\cK}N$.  Gaussian concentration therefore gives, for all
+large enough $N$,
+\[
+ \mathbb P\left(
+ Y_{N,s}>\frac{\lambda_0\varepsilon^2N}{4}\right)
+ \le C_{\cK,\varepsilon}e^{-c_{\cK,\varepsilon}N}.
+\]
+Outside this exceptional event,
+\[
+ \braket{\1_{\{|Q_{12}|\ge\varepsilon\}}}_s
+ \le
+ \exp\left\{-\frac{\lambda_0\varepsilon^2N}{2}
+ +Y_{N,s}\right\}
+ \le e^{-\lambda_0\varepsilon^2N/4}.
+\]
+Taking disorder expectation and enlarging the constant for the
+finitely many remaining $N$ proves \eqref{eq:tail}.
+\end{proof}
+
+\section{Cavity closure}\label{sec:cavityclosure}
+
+\subsection{The finite-size cavity system}\label{subsec:cavity}
+
+The next proposition is the one-species cavity fluctuation system.  We
+include its derivation because the size and form of its remainder are
+essential for the absorption step.
+Recall from \eqref{eq:ABC} that
+\[
+ A_s=\nu_s[Q_{12}^2],\qquad
+ B_s=\nu_s[Q_{12}Q_{13}],\qquad
+ C_s=\nu_s[Q_{12}Q_{34}].
+\]
+
+\begin{proposition}
+\label{prop:cavity}
+Let $x_s\coloneqq(A_s,B_s,C_s)^{\mathsf T}$, and define
+$\rho_{N,s}\in\R^3$ by
+\begin{equation}
+ (I-sL)x_s=\frac1N\theta+\rho_{N,s},
+ \label{eq:cavitysystem}
+\end{equation}
+where
+\begin{equation}
+ \theta\coloneqq
+ \begin{pmatrix}
+ 1-q^2\\ q-q^2\\ r-q^2
+ \end{pmatrix},
+ \label{eq:theta}
+\end{equation}
+\begin{equation}
+ L\coloneqq
+ \begin{pmatrix}
+ b_2&-4b_1&3b_0\\
+ b_1&b_2-2b_1-3b_0&6b_0-3b_1\\
+ b_0&4b_1-8b_0&b_2-8b_1+10b_0
+ \end{pmatrix},
+ \label{eq:L}
+\end{equation}
+with
+\begin{equation}
+ b_2\coloneqq\beta^2(1-q^2),\qquad
+ b_1\coloneqq\beta^2q(1-q),\qquad
+ b_0\coloneqq\beta^2(r-q^2),
+ \label{eq:bs}
+\end{equation}
+Then, uniformly on $\cK\times[0,1]$,
+\begin{equation}
+ \norm{\rho_{N,s}}_\infty
+ \le C_{\cK}
+ \left(N^{-3/2}+\nu_s[|Q_{12}|^3]\right).
+ \label{eq:rho}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Write $\varepsilon_a\coloneqq\sigma_N^a$ and
+\[
+ Q^-_{ab}\coloneqq\frac1N\sum_{i<N}\sigma_i^a\sigma_i^b-q.
+\]
+By site exchangeability after disorder averaging,
+\begin{align}
+ A_s
+ &=\nu_s\bigl[Q_{12}(\varepsilon_1\varepsilon_2-q)\bigr],\nonumber\\
+ B_s
+ &=\nu_s\bigl[Q_{12}(\varepsilon_1\varepsilon_3-q)\bigr],\nonumber\\
+ C_s
+ &=\nu_s\bigl[Q_{12}(\varepsilon_3\varepsilon_4-q)\bigr].
+ \label{eq:siteexchange}
+\end{align}
+Since
+$Q_{12}=Q^-_{12}+N^{-1}\varepsilon_1\varepsilon_2$,
+each line consists of a cavity term involving $Q^-_{12}$ and a
+diagonal term of order $N^{-1}$; explicitly,
+\begin{align}
+ A_s&=\nu_s[Q^-_{12}(\varepsilon_1\varepsilon_2-q)]
+ +\frac1N\nu_s[\varepsilon_1\varepsilon_2
+                    (\varepsilon_1\varepsilon_2-q)],\nonumber\\
+ B_s&=\nu_s[Q^-_{12}(\varepsilon_1\varepsilon_3-q)]
+ +\frac1N\nu_s[\varepsilon_1\varepsilon_2
+                    (\varepsilon_1\varepsilon_3-q)],\nonumber\\
+ C_s&=\nu_s[Q^-_{12}(\varepsilon_3\varepsilon_4-q)]
+ +\frac1N\nu_s[\varepsilon_1\varepsilon_2
+                    (\varepsilon_3\varepsilon_4-q)].
+ \label{eq:cavitydecomposition}
+\end{align}
+
+We define the last-spin interpolation explicitly.  Write
+$\sigma\coloneqq(\rho,\varepsilon)$ with
+$\rho\in\{-1,1\}^{N-1}$ and let
+\begin{align*}
+ H^-_{N,s}(\rho)
+ \coloneqq{}&\frac{\beta\sqrt s}{\sqrt N}
+ \sum_{1\le i<j<N}g_{ij}\rho_i\rho_j
+ +\sum_{i<N}\bigl(h+\beta\sqrt{(1-s)q}\,z_i\bigr)\rho_i.
+\end{align*}
+Let $\widehat z$ be a standard Gaussian independent of all existing
+disorder.  For $0\le u\le1$, set
+\begin{align}
+ H_{N,s,u}(\rho,\varepsilon)
+ \coloneqq{}&H^-_{N,s}(\rho)
+ +\bigl(h+\beta\sqrt{(1-s)q}\,z_N\bigr)\varepsilon\nonumber\\
+ &+\frac{\beta\sqrt{su}}{\sqrt N}
+   \sum_{i<N}g_{iN}\rho_i\varepsilon
+ +\beta\sqrt{s(1-u)q}\,\widehat z\,\varepsilon .
+ \label{eq:cavityHamiltonian}
+\end{align}
+Denote its disorder--Gibbs expectation by $\nu_{s,u}$.  At $u=1$,
+\eqref{eq:cavityHamiltonian} is exactly \eqref{eq:path}, so
+$\nu_{s,1}=\nu_s$.  At $u=0$, the last spin is independent of the
+first $N-1$ spins and sees the Gaussian field
+\[
+ Y\stackrel d=h+\beta\sqrt q\,Z.
+\]
+Conditional on $Y$, its replicas are independent, with mean
+$\tanh Y$.  Thus, at the decoupled endpoint,
+\begin{equation}
+ \E_0[\varepsilon_a\varepsilon_b]=q,\qquad
+ \E_0[\varepsilon_a\varepsilon_b\varepsilon_c\varepsilon_d]=r
+ \label{eq:epsilonmoments}
+\end{equation}
+for distinct indices.
+
+For completeness, we differentiate this interpolation.  The
+derivative of the covariance between the last-spin parts of two
+configurations $(\rho,\varepsilon)$ and
+$(\rho',\varepsilon')$ is
+\begin{equation}
+ s\beta^2\varepsilon\varepsilon'
+ \left(\frac1N\sum_{i<N}\rho_i\rho_i'-q\right)
+ =s\beta^2\varepsilon\varepsilon'Q^-(\rho,\rho').
+ \label{eq:cavitycovariancederivative}
+\end{equation}
+For a bounded function $F$ of $n$ replicas, differentiating the
+normalized Gibbs expectation for $0<u<1$ and applying Gaussian
+integration by parts to \eqref{eq:cavitycovariancederivative} gives
+\begin{align}
+ \frac{\dd}{\dd u}\nu_{s,u}[F]
+ =s\beta^2\Bigg\{&
+ \sum_{1\le a<b\le n}
+ \nu_{s,u}[F\varepsilon_a\varepsilon_bQ^-_{ab}]
+ -n\sum_{a=1}^n
+ \nu_{s,u}[F\varepsilon_a\varepsilon_{n+1}Q^-_{a,n+1}]
+ \nonumber\\
+ &+\frac{n(n+1)}2
+ \nu_{s,u}[F\varepsilon_{n+1}\varepsilon_{n+2}
+ Q^-_{n+1,n+2}]\Bigg\}.
+ \label{eq:cavityderivative}
+\end{align}
+Both sides of \eqref{eq:cavityderivative} extend continuously to
+$u=0,1$.  We use those extensions for the one-sided endpoint
+derivatives below; thus the square-root coefficients in
+\eqref{eq:cavityHamiltonian} cause no endpoint singularity.
+To see all coefficients in one formula, define the replica operator
+\begin{align*}
+ \mathcal D_nF\coloneqq{}&
+ \sum_{1\le a<b\le n}
+ F\varepsilon_a\varepsilon_bQ^-_{ab}
+ -n\sum_{a=1}^n
+ F\varepsilon_a\varepsilon_{n+1}Q^-_{a,n+1}\\
+ &+\frac{n(n+1)}2
+ F\varepsilon_{n+1}\varepsilon_{n+2}Q^-_{n+1,n+2}.
+\end{align*}
+Then \eqref{eq:cavityderivative} is simply
+$\frac{\dd}{\dd u}\nu_{s,u}[F]
+ =s\beta^2\nu_{s,u}[\mathcal D_nF]$.  This form also makes the
+second differentiation below unambiguous: each application of
+$\mathcal D$ appends exactly one centered cavity-overlap factor, and
+the replica number is increased only to include the displayed new
+indices.
+
+\medskip
+\noindent\emph{Cavity replacement lemma.}
+The following estimate permits us to replace every intermediate
+quadratic cavity moment by its full endpoint counterpart.  By
+construction, $\nu_{s,1}=\nu_s$.  Set
+\begin{equation}
+ M_3(u)\coloneqq\nu_{s,u}[|Q^-_{12}|^3].
+ \label{eq:cavityM3}
+\end{equation}
+Applying \eqref{eq:cavityderivative} with
+$F=|Q^-_{12}|^3$, using $|Q^-_{ab}|\le2$ and replica symmetry, gives
+\begin{equation}
+ |M_3'(u)|\le C_{\cK}M_3(u).
+ \label{eq:cavityM3derivative}
+\end{equation}
+Indeed, every term on the right is bounded by
+$2\nu_{s,u}[|Q^-_{12}|^3]$.  Integrating backward from $u=1$ and applying
+Gronwall's inequality yields
+\begin{equation}
+ \sup_{0\le u\le1}M_3(u)\le C_{\cK}M_3(1).
+ \label{eq:cavityM3comparison}
+\end{equation}
+Since
+$Q^-_{12}=Q_{12}-N^{-1}\varepsilon_1\varepsilon_2$ and
+$|\varepsilon_1\varepsilon_2|=1$, the inequality
+$(x+y)^3\le4(x^3+y^3)$ for $x,y\ge0$ gives
+\begin{equation}
+ M_3(1)\le C\left(\nu_s[|Q_{12}|^3]+N^{-3}\right).
+ \label{eq:cavityM3endpoint}
+\end{equation}
+
+Next let $P^-$ be any product of two centered cavity overlaps, for
+example $(Q^-_{12})^2$, $Q^-_{12}Q^-_{13}$, or
+$Q^-_{12}Q^-_{34}$.  Differentiating $\nu_{s,u}[P^-]$ by
+\eqref{eq:cavityderivative} produces products of three centered cavity
+overlaps, possibly multiplied by spin variables.  By H\"older's
+inequality and replica symmetry, each such term is bounded by $M_3(u)$.
+Consequently,
+\begin{equation}
+ \left|\nu_{s,u}[P^-]-\nu_{s,v}[P^-]\right|
+ \le C_{\cK}|u-v|M_3(1),
+ \qquad 0\le u,v\le1.
+ \label{eq:cavityquadraticcomparison}
+\end{equation}
+At the full endpoint, replacing either factor $Q^-_{ab}$ by $Q_{ab}$
+costs at most
+$C(N^{-1}|Q_{cd}|+N^{-2})$.  The pointwise Young inequality
+\begin{equation}
+ \frac{|x|}{N}\le\frac{|x|^3}{3}+\frac{2}{3N^{3/2}}
+ \label{eq:cavityYoung}
+\end{equation}
+therefore implies, for each of the three quadratic overlap patterns,
+\begin{equation}
+ \left|\nu_{s,0}[P^-]-\nu_s[P]\right|
+ \le C_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3/2}\right),
+ \label{eq:cavityendpointcomparison}
+\end{equation}
+where $P$ denotes the corresponding product of full centered overlaps.
+
+\medskip
+\noindent\emph{Cavity Taylor lemma.}
+For each of the three centered cavity functions $F$ in
+\eqref{eq:cavitydecomposition}, one has $\nu_{s,0}[F]=0$ and
+\begin{equation}
+ \nu_{s,1}[F]=
+ \left.\frac{\dd}{\dd u}\nu_{s,u}[F]\right|_{u=0}
+ +O_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3/2}\right).
+ \label{eq:cavityTaylorlemma}
+\end{equation}
+Indeed, the vanishing follows from \eqref{eq:epsilonmoments}, and the
+first-order Taylor formula gives the derivative in
+\eqref{eq:cavityTaylorlemma} plus
+\[
+ \int_0^1(1-u)\frac{\dd^2}{\dd u^2}\nu_{s,u}[F]\,\dd u.
+\]
+Formula \eqref{eq:cavityderivative} first
+expresses the derivatives at $u=0$ in terms of the decoupled quadratic
+moments.  Replacing those moments by $A_s,B_s,C_s$ using
+\eqref{eq:cavityendpointcomparison} changes each equation by at most
+$C_{\cK}(\nu_s[|Q_{12}|^3]+N^{-3/2})$.  Consequently,
+\begin{align}
+ A_s={}&s\bigl(b_2A_s-4b_1B_s+3b_0C_s\bigr)
+       +\frac{1-q^2}{N}
+       +O_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3/2}\right),\nonumber\\
+ B_s={}&s\bigl(b_1A_s+(b_2-2b_1-3b_0)B_s
+                    +(6b_0-3b_1)C_s\bigr)
+       +\frac{q-q^2}{N}
+       +O_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3/2}\right),\nonumber\\
+ C_s={}&s\bigl(b_0A_s+(4b_1-8b_0)B_s
+                    +(b_2-8b_1+10b_0)C_s\bigr)
+       +\frac{r-q^2}{N}
+       +O_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3/2}\right).
+ \label{eq:cavitytable}
+\end{align}
+For example, the first line uses $n=2$.  Before replacing decoupled
+quadratic moments by endpoint moments, the three terms in
+\eqref{eq:cavityderivative} are
+\[
+ (1-q^2)\nu_{s,0}[(Q^-_{12})^2],\qquad
+ -4q(1-q)\nu_{s,0}[Q^-_{12}Q^-_{13}],\qquad
+ 3(r-q^2)\nu_{s,0}[Q^-_{12}Q^-_{34}].
+\]
+Equation \eqref{eq:cavityendpointcomparison} turns these into the first
+identity in \eqref{eq:cavitytable}, with an error of the required size.
+Here is a direct rule that verifies every entry.  Conditional on $Y$,
+the $\varepsilon_a$ are independent with mean $\tanh Y$.  Hence a
+spin monomial has expectation $1$, $q$, or $r$ according as the
+number of replica indices occurring an odd number of times is
+$0$, $2$, or $4$.  In particular, if $e$ is a replica edge, then
+\[
+ \E_0[(\varepsilon_p\varepsilon_q-q)\varepsilon_e]
+ =
+ \begin{cases}
+  1-q^2,&e=\{p,q\},\\
+  q-q^2,&e\text{ shares exactly one endpoint with }\{p,q\},\\
+  r-q^2,&e\text{ is disjoint from }\{p,q\}.
+ \end{cases}
+\]
+Counting the old, one-new, and two-new edges in $\mathcal D_2$,
+$\mathcal D_3$, and $\mathcal D_4$ gives respectively
+\[
+ (b_2,-4b_1,3b_0),
+\]
+\[
+ (b_1,\ b_2-2b_1-3b_0,\ 6b_0-3b_1),
+\]
+and
+\[
+ (b_0,\ 4b_1-8b_0,\ b_2-8b_1+10b_0),
+\]
+which verifies all three identities in \eqref{eq:cavitytable}.
+
+The diagonal terms come from
+$N^{-1}\varepsilon_1\varepsilon_2$ in the exact identity
+$Q_{12}=Q^-_{12}+N^{-1}\varepsilon_1\varepsilon_2$.  For example,
+\[
+ \E_0[\varepsilon_1\varepsilon_2
+       (\varepsilon_1\varepsilon_3-q)]
+ =\E\tanh^2Y-q^2=q-q^2.
+\]
+The other two diagonal expectations are
+$\E_0[\varepsilon_1\varepsilon_2
+(\varepsilon_1\varepsilon_2-q)]=1-q^2$ and
+$\E_0[\varepsilon_1\varepsilon_2
+(\varepsilon_3\varepsilon_4-q)]=r-q^2$.
+
+It remains to bound the integral Taylor remainder.  Each of the three
+cavity functions is a bounded spin factor times one centered cavity
+overlap.  The first application of $\mathcal D_n$ gives a finite sum
+of bounded spin factors times two centered overlaps.  Applying
+\eqref{eq:cavityderivative} once more, now with all replica indices
+appearing in each summand included, gives a finite sum of terms
+\[
+ c\,\nu_{s,u}\bigl[
+ \chi(\varepsilon)\,Q^-_{a_1b_1}Q^-_{a_2b_2}Q^-_{a_3b_3}\bigr],
+\]
+where $|c|\le C$ and $|\chi|\le C$; the number of terms is bounded
+because the original replica numbers are only $2$, $3$, and $4$.
+H\"older's inequality,
+replica symmetry, \eqref{eq:cavityM3comparison}, and
+\eqref{eq:cavityM3endpoint} give, uniformly in $u$,
+\begin{equation}
+ \left|\frac{\dd^2}{\dd u^2}\nu_{s,u}[F]\right|
+ \le C_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3}\right)
+ \label{eq:cavitysecondderivativebound}
+\end{equation}
+for each of the three cavity functions $F$ occurring in
+\eqref{eq:cavitydecomposition}.  Hence their integral Taylor remainders obey
+the same bound.
+
+For the $N^{-1}$ diagonal terms, one differentiation gives a bounded
+spin observable times one centered cavity overlap.  Thus their change
+between $u=0$ and $u=1$ is bounded by
+\[
+ \frac{C_{\cK}}N\sup_{0\le u\le1}\nu_{s,u}[|Q^-_{12}|].
+\]
+Using \eqref{eq:cavityYoung} pointwise and then
+\eqref{eq:cavityM3comparison}--\eqref{eq:cavityM3endpoint}, this is at
+most
+\begin{equation}
+ C_{\cK}\left(\nu_s[|Q_{12}|^3]+N^{-3/2}\right).
+ \label{eq:cavitydiagonalerror}
+\end{equation}
+Combining \eqref{eq:cavityendpointcomparison},
+\eqref{eq:cavitysecondderivativebound}, and
+\eqref{eq:cavitydiagonalerror} proves \eqref{eq:rho}.  The coefficient
+table \eqref{eq:cavitytable} is therefore equivalent to
+\eqref{eq:cavitysystem} with the stated remainder.
+\end{proof}
+
+\subsection{Stability of the cavity matrix}\label{subsec:stability}
+
+Put
+\begin{equation}
+ \gamma'\coloneqq1-4q+3r,\qquad
+ \gamma''\coloneqq2q+q^2-3r.
+ \label{eq:gammas}
+\end{equation}
+The change of coordinates
+\[
+ S\coloneqq
+ \begin{pmatrix}
+ 0&2&-3\\
+ 1&-4&3\\
+ 1&-2&1
+ \end{pmatrix}
+\]
+gives, by direct multiplication,
+\begin{equation}
+ SLS^{-1}
+ =
+ \begin{pmatrix}
+ \beta^2\gamma'&\beta^2\gamma''&0\\
+ 0&\beta^2\gamma'&0\\
+ 0&0&\alpha
+ \end{pmatrix}.
+ \label{eq:triangular}
+\end{equation}
+Hence
+\begin{equation}
+ \det(I-sL)
+ =(1-s\alpha)(1-s\beta^2\gamma')^2.
+ \label{eq:det}
+\end{equation}
+Since $r\le q$,
+\[
+ \alpha-\beta^2\gamma'
+ =2\beta^2(q-r)\ge0.
+\]
+Thus $\beta^2\gamma'\le\alpha<1$.  If $\gamma'<0$, then
+$1-s\beta^2\gamma'\ge1$; if $\gamma'\ge0$, then
+$1-s\beta^2\gamma'\ge1-\alpha$.  Together with
+\eqref{eq:delta}, this gives
+\begin{equation}
+ M_{\cK}\coloneqq
+ \sup_{\substack{(\beta,h)\in\cK\\0\le s\le1}}
+ \norm{(I-sL)^{-1}}_\infty<\infty.
+ \label{eq:inverse}
+\end{equation}
+Notice that \eqref{eq:triangular}, rather than the eigenvalues alone,
+also controls the possible Jordan term.
+
+\section{Conclusions}\label{sec:conclusion}
+\subsection{Absorption of the cubic remainder}\label{subsec:absorb}
+
+Recall that $A_s= \nu_s[Q_{12}^2]$. Replica symmetry and Cauchy--Schwarz give
+\[
+ |B_s|\le A_s,\qquad |C_s|\le A_s.
+\]
+Therefore $\norm{x_s}_\infty=A_s$.  Inverting
+\eqref{eq:cavitysystem}, and using \eqref{eq:inverse} and
+\eqref{eq:rho}, yields
+\begin{equation}
+ A_s
+ \le \frac{C_{\cK}}N
+ +C_{\cK}N^{-3/2}
+ +C_{\cK}\nu_s[|Q_{12}|^3].
+ \label{eq:preabsorb}
+\end{equation}
+
+Fix $\varepsilon>0$.  Since $|Q_{12}|\le2$,
+\begin{align}
+ \nu_s[|Q_{12}|^3]
+ &\le
+ \varepsilon\,\nu_s[Q_{12}^2]
+ +8\,\nu_s[|Q_{12}|>\varepsilon]\nonumber\\
+ &\le
+ \varepsilon A_s
+ +8C_{\cK,\varepsilon}e^{-c_{\cK,\varepsilon}N},
+ \label{eq:thirdsplit}
+\end{align}
+where Corollary~\ref{cor:tail} was used.  Choose
+$\varepsilon=\varepsilon_{\cK}$
+so that the coefficient of $A_s$ obtained by substituting
+\eqref{eq:thirdsplit} into \eqref{eq:preabsorb} is at most $1/2$.
+We obtain
+\[
+ A_s\le\frac{C_{\cK}}N
+\]
+uniformly on $\cK\times[0,1]$, after increasing $C_{\cK}$ to include
+the finitely many small values of $N$.  This proves the first assertion
+of Theorem~\ref{thm:main}.
+
+\subsection{Free energy}\label{subsec:freeenergy}
+
+The identity \eqref{eq:DNprime} and $D_N(0)=0$ give
+\begin{equation}
+ \phi^{\mathrm{RS}}(\beta,h)-\phi_N(1)
+ =D_N(1)=
+ \frac{\beta^2}{4}\int_0^1\nu_s[Q_{12}^2]\,\dd s.
+ \label{eq:freeenergyidentity}
+\end{equation}
+The integrand is nonnegative, and the already proved second-moment
+bound makes the right-hand side at most $C_{\cK}/N$.  This proves the
+free-energy assertion of Theorem~\ref{thm:main}.
+
+\subsection{Replicon susceptibility}\label{subsec:susceptibility}
+
+Define
+\[
+ D_s\coloneqq A_s-2B_s+C_s.
+\]
+The last row of the transformed system \eqref{eq:triangular}, or
+equivalently the scalar product of \eqref{eq:cavitysystem} with
+$(1,-2,1)$, gives
+\begin{equation}
+ (1-s\alpha)D_s=\frac{\alpha}{\beta^2N}+\rho^{(R)}_{N,s},
+ \label{eq:repliconeq}
+\end{equation}
+where
+\begin{equation}
+ |\rho^{(R)}_{N,s}|
+ \le C_{\cK}\left(N^{-3/2}+\nu_s[|Q_{12}|^3]\right).
+ \label{eq:repliconrho}
+\end{equation}
+Here
+\[
+ (1,-2,1)\theta=1-2q+r=\frac{\alpha}{\beta^2}.
+\]
+
+The $O(N^{-1})$ second-moment estimate and
+\eqref{eq:thirdsplit} imply, for every fixed $\varepsilon>0$,
+\[
+ \sup_{\cK\times[0,1]}
+ N\nu_s[|Q_{12}|^3]
+ \le C_{\cK}\varepsilon
+ +8N C_{\cK,\varepsilon}e^{-c_{\cK,\varepsilon}N}.
+\]
+First let $N\to\infty$ and then $\varepsilon\downarrow0$.  Thus
+\[
+ \nu_s[|Q_{12}|^3]=o_{\cK}(N^{-1})
+\]
+uniformly along the path.  It follows from
+\eqref{eq:repliconeq}, \eqref{eq:repliconrho}, and
+$1-s\alpha\ge\delta_{\cK}$ that
+\[
+ ND_s
+ =
+ \frac{\alpha}{\beta^2(1-s\alpha)}+o_{\cK}(1),
+\]
+which is the final assertion of Theorem~\ref{thm:main}.
+
+\appendix
+
+\section{The specialized Guerra--Talagrand bound}
+\label{app:specialGT}
+
+The general two-dimensional Guerra--Talagrand bound is classical; see,
+in particular, \cite{ChenGT} and \cite{Talagrand}.  For completeness, we
+verify here the precise finite-step specialization and normalization
+used in the proof of Proposition~\ref{prop:GTcoercivity}.  Retaining the
+proof records the rank-one covariance pieces, the factors $1/2$, and
+the Lagrange-multiplier convention for the present path.  No claim of
+novelty is made for the abstract Guerra--Talagrand interpolation theorem.
+
+We first record the Gaussian covariance interpolation identity used in
+the verification.  If $G^{(0)}$ and $G^{(1)}$ are independent centered
+Gaussian vectors with covariance matrices $C_0$ and $C_1$, respectively,
+and $G_t\coloneqq\sqrt t\,G^{(1)}+\sqrt{1-t}\,G^{(0)}$, then applying
+\eqref{eq:GIBP} twice yields, for $0<t<1$,
+\begin{equation}
+ \frac{\dd}{\dd t}\E F(G_t)
+ =\frac12\sum_{i,j}(C_1-C_0)_{ij}
+   \E[\partial_{ij}F(G_t)].
+ \label{eq:gaussianinterpolation}
+\end{equation}
+The right-hand side has a continuous extension to $t=0,1$.
+
+\begin{lemma}[GT bound for the replica-symmetric two-replica path]
+\label{lem:specialGT}
+If the centered one-replica Hamiltonian has covariance
+$N\xi_s(R(\sigma,\tau))$, then, for every $v\in\mathcal R_N$ and
+$\lambda\in\mathbb R$,
+\begin{equation}
+ \frac1N\E\log Z^{(2)}_{N,s}(v)
+ \le \mathfrak P_s(\lambda,v).
+ \label{eq:specialGTlemma}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+We use only the three Gaussian recursion operators
+\[
+ T_0F\coloneqq\E F,\qquad
+ T_{1/2}F\coloneqq2\log\E e^{F/2},\qquad
+ T_1F\coloneqq\log\E e^F.
+\]
+Let $0=u_0<\cdots<u_K=1$ be the partition obtained from the distinct
+points among $0,q,|v|,1$.  Thus $K\le3$, and the value $m_k$ of
+$\gamma_v$ on $[u_{k-1},u_k)$ belongs to
+$\{0,\frac12,1\}$.  Put, entrywise,
+\[
+ C_k\coloneqq\xi_s'(Q^v_{u_k}),\qquad
+ \Theta(x)\coloneqq x\xi_s'(x)-\xi_s(x),\qquad
+ D_k\coloneqq\sum_{a,b=1}^2\Theta(Q^v_{u_k,ab}).
+\]
+By \eqref{eq:GTspeed},
+\begin{align*}
+ C_k-C_{k-1}&=\int_{u_{k-1}}^{u_k}A_s^v(u)\,\dd u\succeq0,\\
+ D_k-D_{k-1}&=\int_{u_{k-1}}^{u_k}
+ \sum_{a,b=1}^2A^v_{s,ab}(u)Q^v_{u,ab}\,\dd u\ge0.
+\end{align*}
+Take independent Gaussian vector increments $z_{i,k}$ with covariance
+$C_k-C_{k-1}$ and scalar increments $y_k$ with variance
+$D_k-D_{k-1}$.  At each site the base vector has covariance
+$C_0=\beta^2(1-s)q\,\mathbf1\mathbf1^{\mathsf T}$ and hence equals
+$(Y_{i,0}-h,Y_{i,0}-h)$, where the $Y_{i,0}$ are independent copies
+of $Y_0$.
+
+For a constrained pair
+$\boldsymbol\sigma=(\sigma^1,\sigma^2)$ and $0\le t\le1$, set
+\begin{align*}
+ \mathcal H_t(\boldsymbol\sigma)
+ \coloneqq{}&\sqrt t\,[H_{N,s}^{\rm cen}(\sigma^1)
+                     +H_{N,s}^{\rm cen}(\sigma^2)]\\
+ &+\sqrt{1-t}\sum_{i=1}^N\sum_{a=1}^2
+ \left(Y_{i,0}-h+\sum_{k=1}^Kz_{i,k}^a\right)\sigma_i^a
+ +\sqrt{tN}\sum_{k=1}^K y_k\\
+ &+h\sum_{i=1}^N(\sigma_i^1+\sigma_i^2)
+ +\lambda\sum_{i=1}^N\sigma_i^1\sigma_i^2-\lambda Nv.
+\end{align*}
+Let $X_K(t)$ be the logarithm of the sum of
+$e^{\mathcal H_t(\boldsymbol\sigma)}$ over $R_{12}=v$.  Integrate the
+increments backward by
+\[
+ X_{k-1}(t)=T_{m_k}X_k(t),\qquad k=K,\ldots,1,
+\]
+and set $\varphi_N(t)=N^{-1}\E X_0(t)$, where the last expectation is
+over the original disorder and the base fields.  This is a finite
+recursion, including when $m_k=0$ or $1$.
+
+At $t=0$, remove the overlap constraint.  The recursion then
+factorizes over sites, and the Cole--Hopf formula on each interval
+gives
+\begin{equation}
+ \varphi_N(0)\le2\log2+
+ \E U_s^{\lambda,v}(0,Y_0,Y_0)-\lambda v.
+ \label{eq:GTendpointzero}
+\end{equation}
+At $t=1$, the spin Hamiltonian is independent of the auxiliary
+increments, while
+\[
+ T_{m_k}(x+\sqrt N\,y_k)
+ =x+\frac{Nm_k}{2}(D_k-D_{k-1}).
+\]
+Therefore
+\begin{equation}
+ \varphi_N(1)=\frac1N\E\log Z^{(2)}_{N,s}(v)+\mathcal L_s(v).
+ \label{eq:GTendpointone}
+\end{equation}
+
+For completeness, repeated Gaussian integration by parts through the
+finite recursion gives its monotonicity.  Set $m_0=0$, $m_{K+1}=1$.
+The chain rule writes $\varphi_N'(t)$ as
+\begin{equation}
+ -\frac12\sum_{k=0}^{K}(m_{k+1}-m_k)
+ \E\left\langle
+ \sum_{a,b=1}^2
+ \Delta_{\xi_s}(R^{ab},Q^v_{u_k,ab})
+ \right\rangle_{k,t},
+ \label{eq:GTderivative}
+\end{equation}
+where $\langle\cdot\rangle_{k,t}$ is the two-copy Gibbs expectation
+produced by differentiating the $k$th nested expectation.  This
+formula follows directly from \eqref{eq:gaussianinterpolation}; the
+covariance derivative for each pair $(a,b)$ is
+\[
+ \Delta_{\xi_s}(x,y)
+ \coloneqq\xi_s(x)-\xi_s(y)-\xi_s'(y)(x-y)
+ =\frac{s\beta^2}{2}(x-y)^2\ge0.
+\]
+The coefficients in \eqref{eq:GTderivative} are nonnegative because
+$\gamma_v$ is nondecreasing.  Hence $\varphi_N(1)\le\varphi_N(0)$.
+Combining the two endpoint identities and using
+\eqref{eq:GTfunctional} proves \eqref{eq:specialGTlemma}.
+\end{proof}
+
+\section{Lean 4 formalization guide}
+\label{app:lean-guide}
+
+This section is a working specification for a kernel-checked Lean 4
+formalization of the paper.  It is deliberately more explicit than the
+mathematical proof.  It records proposed data types, theorem interfaces,
+normal forms, dependency order, finite-size conventions, and the analytic
+facts that must be supplied.  The intended target is a project using a
+fixed release of Lean 4 and Mathlib.  Every final declaration should be
+free of \texttt{sorry}; no axiom is needed or intended.
+
+Code fragments below are design templates.  Names for Gaussian measures,
+Bochner integrals, and differentiability lemmas can change between Mathlib
+releases.  Before copying a fragment, inspect the selected release with
+\texttt{\#check}.  Definitions local to this project should keep the names
+used below even if the imported API differs.  That thin wrapper will make
+the rest of the development stable under library updates.
+
+\subsection{Exact formalization target and trusted boundary}
+
+The strongest target is a theorem whose assumptions contain only the
+definitions appearing in the paper: the SK disorder consists of independent
+standard Gaussian coordinates, $q$ solves \eqref{eq:q}, $r$ and $\alpha$ are
+given by \eqref{eq:ra}--\eqref{eq:alpha}, and the parameter set is a compact
+subset of the strict AT region.  Its conclusion is the three-part statement
+of Theorem~\ref{thm:main}, with all uniform quantifiers displayed.
+
+It is useful to maintain two theorem layers.
+The pointwise layer fixes $(\beta,h,q,r,\alpha)$ and explicit positive
+constants witnessing every estimate.  The uniform layer derives common
+constants from compactness and continuity.  Nearly all probability and
+matrix calculations belong to the pointwise layer.  Compactness should be
+introduced only after those calculations have been checked.
+
+The formalization may import proved Mathlib results about finite sums,
+matrices, derivatives, integrals, Gaussian random variables, conditional
+expectation, concentration, and Gronwall inequalities.  If a required
+result is absent, add it as a proved project lemma.  Do not encode a standard
+tool as a field of the final theorem merely to avoid proving it.  Temporary
+interface hypotheses are acceptable during development, but the final
+dependency report should show how each one is discharged.
+
+The following statements are genuine mathematical inputs rather than
+mere simplifications:
+\begin{itemize}[leftmargin=2em]
+\item existence and uniqueness of the positive-field fixed point $q$;
+\item Gaussian integration by parts and covariance interpolation;
+\item Gaussian concentration for a finite maximum;
+\item It\^o's formula and the relevant backward Kolmogorov formula;
+\item the finite-recursion Guerra--Talagrand interpolation inequality;
+\item differentiation under the finite-volume disorder integral;
+\item the finite-dimensional Gronwall inequalities used in
+      Sections~\ref{subsec:gronwall} and \ref{subsec:cavity}.
+\end{itemize}
+Each item must end as an imported theorem or a proved local theorem.  The
+paper's label 'standard' is not itself a formal justification.
+
+\subsection{Dependency graph and recommended order}
+
+The proof dependency graph is
+\[
+\begin{array}{c}
+\text{finite spins, finite Gibbs expectations, Gaussian wrappers}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{fixed-point moments and elementary hyperbolic identities}
+\end{array}
+\]
+\[
+\begin{array}{c}
+\text{scalar semigroup and local-field identities}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{strict AT sign}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{two-replica GT coercivity}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{preliminary concentration and fixed tails},
+\end{array}
+\]
+followed by
+\[
+\begin{array}{c}
+\text{cavity derivative and coefficient table}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{matrix stability}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{cubic absorption}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{main second-moment bound},
+\end{array}
+\]
+and finally
+\[
+\begin{array}{c}
+\text{smart-path identity and replicon row}\\[-0.2em]
+\Downarrow\\[-0.2em]
+\text{free-energy and susceptibility conclusions}.
+\end{array}
+\]
+
+The most productive initial milestone is a completely checked
+finite-algebra package containing spin sums, overlap bounds, the cavity
+coefficient table, the triangularization of $L$, and the final absorption
+lemma.  These results expose normalization errors early and do not depend on
+stochastic calculus.
+
+\subsection{Proposed file layout}
+
+A practical project layout is as follows.  The comments state the intended
+contents, not extra assumptions.
+\begin{lstlisting}
+SKKusuoka/
+  Basic.lean              -- scalar inequalities and project conventions
+  Gaussian.lean           -- Gaussian expectation and IBP wrappers
+  Spins.lean              -- Ising configurations and replica overlaps
+  Gibbs.lean              -- finite partition functions and Gibbs averages
+  Parameters.lean         -- q, r, alpha, strict AT data
+  SmartPath.lean          -- H_{N,s}, phi_N, endpoint and covariance facts
+  ScalarPDE.lean          -- explicit finite-step scalar semigroup
+  Diffusion.lean          -- local field, Ito identities, AT sign
+  Matrix3.lean            -- theta, L, S, inverse bounds
+  GT/Terminal.lean        -- f_lambda and derivative bounds
+  GT/FiniteRecursion.lean -- two-dimensional finite semigroup
+  GT/Interpolation.lean   -- specialized GT inequality
+  GT/Coercivity.lean      -- quadratic constrained-pressure loss
+  Concentration.lean      -- coupled pressure, Gronwall, fixed tails
+  Cavity/Operator.lean    -- replica operator D_n
+  Cavity/Coefficients.lean-- exact coefficient enumeration
+  Cavity/Expansion.lean   -- Taylor remainder and cavity system
+  Absorption.lean         -- cubic closure
+  Main.lean               -- paper-level theorem and consequences
+\end{lstlisting}
+
+Keep imports acyclic.  In particular, \texttt{Matrix3.lean} should import
+only elementary parameter facts, and \texttt{Cavity/Coefficients.lean}
+should not import any concentration theorem.  The coefficient calculation
+is a finite identity and should remain testable in isolation.
+
+\subsection{Naming, normalization, and simp policy}
+
+Use ASCII declaration names even when the mathematical notation is Greek.
+Suggested translations include
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+paper notation & Lean name & type or role\\
+\midrule
+$\beta,h,q,r,\alpha$ & \texttt{beta, h, q, r, alpha} & real parameters\\
+$\Sigma_N$ & \texttt{SpinConfig N} & finite configuration type\\
+$R_{ab}$ & \texttt{overlap N sigma a b} & uncentered overlap\\
+$Q_{ab}$ & \texttt{centeredOverlap p sigma a b} & $R_{ab}-q$\\
+$\langle f\rangle_s$ & \texttt{gibbsExpect path f} & finite Gibbs average\\
+$\nu_s[f]$ & \texttt{nu path f} & disorder-averaged Gibbs value\\
+$P_s^*$ & \texttt{rsPathValue p s} & scalar trial value\\
+$A_s,B_s,C_s$ & \texttt{momentA, momentB, momentC} & overlap moments\\
+$\mathcal D_n$ & \texttt{cavityOp n} & replica derivative operator\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Choose one normalization for expectation and never switch silently between
+a probability expectation and an unnormalized integral.  Likewise, define
+the Hamiltonian with the factor $N^{-1/2}$ exactly once.  A separate lemma
+should state the centered covariance \eqref{eq:GTcovariance}, including the
+finite constant $-s\beta^2/2$.
+
+Tag only stable canonical facts with \texttt{[simp]}.  Good candidates are
+the square of a spin, overlap symmetry, the diagonal overlap, evaluation of
+the cavity endpoint, and obvious matrix-entry reductions.  Do not mark
+fixed-point rewrites in both directions.  Prefer the rewrite orientation
+$\E\tanh^2(h+\beta\sqrt q Z)\mapsto q$, since this reduces analytic
+expressions to parameters.
+
+\subsection{Finite spin space and overlaps}
+
+Using \texttt{Bool} for a spin makes the configuration type finite without
+having to build a new two-point \texttt{Fintype}.  Convert a Boolean to a
+real spin only at the algebraic boundary.
+\begin{lstlisting}
+import Mathlib
+
+open scoped BigOperators
+
+namespace SK
+
+def spinVal : Bool -> Real
+  | false => -1
+  | true  => 1
+
+@[simp] theorem spinVal_sq (b : Bool) : spinVal b ^ 2 = 1 := by
+  cases b <;> norm_num [spinVal]
+
+abbrev SpinConfig (N : Nat) := Fin N -> Bool
+abbrev Replicas (N k : Nat) := Fin k -> SpinConfig N
+
+def overlap (N : Nat) (sigma tau : SpinConfig N) : Real :=
+  (N : Real)⁻¹ * Finset.univ.sum
+    (fun i : Fin N => spinVal (sigma i) * spinVal (tau i))
+
+def replicaOverlap (N : Nat) (sigmas : Replicas N k)
+    (a b : Fin k) : Real := overlap N (sigmas a) (sigmas b)
+
+def centeredOverlap (q : Real) (N : Nat) (sigmas : Replicas N k)
+    (a b : Fin k) : Real := replicaOverlap N sigmas a b - q
+
+end SK
+\end{lstlisting}
+
+The paper is stated for $N\ge1$.  Carry a hypothesis \texttt{hN : 0 < N}
+in every lemma that cancels $N$ or uses the diagonal identity.  This is
+safer than placing positivity inside the definition of
+\texttt{SpinConfig}.  Prove the following facts immediately:
+\begin{align*}
+R(\sigma,\tau)&=R(\tau,\sigma),&
+R(\sigma,\sigma)&=1,\\
+|R(\sigma,\tau)|&\le1,&
+|Q(\sigma,\tau)|&\le2
+\quad\text{when }0\le q\le1.
+\end{align*}
+Also prove the exact range characterization
+\[
+ R(\sigma,\tau)=1-\frac{2k}{N}
+ \quad\text{for some }k\in\{0,\ldots,N\}.
+\]
+This identifies $\mathcal R_N$, proves $|\mathcal R_N|\le N+1$, and
+supports the finite maximum in \eqref{eq:gaussianmax}.  It is preferable to
+define the range as an image rather than as a set described by an
+existential:
+\begin{lstlisting}
+def overlapRange (N : Nat) : Finset Real :=
+  Finset.univ.image (fun k : Fin (N + 1) =>
+    1 - 2 * (k : Real) / N)
+\end{lstlisting}
+The equality between this finite set and the actual overlap image needs the
+Hamming-distance counting lemma.  For $N=0$, keep a harmless formal
+definition but never invoke the range theorem.
+
+\subsection{Finite Gibbs measures without measure-theoretic overhead}
+
+For fixed disorder, all Gibbs operations are finite sums.  Define them as
+such; do not introduce a measure on the finite spin space unless a later API
+requires it.
+\begin{lstlisting}
+namespace SK
+
+noncomputable def partition (H : SpinConfig N -> Real) : Real :=
+  Finset.univ.sum (fun sigma => Real.exp (H sigma))
+
+noncomputable def gibbsWeight (H : SpinConfig N -> Real)
+    (sigma : SpinConfig N) : Real :=
+  Real.exp (H sigma) / partition H
+
+noncomputable def gibbsExpect (H : SpinConfig N -> Real)
+    (f : SpinConfig N -> Real) : Real :=
+  Finset.univ.sum (fun sigma => gibbsWeight H sigma * f sigma)
+
+noncomputable def replicaGibbsExpect (H : SpinConfig N -> Real)
+    (f : Replicas N k -> Real) : Real :=
+  Finset.univ.sum (fun sigmas =>
+    (Finset.univ.prod (fun a : Fin k => gibbsWeight H (sigmas a))) *
+      f sigmas)
+
+end SK
+\end{lstlisting}
+
+The foundational lemmas should say
+\begin{itemize}[leftmargin=2em]
+\item \texttt{0 < partition H};
+\item Gibbs weights are nonnegative and sum to one;
+\item Gibbs expectation is linear, monotone, and preserves constants;
+\item the replica expectation factors for observables depending on disjoint
+      replica coordinates;
+\item permutation of replica labels leaves the expectation unchanged;
+\item if $|f|\le C$ pointwise, then
+      $|\langle f\rangle|\le C$.
+\end{itemize}
+The positivity proof is short because every exponential is positive and the
+configuration type is nonempty.  State a reusable lemma for positive finite
+sums so later denominator arguments close by \texttt{positivity} or
+\texttt{field\_simp}.
+
+For constrained sums, filter rather than use a subtype:
+\begin{lstlisting}
+noncomputable def constrainedPartition2
+    (H : SpinConfig N -> Real) (v : Real) : Real :=
+  Finset.univ.sum (fun st : SpinConfig N × SpinConfig N =>
+    if overlap N st.1 st.2 = v then
+      Real.exp (H st.1 + H st.2)
+    else 0)
+\end{lstlisting}
+This convention makes an unavailable overlap value give partition function
+zero.  The logarithm is used only under the hypothesis
+\texttt{v in overlapRange N}; prove positivity under that hypothesis before
+forming \texttt{Real.log}.
+
+\subsection{Parameter records and the fixed-point layer}
+
+Do not ask Lean to infer every parameter restriction from membership in a
+large set.  A record gives convenient named hypotheses for the pointwise
+proof.
+\begin{lstlisting}
+structure RSPoint where
+  beta : Real
+  h : Real
+  q : Real
+  r : Real
+  beta_pos : 0 < beta
+  h_pos : 0 < h
+  q_nonneg : 0 <= q
+  q_lt_one : q < 1
+  r_nonneg : 0 <= r
+  r_le_q : r <= q
+  fixedPoint : q = gaussianTanhSq beta h q
+  fourthMoment : r = gaussianTanhFourth beta h q
+
+namespace RSPoint
+
+def alpha (p : RSPoint) : Real :=
+  p.beta ^ 2 * (1 - 2 * p.q + p.r)
+
+def StrictAT (p : RSPoint) : Prop := p.alpha < 1
+
+end RSPoint
+\end{lstlisting}
+Here \texttt{gaussianTanhSq} and \texttt{gaussianTanhFourth} are project
+wrappers around integration against a standard normal law.  The record does
+not create new assumptions: a constructor theorem must build it from
+$(\beta,h)$ and the proved existence and uniqueness theorem for $q$.
+
+A second record can package a uniform gap when working on a fixed compact
+set:
+\begin{lstlisting}
+structure UniformATData where
+  K : Set (Real × Real)
+  compact_K : IsCompact K
+  beta_pos : forall x, x ∈ K -> 0 < x.1
+  h_pos : forall x, x ∈ K -> 0 < x.2
+  delta : Real
+  delta_pos : 0 < delta
+  alpha_gap : forall x, x ∈ K -> alphaAt x <= 1 - delta
+\end{lstlisting}
+The final uniform theorem should construct \texttt{delta} from compactness
+and continuity instead of requiring the user to supply it.  Keeping this
+record available is still useful for the long middle part of the proof.
+
+\subsection{Gaussian expectation wrappers and analytic contracts}
+
+Create one project definition for the standard Gaussian law and one for
+expectation.  This confines any Mathlib API adjustment to a small file.
+The desired semantic equations are
+\[
+ \operatorname{gaussE}(f)=\int_{\R} f(x)\,\gamma(\dd x),
+ \qquad \gamma=N(0,1),
+\]
+and
+\[
+ \operatorname{gaussianTanhSq}(\beta,h,q)
+ =\operatorname{gaussE}\bigl(x\mapsto
+   \tanh^2(h+\beta\sqrt q\,x)\bigr).
+\]
+The wrapper file should export these facts:
+\begin{itemize}[leftmargin=2em]
+\item the Gaussian law is a probability measure;
+\item bounded continuous functions are integrable;
+\item expectation is linear and monotone;
+\item dominated convergence in a parameterized form;
+\item the standard normal has mean zero and variance one;
+\item a sum of independent centered Gaussians is Gaussian, with variances
+      adding;
+\item the integration-by-parts identity \eqref{eq:GIBP};
+\item covariance differentiation in the form
+      \eqref{eq:gaussianinterpolation}.
+\end{itemize}
+
+State integration by parts first for a finite index type.  This matches all
+finite-volume applications and avoids committing to Euclidean coordinate
+notation.
+\begin{lstlisting}
+theorem gaussian_ibp_fin
+    {m : Nat} (G : Omega -> (Fin m -> Real))
+    (C : Matrix (Fin m) (Fin m) Real)
+    (hG : CenteredGaussianVector G C)
+    (F : (Fin m -> Real) -> Real)
+    (hF : ContDiff Real 1 F)
+    (hInt : GaussianIBPIntegrable G F) (i : Fin m) :
+    E (fun w => G w i * F (G w)) =
+      Finset.univ.sum (fun j =>
+        C i j * E (fun w =>
+          fderiv Real F (G w) (Pi.single j 1))) := by
+  -- Apply the selected library theorem, or prove density IBP here.
+  ...
+\end{lstlisting}
+The three dots mark a proof obligation, not a permitted final term.
+In actual source, replace them before any downstream file is declared
+complete.  It is worth defining a project predicate such as
+\texttt{GaussianIBPIntegrable} to gather all integrability conditions used by
+the library theorem.  Prove small automation lemmas showing that finite sums
+of exponentials of affine Gaussian functions satisfy it.
+
+\subsection{Hyperbolic identities and moment inequalities}
+
+Before formalizing the fixed-point theorem, build a small deterministic
+library for \texttt{Real.tanh} and \texttt{Real.cosh}.  Define
+\[
+ \operatorname{sech}(x)=\frac1{\cosh x}
+\]
+locally if Mathlib has no stable project-facing name.  Required identities
+include
+\begin{align*}
+&\cosh x>0,\qquad |\tanh x|<1,\qquad 0<\operatorname{sech}x,\\
+&1-\tanh^2x=\operatorname{sech}^2x,\\
+&(1-\tanh^2x)^2
+ =1-2\tanh^2x+\tanh^4x.
+\end{align*}
+From $|\tanh x|\le1$, prove $\tanh^4x\le\tanh^2x$.  Integration then gives
+$0\le r\le q\le1$.  The identity in \eqref{eq:alpha} should be a named
+lemma:
+\begin{lstlisting}
+theorem alpha_eq_gaussian_sech_fourth (p : RSPoint) :
+    p.alpha =
+      p.beta ^ 2 * gaussianSechFourth p.beta p.h p.q := by
+  rw [RSPoint.alpha, p.fixedPoint, p.fourthMoment]
+  -- Push the pointwise polynomial identity through the integral.
+  ...
+\end{lstlisting}
+Also isolate the strictly positive conclusions $0<q$ and $q<1$ for $h>0$.
+The proof of $q<1$ uses strict almost-everywhere inequality plus probability
+mass one; plain monotonicity alone is insufficient.
+
+For existence and uniqueness of $q$, define
+\[
+ T_{\beta,h}(u)=\E\tanh^2(h+\beta\sqrt u\,Z),
+ \qquad 0\le u\le1.
+\]
+Separate the following lemmas: continuity of $T$, preservation of $[0,1]$,
+existence of a fixed point, positive-field uniqueness, and continuous
+dependence of the unique fixed point on $(\beta,h)$.  This separation is
+important because only continuity and uniqueness are needed for the compact
+uniformity argument.  If the uniqueness proof is imported from another
+formal development, state its exact hypotheses and verify that $h>0$ matches
+them.
+
+\subsection{Smart-path data and endpoint checks}
+
+Represent all disorder coordinates on one probability space.  A convenient
+abstract interface is a structure containing the pair couplings, site
+fields, independence, and standard-normal proofs.  Later instantiate it by a
+finite product Gaussian space.
+\begin{lstlisting}
+structure SKDisorder (N : Nat) (Omega : Type*)
+    [MeasurableSpace Omega] (mu : Measure Omega) where
+  g : Fin N -> Fin N -> Omega -> Real
+  z : Fin N -> Omega -> Real
+  g_symm : forall i j w, g i j w = g j i w
+  g_diag : forall i w, g i i w = 0
+  measurable_g : forall i j, Measurable (g i j)
+  measurable_z : forall i, Measurable (z i)
+  gaussian_family :
+    JointStandardGaussianUpperTriangleAndSites g z mu
+\end{lstlisting}
+The final field should itself be defined in \texttt{Gaussian.lean}; it must
+express the full covariance matrix, which encodes both independence and unit
+variance.  An upper-triangular index type is cleaner than storing a symmetric
+array, but either design is acceptable if the covariance calculation stays
+simple.
+
+Define the path Hamiltonian directly from \eqref{eq:path}.  Name and prove:
+\begin{itemize}[leftmargin=2em]
+\item measurability and integrability of $H_{N,s}(\sigma)$;
+\item positivity and integrability of its partition function;
+\item the $s=0$ factorization into independent one-site terms;
+\item the $s=1$ equality with the original Hamiltonian;
+\item the centered covariance formula \eqref{eq:GTcovariance};
+\item continuity in $s$ of every finite-volume expectation later used;
+\item $D_N(0)=0$ after identifying the $s=0$ free energy with $P_0^*$.
+\end{itemize}
+
+Avoid differentiating square roots at $s=0$ or $s=1$.  Prove the derivative
+identity first on the open interval and extend it to the endpoints by the
+finite-dimensional dominated-convergence lemma, exactly as in the paper.
+This pattern is also required for the cavity parameter $u$.
+
+\subsection{Replica indices and exchangeability}
+
+The cavity proof repeatedly appends replicas.  Fixed types such as
+\texttt{Fin 2}, \texttt{Fin 3}, and \texttt{Fin 4} work for final moments,
+but the derivative operator needs a systematic embedding
+$\operatorname{Fin} n\hookrightarrow\operatorname{Fin}(n+2)$.
+Use Mathlib's canonical \texttt{Fin.castLE}, \texttt{Fin.castSucc}, and
+\texttt{Fin.last} maps or define project wrappers with simp lemmas.
+
+Prove exchangeability once for arbitrary permutations:
+\begin{lstlisting}
+theorem replica_expect_perm
+    (pi : Equiv.Perm (Fin k)) (f : Replicas N k -> Real) :
+    replicaGibbsExpect H (fun sigmas =>
+      f (fun a => sigmas (pi a))) = replicaGibbsExpect H f := by
+  -- Reindex by the induced equivalence on replica tuples.
+  ...
+\end{lstlisting}
+Pairwise moment identifications, H\"older estimates, and coefficient-table
+symmetries should then be consequences of this theorem, not fresh finite-sum
+proofs.
+
+\subsection{Scalar PDE as an explicit semigroup}
+
+The paper already supplies the solution
+\eqref{eq:PDEupper}--\eqref{eq:PDElower}.  For formalization, define $\Psi$
+by those formulas and prove that it solves the PDE.  This is easier to audit
+than starting from an abstract PDE existence theorem.
+
+Define two branches:
+\begin{align*}
+ \Psi_{\rm up}(u,x)
+ &=\log\cosh x+\frac{s\beta^2}{2}(1-u),\\
+ \Psi_{\rm low}(u,x)
+ &=\E\log\cosh\bigl(x+\beta\sqrt{s(q-u)}Z\bigr)
+   +\frac{s\beta^2}{2}(1-q).
+\end{align*}
+Then define \texttt{psi p s u x} by a decidable branch on $q\le u$.
+Prove branch agreement at $u=q$, continuity there, and the derivatives needed
+on each open subinterval.  The target regularity is piecewise $C^{1,2}$;
+global twice differentiability in $u$ is neither asserted nor needed.
+
+The following derivative formulas deserve individual names:
+\begin{align*}
+ \Psi_x(u,x)&=\tanh x &&(q\le u),\\
+ \Psi_{xx}(u,x)&=\operatorname{sech}^2x &&(q\le u),\\
+ \Psi_x(u,x)&=\E\tanh(x+\beta\sqrt{s(q-u)}Z)&&(u<q),\\
+ \Psi_{xx}(u,x)&=\E\operatorname{sech}^2
+     (x+\beta\sqrt{s(q-u)}Z)&&(u<q).
+\end{align*}
+Record uniform bounds $|\Psi_x|\le1$ and $0\le\Psi_{xx}\le1$.  They discharge
+most integrability and Lipschitz obligations for the local-field SDE.
+
+The reduction of \eqref{eq:scalartrial} to \eqref{eq:RSpathvalue} should be
+a separate algebraic theorem.  Its critical variance identity is
+\[
+ \beta^2(1-s)q+s\beta^2q=\beta^2q.
+\]
+Normalize polynomial expressions with \texttt{ring}; do not ask
+\texttt{simp} to find this cancellation.
+
+\subsection{Local field, diffusion, and strict AT sign}
+
+The formal local field is an SDE with bounded Lipschitz drift
+\[
+ b(u,x)=s\beta^2x_q(u)\Psi_x(u,x)
+\]
+and constant diffusion coefficient $\beta\sqrt s$.  Because $x_q$ has one
+jump, either invoke an SDE theorem for measurable time-dependent drift or
+construct the process in two pieces and concatenate at $q$.  The second
+route aligns with the explicit semigroup and usually requires fewer general
+measurability results.
+
+The essential distribution statement is \eqref{eq:Xq}.  Prove it as a
+named theorem from the sum-of-independent-Gaussians lemma.  Downstream
+moment rewrites should use this theorem rather than reopening the SDE
+construction.
+
+For $u<q$, prove
+\[
+ g_s'(u)=s\beta^2\E\bigl[\Psi_{xx}(u,X_u)^2\bigr]
+\]
+and use $0\le\Psi_{xx}\le1$ plus the appropriate comparison at $q$ to obtain
+\eqref{eq:leftstrict}.  For $u\ge q$, define $m_u=\tanh X_u$ and apply
+It\^o's formula.  The drift cancellation should end in the exact normal form
+\[
+ \dd m_u=\beta\sqrt s(1-m_u^2)\dd W_u.
+\]
+If Lean leaves a residual expression, first rewrite
+$\tanh'(x)=1-\tanh^2x$ and
+$\tanh''(x)=-2\tanh x(1-\tanh^2x)$, then use \texttt{ring}.
+
+The diffusion comparison Lemma~\ref{lem:diffusioncomparison} should be split
+into the following reusable results:
+\begin{itemize}[leftmargin=2em]
+\item a time-change representation of the martingale $m$;
+\item the representation \eqref{eq:Flambda-representation};
+\item positivity and unit mean of the density $F_\lambda$;
+\item its monotonicity property needed for the comparison;
+\item the moment inequality
+      $\beta^2\E(1-m_u^2)^2\le\alpha$.
+\end{itemize}
+The assumption $s\beta^2(1-q)>1$ is used only in this comparison branch.
+Keep it local so the complementary elementary branch remains easy to apply.
+
+Package Proposition~\ref{prop:pathRS} into sign, local slope, and compact
+gap theorems.  A useful interface is
+\begin{lstlisting}
+theorem gs_sub_id_sign (p : RSPoint) (hat : p.StrictAT)
+    (hs : s ∈ Set.Icc (0 : Real) 1) :
+    (forall u ∈ Set.Ico (0 : Real) p.q, 0 < gs p s u - u) ∧
+    gs p s p.q - p.q = 0 ∧
+    (forall u ∈ Set.Ioc p.q 1, gs p s u - u < 0) := by
+  ...
+
+theorem gs_linear_gap_on_compact
+    (U : UniformATData) :
+    exists c > 0, exists eps > 0,
+      forall x ∈ U.K, forall s ∈ Set.Icc (0 : Real) 1,
+      forall u ∈ Set.Icc (0 : Real) 1,
+      abs (u - qAt x) <= eps ->
+      abs (gsAt x s u - u) >= c * abs (u - qAt x) := by
+  ...
+\end{lstlisting}
+In the actual file, eliminate every placeholder.  The second theorem should
+be derived from the pointwise slope at $q$, continuity of the derivative,
+the common AT gap, and a finite subcover or compact minimum argument.
+
+\subsection{Two-replica terminal function}
+
+Define the terminal function without expanding the four-state sum:
+\begin{lstlisting}
+noncomputable def gtTerminal (lambda x1 x2 : Real) : Real :=
+  Real.log ((1 / 4 : Real) *
+    ((Finset.univ : Finset Bool).sum (fun e1 =>
+      (Finset.univ : Finset Bool).sum (fun e2 =>
+        Real.exp (spinVal e1 * x1 + spinVal e2 * x2 +
+          lambda * spinVal e1 * spinVal e2)))))
+\end{lstlisting}
+Prove the inside of the logarithm is positive.  Then derive, rather than
+postulate, the useful closed form
+\[
+ f_\lambda(x_1,x_2)
+ =\log\bigl(
+ \cosh x_1\cosh x_2\cosh\lambda
+ +\sinh x_1\sinh x_2\sinh\lambda\bigr).
+\]
+The finite-sum definition is best for spin differentiation and uniform
+bounds; the closed form is best for continuity.
+
+The terminal identities required later are
+\[
+ f_0(x_1,x_2)=\log\cosh x_1+\log\cosh x_2,
+ \qquad
+ \partial_\lambda f_\lambda\big|_{\lambda=0}
+ =\tanh x_1\tanh x_2.
+\]
+Also prove
+\[
+ |\partial_\lambda f_\lambda|\le1,\qquad
+ 0\le\partial_{\lambda\lambda}f_\lambda\le1.
+\]
+The second derivative is the variance of the two-spin product under a
+four-state Gibbs law.  Formalizing it in that form often avoids a large
+quotient derivative.
+
+\subsection{Matrix-valued GT path}
+
+Use \texttt{Matrix (Fin 2) (Fin 2) Real} for the path $Q^v$ and speed
+$A_s^v$.  Define the sign $\iota_v$ separately, and decide once what happens
+at $v=0$.  The choice is irrelevant because the off-diagonal value is zero,
+but a simp theorem should state this fact.
+
+The path has a breakpoint $r_v=|v|$.  Required elementary facts include
+\[
+0\le r_v\le1,\qquad
+Q^v_0=0,\qquad
+Q^v_1=\begin{pmatrix}1&v\\v&1\end{pmatrix}.
+\]
+Prove positive semidefiniteness by completing the square:
+\[
+ (x,y)
+ \begin{pmatrix}u&\iota_vu\\\iota_vu&u\end{pmatrix}
+ \binom{x}{y}
+ =u(x+\iota_vy)^2
+\]
+below the breakpoint, and
+\[
+ u(x^2+y^2)+2vxy
+ =\frac{u+v}{2}(x+y)^2+\frac{u-v}{2}(x-y)^2
+\]
+above it.  The hypotheses $u\ge|v|$ make both coefficients nonnegative.
+These scalar identities are often easier for Lean than invoking an
+eigenvalue criterion.
+
+For the correction term, expand the finite sum over \texttt{Fin 2} and prove
+\[
+ \mathcal L_s(v)=s\beta^2\int_0^1x_q(u)u\,\dd u
+ =\frac{s\beta^2}{2}(1-q^2).
+\]
+The proof must retain the factor $1/2$ in $\gamma_v$ below $r_v$.  Give the
+final independence of $v$ its own theorem:
+\begin{lstlisting}
+theorem gtCorrection_eq (p : RSPoint)
+    (hs : s ∈ Set.Icc (0 : Real) 1)
+    (hv : v ∈ Set.Icc (-1 : Real) 1) :
+    gtCorrection p s v = s * p.beta ^ 2 / 2 * (1 - p.q ^ 2) := by
+  ...
+\end{lstlisting}
+
+\subsection{Finite-semigroup construction of the two-dimensional PDE}
+
+The path coefficients are piecewise constant or affine with finitely many
+breakpoints drawn from $\{0,q,|v|,1\}$.  Sort and deduplicate this list.
+Do not define a recursion indexed by a list whose order has not been proved.
+
+For a positive semidefinite covariance matrix $D$ and $m\ge0$, use the
+semigroup
+\[
+ T_{m,D}F(x)=
+ \begin{cases}
+ m^{-1}\log\E\exp(mF(x+G_D)),&m>0,\\
+ \E F(x+G_D),&m=0.
+ \end{cases}
+\]
+Create a structure for a finite path containing the ordered breakpoints,
+increment covariances, nonnegative masses, and proofs of positive
+semidefiniteness.  The recursion defining $U_s^{\lambda,v}$ then folds these
+operators backward from the terminal function.
+
+Export the following contracts:
+\begin{itemize}[leftmargin=2em]
+\item continuity in $(\beta,h,s,\lambda,v,x_1,x_2)$;
+\item differentiability once and twice in $\lambda$;
+\item differentiation under each finite Gaussian expectation;
+\item $|\partial_\lambda U|\le1$ and
+      $0\le\partial_{\lambda\lambda}U\le1$;
+\item the additive splitting of $U_s^{0,v}$ above the relevant breakpoint;
+\item the diagonal backward-Kolmogorov representation used in
+      \eqref{eq:GTlinearizedlower}.
+\end{itemize}
+A finite recursion is important: all regularity can be proved by induction on
+the number of semigroup pieces.  No general viscosity-solution theory is
+needed for this paper.
+
+\subsection{Specialized GT interpolation}
+
+Formalize Appendix~\ref{app:specialGT} before proving coercivity.  The key
+convexity remainder should be defined once:
+\begin{lstlisting}
+def xi (p : RSPoint) (s u : Real) : Real :=
+  p.beta ^ 2 * (1 - s) * p.q * u +
+    s * p.beta ^ 2 / 2 * u ^ 2
+
+def xiRemainder (p : RSPoint) (s x y : Real) : Real :=
+  xi p s x - xi p s y - deriv (xi p s) y * (x - y)
+
+theorem xiRemainder_eq (p : RSPoint) :
+    xiRemainder p s x y = s * p.beta ^ 2 / 2 * (x - y) ^ 2 := by
+  simp [xiRemainder, xi]
+  ring
+\end{lstlisting}
+From $s\ge0$, obtain nonnegativity immediately.  This identity supplies the
+sign of the GT interpolation derivative.
+
+The auxiliary common Gaussian added in the proof changes covariance but not
+the normalized quenched pressure.  State both facts:
+\[
+ \operatorname{Cov}(H^{\rm cen}+G)
+ =N\xi_s(R),
+ \qquad
+ \frac1N\E\log\sum_\sigma e^{H^{\rm cen}(\sigma)+G}
+ =
+ \frac1N\E\log\sum_\sigma e^{H^{\rm cen}(\sigma)}.
+\]
+The second equality uses $\E G=0$ after pulling the common factor $e^G$ out
+of the partition sum.
+
+The interpolation theorem should expose every endpoint and derivative
+identity:
+\begin{lstlisting}
+theorem specialized_gt_bound
+    (p : RSPoint) (hN : 0 < N)
+    (hs : s ∈ Set.Icc (0 : Real) 1)
+    (hv : v ∈ overlapRange N) (lambda : Real) :
+    disorderE (fun w =>
+      Real.log (constrainedPartition2 (pathH p N s w) v)) / N
+      <= gtFunctional p s lambda v := by
+  have hzero := gt_endpoint_zero ...
+  have hone := gt_endpoint_one ...
+  have hmono : forall t ∈ Set.Ioo (0 : Real) 1,
+      deriv interpolationPressure t <= 0 := by
+    ...
+  exact hzero.trans (by linarith [monotone_of_deriv_nonpos hmono, hone])
+\end{lstlisting}
+Do not conceal normalization in the endpoint lemmas.  In particular, verify
+the factors $1/N$, $1/2$, the two replicas, and the correction
+$\mathcal L_s(v)$ separately.
+
+\subsection{Flatness and the multiplier derivative}
+
+The identity
+\[
+ \mathfrak P_s(0,v)=2P_s^*,\qquad 0\le v\le1,
+\]
+comes from the additive semigroup solution.  Formalize it before taking
+derivatives.  It prevents unnecessary differentiation of expressions that
+are already constant in $v$.
+
+Let
+\[
+ W_s^v=\left.\partial_\lambda U_s^{\lambda,v}\right|_{\lambda=0}.
+\]
+The upper-interval product formula
+\[
+ W_s^v(u,x_1,x_2)=\Psi_x(u,x_1)\Psi_x(u,x_2)
+\]
+should be proved by checking that both sides satisfy the same finite
+semigroup recursion, not by appealing to uniqueness of a large PDE class.
+On the diagonal below $v$, the finite-semigroup conditional expectation
+gives
+\[
+ \partial_\lambda\mathfrak P_s(0,v)=g_s(v)-v.
+\]
+Store this as the bridge theorem between the scalar AT sign and GT
+coercivity.
+
+For signed overlaps $-q\le v\le q$, define jointly Gaussian variables with
+common variance $\beta^2q$ and covariance
+$\beta^2(1-s)q+s\beta^2v$.  Before constructing them, prove the covariance
+matrix is positive semidefinite.  Gaussian covariance differentiation gives
+\[
+ f_s'(v)=s\beta^2\E[
+ \operatorname{sech}^2Y_1(v)\operatorname{sech}^2Y_2(v)].
+\]
+Cauchy--Schwarz and equality of marginal laws yield $f_s'(v)\le s\alpha$.
+The proof requires the square-integrability identity
+\[
+ \E[\operatorname{sech}^4Y_i(v)]=\alpha/\beta^2.
+\]
+
+Define the combined signed derivative $\eta_s$ exactly as in
+\eqref{eq:GTeta}.  Prove branch agreement at $q$ before proving continuity.
+The local coercive sign should be stated in multiplication form
+\[
+ \eta_s(v)(v-q)\le-c|v-q|^2,
+\]
+because this is the form consumed by the choice of Lagrange multiplier.
+
+\subsection{Uniform Taylor coercivity}
+
+Lemma~\ref{lem:Taylorcoercivity} is deterministic and should be formalized
+early.  A useful Lean statement keeps all constants explicit:
+\begin{lstlisting}
+theorem uniform_taylor_coercivity
+    (P : Type*) [TopologicalSpace P] [CompactSpace P]
+    (q : P -> Real) (H : P -> Real -> Real -> Real)
+    (lambda0 M c kappa : Real)
+    (hlambda0 : 0 < lambda0) (hM : 0 < M)
+    (hsecond : forall p lambda v,
+      abs lambda <= lambda0 ->
+      abs (secondDerivInLambda H p lambda v) <= M)
+    (hlocal : forall p v,
+      abs (v - q p) <= lambda0 * M / c ->
+      dLambda H p 0 v * (v - q p) <= -c * (v - q p) ^ 2)
+    (hfar : forall p v,
+      lambda0 * M / c <= abs (v - q p) ->
+      infOverLambda (H p) v <= H p 0 (q p) - kappa) :
+    exists c0 > 0, forall p v,
+      infOverLambda (H p) v
+        <= H p 0 (q p) - c0 * (v - q p) ^ 2 := by
+  ...
+\end{lstlisting}
+The exact neighborhood parameter may be adjusted to simplify the proof.
+The local multiplier is
+$\lambda=-\partial_\lambda H_p(0,v)/M$.  Prove that it lies in the allowed
+interval before applying Taylor's theorem.  For the far region, use
+$|v-q_p|\le2$ to convert the fixed loss into a quadratic loss.
+
+Keep the signed far-gap proof in separate cases:
+\begin{itemize}[leftmargin=2em]
+\item $v\in[-q,1]$ away from $q$, using continuity and the strict sign;
+\item $v<-q$ with $s>0$, using strict Cauchy--Schwarz in
+      \eqref{eq:signedhopfcole}--\eqref{eq:signedpositivity};
+\item $v\le-q$ with $s$ near zero, using \eqref{eq:GTendpoint};
+\item $s$ bounded away from zero, using compactness.
+\end{itemize}
+For strict Cauchy--Schwarz, prove that equality would force proportionality
+almost everywhere and then contradict it on a set of positive Gaussian
+measure.  A pointwise inequality with no equality analysis cannot supply the
+strict compact gap.
+
+The output of this block is Proposition~\ref{prop:GTcoercivity}, preferably
+in two forms:
+\[
+ \frac1N\E\log Z_{N,s}^{(2)}(v)
+ \le2P_s^*-c(v-q)^2
+\]
+for attainable $v$, and an exponential-weight form ready for summing over
+$v\in\mathcal R_N$.
+
+\subsection{Uniform second derivative in the multiplier}
+
+The paper uses a uniform bound on
+$\partial_{\lambda\lambda}\mathfrak P_s$.  The finite-spin terminal function
+has second derivative at most one.  Under the nonlinear semigroup, the
+second derivative is a conditional variance plus the semigroup average of
+the terminal second derivative, hence remains bounded by a constant
+depending only on the total mass of the finite recursion.
+
+Formalize a generic preservation lemma:
+\begin{lstlisting}
+theorem log_gaussian_semigroup_second_param_bound
+    (h1 : forall x, abs (dParam F x) <= L1)
+    (h2 : forall x, abs (d2Param F x) <= L2)
+    (hm : m ∈ Set.Icc (0 : Real) mMax) :
+    forall x,
+      abs (d2Param (logGaussianSemigroup m D F) x)
+        <= L2 + mMax * L1 ^ 2 := by
+  ...
+\end{lstlisting}
+Inducting over the finite path gives \eqref{eq:GTsecondderivative}.  This
+approach records the source of the constant and avoids a bare compactness
+argument over an unbounded $\lambda$ parameter.
+
+\subsection{Coupled pressure and preliminary concentration}
+
+Define the coupled pressure by finite sums and prove the elementary
+log-sum-exp bound directly from GT coercivity.  The relevant deterministic
+lemma is
+\[
+ \log\sum_{v\in I}e^{L_v}
+ \le \log|I|+\max_{v\in I}L_v.
+\]
+Since a finite set may be empty in general, either assume nonemptiness or
+use the known value $1\in\mathcal R_N$ for $N>0$.
+
+For the Gaussian maximum estimate, first prove that each constrained log
+partition $L_v$ is Lipschitz in the full disorder vector with one common
+constant of order $\sqrt N$.  Compute the squared norm of its gradient,
+including both the pair-coupling coordinates and the site-field coordinates.
+The two replicas introduce a factor that must be retained.  Apply the finite
+maximum concentration theorem with $|\mathcal R_N|\le N+1$ to obtain
+\eqref{eq:gaussianmax}.
+
+The smart-path differentiation identity should be a standalone theorem:
+\begin{lstlisting}
+theorem freeEnergyGap_deriv
+    (p : RSPoint) (hN : 0 < N)
+    (hs : s ∈ Set.Ioo (0 : Real) 1) :
+    HasDerivAt (freeEnergyGap p N) (p.beta ^ 2 / 4 * momentA p N s) s := by
+  -- Differentiate the finite Gibbs sum, then apply Gaussian IBP.
+  ...
+\end{lstlisting}
+A companion theorem extends the equality continuously to the closed
+interval.  Check the diagonal $i=j$ contribution separately; it is a common
+source of an erroneous $O(N^{-1})$ term.
+
+From convexity of the exponential,
+\[
+ \frac{\lambda_0}{2}A_s
+ \le F_{N,s}(\lambda_0).
+\]
+Combine this with the pressure envelope and
+$D_N'(s)=\beta^2A_s/4$ to obtain \eqref{eq:gronwallDN}.  Use an interval
+Gronwall theorem with initial condition $D_N(0)=0$.  The output should keep
+the explicit rate
+\[
+ \epsilon_N=C\left(\sqrt{\frac{\log(N+1)}N}
+              +\frac{\log(N+1)}N\right),
+\]
+and prove separately that $\epsilon_N\to0$.
+
+\subsection{Fixed-deviation tails}
+
+Let
+\[
+ Y_{N,s}=\log\langle
+   e^{\lambda_0NQ_{12}^2/2}\rangle_s.
+\]
+Prove that it is nonnegative and that its expectation is
+$2NF_{N,s}(\lambda_0)$.  Its disorder Lipschitz constant is again of order
+$\sqrt N$.  Gaussian concentration then gives an exceptional event with
+probability exponentially small in $N$.
+
+Formalize the elementary implication outside that event:
+\[
+ |Q_{12}|\ge\varepsilon
+ \quad\Longrightarrow\quad
+ \1_{\{|Q_{12}|\ge\varepsilon\}}
+ \le
+ \exp\left(-\frac{\lambda_0\varepsilon^2N}{2}
+     +Y_{N,s}\right).
+\]
+This is a pointwise statement on the finite replica space.  Taking Gibbs and
+disorder expectations comes afterward.  For the finitely many small $N$,
+enlarge the multiplicative constant by an explicit finite maximum; do not
+use an informal phrase about changing constants without constructing one.
+
+A reusable Lean conclusion is
+\begin{lstlisting}
+theorem fixed_deviation_tail
+    (U : UniformATData) (eps : Real) (heps : 0 < eps) :
+    exists c > 0, exists C > 0, forall N, 0 < N ->
+      forall x ∈ U.K, forall s ∈ Set.Icc (0 : Real) 1,
+      nuAt x N s (fun sigmas =>
+        indicator (abs (Q12At x N sigmas) >= eps)) <=
+          C * Real.exp (-c * N) := by
+  ...
+\end{lstlisting}
+Use either $>$ or $\ge$ consistently.  The paper switches harmlessly between
+them only after constants are adjusted; Lean requires an explicit inclusion.
+
+\subsection{Cavity configuration and endpoint factorization}
+
+For a configuration of size $N$, define the cavity spin
+$\varepsilon=\sigma(\operatorname{Fin.last}(N-1))$ and the restriction to
+the first $N-1$ coordinates.  A clean implementation uses the equivalence
+\[
+ \operatorname{Fin}N\simeq \operatorname{Fin}(N-1)\,\sqcup\,\mathbf 1
+\]
+under $0<N$.  Prove that summing over full configurations is equal to summing
+over a restricted configuration and the last Boolean spin.
+
+The centered cavity overlap keeps denominator $N$:
+\[
+ Q^-_{ab}=\frac1N\sum_{i<N}\sigma_i^a\sigma_i^b-q.
+\]
+Do not replace this denominator by $N-1$.  Prove the exact relation
+\[
+ Q_{ab}=Q^-_{ab}+N^{-1}\varepsilon_a\varepsilon_b.
+\]
+All three diagonal vectors in \eqref{eq:theta} come from this normalization.
+
+At $u=0$, conditional on
+$Y=h+\beta\sqrt q\,Z$, cavity spins are independent with mean $\tanh Y$.
+Formalize the conditional finite-spin distribution first:
+\[
+ \Pr(\varepsilon=e\mid Y)
+ =\frac{e^{eY}}{2\cosh Y}.
+\]
+Then prove for any finite set of distinct replica indices $A$,
+\[
+ \E_0\prod_{a\in A}\varepsilon_a
+ =
+ \begin{cases}
+ 1,&|A|=0,\\
+ q,&|A|=2,\\
+ r,&|A|=4,
+ \end{cases}
+\]
+for the cases needed here.  The more useful general rule reduces a spin
+monomial by parity of multiplicities before counting the number of odd
+indices.
+
+\subsection{The replica derivative operator}
+
+Represent an overlap edge as an unordered pair of replica indices.  A
+project structure can enforce distinct endpoints:
+\begin{lstlisting}
+structure ReplicaEdge (n : Nat) where
+  left : Fin n
+  right : Fin n
+  ne : Not (left = right)
+\end{lstlisting}
+Alternatively use ordered pairs and prove symmetry normalization.  The first
+choice simplifies parity counting; the second aligns more directly with
+matrix indices.  Do not quotient by edge symmetry until the simp behavior
+has been tested.
+
+For an observable of $n$ replicas, define the three parts of
+$\mathcal D_n$ with explicit embeddings into $n+2$ replicas:
+\begin{align*}
+\mathcal D_nF={}&
+ \sum_{1\le a<b\le n}F\varepsilon_a\varepsilon_bQ^-_{ab}\\
+&-n\sum_{a=1}^n
+ F\varepsilon_a\varepsilon_{n+1}Q^-_{a,n+1}\\
+&+\frac{n(n+1)}2
+ F\varepsilon_{n+1}\varepsilon_{n+2}Q^-_{n+1,n+2}.
+\end{align*}
+The coefficient in the last line counts the normalization replicas produced
+by differentiating a Gibbs expectation.  It is not the cardinality of a
+displayed edge set, so record it directly.
+
+State the cavity derivative theorem as a \texttt{HasDerivAt} result on
+$u\in(0,1)$:
+\begin{lstlisting}
+theorem cavity_expect_hasDerivAt
+    (F : Replicas N n -> Real) (hF : Bounded F)
+    (hu : u ∈ Set.Ioo (0 : Real) 1) :
+    HasDerivAt
+      (fun u => cavityNu p N s u F)
+      (s * p.beta ^ 2 * cavityNu p N s u (cavityOp n F)) u := by
+  ...
+\end{lstlisting}
+The observable on the right formally lives on $n+2$ replicas.  Reflect that
+in the type of \texttt{cavityOp}; relying on an implicit coercion will make
+the second derivative hard to state.
+
+Prove endpoint continuity separately.  The square-root coefficients in the
+Hamiltonian are not differentiable at the endpoints, but the covariance
+derivative and the final expectation have one-sided continuous extensions.
+
+\subsection{Cavity replacement estimates}
+
+For
+\[
+ M_3(u)=\nu_{s,u}[|Q^-_{12}|^3],
+\]
+differentiate with the cavity operator and bound every extra overlap by $2$.
+Formalize replica H\"older in a symmetric form:
+\[
+ \nu[|Q^-_{ab}Q^-_{cd}Q^-_{ef}|]
+ \le\prod_{\text{three edges}}
+      \nu[|Q^-_{\cdot\cdot}|^3]^{1/3}
+ =M_3(u).
+\]
+The final equality uses replica exchangeability, so all six indices may have
+different coincidence patterns.  Verify that the one-edge marginal is
+always the same; no independence is claimed.
+
+Apply a two-sided or backward Gronwall lemma to
+$|M_3'(u)|\le CM_3(u)$ to get
+\eqref{eq:cavityM3comparison}.  Next prove
+\[
+ |Q^-_{12}|\le |Q_{12}|+N^{-1}
+\]
+and the real inequality $(x+y)^3\le4(x^3+y^3)$ for nonnegative $x,y$.
+This yields \eqref{eq:cavityM3endpoint}.
+
+For products of two overlaps, the derivative adds one overlap.  Integrating
+the derivative and applying the triple H\"older bound proves
+\eqref{eq:cavityquadraticcomparison}.  Keep the following real Young
+inequality as a named lemma:
+\begin{lstlisting}
+theorem abs_div_nat_le_cube_add (x : Real) (hN : 0 < N) :
+    abs x / N <= abs x ^ 3 / 3 + 2 / (3 * (N : Real) ^ (3 / 2 : Real)) := by
+  -- Use Young's inequality with exponents 3 and 3/2.
+  ...
+\end{lstlisting}
+Because real powers create extra positivity obligations, an equivalent
+version with $N\sqrt N$ in the denominator may be easier:
+\[
+ \frac{|x|}{N}\le\frac{|x|^3}{3}+\frac{2}{3N^{3/2}}.
+\]
+Prove the casted $N>0$ facts once and reuse them.
+
+\subsection{Cavity Taylor remainder}
+
+For each centered cavity observable $F$, establish
+\[
+ \nu_{s,0}[F]=0.
+\]
+This follows from endpoint factorization and the definitions of $q$ and $r$.
+Use the integral Taylor formula
+\[
+ f(1)=f(0)+f'(0)+\int_0^1(1-u)f''(u)\,\dd u.
+\]
+A local theorem specialized to $[0,1]$ may be much easier to apply than a
+fully general second-order Taylor theorem.
+
+When differentiating twice, the replica count changes after the first
+application of $\mathcal D$.  Each summand must carry the number of replicas
+on which it truly depends before the operator is applied again.  Define a
+small syntax of cavity monomials if direct dependent types become hard:
+\begin{lstlisting}
+structure CavityMonomial where
+  replicas : Nat
+  spinEdges : List (ReplicaEdge replicas)
+  overlapEdges : List (ReplicaEdge replicas)
+  coefficient : Real
+\end{lstlisting}
+Give this syntax an evaluation function.  Then prove that one derivative
+maps each monomial to a finite sum of monomials and adds exactly one overlap
+edge.  The second derivative bound reduces to: every produced term has three
+overlap edges, bounded spin factor, and a uniformly bounded coefficient.
+
+The diagonal terms already carry $N^{-1}$.  One derivative adds a single
+overlap, and the Young estimate converts
+$N^{-1}\nu|Q^-|$ into the allowed cubic remainder plus $N^{-3/2}$.
+
+The final cavity system theorem should not use big-$O$ notation:
+\begin{lstlisting}
+theorem cavity_system
+    (U : UniformATData) :
+    exists C > 0, forall N, 0 < N ->
+      forall x ∈ U.K, forall s ∈ Set.Icc (0 : Real) 1,
+      exists rho : Fin 3 -> Real,
+        (identity3 - s • cavityL x) *v momentVec x N s =
+          (1 / N : Real) • theta x + rho
+        ∧ normInf rho <=
+          C * ((N : Real)⁻¹ / Real.sqrt N +
+            thirdMoment x N s) := by
+  ...
+\end{lstlisting}
+Choose one expression for $N^{-3/2}$ and prove its equivalence to
+$1/(N\sqrt N)$ under $N>0$.
+
+\subsection{Finite coefficient verification}
+
+The coefficient table \eqref{eq:cavitytable} is suitable for a fully
+decidable check once $q$ and $r$ are treated as formal variables.  Encode a
+spin monomial by the parity set of its replica indices.  At the decoupled
+endpoint, assign the symbolic value
+\[
+ \operatorname{mom}(A)=
+ \begin{cases}
+ 1,&|A|=0,\\
+ q,&|A|=2,\\
+ r,&|A|=4.
+ \end{cases}
+\]
+Multiplication of spin monomials becomes symmetric difference of parity sets.
+The factor
+\[
+ \E_0[(\varepsilon_p\varepsilon_q-q)\varepsilon_e]
+\]
+then normalizes to $1-q^2$, $q-q^2$, or $r-q^2$ according to whether the
+edge is equal, adjacent, or disjoint.
+
+There should be two checks of the table:
+\begin{itemize}[leftmargin=2em]
+\item a general parity lemma proving the three symbolic values;
+\item a finite \texttt{native\_decide} or \texttt{decide} computation for
+      the edge multiplicities in the $n=2,3,4$ cases.
+\end{itemize}
+The computational check counts combinatorial coefficients only.  The
+mathematical theorem connects those counts to cavity expectations.  Keeping
+both makes the calculation easy to audit.
+
+Expected rows are
+\[
+ (b_2,-4b_1,3b_0),
+\]
+\[
+ (b_1,b_2-2b_1-3b_0,6b_0-3b_1),
+\]
+and
+\[
+ (b_0,4b_1-8b_0,b_2-8b_1+10b_0).
+\]
+After the finite count, use \texttt{ring} to collect the symbolic $b_i$
+terms.
+
+\subsection{The three-dimensional cavity matrix}
+
+Use vectors \texttt{Fin 3 -> Real} and matrices
+\texttt{Matrix (Fin 3) (Fin 3) Real}.  Define the entries in one location:
+\begin{lstlisting}
+def cavityB2 (p : RSPoint) : Real :=
+  p.beta ^ 2 * (1 - p.q ^ 2)
+
+def cavityB1 (p : RSPoint) : Real :=
+  p.beta ^ 2 * p.q * (1 - p.q)
+
+def cavityB0 (p : RSPoint) : Real :=
+  p.beta ^ 2 * (p.r - p.q ^ 2)
+
+def theta (p : RSPoint) : Fin 3 -> Real :=
+  ![1 - p.q ^ 2, p.q - p.q ^ 2, p.r - p.q ^ 2]
+
+def cavityL (p : RSPoint) : Matrix (Fin 3) (Fin 3) Real :=
+  ![![cavityB2 p, -4 * cavityB1 p, 3 * cavityB0 p],
+    ![cavityB1 p,
+       cavityB2 p - 2 * cavityB1 p - 3 * cavityB0 p,
+       6 * cavityB0 p - 3 * cavityB1 p],
+    ![cavityB0 p,
+       4 * cavityB1 p - 8 * cavityB0 p,
+       cavityB2 p - 8 * cavityB1 p + 10 * cavityB0 p]]
+\end{lstlisting}
+The \texttt{![...]} notation may need the relevant matrix and vector
+imports.  Keep entrywise simp lemmas so \texttt{fin\_cases i} followed by
+\texttt{ring} can prove matrix equalities.
+
+Define $S$ and an explicit $S^{-1}$.  Prove both
+$SS^{-1}=I$ and $S^{-1}S=I$ by extensionality and finite cases.  Then prove
+\eqref{eq:triangular} entrywise.  Do not rely only on a determinant
+calculation: the upper-right Jordan entry matters for the uniform inverse
+bound.
+
+The scalar inequalities required for stability are
+\[
+r\le q,\qquad
+\alpha-\beta^2\gamma'=2\beta^2(q-r)\ge0,
+\]
+and hence
+\[
+ \beta^2\gamma'\le\alpha<1.
+\]
+For $s\in[0,1]$, prove
+\[
+1-s\alpha\ge1-\alpha>0
+\]
+when $\alpha\ge0$; nonnegativity of $\alpha$ follows from the sech-fourth
+formula.  For $\gamma'$, split on its sign exactly as in the paper.
+
+One route to the inverse bound is to write the inverse of the triangular
+matrix explicitly:
+\[
+ \begin{pmatrix}
+ a&b&0\\0&a&0\\0&0&c
+ \end{pmatrix}^{-1}
+ =
+ \begin{pmatrix}
+ a^{-1}&-b/a^2&0\\0&a^{-1}&0\\0&0&c^{-1}
+ \end{pmatrix}.
+\]
+Here
+\[
+a=1-s\beta^2\gamma',\qquad
+b=-s\beta^2\gamma'',\qquad
+c=1-s\alpha.
+\]
+Compactness bounds $\beta$, $q$, and $r$, so it also bounds $b$.  Conjugating
+by the fixed matrices $S$ and $S^{-1}$ supplies a concrete infinity-norm
+bound.  This avoids relying on continuity of matrix inversion, though that
+is a valid alternative after invertibility is proved.
+
+The replicon row can be checked without inverting the full matrix:
+\begin{lstlisting}
+def repliconRow : Fin 3 -> Real := ![1, -2, 1]
+
+theorem repliconRow_mul_L (p : RSPoint) :
+    Matrix.vecMul repliconRow (cavityL p) =
+      p.alpha • repliconRow := by
+  funext j
+  fin_cases j <;> simp [repliconRow, cavityL, RSPoint.alpha,
+    cavityB0, cavityB1, cavityB2] <;> ring
+
+theorem repliconRow_dot_theta (p : RSPoint) :
+    dotProduct repliconRow (theta p) = p.alpha / p.beta ^ 2 := by
+  have hb : p.beta ^ 2 != 0 := pow_ne_zero 2 (ne_of_gt p.beta_pos)
+  simp [repliconRow, theta, RSPoint.alpha]
+  field_simp
+  ring
+\end{lstlisting}
+Depending on simplification, it may be better to prove the equivalent
+identity
+\[
+ \beta^2\bigl(\texttt{repliconRow dot theta}\bigr)=\alpha
+\]
+first, then divide using $\beta>0$.
+
+\subsection{Deterministic cubic absorption}
+
+Abstract the final closure from all probability definitions.  The needed
+lemma has the following shape.  Suppose $A_N\ge0$,
+\[
+ A_N\le aN^{-1}+bN^{-3/2}+dT_N,
+\]
+and for every fixed $\varepsilon>0$,
+\[
+ T_N\le\varepsilon A_N+C_\varepsilon e^{-c_\varepsilon N}.
+\]
+Choose $\varepsilon>0$ with $d\varepsilon\le1/2$ and move the resulting term
+to the left.  Then bound
+\[
+ N^{-3/2}\le N^{-1},\qquad
+ e^{-cN}\le C_cN^{-1}
+\]
+for $N\ge1$.  The latter can use boundedness of
+$x\mapsto xe^{-cx}$ on $[0,\infty)$.
+
+The split behind the second assumption is pointwise:
+\[
+ |Q|^3
+ \le\varepsilon Q^2+
+ 8\1_{\{|Q|>\varepsilon\}}
+ \quad\text{when }|Q|\le2.
+\]
+Prove it by cases on $|Q|\le\varepsilon$.  In the first case,
+$|Q|^3\le\varepsilon Q^2$; in the other case, use $|Q|^3\le8$.
+This small lemma should not depend on probability.
+
+A suggested interface is
+\begin{lstlisting}
+theorem absorb_cubic_remainder
+    (A T : Nat -> Real) (a b d : Real)
+    (hA : forall N, 0 < N -> 0 <= A N)
+    (hpre : forall N, 0 < N ->
+      A N <= a / N + b / ((N : Real) * Real.sqrt N) + d * T N)
+    (htail : forall eps, 0 < eps ->
+      exists C c, 0 < C ∧ 0 < c ∧ forall N, 0 < N ->
+        T N <= eps * A N + C * Real.exp (-c * N)) :
+    exists C, 0 < C ∧ forall N, 0 < N -> A N <= C / N := by
+  ...
+\end{lstlisting}
+In the uniform application, all functions also depend on the compact
+parameter and on $s$; either include those indices in the abstract lemma or
+apply it to suprema.
+
+\subsection{Free-energy conclusion}
+
+Once
+\[
+ A_s\le C_{\mathcal K}/N
+\]
+is available, the free-energy result is short.  Integrate the exact identity
+\[
+ D_N'(s)=\frac{\beta^2}{4}A_s
+\]
+from zero to one.  Prove $A_s\ge0$ from positivity of Gibbs expectation, so
+$D_N(1)\ge0$.  For the upper bound, use a uniform upper bound on $\beta^2$
+over $\mathcal K$ and the fact that the interval has length one.
+
+The endpoint equality
+\[
+P_1^*=\phi^{\rm RS}(\beta,h)
+\]
+and $\phi_N(1)=\phi_N(\beta,h)$ should be explicit rewrite lemmas.  With
+them, the final proof should require no unfolding of Hamiltonians.
+
+\subsection{Replicon susceptibility}
+
+Let $D_s=A_s-2B_s+C_s$.  Apply the row vector $(1,-2,1)$ to the cavity
+system.  The two finite algebra lemmas above give
+\[
+ (1-s\alpha)D_s
+ =\frac{\alpha}{\beta^2N}+\rho^{(R)}_{N,s}.
+\]
+Bound
+\[
+ |\rho^{(R)}_{N,s}|
+ \le \|\,(1,-2,1)\,\|_1\|\rho_{N,s}\|_\infty
+ =4\|\rho_{N,s}\|_\infty.
+\]
+Record the factor four rather than absorbing it immediately.
+
+To show the scaled cubic moment vanishes uniformly, use
+\[
+ N\nu_s[|Q|^3]
+ \le C\varepsilon+
+ 8NC_{\varepsilon}e^{-c_{\varepsilon}N}.
+\]
+For each fixed $\varepsilon$, the exponential term tends to zero uniformly
+in the parameters.  Then send $\varepsilon$ to zero.  Formalize this as an
+$\varepsilon$ proof of uniform convergence, or define
+\[
+ e_N=\sup_{(\beta,h,s)\in\mathcal K\times[0,1]}
+      N\nu_s[|Q|^3]
+\]
+and prove $e_N\to0$ using a limsup inequality.
+
+Finally divide by $1-s\alpha$.  The common AT gap makes the denominator
+uniformly positive.  State the result as uniform convergence:
+\begin{lstlisting}
+theorem replicon_susceptibility_uniform
+    (U : UniformATData) :
+    TendstoUniformlyOn
+      (fun N x_s =>
+        N * (momentAAt x_s N - 2 * momentBAt x_s N +
+          momentCAt x_s N))
+      (fun x_s =>
+        alphaAt x_s.1 /
+          (betaAt x_s.1 ^ 2 * (1 - x_s.2 * alphaAt x_s.1)))
+      atTop (U.K ×ˢ Set.Icc (0 : Real) 1) := by
+  ...
+\end{lstlisting}
+If Mathlib's uniform-convergence predicate is inconvenient, use the direct
+quantifier form from Theorem~\ref{thm:main}:
+for every $\varepsilon>0$, there is $N_0$ such that the absolute difference
+is at most $\varepsilon$ for every $N\ge N_0$, every parameter in
+$\mathcal K$, and every $s\in[0,1]$.
+
+\subsection{Uniformity on compact parameter sets}
+
+Do not use a symbol $C_{\mathcal K}$ without recording what it depends on.
+A robust pattern is to prove lemmas of the form
+\begin{lstlisting}
+exists C > 0, forall x ∈ K, forall s ∈ Set.Icc (0 : Real) 1, ...
+\end{lstlisting}
+and assign descriptive names to the witnesses.  Recommended names are
+\begin{itemize}[leftmargin=2em]
+\item \texttt{betaBound}, \texttt{qLower}, and \texttt{atGap};
+\item \texttt{gtSecondBound} and \texttt{matrixInverseBound}.
+\end{itemize}
+
+The compact facts needed from the parameter map are:
+\begin{itemize}[leftmargin=2em]
+\item continuity of $q(\beta,h)$;
+\item continuity of $r$ and $\alpha$ by dominated convergence;
+\item a positive minimum of $\beta$ and $h$;
+\item a positive minimum of $q$;
+\item a maximum of $q$ strictly below one;
+\item a positive minimum of $1-\alpha$;
+\item finite maxima of $\beta$, $q$, $r$, and all continuous semigroup
+      derivative bounds.
+\end{itemize}
+For a strictly positive continuous function on a compact nonempty set,
+write a helper theorem returning a positive lower bound.  State
+nonemptiness explicitly.  If $\mathcal K$ is empty, the main uniform theorem
+is vacuous and may be handled in a separate case.
+
+The proof that $\sup_{\mathcal K}q<1$ requires more than pointwise $q<1$:
+continuity makes $q$ attain a maximum, and the pointwise strict inequality at
+the maximizer makes that maximum less than one.  The same pattern yields a
+strict uniform AT gap.
+
+\subsection{Paper-to-Lean theorem ledger}
+
+The following ledger should be kept current as declarations are completed.
+\begin{center}
+\begin{tabular}{p{0.25\textwidth}p{0.31\textwidth}p{0.34\textwidth}}
+\toprule
+paper item & proposed Lean declaration & principal prerequisites\\
+\midrule
+\eqref{eq:GIBP} &
+\texttt{gaussian\_ibp\_fin} &
+finite Gaussian vector, differentiability, integrability\\
+\eqref{eq:gaussianmaxgeneral} &
+\texttt{gaussian\_max\_bound} &
+coordinate Lipschitz bound, finite nonempty index set\\
+\eqref{eq:PDEupper}--\eqref{eq:PDElower} &
+\texttt{psi\_explicit}, \texttt{psi\_solves} &
+Gaussian convolution derivatives\\
+Lemma~\ref{lem:diffusioncomparison} &
+\texttt{diffusion\_sech4\_comparison} &
+It\^o formula, time change, density comparison\\
+Proposition~\ref{prop:pathRS} &
+\texttt{gs\_sign}, \texttt{gs\_uniform\_linear\_gap} &
+scalar PDE, diffusion comparison, compactness\\
+Lemma~\ref{lem:GTcontinuity} &
+\texttt{gtFunctional\_continuous} &
+finite-semigroup parameter continuity\\
+Lemma~\ref{lem:Taylorcoercivity} &
+\texttt{uniform\_taylor\_coercivity} &
+one-variable Taylor theorem, compact fixed gap\\
+Lemma~\ref{lem:specialGT} &
+\texttt{specialized\_gt\_bound} &
+Gaussian covariance interpolation, finite recursion\\
+Proposition~\ref{prop:GTcoercivity} &
+\texttt{gt\_quadratic\_coercivity} &
+GT bound, multiplier derivative, signed gaps\\
+Lemma~\ref{lem:sublinearpressure} &
+\texttt{coupledPressure\_envelope} &
+coercivity, Gaussian maximum\\
+\eqref{eq:DNprime} &
+\texttt{freeEnergyGap\_deriv} &
+finite Gibbs differentiation, Gaussian IBP\\
+Corollary~\ref{cor:tail} &
+\texttt{fixed\_deviation\_tail} &
+coupled pressure, Gaussian concentration\\
+\eqref{eq:cavityderivative} &
+\texttt{cavity\_expect\_hasDerivAt} &
+covariance differentiation, replica normalization\\
+Proposition~\ref{prop:cavity} &
+\texttt{cavity\_system} &
+endpoint moments, Taylor remainder, coefficient count\\
+\eqref{eq:triangular} &
+\texttt{cavityL\_triangular} &
+finite $3\times3$ matrix algebra\\
+\eqref{eq:inverse} &
+\texttt{cavity\_inverse\_uniform} &
+strict AT gap, explicit triangular inverse\\
+\eqref{eq:preabsorb}--\eqref{eq:thirdsplit} &
+\texttt{overlap\_second\_moment\_bound} &
+matrix inverse, fixed tail, cubic absorption\\
+\eqref{eq:freeenergyidentity} &
+\texttt{freeEnergy\_error\_bound} &
+smart-path derivative, second moment\\
+\eqref{eq:repliconeq} &
+\texttt{replicon\_susceptibility\_uniform} &
+replicon row, vanishing scaled cubic moment\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Every ledger row should eventually have a source file and a theorem name
+that Lean accepts.  If one paper statement is split into several
+declarations, list the public theorem that reassembles it.
+
+\subsection{Suggested public theorem statements}
+
+A pointwise finite-volume theorem may have the following shape:
+\begin{lstlisting}
+theorem overlap_second_moment_pointwise
+    (p : RSPoint) (hat : p.StrictAT) :
+    exists C > 0, forall N, 0 < N ->
+      forall s ∈ Set.Icc (0 : Real) 1,
+        momentA p N s <= C / N := by
+  ...
+\end{lstlisting}
+This statement alone does not imply one common constant on a compact family.
+The uniform theorem should quantify in the following order:
+\begin{lstlisting}
+theorem overlap_second_moment_uniform
+    (K : Set (Real × Real))
+    (hKc : IsCompact K)
+    (hKsub : K ⊆ strictATRegion) :
+    exists C > 0, forall N, 0 < N ->
+      forall x ∈ K, forall s ∈ Set.Icc (0 : Real) 1,
+        momentAAt x N s <= C / N := by
+  ...
+\end{lstlisting}
+Then state the full paper result as a structure or conjunction containing the
+second-moment estimate, free-energy estimate, and uniform susceptibility
+limit.  Keeping the first two theorems public is useful for downstream work.
+
+The condition $N\ge1$ is represented by \texttt{0 < N}.  The paper's
+$C_{\mathcal K}<\infty$ becomes \texttt{exists C, 0 < C} together with the
+bound.  There is no need to encode finiteness separately for a real number.
+
+\subsection{Tactic guidance for fragile calculations}
+
+Use \texttt{ring} or \texttt{ring\_nf} for polynomial identities in
+$q,r,\beta,s$.  Use \texttt{field\_simp} only after proving every denominator
+nonzero.  For inequalities with squares, \texttt{nlinarith} is effective
+once square nonnegativity is in the local context.
+
+For \texttt{Fin 2} and \texttt{Fin 3} matrix goals, the reliable pattern is
+\begin{lstlisting}
+  ext i j
+  fin_cases i <;> fin_cases j
+  all_goals simp [cavityL, changeMatrix, cavityB0, cavityB1, cavityB2]
+  all_goals ring
+\end{lstlisting}
+If vector notation expands poorly, prove each coordinate as a named lemma
+and combine by \texttt{funext}.
+
+For finite Gibbs sums, use equivalences to reindex rather than expanding all
+configurations.  Reserve \texttt{native\_decide} for closed finite
+combinatorics, never for identities containing arbitrary real parameters.
+
+For measure-theoretic goals, first prove measurability and integrability as
+separate lemmas.  A large \texttt{convert} proof that mixes algebra,
+measurability, and almost-everywhere equality is hard to maintain.
+
+\subsection{Audit checklist before claiming completion}
+
+A final audit should verify all of the following:
+\begin{itemize}[leftmargin=2em]
+\item the project builds with a pinned Lean and Mathlib version;
+\item no source contains \texttt{sorry}, \texttt{admit}, or a project axiom;
+\item every use of division by $N$, $\beta$, $1-s\alpha$, or a partition
+      function has a nearby nonzero proof;
+\item every logarithm has a positivity proof for its argument;
+\item square-root arguments are nonnegative;
+\item every Gaussian integral has measurability and integrability evidence;
+\item open-interval derivative identities are extended to endpoints only by
+      a proved continuity or dominated-convergence theorem;
+\item replica embeddings are explicit after every cavity derivative;
+\item the $Q^-$ denominator is $N$, not $N-1$;
+\item covariance calculations include diagonal corrections;
+\item the half-parameter $\gamma_v=x_q/2$ below $|v|$ is present;
+\item constrained partition functions are used only at attainable overlaps;
+\item all compact uniform constants are selected outside the quantifiers
+      over parameters, $s$, and $N$;
+\item the final susceptibility statement uses uniform, not merely pointwise,
+      convergence;
+\item \texttt{\#print axioms} for each public theorem reports only the
+      standard logical principles inherited from Mathlib.
+\end{itemize}
+
+Useful repository checks are
+\begin{lstlisting}
+lake build
+rg -n "\bsorry\b|\badmit\b|^axiom " SKKusuoka
+lake env lean SKKusuoka/Main.lean
+\end{lstlisting}
+The regular expression should be run on source code, with comments excluded
+or reviewed manually.  Also add small executable or example files that
+check the $3\times3$ identities and the cavity coefficient enumeration
+independently of the analytic development.
+
+\subsection{High-risk proof obligations}
+
+The parts most likely to require new general-purpose library work are the
+positive-field uniqueness of the fixed point, the SDE comparison in
+Lemma~\ref{lem:diffusioncomparison}, strictness in the signed
+Cauchy--Schwarz gap, Gaussian concentration with the exact finite-volume
+Lipschitz constant, and the twice-differentiated cavity expectation with
+changing replica count.
+
+For each such block, first write the exact theorem signature and prove every
+finite or deterministic sublemma around it.  This prevents a hard analytic
+lemma from becoming entangled with notation or normalization.  In
+particular:
+\begin{itemize}[leftmargin=2em]
+\item the diffusion block should accept already-proved identities for the
+      law at time $q$ and return only the comparison estimate;
+\item the strict signed-gap block should accept the explicit two-variable
+      Gaussian semigroup and return a continuous negative gap on a compact
+      set;
+\item the concentration block should accept a Lipschitz function on a finite
+      Gaussian vector and return the exact tail bound used later;
+\item the cavity second-derivative block should work for a finite list of
+      monomials and return a bound by the third overlap moment.
+\end{itemize}
+Once these interfaces are stable, their proofs can be improved without
+changing the main argument.
+
+\subsection{Minimal useful completion stages}
+
+A useful algebraic release consists of the following files:
+\begin{itemize}[leftmargin=2em]
+\item \texttt{Spins.lean} and \texttt{Gibbs.lean};
+\item \texttt{Cavity/Coefficients.lean} and \texttt{Matrix3.lean};
+\item \texttt{Absorption.lean}.
+\end{itemize}
+It checks the exact finite-size conventions and the stability calculation.
+
+A useful analytic-core release adds \texttt{Parameters.lean},
+\texttt{ScalarPDE.lean}, and \texttt{Diffusion.lean}.  It should end with a
+pointwise strict-AT sign theorem.
+
+A coercivity release adds the finite GT recursion, its interpolation bound,
+and the signed compact-gap cases.  Its public endpoint is
+Proposition~\ref{prop:GTcoercivity}.
+
+The final release adds preliminary concentration, cavity remainders,
+compact uniformity, and all three conclusions of Theorem~\ref{thm:main}.
+Each release should build without unfinished declarations; work in progress
+can live on a separate branch or in files not imported by the release root.
+
+This organization turns each displayed equation in the paper into a
+checkable contract and keeps the eventual Lean code close enough to the
+mathematical notation for line-by-line comparison.
+
+
+\section*{Acknowledgements}
+S.K.\ acknowledges support from JSPS KAKENHI Grant Numbers
+JP22H00099 and JP23K20801.
+S.N.\ acknowledges support from JSPS KAKENHI Grant Numbers
+JP24K16937 and JP25K00911.
+
+\section*{Statement on the Use of Artificial Intelligence}
+Codex was used to assist with revising the presentation and performing
+compilation checks.  The authors take full responsibility for the
+content of this work.
+
+\begin{thebibliography}{10}
+
+\bibitem{ChenGT}
+W.-K.~Chen,
+\newblock
+\emph{Variational representations for the Parisi functional and the
+two-dimensional Guerra--Talagrand bound},
+\newblock \emph{Annals of Probability} 45 (2017), 3929--3966.
+\href{https://arxiv.org/abs/1501.06635}{arXiv:1501.06635}.
+
+\bibitem{DeyWu}
+P.~S.~Dey and Q.~Wu,
+\newblock
+\emph{Fluctuation results for multi-species
+Sherrington--Kirkpatrick model in the replica symmetric regime},
+\newblock \emph{Journal of Statistical Physics} 185 (2021),
+Paper No.~22.
+\href{https://arxiv.org/abs/2012.13381}{arXiv:2012.13381}.
+
+\bibitem{Ledoux}
+M.~Ledoux,
+\newblock
+\emph{The Concentration of Measure Phenomenon},
+\newblock Mathematical Surveys and Monographs, Vol.~89,
+American Mathematical Society, Providence, RI, 2001.
+
+\bibitem{Lopatto}
+P.~Lopatto,
+\newblock
+\emph{Replica symmetry up to the de Almeida--Thouless line in the
+Sherrington--Kirkpatrick model},
+\newblock preprint (2026).
+\href{https://arxiv.org/abs/2604.11921}{arXiv:2604.11921}.
+
+\bibitem{Panchenko}
+D.~Panchenko,
+\newblock
+\emph{The Sherrington--Kirkpatrick Model},
+\newblock Springer Monographs in Mathematics, Springer, New York, 2013.
+
+\bibitem{Talagrand}
+M.~Talagrand,
+\newblock
+\emph{Mean Field Models for Spin Glasses}, Vols.~I--II,
+\newblock Springer, 2011.
+
+\end{thebibliography}
+
+
+\end{document}

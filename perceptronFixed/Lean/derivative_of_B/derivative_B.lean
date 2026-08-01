@@ -259,8 +259,10 @@ lemma deriv_φ (u : ℝ) : deriv φ u = -u * φ u := by
       (h_pow.neg.div_const (2 : ℝ))
   have h_exp :
       HasDerivAt (fun x : ℝ => rexp (-(x ^ 2) / 2)) (-(u * rexp (-(u ^ 2) / 2))) u := by
-    simpa [Function.comp, mul_assoc, mul_left_comm, mul_comm] using
-      (Real.hasDerivAt_exp (x := (-(u ^ 2) / 2))).comp u h_inner
+    have h := (Real.hasDerivAt_exp (x := (-(u ^ 2) / 2))).comp u h_inner
+    change HasDerivAt (fun x : ℝ => rexp (-(x ^ 2) / 2))
+      (rexp (-(u ^ 2) / 2) * -u) u at h
+    convert h using 1 <;> ring
   have h_mul :
       HasDerivAt
         (fun x : ℝ => (1 / Real.sqrt (2 * Real.pi)) * rexp (-(x ^ 2) / 2))
@@ -282,7 +284,10 @@ lemma deriv_Φbar (u : ℝ) : deriv Φbar u = -φ u := by
   have hΦ : HasDerivAt Φ (φ u) u := hasDerivAt_Φ (u := u)
   have hΦbar : HasDerivAt Φbar (-φ u) u := by
     -- `1 - Φ` has derivative `-Φ'`.
-    simpa [Φbar] using hΦ.const_sub (1 : ℝ)
+    unfold Φbar
+    have h := hΦ.const_sub (1 : ℝ)
+    change HasDerivAt (fun x : ℝ => 1 - Φ x) (-φ u) u at h
+    exact h
   exact hΦbar.deriv
 
 lemma deriv_E (u : ℝ) :
@@ -300,7 +305,11 @@ lemma deriv_E (u : ℝ) :
   have h_div :
       deriv E u =
         (deriv φ u * Φbar u - φ u * deriv Φbar u) / (Φbar u) ^ 2 := by
-    simpa [E] using (deriv_div hφ hΦbar (Φbar_ne_zero u))
+    unfold E
+    have h := deriv_div hφ hΦbar (Φbar_ne_zero u)
+    change deriv (fun x : ℝ => φ x / Φbar x) u =
+      (deriv φ u * Φbar u - φ u * deriv Φbar u) / Φbar u ^ 2 at h
+    exact h
   -- Substitute the known derivatives and simplify.
   rw [h_div, deriv_φ (u := u), deriv_Φbar (u := u)]
   field_simp [E, Φbar_ne_zero u]
@@ -317,7 +326,10 @@ lemma differentiableAt_E (u : ℝ) :
     fun_prop
   have hΦbar : DifferentiableAt ℝ Φbar u :=
     ((hasDerivAt_Φ (u := u)).const_sub (1 : ℝ)).differentiableAt
-  simpa [E] using (hφ.div hΦbar (Φbar_ne_zero u))
+  unfold E
+  have h := hφ.div hΦbar (Φbar_ne_zero u)
+  change DifferentiableAt ℝ (fun x : ℝ => φ x / Φbar x) u at h
+  exact h
 
 lemma deriv2_E (u : ℝ) :
     deriv (fun x => deriv E x) u =
@@ -334,7 +346,10 @@ lemma deriv2_E (u : ℝ) :
       fun_prop
     have hΦbar : DifferentiableAt ℝ Φbar u :=
       ((hasDerivAt_Φ (u := u)).const_sub (1 : ℝ)).differentiableAt
-    simpa [E] using (hφ.div hΦbar (Φbar_ne_zero u))
+    unfold E
+    have h := hφ.div hΦbar (Φbar_ne_zero u)
+    change DifferentiableAt ℝ (fun x : ℝ => φ x / Φbar x) u at h
+    exact h
   -- Rewrite the left-hand side using `hfun`, then compute the derivative of the RHS.
   simp [hfun, pow_two, deriv_sub, deriv_mul, hE, differentiableAt_id, mul_assoc, mul_left_comm,
       mul_comm]
@@ -416,7 +431,9 @@ lemma Φbar_antitone : Antitone Φbar := by
     refine ae_of_all _ (fun x => (φ_pos x).le)
   have hst : (Set.Ioi v : Set ℝ) ≤ᵐ[(volume : Measure ℝ)] Set.Ioi u := by
     refine ae_of_all _ (fun x hx => ?_)
-    have : v < x := by simpa [Set.mem_Ioi] using hx
+    have : v < x := by
+      change v < x at hx
+      exact hx
     exact lt_of_le_of_lt huv this
   exact setIntegral_mono_set (μ := (volume : Measure ℝ)) (f := φ)
     (s := Set.Ioi v) (t := Set.Ioi u) hfi_on h_nonneg hst
@@ -507,7 +524,17 @@ lemma Φbar_eq_phi_div_sub_integral {u : ℝ} (hu : 0 < u) :
   have hu_deriv :
       ∀ x ∈ Set.Ioi u, HasDerivAt (fun y : ℝ => -φ y) (x * φ x) x := by
     intro x hx
-    simpa [mul_assoc, mul_left_comm, mul_comm] using (hφderiv x).neg
+    have hφdiff : DifferentiableAt ℝ φ x := (hφderiv x).differentiableAt
+    have hdiff : DifferentiableAt ℝ (fun y : ℝ => -φ y) x := by
+      fun_prop
+    have hder : deriv (fun y : ℝ => -φ y) x = x * φ x := by
+      have hfun : (fun y : ℝ => -φ y) = -φ := by
+        funext y
+        rfl
+      rw [hfun, deriv.neg]
+      rw [(hφderiv x).deriv]
+      ring
+    exact hdiff.hasDerivAt.congr_deriv hder
   have hv_deriv :
       ∀ x ∈ Set.Ioi u, HasDerivAt (fun y : ℝ => y⁻¹) (-(x ^ 2)⁻¹) x := by
     intro x hx
@@ -638,7 +665,9 @@ lemma E_le_add_inv {u : ℝ} (hu : 0 < u) : E u ≤ u + 1 / u := by
         have : Measurable (fun x : ℝ => φ x / x ^ 2) := by
           have hφm : Measurable (fun x : ℝ => φ x) := continuous_φ.measurable
           have hx2 : Measurable (fun x : ℝ => x ^ 2) := (measurable_id.pow_const (2 : ℕ))
-          simpa [div_eq_mul_inv] using hφm.mul hx2.inv
+          have h := hφm.mul hx2.inv
+          change Measurable (fun x : ℝ => φ x * (x ^ 2)⁻¹) at h
+          simpa only [div_eq_mul_inv] using h
         exact this.aestronglyMeasurable
       have hbound :
           ∀ᵐ x ∂(volume.restrict (Set.Ioi u)), ‖φ x / x ^ 2‖ ≤ ‖(1 / u ^ 2) * φ x‖ := by
@@ -831,7 +860,10 @@ lemma B_eq :
     have h2 :
         DifferentiableAt ℝ (fun s => 𝔼 (P := P) (fun ω => h (U (κ := κ) (Z := Z) s ω))) t :=
       h_deriv_under_expect.differentiableAt
-    simpa [B, h] using h1.mul h2
+    have hprod := h1.mul h2
+    change DifferentiableAt ℝ
+      (fun s => (1 - s) * 𝔼 (P := P) (fun ω => h (U (κ := κ) (Z := Z) s ω))) t at hprod
+    simpa [B, h] using hprod
 
   lemma deriv_B_step2
       (h_deriv_under_expect :
@@ -858,7 +890,14 @@ lemma B_eq :
                 (deriv h (U (κ := κ) (Z := Z) t ω))
                   * (deriv (fun s => U (κ := κ) (Z := Z) s ω) t)))
           t := by
-      simpa using h1.mul h_deriv_under_expect
+      have hprod := h1.mul h_deriv_under_expect
+      change HasDerivAt
+        (fun s => (1 - s) * 𝔼 (P := P) (fun ω => h (U (κ := κ) (Z := Z) s ω)))
+        ((-1) * 𝔼 (P := P) (fun ω => h (U (κ := κ) (Z := Z) t ω)) +
+          (1 - t) * 𝔼 (P := P) (fun ω =>
+            deriv h (U (κ := κ) (Z := Z) t ω) *
+              deriv (fun s => U (κ := κ) (Z := Z) s ω) t)) t at hprod
+      exact hprod
     -- Rewrite `B` using `h` and apply the product rule.
     simpa [B, h, mul_add, add_mul, add_assoc, add_left_comm, add_comm] using hprod.deriv
 
@@ -905,7 +944,13 @@ lemma B_eq :
               - (κ - Real.sqrt t * Z ω) * (-(1 / (2 * Real.sqrt (1 - t)))))
             / (Real.sqrt (1 - t)) ^ 2)
           t := by
-      simpa using (hnum.div hden hdenom)
+      have hq := hnum.div hden hdenom
+      change HasDerivAt
+        (fun s : ℝ => (κ - Real.sqrt s * Z ω) / Real.sqrt (1 - s))
+        (((-(Z ω) / (2 * Real.sqrt t)) * Real.sqrt (1 - t) -
+          (κ - Real.sqrt t * Z ω) * (-(1 / (2 * Real.sqrt (1 - t))))) /
+            Real.sqrt (1 - t) ^ 2) t at hq
+      exact hq
     have hsqrt_t : Real.sqrt t ≠ 0 := by
       exact ne_of_gt (Real.sqrt_pos.2 ht.1)
     have h1mt : (1 - t) ≠ 0 := by
@@ -1116,7 +1161,10 @@ lemma deriv_ψ (ht : t ∈ Set.Ioo (0 : ℝ) 1) (z : ℝ) :
   have hcomp' :
       deriv (ψ (κ := κ) (t := t)) z =
         deriv (fun u : ℝ => deriv h u) (ufun z) * deriv ufun z := by
-    simpa [ψ, ufun, Function.comp] using hcomp
+    unfold ψ
+    change deriv ((fun u : ℝ => deriv h u) ∘ ufun) z =
+      deriv (fun u : ℝ => deriv h u) (ufun z) * deriv ufun z
+    exact hcomp
 
   have hdu : deriv ufun z = -(Real.sqrt (t / (1 - t))) := by
     have ht0 : 0 ≤ t := le_of_lt ht.1
@@ -1203,7 +1251,11 @@ lemma Z_term_eq
       fun_prop
     have houter : DifferentiableAt ℝ (fun u : ℝ => deriv h u) (ufun z) := by
       simpa [hderiv_h_fun] using houter_poly
-    simpa [ψ, ufun, Function.comp] using houter.comp z hu
+    have hc := houter.comp z hu
+    change DifferentiableAt ℝ (fun z => deriv h (ufun z)) z at hc
+    change DifferentiableAt ℝ
+      (fun z => deriv h ((κ - Real.sqrt t * z) / Real.sqrt (1 - t))) z
+    simpa [ufun] using hc
 
   have hψ_aesm : AEStronglyMeasurable (ψ (κ := κ) (t := t)) (Measure.map Z P) := by
     exact hψdiff.continuous.measurable.aestronglyMeasurable
@@ -1213,7 +1265,9 @@ lemma Z_term_eq
   have hxψ_aesm :
       AEStronglyMeasurable (fun x : ℝ => x * (ψ (κ := κ) (t := t) x)) (Measure.map Z P) := by
     have hmeas : Measurable (fun x : ℝ => x * (ψ (κ := κ) (t := t) x)) := by
-      simpa using measurable_id.mul (hψdiff.continuous.measurable)
+      have hm := measurable_id.mul (hψdiff.continuous.measurable)
+      change Measurable (fun x : ℝ => x * ψ (κ := κ) (t := t) x) at hm
+      exact hm
     exact hmeas.aestronglyMeasurable
 
   have hψ_int_gauss : Integrable (ψ (κ := κ) (t := t)) μ := by
@@ -1410,8 +1464,11 @@ lemma deriv_B_step4
       Integrable (fun ω =>
         -h (U (κ := κ) (Z := Z) t ω)
           + (U (κ := κ) (Z := Z) t ω) * (deriv h (U (κ := κ) (Z := Z) t ω)) * (2⁻¹ : ℝ)) P := by
-    simpa [mul_assoc, mul_left_comm, mul_comm] using
-      (integrable_neg_h.add integrable_Uh2inv)
+    have hi := integrable_neg_h.add integrable_Uh2inv
+    change Integrable (fun ω =>
+      -h (U (κ := κ) (Z := Z) t ω) +
+        U (κ := κ) (Z := Z) t ω * deriv h (U (κ := κ) (Z := Z) t ω) * (2⁻¹ : ℝ)) P at hi
+    exact hi
   have integrable_hdd2inv :
       Integrable (fun ω =>
         deriv (fun u => deriv h u) (U (κ := κ) (Z := Z) t ω) * (2⁻¹ : ℝ)) P := by
@@ -1463,11 +1520,17 @@ lemma deriv2_h (u : ℝ) :
     simpa using (deriv_E (u := x))
   have hderivE : DifferentiableAt ℝ (fun x => deriv E x) u := by
     have hPow : DifferentiableAt ℝ (fun x => (E x) ^ 2) u := by
-      simpa using hE.pow 2
+      have hd := hE.pow 2
+      change DifferentiableAt ℝ (fun x : ℝ => E x ^ 2) u at hd
+      exact hd
     have hMul : DifferentiableAt ℝ (fun x => x * E x) u := by
-      simpa using (differentiableAt_id.mul hE)
+      have hd := differentiableAt_id.mul hE
+      change DifferentiableAt ℝ (fun x : ℝ => x * E x) u at hd
+      exact hd
     have hRHS : DifferentiableAt ℝ (fun x => (E x) ^ 2 - x * E x) u := by
-      simpa using hPow.sub hMul
+      have hd := hPow.sub hMul
+      change DifferentiableAt ℝ (fun x : ℝ => E x ^ 2 - x * E x) u at hd
+      exact hd
     simpa [hfunE] using hRHS
   simp [hfun, pow_two, deriv_mul, deriv_const_mul, hE, hderivE, mul_assoc, mul_left_comm, mul_comm]
   ring_nf
@@ -1701,7 +1764,9 @@ lemma deriv2_h (u : ℝ) :
       have hZscaled : MemLp (fun ω => Real.sqrt t * Z ω) (4 : ℝ≥0∞) P :=
         hZ4.const_mul (Real.sqrt t)
       have hnum : MemLp (fun ω => κ - Real.sqrt t * Z ω) (4 : ℝ≥0∞) P := by
-        simpa using hκ.sub hZscaled
+        have hm := hκ.sub hZscaled
+        change MemLp (fun ω => κ - Real.sqrt t * Z ω) (4 : ℝ≥0∞) P at hm
+        exact hm
       simpa [U, div_eq_mul_inv] using hnum.mul_const ((Real.sqrt (1 - t))⁻¹)
 
     have hb4_int : Integrable (fun ω => (b (U (κ := κ) (Z := Z) t ω)) ^ 4) P := by
@@ -1710,7 +1775,9 @@ lemma deriv2_h (u : ℝ) :
       have hC : MemLp (fun _ : Ω => C_mills) (4 : ℝ≥0∞) P := by
         simpa using (memLp_const (μ := P) (c := C_mills) (p := (4 : ℝ≥0∞)))
       have hb_memLp : MemLp (fun ω => b (U (κ := κ) (Z := Z) t ω)) (4 : ℝ≥0∞) P := by
-        simpa [b] using (habsU.add hC)
+        have hm := habsU.add hC
+        change MemLp (fun ω => |U (κ := κ) (Z := Z) t ω| + C_mills) (4 : ℝ≥0∞) P at hm
+        simpa [b] using hm
       have hb_int_norm : Integrable (fun ω => ‖b (U (κ := κ) (Z := Z) t ω)‖ ^ 4) P :=
         hb_memLp.integrable_norm_pow (p := 4) (by decide)
       have hb_int_abs : Integrable (fun ω => |b (U (κ := κ) (Z := Z) t ω)| ^ 4) P := by
@@ -1727,7 +1794,10 @@ lemma deriv2_h (u : ℝ) :
       have hZmul : AEMeasurable (fun ω => Real.sqrt t * Z ω) P :=
         hZ_meas.const_mul (Real.sqrt t)
       have hnum : AEMeasurable (fun ω => κ - Real.sqrt t * Z ω) P := by
-        simpa using (aemeasurable_const.sub hZmul)
+        have hκ : AEMeasurable (fun _ : Ω => κ) P := aemeasurable_const
+        have hm := hκ.sub hZmul
+        change AEMeasurable (fun ω => κ - Real.sqrt t * Z ω) P at hm
+        exact hm
       simpa [U] using hnum.div_const (Real.sqrt (1 - t))
 
     -- Measurability of the deterministic functions.
@@ -1737,7 +1807,8 @@ lemma deriv2_h (u : ℝ) :
       exact (differentiableAt_E (u := u)).continuousAt
     have hmeas_E : Measurable E := hcont_E.measurable
     have hmeas_h : Measurable h := by
-      simpa [h] using hmeas_E.pow_const (2 : ℕ)
+      unfold h
+      exact hmeas_E.pow_const (2 : ℕ)
     have hmeas_deriv_h : Measurable (fun u : ℝ => deriv h u) := by
       simpa using (measurable_deriv h)
     have hmeas_hdd : Measurable (fun u : ℝ => deriv (fun x => deriv h x) u) := by
@@ -1876,7 +1947,12 @@ lemma deriv2_h (u : ℝ) :
       have int2 : Integrable (fun ω => (Real.sqrt (1 - t) / Real.sqrt t) *
             ((U (κ := κ) (Z := Z) t ω) * deriv h (U (κ := κ) (Z := Z) t ω))) P :=
         integrable_Uh.const_mul (Real.sqrt (1 - t) / Real.sqrt t)
-      simpa [hrewrite] using int1.sub int2
+      have hi := int1.sub int2
+      change Integrable (fun ω =>
+        (κ / Real.sqrt t) * deriv h (U (κ := κ) (Z := Z) t ω) -
+          (Real.sqrt (1 - t) / Real.sqrt t) *
+            (U (κ := κ) (Z := Z) t ω * deriv h (U (κ := κ) (Z := Z) t ω))) P at hi
+      simpa [hrewrite] using hi
 
     exact
       { integrable_h := integrable_h
@@ -1941,7 +2017,8 @@ lemma h_deriv_under_expect_of_gaussian
     exact (differentiableAt_E (u := u)).continuousAt
   have hmeas_E : Measurable E := hcont_E.measurable
   have hmeas_h : Measurable h := by
-    simpa [h] using hmeas_E.pow_const (2 : ℕ)
+    unfold h
+    exact hmeas_E.pow_const (2 : ℕ)
   have hmeas_deriv_h : Measurable (fun u : ℝ => deriv h u) := by
     simpa using (measurable_deriv h)
 
@@ -1952,7 +2029,10 @@ lemma h_deriv_under_expect_of_gaussian
       have hZmul : AEMeasurable (fun ω => Real.sqrt s * Z ω) P :=
         hZ_meas.const_mul (Real.sqrt s)
       have hnum : AEMeasurable (fun ω => κ - Real.sqrt s * Z ω) P := by
-        simpa using (aemeasurable_const.sub hZmul)
+        have hκ : AEMeasurable (fun _ : Ω => κ) P := aemeasurable_const
+        have hm := hκ.sub hZmul
+        change AEMeasurable (fun ω => κ - Real.sqrt s * Z ω) P at hm
+        exact hm
       have hU_meas : AEMeasurable (fun ω => U (κ := κ) (Z := Z) s ω) P := by
         simpa [U] using hnum.div_const (Real.sqrt (1 - s))
       exact (hmeas_h.comp_aemeasurable hU_meas).aestronglyMeasurable
@@ -1978,7 +2058,10 @@ lemma h_deriv_under_expect_of_gaussian
     have hZmul : AEMeasurable (fun ω => Real.sqrt t * Z ω) P :=
       hZ_meas.const_mul (Real.sqrt t)
     have hnum : AEMeasurable (fun ω => κ - Real.sqrt t * Z ω) P := by
-      simpa using (aemeasurable_const.sub hZmul)
+      have hκ : AEMeasurable (fun _ : Ω => κ) P := aemeasurable_const
+      have hm := hκ.sub hZmul
+      change AEMeasurable (fun ω => κ - Real.sqrt t * Z ω) P at hm
+      exact hm
     have hU_meas : AEMeasurable (fun ω => U (κ := κ) (Z := Z) t ω) P := by
       simpa [U] using hnum.div_const (Real.sqrt (1 - t))
     have hdh_meas : AEMeasurable (fun ω => deriv h (U (κ := κ) (Z := Z) t ω)) P :=
@@ -2003,7 +2086,11 @@ lemma h_deriv_under_expect_of_gaussian
             (fun ω =>
               (U (κ := κ) (Z := Z) t ω) / (2 * (1 - t))
                 - (Z ω) / (2 * Real.sqrt t * Real.sqrt (1 - t))) P := by
-        simpa [sub_eq_add_neg] using (hUterm.add hZterm.neg)
+        have hm := hUterm.add hZterm.neg
+        change AEMeasurable
+          (fun ω => U (κ := κ) (Z := Z) t ω / (2 * (1 - t)) +
+            -(Z ω / (2 * Real.sqrt t * Real.sqrt (1 - t)))) P at hm
+        simpa only [sub_eq_add_neg] using hm
       simpa [hpoint] using hRHS
     exact (hdh_meas.mul hUder_meas).aestronglyMeasurable
 
@@ -2108,7 +2195,9 @@ lemma h_deriv_under_expect_of_gaussian
     have hone : MemLp (fun _ : Ω => (1 : ℝ)) (4 : ℝ≥0∞) P := by
       simpa using (memLp_const (μ := P) (c := (1 : ℝ)) (p := (4 : ℝ≥0∞)))
     have hsum : MemLp (fun ω => |Z ω| + 1) (4 : ℝ≥0∞) P := by
-      simpa using habsZ4.add hone
+      have hm := habsZ4.add hone
+      change MemLp (fun ω => |Z ω| + 1) (4 : ℝ≥0∞) P at hm
+      exact hm
     have hint : Integrable (fun ω => ‖|Z ω| + 1‖ ^ 4) P :=
       hsum.integrable_norm_pow (p := 4) (by decide)
     have hint' : Integrable (fun ω => (|Z ω| + 1) ^ 4) P := by
@@ -2436,7 +2525,11 @@ lemma h_deriv_under_expect_of_gaussian
       exact ne_of_gt (Real.sqrt_pos.2 this)
     have hU_diff :
         DifferentiableAt ℝ (fun r : ℝ => U (κ := κ) (Z := Z) r ω) s := by
-      simpa [U] using (hnum_diff.div hden_diff hden0)
+      unfold U
+      have hd := hnum_diff.div hden_diff hden0
+      change DifferentiableAt ℝ
+        (fun r : ℝ => (κ - Real.sqrt r * Z ω) / Real.sqrt (1 - r)) s at hd
+      exact hd
     have hU_has :
         HasDerivAt (fun r : ℝ => U (κ := κ) (Z := Z) r ω)
           (deriv (fun r : ℝ => U (κ := κ) (Z := Z) r ω) s) s :=
@@ -2444,10 +2537,17 @@ lemma h_deriv_under_expect_of_gaussian
     have hh_diff : DifferentiableAt ℝ h (U (κ := κ) (Z := Z) s ω) := by
       have hE : DifferentiableAt ℝ E (U (κ := κ) (Z := Z) s ω) :=
         differentiableAt_E (u := U (κ := κ) (Z := Z) s ω)
-      simpa [h] using hE.pow 2
+      unfold h
+      have hd := hE.pow 2
+      change DifferentiableAt ℝ (fun x : ℝ => E x ^ 2) (U (κ := κ) (Z := Z) s ω) at hd
+      exact hd
     have hh_has : HasDerivAt h (deriv h (U (κ := κ) (Z := Z) s ω)) (U (κ := κ) (Z := Z) s ω) :=
       hh_diff.hasDerivAt
-    simpa [Function.comp] using (hh_has.comp s hU_has)
+    have hc := hh_has.comp s hU_has
+    change HasDerivAt (fun r : ℝ => h (U (κ := κ) (Z := Z) r ω))
+      (deriv h (U (κ := κ) (Z := Z) s ω) *
+        deriv (fun r : ℝ => U (κ := κ) (Z := Z) r ω) s) s at hc
+    exact hc
 
   exact
     h_deriv_under_expect (P := P) (Z := Z) (κ := κ) (t := t)

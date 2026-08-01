@@ -69,14 +69,18 @@ lemma E_continuous : Continuous E := by
   -- `E = φ / Φbar`, with `Φbar` nowhere vanishing.
   have hΦbar_ne : ∀ u, Φbar u ≠ 0 := fun u => (Φbar_pos u).ne'
   -- unfold the alias so `Continuous.div` applies.
-  simpa [E, DecreasingG.E] using (φ_continuous.div Φbar_continuous hΦbar_ne)
+  change Continuous (fun u : ℝ => φ u / Φbar u)
+  exact φ_continuous.div Φbar_continuous hΦbar_ne
 
 lemma g_continuous : Continuous g := by
   -- `g` is a polynomial expression in `u` and `E(u)`.
-  have hE : Continuous (fun u : ℝ => DecreasingG.E u) := by
-    simpa [E] using (E_continuous : Continuous E)
-  unfold g DecreasingG.g
-  fun_prop [hE]
+  change Continuous (fun u : ℝ =>
+    (E u) ^ 2 * (3 * (E u) ^ 2 - 4 * u * E u + u ^ 2 - 2))
+  have hE : Continuous (fun u : ℝ => E u) := E_continuous
+  exact (hE.pow 2).mul
+    ((((continuous_const.mul (hE.pow 2)).sub
+      ((continuous_const.mul continuous_id).mul hE)).add
+        (continuous_id.pow 2)).sub continuous_const)
 
 lemma E_deriv (u : ℝ) : deriv E u = (E u) ^ 2 - u * E u := by
   simpa [E] using DecreasingG.deriv_E u
@@ -164,8 +168,9 @@ lemma g_tendsto_zero_atBot : Filter.Tendsto g Filter.atBot (𝓝 0) := by
         Filter.Tendsto (fun u : ℝ => (u ^ 2 / (2 : ℝ)) * Real.exp (-(u ^ 2 / (2 : ℝ))))
           Filter.atBot (𝓝 0) := by
       -- Compose `x ↦ x * exp(-x)` with `x = u^2/2`.
-      simpa [pow_one] using
-        (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp ht
+      have hcomp := (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp ht
+      refine hcomp.congr' (Filter.Eventually.of_forall fun u => ?_)
+      simp [Function.comp_def]
     have hmain' :
         Filter.Tendsto (fun u : ℝ => (u ^ 2 / (2 : ℝ)) * φ u) Filter.atBot (𝓝 0) := by
       -- Convert the `exp` form to `φ`.

@@ -36,8 +36,8 @@ The third main result is formalized in the namespace `Theorem3`, which is define
 
 This project is pinned by [lean-toolchain](./lean-toolchain) and [lakefile.toml](./lakefile.toml):
 
-- Lean `v4.26.0`
-- mathlib `v4.26.0`
+- Lean `v4.32.0`
+- mathlib `v4.32.0`
 
 From this directory, build the library and check the public entry point:
 
