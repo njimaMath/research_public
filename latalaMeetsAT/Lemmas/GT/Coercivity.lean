@@ -30,10 +30,6 @@ theorem gt_quadratic_coercivity {Ω : Type u} [MeasureSpace Ω]
   -- ranges `[-q,q)` and `v < -q` require equations (signedslope) and
   -- (GTuniformnegativegap).  Since `|v-q| ≤ 2`, one uniform fixed gap away from
   -- `q` can be weakened to the claimed quadratic loss.
-  --
-  -- This cannot follow from the present `twoReplica_GT_bound`, which evaluates
-  -- the placeholder `gtFunctional` only at multiplier `0` and therefore has no
-  -- quadratic loss.  Complete the functional and repair `strictAT_sign` first.
   sorry
 
 end SpinGlass.AT

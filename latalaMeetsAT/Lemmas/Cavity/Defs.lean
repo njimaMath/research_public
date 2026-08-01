@@ -12,19 +12,19 @@ universe u
 noncomputable def A {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
-  quenchedReplicaAverage (path.H s)
+  quenchedReplicaAverage (fullPathHamiltonian path s)
     (fun σs : Replicas N 4 => centeredOverlap q σs 0 1 ^ 2)
 
 noncomputable def B {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
-  quenchedReplicaAverage (path.H s) (fun σs : Replicas N 4 =>
+  quenchedReplicaAverage (fullPathHamiltonian path s) (fun σs : Replicas N 4 =>
     centeredOverlap q σs 0 1 * centeredOverlap q σs 0 2)
 
 noncomputable def C {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
-  quenchedReplicaAverage (path.H s) (fun σs : Replicas N 4 =>
+  quenchedReplicaAverage (fullPathHamiltonian path s) (fun σs : Replicas N 4 =>
     centeredOverlap q σs 0 1 * centeredOverlap q σs 2 3)
 
 noncomputable def cavityVector {Ω : Type u} [MeasureSpace Ω]

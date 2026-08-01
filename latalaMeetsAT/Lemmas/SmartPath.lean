@@ -14,7 +14,8 @@ universe u
 noncomputable def smartPathCovKernel (N : ℕ) (β q s : ℝ)
     (σ τ : Config N) : ℝ :=
   s * ((N : ℝ) * β ^ 2 / 2) * configOverlap N σ τ ^ 2 +
-    (1 - s) * (N : ℝ) * β ^ 2 * q * configOverlap N σ τ
+    (1 - s) * (N : ℝ) * β ^ 2 * q * configOverlap N σ τ -
+      s * β ^ 2 / 2
 
 /-- Abstract smart-path disorder.  This removes any hidden independence
 assumption from all downstream interpolation arguments. -/
@@ -30,6 +31,13 @@ structure RSSmartPathDisorder (Ω : Type u) [MeasureSpace Ω]
   covariance : ∀ s, ∀ _hs : s ∈ Set.Icc (0 : ℝ) 1, ∀ σ τ,
     ∫ ω, H s ω σ * H s ω τ ∂(volume : Measure Ω) =
       smartPathCovKernel N β q s σ τ
+
+/-- The full smart-path Hamiltonian, including the deterministic external
+field.  The random field `path.H` remains centered. -/
+noncomputable def fullPathHamiltonian {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) (ω : Ω) : EnergySpace N :=
+  fun σ => path.H s ω σ + h * ∑ i, spin σ i
 
 noncomputable def pathATParameter (β h s : ℝ) : ℝ := s * atParameter β h
 

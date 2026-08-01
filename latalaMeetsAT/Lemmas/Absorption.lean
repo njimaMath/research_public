@@ -12,11 +12,10 @@ theorem cavityVector_norm_eq_A {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) :
     |A path s| ≤ ‖cavityVector path s‖ := by
-  -- Proof route: `A path s` is coordinate `0` of `cavityVector path s` by
-  -- definition.  Rewrite it, identify `|x|` with `‖x‖`, and apply
-  -- `norm_apply_le_norm` for the finite function space `Fin 3 → ℝ`.  No cavity
-  -- estimate is needed.  The theorem name should say `le`, not `eq`.
-  sorry
+  rw [Pi.norm_def]
+  have hsup := Finset.le_sup (s := Finset.univ)
+    (f := fun b : Fin 3 => ‖cavityVector path s b‖₊) (Finset.mem_univ (0 : Fin 3))
+  exact_mod_cast hsup
 
 theorem uniform_secondMoment {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}

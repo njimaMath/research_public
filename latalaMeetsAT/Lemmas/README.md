@@ -8,12 +8,12 @@ and probabilistic proof obligations still use `sorry`.  Consequently the axiom a
 `SpinGlass.AT.quantitative_strictAT` reports `sorryAx` together with ordinary Lean foundations.
 No project-specific `axiom` declarations and no `admit`s are present.
 
-Every current `sorry` now has an adjacent proof-route comment keyed to the notation and equation
-labels in `refs/paper.tex`.  Comments headed with a repair requirement or API gap record a
-prerequisite that must be resolved before the indicated proof is attempted.  In particular, the
-comments flag the centered versus full Hamiltonian mismatch, the placeholder quadratic pressure
-and GT functional, the missing last-spin interpolation, and hypotheses absent from several scalar
-and cavity statements.
+The smart path now separates centered disorder from the deterministic external field and uses the
+finite-volume covariance from the paper.  The scalar Latała kernel, signed matrix path, half-mass
+profile, GT terminal condition and functional, and quadratic coupled pressure use the formulas in
+`refs/paper.tex`.  Missing constructions are exposed by `sorry`; they are not replaced by simpler
+surrogate formulas.  The last-spin interpolation and some missing hypotheses in scalar and cavity
+statements remain to be formalized.
 
 The development currently gives the AT modules a small finite-volume model independent of the
 legacy `SpinGlass.SKModel` import.  The legacy Hilbert Gaussian files do not compile with the

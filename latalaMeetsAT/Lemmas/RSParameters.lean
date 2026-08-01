@@ -1,7 +1,8 @@
 import Lemmas.Replicas
 import Mathlib.Probability.Distributions.Gaussian.Real
 
-open MeasureTheory ProbabilityTheory Real BigOperators
+open MeasureTheory ProbabilityTheory Real BigOperators Filter
+open scoped Topology
 
 set_option autoImplicit false
 
@@ -30,16 +31,105 @@ noncomputable def rsA (β h : ℝ) : ℝ :=
 
 noncomputable def atParameter (β h : ℝ) : ℝ := β ^ 2 * rsA β h
 
-theorem rsQ_fixedPoint {β h : ℝ} (hβ : 0 < β) (hh : 0 < h) :
+private noncomputable def rsMap (β h q : ℝ) : ℝ :=
+  standardGaussianExpectation
+    (fun z => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+
+private theorem continuous_tanh' : Continuous (fun x : ℝ => Real.tanh x) := by
+  simp_rw [Real.tanh_eq]
+  apply Continuous.div
+  · fun_prop
+  · fun_prop
+  · intro x
+    positivity
+
+private theorem continuous_rsMap (β h : ℝ) : Continuous (rsMap β h) := by
+  refine continuous_iff_continuousAt.2 fun q₀ => ?_
+  have hmeas : ∀ᶠ q in 𝓝 q₀,
+      AEStronglyMeasurable
+        (fun z : ℝ => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+        (gaussianReal 0 1) := by
+    refine Filter.Eventually.of_forall fun q => ?_
+    exact ((continuous_tanh'.comp (by fun_prop)).pow 2).aestronglyMeasurable
+  have hbound : ∀ᶠ q in 𝓝 q₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖Real.tanh (h + β * Real.sqrt q * z) ^ 2‖ ≤ (1 : ℝ) := by
+    refine Filter.Eventually.of_forall fun q => ae_of_all _ fun z => ?_
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    exact (Real.tanh_sq_lt_one _).le
+  have hlim : ∀ᵐ z : ℝ ∂gaussianReal 0 1,
+      Tendsto
+        (fun q : ℝ => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+        (𝓝 q₀)
+        (𝓝 (Real.tanh (h + β * Real.sqrt q₀ * z) ^ 2)) := by
+    refine ae_of_all _ fun z => ?_
+    have harg : ContinuousAt (fun q : ℝ => h + β * Real.sqrt q * z) q₀ := by
+      fun_prop
+    exact ((ContinuousAt.comp (x := q₀)
+      (f := fun q : ℝ => h + β * Real.sqrt q * z)
+      (g := Real.tanh) continuous_tanh'.continuousAt harg).pow 2).tendsto
+  have htend := tendsto_integral_filter_of_dominated_convergence
+    (μ := gaussianReal 0 1) (l := 𝓝 q₀)
+    (F := fun q : ℝ => fun z : ℝ =>
+      Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+    (f := fun z : ℝ => Real.tanh (h + β * Real.sqrt q₀ * z) ^ 2)
+    (bound := fun _ : ℝ => (1 : ℝ)) hmeas hbound (integrable_const 1) hlim
+  change Tendsto
+    (fun q : ℝ => ∫ z, Real.tanh (h + β * Real.sqrt q * z) ^ 2
+      ∂gaussianReal 0 1)
+    (𝓝 q₀)
+    (𝓝 (∫ z, Real.tanh (h + β * Real.sqrt q₀ * z) ^ 2
+      ∂gaussianReal 0 1))
+  exact htend
+
+private theorem rsMap_mem_Icc (β h q : ℝ) : rsMap β h q ∈ Set.Icc (0 : ℝ) 1 := by
+  constructor
+  · unfold rsMap standardGaussianExpectation
+    exact integral_nonneg fun z => sq_nonneg _
+  · unfold rsMap standardGaussianExpectation
+    calc
+      (∫ z, Real.tanh (h + β * Real.sqrt q * z) ^ 2 ∂gaussianReal 0 1) ≤
+          ∫ _z : ℝ, (1 : ℝ) ∂gaussianReal 0 1 := by
+        apply integral_mono
+        · apply Integrable.of_bound (C := 1)
+          · exact ((continuous_tanh'.comp (by fun_prop)).pow 2).aestronglyMeasurable
+          · filter_upwards [] with z
+            rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+            exact (Real.tanh_sq_lt_one _).le
+        · exact integrable_const 1
+        · intro z
+          exact (Real.tanh_sq_lt_one _).le
+      _ = 1 := by simp
+
+private theorem rsFixedPointSet_nonempty (β h : ℝ) :
+    {q : ℝ | q ∈ Set.Icc (0 : ℝ) 1 ∧ IsRSFixedPoint β h q}.Nonempty := by
+  obtain ⟨q, hq, hfix⟩ := exists_mem_Icc_isFixedPt
+    (continuous_rsMap β h).continuousOn (by norm_num)
+    (rsMap_mem_Icc β h 0).1 (rsMap_mem_Icc β h 1).2
+  exact ⟨q, hq, by simpa [IsRSFixedPoint, rsMap] using hfix.symm⟩
+
+theorem rsQ_mem_Icc (β h : ℝ) : rsQ β h ∈ Set.Icc (0 : ℝ) 1 := by
+  let S := {q : ℝ | q ∈ Set.Icc (0 : ℝ) 1 ∧ IsRSFixedPoint β h q}
+  have hclosed : IsClosed S := by
+    dsimp [S]
+    exact isClosed_Icc.inter
+      (isClosed_eq continuous_id (continuous_rsMap β h))
+  have hnonempty : S.Nonempty := rsFixedPointSet_nonempty β h
+  have hbdd : BddBelow S := ⟨0, fun q hq => hq.1.1⟩
+  exact (hclosed.csInf_mem hnonempty hbdd).1
+
+theorem rsQ_fixedPoint {β h : ℝ} (_hβ : 0 < β) (_hh : 0 < h) :
     IsRSFixedPoint β h (rsQ β h) := by
-  -- Paper route: use equation (q) and the standard existence and uniqueness
-  -- theorem for the SK fixed point when `β > 0` and `h > 0`.  With the current
-  -- `sInf` definition, first prove that the set in `rsQ` is nonempty, contained
-  -- in `[0,1]`, and is a singleton.  `csInf_mem` can then identify its infimum
-  -- with that unique member.  The paper cites this fixed-point theorem rather
-  -- than proving it, so the Lean development needs it as a separate analytic
-  -- lemma before this proof can be completed.
-  sorry
+  -- Continuity and interval invariance give a fixed point in `[0,1]`.  The
+  -- fixed-point set is closed and bounded below, hence contains its infimum.
+  -- Uniqueness is not needed for this selection argument.
+  let S := {q : ℝ | q ∈ Set.Icc (0 : ℝ) 1 ∧ IsRSFixedPoint β h q}
+  have hclosed : IsClosed S := by
+    dsimp [S]
+    exact isClosed_Icc.inter
+      (isClosed_eq continuous_id (continuous_rsMap β h))
+  have hnonempty : S.Nonempty := rsFixedPointSet_nonempty β h
+  have hbdd : BddBelow S := ⟨0, fun q hq => hq.1.1⟩
+  exact (hclosed.csInf_mem hnonempty hbdd).2
 
 theorem rsQ_pos {β h : ℝ} (hβ : 0 < β) (hh : 0 < h) : 0 < rsQ β h := by
   -- Proof route from the paragraph after equation (qcompact): get the fixed
@@ -48,7 +138,17 @@ theorem rsQ_pos {β h : ℝ} (hβ : 0 < β) (hh : 0 < h) : 0 < rsQ β h := by
   -- `0 = tanh h ^ 2`; `hh` implies `0 < tanh h`, a contradiction.  The missing
   -- lower bound `0 ≤ rsQ` should come from the singleton/set-membership lemma
   -- built for `rsQ_fixedPoint`.
-  sorry
+  have hqnonneg := (rsQ_mem_Icc β h).1
+  apply lt_of_le_of_ne hqnonneg
+  intro hqzero
+  have hfp := rsQ_fixedPoint hβ hh
+  rw [← hqzero] at hfp
+  simp [IsRSFixedPoint, standardGaussianExpectation] at hfp
+  have htanh : 0 < Real.tanh h := by
+    rw [Real.tanh_eq]
+    exact div_pos (sub_pos.mpr (Real.exp_lt_exp.mpr (by linarith)))
+      (add_pos (Real.exp_pos h) (Real.exp_pos (-h)))
+  nlinarith
 
 theorem rsQ_lt_one {β h : ℝ} (hβ : 0 < β) (hh : 0 < h) : rsQ β h < 1 := by
   -- Proof route from equation (qcompact): prove `rsQ β h ≤ 1` from membership
@@ -58,7 +158,50 @@ theorem rsQ_lt_one {β h : ℝ} (hβ : 0 < β) (hh : 0 < h) : rsQ β h < 1 := by
   -- against the Gaussian probability measure is positive.  This requires the
   -- standard lemma that a positive almost-everywhere integrable function has
   -- positive integral.
-  sorry
+  have hqle := (rsQ_mem_Icc β h).2
+  apply lt_of_le_of_ne hqle
+  intro hqone
+  have hfp := rsQ_fixedPoint hβ hh
+  rw [hqone] at hfp
+  let X : ℝ → ℝ := fun z => h + β * z
+  let g : ℝ → ℝ := fun z => 1 - Real.tanh (X z) ^ 2
+  have hgcont : Continuous g := by
+    dsimp [g, X]
+    exact continuous_const.sub ((continuous_tanh'.comp (by fun_prop)).pow 2)
+  have hgnonneg : 0 ≤ g := fun z => by
+    dsimp [g]
+    exact sub_nonneg.mpr (Real.tanh_sq_lt_one _).le
+  have hgint : Integrable g (gaussianReal 0 1) := by
+    apply Integrable.of_bound (C := 1)
+    · exact hgcont.aestronglyMeasurable
+    · filter_upwards [] with z
+      rw [Real.norm_eq_abs, abs_of_nonneg (hgnonneg z)]
+      dsimp [g]
+      nlinarith [sq_nonneg (Real.tanh (X z))]
+  have hgpos : 0 < ∫ z, g z ∂gaussianReal 0 1 := by
+    rw [integral_pos_iff_support_of_nonneg hgnonneg hgint]
+    have hsupp : Function.support g = Set.univ := by
+      ext z
+      simp only [Function.mem_support, Set.mem_univ, iff_true]
+      exact ne_of_gt (by
+        dsimp [g]
+        exact sub_pos.mpr (Real.tanh_sq_lt_one _))
+    rw [hsupp]
+    simp
+  have htanhInt : Integrable (fun z => Real.tanh (X z) ^ 2)
+      (gaussianReal 0 1) := by
+    apply Integrable.of_bound (C := 1)
+    · exact ((continuous_tanh'.comp (by fun_prop)).pow 2).aestronglyMeasurable
+    · filter_upwards [] with z
+      rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+      exact (Real.tanh_sq_lt_one _).le
+  have hgzero : ∫ z, g z ∂gaussianReal 0 1 = 0 := by
+    have htint : ∫ z, Real.tanh (X z) ^ 2 ∂gaussianReal 0 1 = 1 := by
+      simpa [IsRSFixedPoint, standardGaussianExpectation, X] using hfp.symm
+    rw [show g = fun z => 1 - Real.tanh (X z) ^ 2 by rfl,
+      integral_sub (integrable_const 1) htanhInt, htint]
+    norm_num
+  linarith
 
 theorem rsA_eq_one_sub_two_q_add_r (β h : ℝ) :
     rsA β h = 1 - 2 * rsQ β h + rsR β h := by

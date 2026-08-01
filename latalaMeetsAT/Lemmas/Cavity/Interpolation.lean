@@ -11,25 +11,29 @@ universe u
 noncomputable def thirdMoment {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
-  quenchedReplicaAverage (path.H s)
-    (fun σs : Replicas N 2 => |centeredOverlap q σs 0 1| ^ 3)
+  quenchedReplicaAverage (fullPathHamiltonian path s)
+    (fun σs : Replicas N 4 => |centeredOverlap q σs 0 1| ^ 3)
 
 theorem cavity_thirdMoment_gronwall {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) :
+    (path : RSSmartPathDisorder Ω N β h q) (hN : 0 < N)
+    (hq : q ∈ Set.Icc (0 : ℝ) 1) :
     thirdMoment path s ≤ 2 * A path s := by
-  -- Proof route: for full overlaps this is the pointwise bound used in the paper:
-  -- `|Q12| ≤ 2` implies `|Q12|^3 ≤ 2*Q12^2`; monotonicity of the finite Gibbs
-  -- sum and disorder integral then gives the result.  Use
-  -- `abs_centeredOverlap_le_two` followed by `nlinarith [sq_nonneg Q12]`.
-  --
-  -- The present statement is missing `0 < N` and `q ∈ [0,1]`; without them
-  -- `|centeredOverlap q| ≤ 2` is unavailable and the claim is false for
-  -- arbitrary `q`.  Add these hypotheses, or specialize to
-  -- `q = rsQ β h` with positive `β,h`.  The Gronwall comparison in equations
-  -- (cavityM3derivative)--(cavityM3endpoint) is a different lemma for the
-  -- last-spin interpolation and should be formalized separately.
-  sorry
+  unfold thirdMoment A
+  rw [← quenchedReplicaAverage_const_mul]
+  apply quenchedReplicaAverage_mono (H := fullPathHamiltonian path s) (by
+    apply measurable_pi_iff.mpr
+    intro σ
+    exact ((measurable_pi_iff.mp (path.measurable s)) σ).add measurable_const)
+  intro σs
+  have habs := abs_centeredOverlap_le_two hN hq σs (0 : Fin 4) (1 : Fin 4)
+  have hsq := sq_nonneg (centeredOverlap q σs (0 : Fin 4) (1 : Fin 4))
+  rw [show |centeredOverlap q σs (0 : Fin 4) (1 : Fin 4)| ^ 3 =
+      |centeredOverlap q σs (0 : Fin 4) (1 : Fin 4)| *
+        centeredOverlap q σs (0 : Fin 4) (1 : Fin 4) ^ 2 by
+    rw [pow_succ, sq_abs]
+    ring]
+  nlinarith
 
 theorem cavity_secondDerivative_bound {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}

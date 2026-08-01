@@ -23,15 +23,15 @@ def decoupledSpinCoefficient (q r : ℝ) : EdgeRelation → ℝ
   | .disjoint => r - q ^ 2
 
 theorem cavity_coefficient_matrix_eq (β q r : ℝ) :
-    cavityMatrix β q r = cavityMatrix β q r := by
-  -- Proof replacement guide: the reflexive statement is only a placeholder for
-  -- the coefficient table (cavitytable).  State the three rows obtained by
-  -- applying `D_2`, `D_3`, and `D_4`.  At the decoupled endpoint, condition on
-  -- the one-site field: a spin monomial has expectation `1`, `q`, or `r`
-  -- according as zero, two, or four replica indices occur oddly.  The relation
-  -- of two edges then returns exactly `1-q^2`, `q-q^2`, or `r-q^2`.  A finite
-  -- enumeration gives the three paper rows, and `fin_cases` plus `ring`
-  -- identifies that table with `cavityMatrix`.
-  rfl
+    cavityMatrix β q r = β ^ 2 •
+      !![1 - q ^ 2, -4 * (q - q ^ 2), 3 * (r - q ^ 2);
+         q - q ^ 2,
+           (1 - q ^ 2) - 2 * (q - q ^ 2) - 3 * (r - q ^ 2),
+           6 * (r - q ^ 2) - 3 * (q - q ^ 2);
+         r - q ^ 2,
+           4 * (q - q ^ 2) - 8 * (r - q ^ 2),
+           (1 - q ^ 2) - 8 * (q - q ^ 2) + 10 * (r - q ^ 2)] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [cavityMatrix] <;> ring
 
 end SpinGlass.AT

@@ -4,10 +4,12 @@ set_option autoImplicit false
 
 namespace SpinGlass.AT
 
+/-- $g_s(u)=\mathbb E[(\partial_x\Psi_s(u,X_u))^2]$ for the local-field
+diffusion in Proposition `pathRS`.  Its construction is one of the remaining
+stochastic-calculus obligations. -/
 noncomputable def scalarOrderParameter (β h s u : ℝ) : ℝ :=
-  standardGaussianExpectation (fun z =>
-    Real.tanh (h + β * Real.sqrt (rsQ β h) * z) ^ 2) +
-      (1 - s) * (u - rsQ β h)
+  by
+    sorry
 
 theorem strictAT_sign {K : Set (ℝ × ℝ)} (data : UniformATData K)
     {β h s : ℝ} (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
@@ -17,13 +19,7 @@ theorem strictAT_sign {K : Set (ℝ × ℝ)} (data : UniformATData K)
     ∃ c eps, 0 < c ∧ 0 < eps ∧ ∀ u,
       |u - rsQ β h| ≤ eps →
       c * |u - rsQ β h| ≤ |scalarOrderParameter β h s u - u| := by
-  -- Statement/model repair required.  By `rsQ_fixedPoint`, the current
-  -- `scalarOrderParameter` simplifies to `q + (1-s)*(u-q)`, so its difference
-  -- from `u` is `s*(q-u)`.  At `s = 0` this is identically zero, contradicting
-  -- the asserted positive left-hand slope `data.gap*(q-u)` and the final
-  -- positive constant.
-  --
-  -- The intended proof is Proposition (pathRS), equations (leftstrict),
+  -- Paper route: Proposition (pathRS), equations (leftstrict),
   -- (strictATdiffusion), and (linearATsign).  Define `scalarOrderParameter` as
   -- `g_s(u) = E[(Psi_x(u, X_u))^2]` for the scalar PDE/local-field diffusion.
   -- Below `q`, Itô plus conditional Jensen gives

@@ -10,20 +10,17 @@ universe u
 
 noncomputable def cavityRemainder {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : Fin 3 → ℝ :=
-  cavityVector path s - s • (cavityMatrix β q (rsR β h)).mulVec (cavityVector path s) -
-    (1 / (N : ℝ)) • theta q (rsR β h)
+    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : Fin 3 → ℝ := by
+  sorry
 
 theorem cavity_system {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) :
     cavityVector path s - s • (cavityMatrix β q (rsR β h)).mulVec (cavityVector path s) =
       (1 / (N : ℝ)) • theta q (rsR β h) + cavityRemainder path s := by
-  -- This is definitional with the current residual definition: unfold
-  -- `cavityRemainder` and close by module arithmetic.  The substantive paper
-  -- result is the following remainder bound, whose proof must construct the
-  -- last-spin interpolation rather than define the error after the fact.
-  simp [cavityRemainder]
+  -- Construct the remainder by the last-spin interpolation and its integral
+  -- Taylor remainder.  It is not defined as the residual of this equation.
+  sorry
 
 theorem cavityRemainder_bound {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}

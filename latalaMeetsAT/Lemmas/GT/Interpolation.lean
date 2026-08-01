@@ -8,8 +8,23 @@ namespace SpinGlass.AT
 
 universe u
 
+/-- The solution of the finite two-dimensional Parisi recursion associated to
+`signedMatrixPath v`, `gtMassParameter q v`, and `gtTerminal lam`.
+
+The construction will be supplied by the finite-cascade development.  A
+`sorry` here records precisely that missing construction without replacing it
+by a different functional. -/
+noncomputable def gtSemigroupSolution
+    (β q s lam v u x₁ x₂ : ℝ) : ℝ := by
+  sorry
+
+/-- The specialized Guerra--Talagrand functional from the paper. -/
 noncomputable def gtFunctional (β h q s lam v : ℝ) : ℝ :=
-  2 * rsPathValue β h q s - lam * (v - q) + 3 / 2 * lam ^ 2
+  standardGaussianExpectation (fun z =>
+    gtSemigroupSolution β q s lam v 0
+      (h + β * Real.sqrt ((1 - s) * q) * z)
+      (h + β * Real.sqrt ((1 - s) * q) * z)) -
+    lam * v - gtCorrection β q s
 
 theorem twoReplica_GT_bound {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s v : ℝ}
@@ -23,13 +38,6 @@ theorem twoReplica_GT_bound {Ω : Type u} [MeasureSpace Ω]
   -- nonpositive.  At multiplier zero the finite semigroup factorizes into two
   -- scalar RS semigroups, and the correction is equation (GTcorrection), which
   -- produces `2 * rsPathValue`.
-  --
-  -- Definition gap: `signedMatrixPath` currently has no negative sign branch,
-  -- `gtMassParameter` does not encode the paper's full piecewise profile, and
-  -- `gtFunctional` omits the two-dimensional semigroup.  Also the abstract
-  -- smart path lacks the deterministic external field.  Introduce the actual
-  -- `Q^v`, `gamma_v`, terminal function, finite recursion, and interpolation
-  -- theorem before attempting this wrapper.
   sorry
 
 end SpinGlass.AT

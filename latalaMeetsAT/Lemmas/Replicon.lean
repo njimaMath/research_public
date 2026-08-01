@@ -1,6 +1,6 @@
 import Lemmas.FreeEnergy
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Filter
 
 set_option autoImplicit false
 
@@ -15,16 +15,73 @@ theorem thirdMoment_littleO {Ω : Type u} [MeasureSpace Ω]
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
       ∀ path : RSSmartPathDisorder Ω N β h q,
       N * thirdMoment path s < eps := by
-  -- Paper route after equation (repliconrho): combine the optimal bound
-  -- `A_s ≤ M/N` with the same fixed-deviation split used in absorption.  For a
-  -- fixed cutoff `eta > 0`,
-  -- `N*E|Q|^3 ≤ eta*M + 8*N*C_eta*exp(-c_eta*N)`.
-  -- Given `eps`, choose `eta` so the first term is below `eps/2`, then choose
-  -- `N0` so the exponentially decaying term is below `eps/2` for `N ≥ N0`.
-  -- Formalize the latter with `tendsto_nat_mul_exp_neg_atTop_nhds_zero` or a
-  -- small comparison lemma.  This is the quantifier form of
-  -- `thirdMoment = o_K(N⁻¹)` written at the end of the paper.
-  sorry
+  intro eps heps
+  obtain ⟨M, hM, hsecond⟩ := uniform_secondMoment (Ω := Ω) data
+  let eta : ℝ := eps / (4 * (M + 1))
+  have hM1 : 0 < M + 1 := by linarith
+  have heta : 0 < eta := by
+    dsimp [eta]
+    positivity
+  have hetaM : eta * M < eps / 4 := by
+    dsimp [eta]
+    rw [div_mul_eq_mul_div]
+    apply (div_lt_iff₀ (by positivity : 0 < 4 * (M + 1))).2
+    nlinarith
+  obtain ⟨c, C, hc, hC, htail⟩ := fixedDeviation (Ω := Ω) data eta heta
+  have hdecayReal : Tendsto
+      (fun x : ℝ => 8 * C * (x ^ (1 : ℝ) * Real.exp (-c * x)))
+      atTop (nhds 0) := by
+    simpa using
+      (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 c hc).const_mul (8 * C)
+  have hdecay : Tendsto
+      (fun N : ℕ => 8 * C * (N : ℝ) * Real.exp (-c * (N : ℝ)))
+      atTop (nhds 0) := by
+    simpa [Function.comp_def, Real.rpow_one, mul_assoc] using
+      hdecayReal.comp tendsto_natCast_atTop_atTop
+  obtain ⟨Ntail, hNtail⟩ := (Metric.tendsto_atTop.1 hdecay) (eps / 2) (by positivity)
+  refine ⟨max 1 Ntail, ?_⟩
+  intro N hN β h q s hp hq hs path
+  have hNpos : 0 < N := lt_of_lt_of_le (by omega : 0 < 1) (le_trans (le_max_left _ _) hN)
+  subst q
+  have hqmem : rsQ β h ∈ Set.Icc (0 : ℝ) 1 := rsQ_mem_Icc β h
+  have hfull : Measurable (fullPathHamiltonian path s) := by
+    apply measurable_pi_iff.mpr
+    intro σ
+    exact ((measurable_pi_iff.mp (path.measurable s)) σ).add measurable_const
+  have hsplit : thirdMoment path s ≤
+      eta * A path s + 8 * quenchedTail path s eta := by
+    unfold thirdMoment A quenchedTail
+    rw [← quenchedReplicaAverage_const_mul, ← quenchedReplicaAverage_const_mul,
+      ← quenchedReplicaAverage_add hfull]
+    apply quenchedReplicaAverage_mono hfull
+    intro σs
+    let X := centeredOverlap (rsQ β h) σs (0 : Fin 4) (1 : Fin 4)
+    have hX : |X| ≤ 2 := abs_centeredOverlap_le_two hNpos hqmem σs 0 1
+    have hXsq : 0 ≤ X ^ 2 := sq_nonneg X
+    change |X| ^ 3 ≤ eta * X ^ 2 + 8 * (if eta ≤ |X| then 1 else 0)
+    by_cases hlarge : eta ≤ |X|
+    · simp only [if_pos hlarge, mul_one]
+      have hcub : |X| ^ 3 ≤ 8 := by
+        nlinarith [abs_nonneg X, sq_nonneg (|X|),
+          mul_self_le_mul_self (abs_nonneg X) hX]
+      nlinarith [mul_nonneg heta.le hXsq]
+    · simp only [if_neg hlarge, mul_zero, add_zero]
+      have hsmall : |X| < eta := lt_of_not_ge hlarge
+      rw [show |X| ^ 3 = |X| * X ^ 2 by
+        rw [pow_succ, sq_abs]
+        ring]
+      exact mul_le_mul_of_nonneg_right hsmall.le hXsq
+  have hsecondN : (N : ℝ) * A path s ≤ M :=
+    hsecond hNpos hp rfl hs path
+  have htailN : quenchedTail path s eta ≤ C * Real.exp (-c * (N : ℝ)) :=
+    htail path hp rfl hs
+  have hsplitN := mul_le_mul_of_nonneg_left hsplit (Nat.cast_nonneg N)
+  have htailN' := mul_le_mul_of_nonneg_left htailN (Nat.cast_nonneg N)
+  have hdecayN := hNtail N (le_trans (le_max_right _ _) hN)
+  rw [Real.dist_eq, sub_zero,
+    abs_of_nonneg (by positivity : 0 ≤ 8 * C * (N : ℝ) * Real.exp (-c * (N : ℝ)))]
+    at hdecayN
+  nlinarith
 
 theorem replicon_susceptibility {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {K : Set (ℝ × ℝ)}
@@ -43,6 +100,103 @@ theorem replicon_susceptibility {Ω : Type u} [MeasureSpace Ω]
   -- `1-s*atParameter`, whose lower bound is `data.gap` by `path_gap`, and
   -- rearrange.  Translate the uniform little-o estimate into the requested
   -- `eps,N0` quantifiers exactly as in the final paragraph of the paper.
-  sorry
+  intro eps heps
+  let δ : ℝ := eps * data.gap / 80
+  have hδ : 0 < δ := by
+    dsimp [δ]
+    nlinarith [data.gap_pos]
+  obtain ⟨Nthird, hNthird⟩ := thirdMoment_littleO (Ω := Ω) data δ hδ
+  have hpowlim : Tendsto
+      (fun N : ℕ => (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2))
+      atTop (nhds 0) := by
+    have hbase : Tendsto (fun N : ℕ => (N : ℝ) ^ (-(1 : ℝ) / 2))
+        atTop (nhds 0) := by
+      convert
+        (tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).comp
+          tendsto_natCast_atTop_atTop using 1
+      all_goals norm_num [Function.comp_def]
+    refine hbase.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with N hN
+    calc
+      (N : ℝ) ^ (-(1 : ℝ) / 2) =
+          (N : ℝ) ^ ((1 : ℝ) + (-(3 : ℝ) / 2)) := by norm_num
+      _ = (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) :=
+        Real.rpow_add (Nat.cast_pos.mpr hN) _ _
+      _ = (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) := by rw [Real.rpow_one]
+  obtain ⟨Npow, hNpow⟩ := (Metric.tendsto_atTop.1 hpowlim) δ hδ
+  refine ⟨max 1 (max Nthird Npow), ?_⟩
+  intro N hN β h q s hp hq hs path
+  have hNpos : 0 < N :=
+    lt_of_lt_of_le (by omega : 0 < 1) (le_trans (le_max_left _ _) hN)
+  have hthird : (N : ℝ) * thirdMoment path s < δ :=
+    hNthird (le_trans (le_max_left _ _) (le_trans (le_max_right _ _) hN))
+      hp hq hs path
+  have hpow : (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) < δ := by
+    have hdist :=
+      hNpow N (le_trans (le_max_right _ _) (le_trans (le_max_right _ _) hN))
+    rw [Real.dist_eq, sub_zero, abs_mul,
+      abs_of_nonneg (Nat.cast_nonneg N),
+      abs_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg N) _)] at hdist
+    exact hdist
+  subst q
+  let R : ℝ := cavityRemainder path s 0 - 2 * cavityRemainder path s 1 +
+    cavityRemainder path s 2
+  have hidentity :
+      (1 - s * atParameter β h) * (A path s - 2 * B path s + C path s) =
+        (1 / (N : ℝ)) * rsA β h + R := by
+    have hsys := cavity_system (s := s) path
+    have h0 := congrFun hsys 0
+    have h1 := congrFun hsys 1
+    have h2 := congrFun hsys 2
+    simp [cavityVector, cavityMatrix, theta] at h0 h1 h2
+    dsimp [R]
+    unfold atParameter rsA
+    linear_combination h0 - 2 * h1 + h2
+  have hRcoord : |R| ≤ 4 * ‖cavityRemainder path s‖ := by
+    have h0 : |cavityRemainder path s 0| ≤ ‖cavityRemainder path s‖ := by
+      simpa [Real.norm_eq_abs] using norm_le_pi_norm (cavityRemainder path s) 0
+    have h1 : |cavityRemainder path s 1| ≤ ‖cavityRemainder path s‖ := by
+      simpa [Real.norm_eq_abs] using norm_le_pi_norm (cavityRemainder path s) 1
+    have h2 : |cavityRemainder path s 2| ≤ ‖cavityRemainder path s‖ := by
+      simpa [Real.norm_eq_abs] using norm_le_pi_norm (cavityRemainder path s) 2
+    dsimp [R]
+    calc
+      |cavityRemainder path s 0 - 2 * cavityRemainder path s 1 +
+          cavityRemainder path s 2| ≤
+          |cavityRemainder path s 0| + |2 * cavityRemainder path s 1| +
+            |cavityRemainder path s 2| := by
+        calc
+          |_ - 2 * _ + _| ≤ |_ - 2 * _| + |_| := abs_add_le _ _
+          _ ≤ (|cavityRemainder path s 0| + |2 * cavityRemainder path s 1|) +
+              |cavityRemainder path s 2| := by
+                gcongr
+                simpa [sub_eq_add_neg] using
+                  abs_add_le (cavityRemainder path s 0)
+                    (-(2 * cavityRemainder path s 1))
+      _ = |cavityRemainder path s 0| + 2 * |cavityRemainder path s 1| +
+          |cavityRemainder path s 2| := by rw [abs_mul]; norm_num
+      _ ≤ 4 * ‖cavityRemainder path s‖ := by linarith
+  have hRbound : |R| ≤ 40 *
+      ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s) := by
+    have hr := cavityRemainder_bound (s := s) path
+    nlinarith [norm_nonneg (cavityRemainder path s)]
+  have hNR : (N : ℝ) * |R| < eps * data.gap := by
+    have hmul := mul_le_mul_of_nonneg_left hRbound (Nat.cast_nonneg N)
+    dsimp [δ] at hthird hpow
+    nlinarith
+  have hgap : data.gap ≤ 1 - s * atParameter β h := path_gap data hp hs
+  have hden : 0 < 1 - s * atParameter β h := lt_of_lt_of_le data.gap_pos hgap
+  have hNne : (N : ℝ) ≠ 0 := by exact_mod_cast ne_of_gt hNpos
+  have hidN := hidentity
+  field_simp [hNne] at hidN
+  have herr :
+      (N : ℝ) * (A path s - 2 * B path s + C path s) -
+          rsA β h / (1 - s * atParameter β h) =
+        (N : ℝ) * R / (1 - s * atParameter β h) := by
+    field_simp [ne_of_gt hden]
+    linear_combination hidN
+  rw [herr, abs_div, abs_mul, abs_of_nonneg (Nat.cast_nonneg N), abs_of_pos hden]
+  apply (div_lt_iff₀ hden).2
+  exact hNR.trans_le (mul_le_mul_of_nonneg_left hgap (le_of_lt heps))
 
 end SpinGlass.AT

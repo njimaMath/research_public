@@ -8,10 +8,18 @@ namespace SpinGlass.AT
 
 universe u
 
+noncomputable def quadraticCoupledPartition {N : ℕ}
+    (H : EnergySpace N) (lam : ℝ) : ℝ :=
+  ∑ p : Config N × Config N,
+    Real.exp (H p.1 + H p.2 +
+      lam * (N : ℝ) / 2 * configOverlap N p.1 p.2 ^ 2)
+
 noncomputable def quadraticCoupledPressure {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
     (path : RSSmartPathDisorder Ω N β h q) (s lam : ℝ) : ℝ :=
-  pathFreeEnergy path s + lam * overlapSecondMoment path s
+  (1 / (2 * (N : ℝ))) * ∫ ω,
+    Real.log (quadraticCoupledPartition (fullPathHamiltonian path s ω) lam)
+      ∂(volume : Measure Ω)
 
 noncomputable def normalizedCouplingExcess {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
@@ -39,14 +47,6 @@ theorem coupledPressure_sublinear {Ω : Type u} [MeasureSpace Ω]
   -- `D_N(s) = rsPathValue - pathFreeEnergy`, use `rsGap_deriv`, convexity in
   -- the coupling, and Gronwall to obtain both `D_N(s) ≤ C*epsN N` and the
   -- displayed overlap bound.  Standard limit lemmas show `epsN -> 0`.
-  --
-  -- Definition repair required: `quadraticCoupledPressure` in the paper is a
-  -- normalized expected log partition with weight
-  -- `exp (lam*N*Q12^2/2)`.  The current definition
-  -- `pathFreeEnergy + lam * overlapSecondMoment` is only its tangent at zero,
-  -- so it has neither the convexity nor the concentration content needed for
-  -- this argument.  Replace it, and define `normalizedCouplingExcess` as in
-  -- equation (normalizedcoupling), before proving this lemma.
   sorry
 
 theorem preliminary_overlap_bound {Ω : Type u} [MeasureSpace Ω]
