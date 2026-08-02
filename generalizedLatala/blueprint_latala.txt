@@ -33,7 +33,7 @@
   \footnote{\textcolor{green!50!black}{#1}}%
   \endgroup}
 
-\title{\textbf{A note on Latała's argument in SK model}}
+\title{\textbf{A note on Lata\l{}a's argument in convex mixed $p$-spin models}}
 \author{
   Seiichiro Kusuoka\thanks{Department of Mathematics and Mathematical Sciences, Graduate School of Science, Kyoto University. E-mail: \texttt{kusuoka@math.kyoto-u.ac.jp}}
   \and
@@ -48,34 +48,46 @@
 \maketitle
 
 \begin{abstract}
-In this note, we consider the Sherrington--Kirkpatrick model with deterministic external field. Let $q=q(\beta,h)$ denote the solution of the replica-symmetric self-consistency equation
+In this note, we consider a mixed $p$-spin model with convex covariance function $\xi$ and deterministic external field. Let $q=q(\xi,h)$ denote a solution of the replica-symmetric self-consistency equation
 \[
-q=\mathbb E\tanh^2\!\left(h+\beta\sqrt q\,Z\right),
+q=\mathbb E\tanh^2\!\left(h+\sqrt{\xi'(q)}\,Z\right),
 \qquad Z\sim N(0,1),
 \]
-where $\beta$ and $h$ are inverse temperature and external field, respectively.  By refining Latała’s argument, previously limited to \(\beta<\tfrac12\), and using the Kearns--Saul inequality, we prove overlap concentration and convergence of the free energy to the replica symmetric formula with error \(O(N^{-1})\) whenever
+where $h$ is the external field.  By refining Lata\l{}a's argument and using the Kearns--Saul inequality, we prove overlap concentration and convergence of the free energy to the replica symmetric formula with error $O(N^{-1})$ whenever
+\[
+\Gamma(q)\frac{q}{\operatorname{arctanh}q}<1,
+\]
+where $\Gamma(q)$ is the optimal global quadratic upper bound for the Bregman remainder of $\xi$ at $q$. For the Sherrington--Kirkpatrick model, one has $\xi(r)=\beta^2r^2/2$ and $\Gamma(q)=\beta^2$, so the condition above reduces to
 \[
 \beta^2\frac{q}{\operatorname{arctanh}q}<1.
 \]
-Note that for any $\beta<1$ and $h\in \mathbb R$, the condition above is satisfied. Moreover, for every nonzero $h$, this region contains a nonempty interval with $\beta>1$.
-We provide a formalization of the proof in Lean 4 \cite{brabra}.
+Note that in the Sherrington--Kirkpatrick model, for any $\beta<1$ and $h\in\mathbb R$, the condition above is satisfied. Moreover, for every nonzero $h$, this region contains a nonempty interval with $\beta>1$.
 \end{abstract}
 
 
 
 \section{Model and main result}
-In the present paper, we study the SK model, one of the classical models of spin-glass theory, defined as follows.  Let 
+In the present paper, we study a convex mixed $p$-spin model defined as follows.  Let
 \(
 \Sigma_N=\{-1,1\}^N,
-\)  
-and  $(g_{ij})_{1\leq i<j\leq N}$ be independent standard normals.  Fix an external field \(h\in\mathbb R\) and an inverse temperature $\beta\geq 0.$  For $\sigma\in\Sigma_N$, define the SK Hamiltonian by 
-\begin{equation}\label{eq:SK-Hamiltonian}
+\)
+and let $(X_N(\sigma))_{\sigma\in\Sigma_N}$ be a centered Gaussian process whose covariance is
+\begin{equation}\label{eq:mixed-covariance}
+\E X_N(\sigma)X_N(\tau)
+=N\xi\bigl(R(\sigma,\tau)\bigr),
+\qquad
+R(\sigma,\tau):=\frac1N\sum_{i=1}^N\sigma_i\tau_i.
+\end{equation}
+We suppose that $\xi\in C^2([-1,1])$ is convex, $\xi(0)=\xi'(0)=0$, and that \eqref{eq:mixed-covariance} defines a covariance kernel.  The principal example is
+\[
+\xi(r)=\sum_{p\geq2}\beta_p^2r^p,
+\]
+where the coefficients satisfy a suitable summability condition; see \cite{PanchenkoMixed}.  In particular, every mixed even $p$-spin model is covered by our assumptions. Fix an external field $h\in\mathbb R$. For $\sigma\in\Sigma_N$, define the Hamiltonian by
+\begin{equation}\label{eq:mixed-Hamiltonian}
 H_N(\sigma)
 :=
-\frac{\beta}{\sqrt{N}}
-\sum_{1\leq i<j\leq N}g_{ij}\sigma_i\sigma_j
-+
-h\sum_{i=1}^N\sigma_i.
+X_N(\sigma)
++h\sum_{i=1}^N\sigma_i.
 \end{equation}
 Write
 \[
@@ -88,19 +100,38 @@ and denote Gibbs expectation by $\braket{\cdot}$, i.e.
 \braket{F} := \frac{1}{Z_{N}}\sum _{\sigma \in \Sigma _N} F(\sigma ) e^{H_{N}(\sigma)}
 \]
 for a function $F$ on $\Sigma _N$.
-This $Z_N$ is called the partition function, hence $\phi_N=N^{-1}\mathbb E \log Z_N$ stands for the expected free energy up to multiplication of constant. 
+This $Z_N$ is called the partition function, hence $\phi_N=N^{-1}\mathbb E \log Z_N$ stands for the expected free energy up to multiplication of constant.
 
 
 For replicas $\sigma^a,\sigma^b$ sampled independently from the Gibbs measure conditional on the disorder, define the overlap
 \[
 R_{ab}:=\frac1N\sum_{i=1}^N\sigma_i^a\sigma_i^b.
 \]
-Let $q=q(\beta,h)\in[0,1]$ be a solution of\footnote{Existence follows because the right-hand side defines a continuous map from $[0,1]$ into itself. In the parameter region considered below, the relevant solution is unique by Guerra's result; see \cite{Talagrand2}.}
+Let $q=q(\xi,h)\in[0,1]$ be a solution of\footnote{Existence follows because the right-hand side defines a continuous map from $[0,1]$ into itself. We fix a solution satisfying the condition considered below.}
 \begin{equation}\label{eq:fixed-point}
-q=\E[\tanh\!\left(h+\beta\sqrt q\,Z\right)^2],
+q=\E\left[\tanh\!\left(h+\sqrt{\xi'(q)}\,Z\right)^2\right],
 \qquad Z\sim N(0,1).
 \end{equation}
-For finite $\beta$ and $h$, one has $q<1$. Define
+For finite $\xi'(q)$ and $h$, one has $q<1$. Define
+\begin{equation}\label{eq:Delta-definition}
+\Delta_q(r)
+:=
+\xi(r)-\xi(q)-\xi'(q)(r-q),
+\qquad -1\leq r\leq1,
+\end{equation}
+and
+\begin{equation}\label{eq:Gamma-definition}
+\Gamma(q)
+:=
+\sup_{\substack{-1\leq r\leq1\\r\neq q}}
+\frac{2\Delta_q(r)}{(r-q)^2},
+\end{equation}
+where the quotient is understood to equal $\xi''(q)$ at $r=q$. Since $\xi$ is convex and belongs to $C^2([-1,1])$, we have
+\begin{equation}\label{eq:Delta-bounds}
+0\leq\Delta_q(r)\leq\frac{\Gamma(q)}2(r-q)^2,
+\qquad -1\leq r\leq1.
+\end{equation}
+Define
 \[
 \kappa(q):=
 \begin{cases}
@@ -108,100 +139,140 @@ For finite $\beta$ and $h$, one has $q<1$. Define
 1,&q=0,
 \end{cases}
 \qquad
-\rho(\beta,h):=\beta^2\kappa(q(\beta,h)).
+\rho(\xi,h):=\Gamma(q(\xi,h))\kappa(q(\xi,h)).
 \]
 We define the replica-symmetric free energy by
-\[
-\phi^{\mathrm{RS}}(\beta,h)
-:=
+\begin{align}
+\phi^{\mathrm{RS}}(\xi,h)
+&:=
 \log 2
 +
-\E\log\cosh\!\left(h+\beta\sqrt q\,Z\right)
-+
-\frac{\beta^2}{4}(1-q)^2.
-\]
+\E\log\cosh\!\left(h+\sqrt{\xi'(q)}\,Z\right)
+\notag\\
+&\quad
++\frac12\left(\xi(1)-\xi(q)-\xi'(q)(1-q)\right).
+\label{eq:RS-functional}
+\end{align}
 
 We say that replica symmetry holds if
 \[
-\lim_{N\to\infty}\phi_N=\phi^{\mathrm{RS}}(\beta,h).
+\lim_{N\to\infty}\phi_N=\phi^{\mathrm{RS}}(\xi,h).
 \]
 
-When \(h=0\), replica symmetry is known to hold throughout the region \(\beta<1\) (see \cite{AizenmanLebowitzRuelle}), whereas it fails for \(\beta>1\) (see \cite{Guerra}).   For a general external field and sufficiently small \(\beta\), replica symmetry was later proved by Talagrand in \cite{Talagrand2} using the cavity method. Latała subsequently extended the result to the regime \(\beta<1/2\) by  a simple interpolation argument inspired by Guerra's argument \cite{Guerra}.
+When $\xi(r)=\beta^2r^2/2$, this model is the Sherrington--Kirkpatrick model, up to a centered Gaussian random variable common to all configurations, which does not affect the expected free energy. When $h=0$, replica symmetry in the Sherrington--Kirkpatrick model is known to hold throughout the region $\beta<1$ (see \cite{AizenmanLebowitzRuelle}), whereas it fails for $\beta>1$ (see \cite{Guerra}). For a general external field and sufficiently small $\beta$, replica symmetry was later proved by Talagrand in \cite{Talagrand2} using the cavity method. Lata\l{}a subsequently extended the result to the regime $\beta<1/2$ by a simple interpolation argument inspired by Guerra's argument \cite{Guerra}.
 
-It is therefore natural to ask whether the reduction of the range from \(\beta<1\) to \(\beta<1/2\) is intrinsic to its interpolation method. Our purpose is to show that it is not the case.  Our proof is inspired by Latała's argument and incorporates the coupled free energy introduced below as an additional ingredient.
+It is therefore natural to ask whether the interpolation method extends beyond the quadratic covariance of the Sherrington--Kirkpatrick model. Our purpose is to show that this is the case for a general convex covariance function. Our proof is inspired by Lata\l{}a's argument and incorporates the coupled free energy introduced below as an additional ingredient.
 \begin{theorem}\label{thm:main}
-Let $\beta\geq0$ and $h\in \mathbb R$, and suppose that
+Let $\xi\in C^2([-1,1])$ satisfy the assumptions above, let $h\in\mathbb R$, and suppose that
 \begin{equation}\label{eq:improved-region}
-\rho(\beta,h) = \beta^2\kappa(q(\beta,h))
-<1,
+\rho(\xi,h) = \Gamma(q(\xi,h))\kappa(q(\xi,h))
+<1.
 \end{equation}
-Then, the overlap concentration holds in the sense that there exists a constant $C=C(\beta,h)<\infty$ such that
+Then, the overlap concentration holds in the sense that there exists a constant $C=C(\xi,h)<\infty$ such that
 \begin{equation}\label{eq:overlap-concentration}
 \E\braket{(R_{12}-q)^2}\leq \frac{C}{N}.
 \end{equation}
-Consequently, we have the quantitative estimate of the replica symmetric free energy $\phi^{\mathrm{RS}}(\beta,h)$:
+Consequently, we have the quantitative estimate of the replica symmetric free energy $\phi^{\mathrm{RS}}(\xi,h)$:
 \begin{equation}\label{eq:RS-free-energy}
-0\leq \phi^{\mathrm{RS}}(\beta,h)-\phi_N\leq \frac{C}{N}.
+0\leq \phi^{\mathrm{RS}}(\xi,h)-\phi_N\leq \frac{C}{N}.
  \end{equation}
 
 \end{theorem}
 
 \begin{remark}\label{rem:beyond-beta-one}
-Since $0<\kappa(q)\leq1$, condition \eqref{eq:improved-region} contains the entire region $\beta<1$. It is strictly stronger in a nonzero external field. Indeed, if $h\neq0$, then $q(\beta,h)>0$ and hence $\kappa(q(\beta,h))<1$. Thus, $\rho(\beta,h)<1$ for all $\beta>1$ sufficiently close to $1$.
+For the Sherrington--Kirkpatrick model, $\xi(r)=\beta^2r^2/2$ and
+\[
+\Delta_q(r)=\frac{\beta^2}{2}(r-q)^2,
+\qquad
+\Gamma(q)=\beta^2.
+\]
+Thus, condition \eqref{eq:improved-region} reduces to
+\[
+\beta^2\kappa(q(\beta,h))<1.
+\]
+Writing $\rho(\beta,h):=\beta^2\kappa(q(\beta,h))$, we recover the condition in the Sherrington--Kirkpatrick model.
+Since $0<\kappa(q)\leq1$, this condition contains the entire region $\beta<1$. It is strictly stronger in a nonzero external field. Indeed, if $h\neq0$, then $q(\beta,h)>0$ and hence $\kappa(q(\beta,h))<1$. Thus, $\rho(\beta,h)<1$ for all $\beta>1$ sufficiently close to $1$.
+\end{remark}
+
+\begin{remark}\label{rem:simple-condition}
+Taylor's formula gives
+\[
+\Gamma(q)\leq\sup_{-1\leq r\leq1}\xi''(r).
+\]
+Consequently, the simpler condition
+\[
+\kappa(q)\sup_{-1\leq r\leq1}\xi''(r)<1
+\]
+implies \eqref{eq:improved-region}. For a mixed even $p$-spin model,
+\[
+\xi(r)=\sum_{p\in2\N}\beta_p^2r^p,
+\]
+one has
+\[
+\sup_{-1\leq r\leq1}\xi''(r)=\xi''(1).
+\]
 \end{remark}
 
 
 
-The present work does not establish replica symmetry in the entire
-Almeida--Thouless region,
+The present work does not establish replica symmetry under the local generalized Almeida--Thouless condition
 \[
-\beta^2 \mathbb{E}\!\left[\cosh\!\left(h+\beta\sqrt{q}\,Z\right)^{-4}\right]\leq 1,
+\xi''(q)\mathbb E\!\left[\cosh\!\left(h+\sqrt{\xi'(q)}\,Z\right)^{-4}\right]\leq 1,
 \]
-where replica symmetry is expected to hold in the sense that
+which is the natural local stability condition for the replica-symmetric solution. In the Sherrington--Kirkpatrick model, replica symmetry is expected to hold throughout this region in the sense that
 \[
-\lim_{N\to\infty}\phi_N=\phi^{\mathrm{RS}}(\beta,h).
-\] 
-We note that a recent preprint by Lopatto \cite{Lap26} claims to resolve this question using a dynamic-programming approach developed in \cite{Jagannath}. See also \cite{BrenneckeYau2021}, which establishes a similar, though slightly stronger, condition via the conditional second-moment method introduced in \cite{Bolthausen}.
+\lim_{N\to\infty}\phi_N=\phi^{\mathrm{RS}}(\xi,h).
+\]
+Indeed,
+\[
+\xi''(q)\leq\Gamma(q),
+\qquad
+\E\!\left[\cosh\!\left(h+\sqrt{\xi'(q)}\,Z\right)^{-4}\right]
+\leq1-q\leq\kappa(q),
+\]
+where the first inequality follows from $\operatorname{sech}^4x\leq\operatorname{sech}^2x$ and \eqref{eq:fixed-point}, while the second follows from $\operatorname{arctanh}q\leq q/(1-q)$. Thus, condition \eqref{eq:improved-region} is contained in the strict generalized Almeida--Thouless region. In the Sherrington--Kirkpatrick case, we note that a recent preprint by Lopatto \cite{Lap26} claims to resolve the entire Almeida--Thouless region using a dynamic-programming approach developed in \cite{Jagannath}. See also \cite{BrenneckeYau2021}, which establishes a similar, though slightly stronger, condition for the Sherrington--Kirkpatrick model via the conditional second-moment method introduced in \cite{Bolthausen}.
 
-In the rest of the paper, we give the proof of Theorem~\ref{thm:main}.
+In the rest of the paper, we give the proof of Theorem~\ref{thm:main}. We also note that we provide a formalization of the proof in the Sherrington--Kirkpatrick case in Lean 4 \cite{brabra}.
 
+
+\IfFileExists{AT_and_current_comparison.png}{%
 \begin{figure}[h]
   \centering
   \includegraphics[width=\textwidth]{AT_and_current_comparison.png}
-  \caption{Comparison of the Almeida--Thouless condition 
+  \caption{Comparison, in the Sherrington--Kirkpatrick model, of the Almeida--Thouless condition
   and the condition \eqref{eq:improved-region}.}
   \label{fig:AT-current}
 \end{figure}
+}{}
 
 
 \section{Proof of the main theorem}
 
 
-We use a smart path interpolation introduced by Guerra \cite{Guerra} (see also \cite{Talagrand2}). Let $(z_i)_{i\leq N}$ be independent standard Gaussian random variables, independent of $(g_{ij})$.  Define the smart-path Hamiltonian
+We use a smart path interpolation introduced by Guerra \cite{Guerra} (see also \cite{Talagrand2}). Let $(z_i)_{i\leq N}$ be independent standard Gaussian random variables, independent of $X_N$. Define the smart-path Hamiltonian
 \begin{equation}\label{eq:smart-path}
 H_{N,t}(\sigma)
 :=
-\frac{\beta\sqrt t}{\sqrt N}
-\sum_{i<j}g_{ij}\sigma_i\sigma_j
+\sqrt t\,X_N(\sigma)
 +
 \sum_{i=1}^N
-\left(h+\beta\sqrt{(1-t)q}\,z_i\right)\sigma_i,
+\left(h+\sqrt{(1-t)\xi'(q)}\,z_i\right)\sigma_i,
 \qquad 0\leq t\leq1.
 \end{equation}
-At $t=1$, this is the SK Hamiltonian \eqref{eq:SK-Hamiltonian}; at $t=0$, the sites are independent.
+At $t=1$, this is the Hamiltonian \eqref{eq:mixed-Hamiltonian}; at $t=0$, the sites are independent.
 
 Let $\braket{\cdot}_t$ denote the Gibbs expectation associated with \eqref{eq:smart-path}, i.e.
 \[
 \braket{F}_t := \frac{1}{Z_{N,t}}\sum _{\sigma \in \Sigma _N} F(\sigma ) e^{H_{N,t}(\sigma)}
 \]
-where $Z_{N,t} := \sum _{\sigma \in \Sigma _N} e^{H_{N,t}(\sigma)}$, 
+where $Z_{N,t} := \sum _{\sigma \in \Sigma _N} e^{H_{N,t}(\sigma)}$,
 and set
 \[
 \nu_t[F]:=\E\braket{F}_t.
 \]
 We write
 \[
-\phi _N(s) := \frac{1}{N} \E \log Z_{N,s}
+\phi _N(s) := \frac{1}{N} \E \log Z_{N,s}.
 \]
 For replicas $(\sigma^a)_a$ write
 \[
@@ -212,13 +283,13 @@ At $t=0$, conditional on $(z_i)_{i\leq N}$,
 \[
 m_i := \braket{\sigma_i}_0
 =
-\tanh\!\left(h+\beta\sqrt q\,z_i\right).
+\tanh\!\left(h+\sqrt{\xi'(q)}\,z_i\right).
 \]
 For two independent replicas $\sigma^1,\sigma^2$, the variables
 $X_i:=\sigma_i^1\sigma_i^2$ are independent and identically distributed under the annealed law $\mathbb E \langle \cdot\rangle_0$,
 take values in $\{-1,1\}$, and satisfy
 \[
-\E\langle \sigma_i^1\sigma_i^2\rangle_0=\E m_i^2=\mathbb E[\tanh\!\left(h+\beta\sqrt q\,z_i\right)^2]=q,
+\E\langle \sigma_i^1\sigma_i^2\rangle_0=\E m_i^2=\mathbb E\left[\tanh\!\left(h+\sqrt{\xi'(q)}\,z_i\right)^2\right]=q,
 \]
 due to \eqref{eq:fixed-point}. In particular,
 \[
@@ -228,20 +299,20 @@ due to \eqref{eq:fixed-point}. In particular,
 \]
 
 
-We now  prove\footnote{Note that the Kearns--Saul inequality in its $\{-1,1\}$-valued form \cite{Schlemm} also gives \eqref{eq:Kearns-Saul}.}
+We now prove\footnote{Note that the Kearns--Saul inequality in its $\{-1,1\}$-valued form \cite{Schlemm} also gives \eqref{eq:Kearns-Saul}.}
 \begin{equation}\label{eq:Kearns-Saul}
 \E\braket{e^{u(X_i-q)}}_0
 \leq \exp\left(\frac{\kappa(q)u^2}{2}\right),
 \qquad u\in\R.
 \end{equation}
- By the continuity of both sides of \eqref{eq:Kearns-Saul} in $q\in [0,1]$, it suffices to consider the case that \(0< q< 1\). Letting $a:= {\operatorname{arctanh}q}$, we obtain
+By the continuity of both sides of \eqref{eq:Kearns-Saul} in $q\in [0,1]$, it suffices to consider the case that $0<q<1$. Letting $a:={\operatorname{arctanh}q}$, we obtain
 \begin{align*}
 \E \braket{e^{u(X_i-q)}}_0
 &=e^{-qu} \left( \frac{1+q}{2} e^u + \frac{1-q}{2} e^{-u} \right) \\
 &=e^{-qu} \bigl(\cosh u +q \sinh u\bigr) \\
 &=e^{-qu} \frac{\cosh(u+a)}{\cosh a}.
 \end{align*}
-Let $x=u+a$ and define \(F(t)=\log\cosh(\sqrt t)\) for \(t\geq0\). For \(t>0\), by writing \(r=\sqrt t\) we have,
+Let $x=u+a$ and define $F(t)=\log\cosh(\sqrt t)$ for $t\geq0$. For $t>0$, by writing $r=\sqrt t$ we have,
 \[
 F'(t)=\frac{\tanh r}{2r},\qquad
 F''(t)=\frac{r\operatorname{sech}^2r-\tanh r}{4r^3}.
@@ -250,11 +321,11 @@ Let
 \[
 h(r)=\tanh r-r\operatorname{sech}^2r.
 \]
-Then \(h(0)=0\) and
+Then $h(0)=0$ and
 \[
 h'(r)=2r\operatorname{sech}^2r\,\tanh r\geq0,
 \]
-so \(h(r)\geq0\), and hence \(F''(t)\leq0\). Thus \(F\) is concave, and
+so $h(r)\geq0$, and hence $F''(t)\leq0$. Thus $F$ is concave, and
 \[
 F(x^2)\leq F(a^2)+F'(a^2)(x^2-a^2).
 \]
@@ -265,7 +336,7 @@ F(a^2)=\log\cosh a,\qquad
 F'(a^2)=\frac{\tanh a}{2a},
 \]
 and $q(x-a)+\frac{q}{2a}(x-a)^2
-=\frac{q}{2a}(x^2-a^2)$, we obtain  
+=\frac{q}{2a}(x^2-a^2)$, we obtain
 \[
 {\;
 \log\cosh x
@@ -273,7 +344,7 @@ and $q(x-a)+\frac{q}{2a}(x-a)^2
 \log\cosh a+q(x-a)+\frac{q}{2a}(x-a)^2
 \; }.
 \]
-This together with \(x=u+a\) gives
+This together with $x=u+a$ gives
 \[
 e^{-qu}\frac{\cosh(u+a)}{\cosh a}
 \leq
@@ -287,7 +358,7 @@ Therefore, we obtain \eqref{eq:Kearns-Saul}.
 
 
 
-Since $H_{N,0} (\sigma ) = \sum _{i=1}^N \left( h+ \beta \sqrt{q} z_i \right) \sigma _i$, $\{ \sigma _i\}$ are independent with respect to the Gibbs measure at $t=0$.
+Since $H_{N,0}(\sigma)=\sum_{i=1}^N\left(h+\sqrt{\xi'(q)}\,z_i\right)\sigma_i$, $\{\sigma_i\}$ are independent with respect to the Gibbs measure at $t=0$.
 This fact and \eqref{eq:Kearns-Saul} imply
 \begin{equation}\label{eq:subgaussian-endpoint}
 \E\braket{
@@ -297,7 +368,7 @@ This fact and \eqref{eq:Kearns-Saul} imply
 }_0
 \leq \exp\left(\frac{\kappa(q)u^2}{2}\right).
 \end{equation}
-Integrating both sides of \eqref{eq:subgaussian-endpoint} by $\exp \left( -\frac{u^2}{2\Lambda}\right) du$ on ${\mathbb R}$ gives, whenever $\kappa(q)\Lambda<1$,
+Integrating both sides of \eqref{eq:subgaussian-endpoint} by $\exp\left(-\frac{u^2}{2\Lambda}\right)du$ on $\mathbb R$ gives, whenever $\kappa(q)\Lambda<1$,
 \begin{equation}\label{eq:endpoint-quadratic}
 \E\braket{\exp\left(\frac{\Lambda N}{2} Q_{12}^2\right)}_0
 \leq \frac{1}{\sqrt{1-\kappa(q)\Lambda}}.
@@ -309,9 +380,9 @@ Integrating both sides of \eqref{eq:subgaussian-endpoint} by $\exp \left( -\frac
 We now give a key estimate.
 
 \begin{proposition}\label{prop:quadratic}
-Suppose that $\rho=\rho(\beta,h)<1$, and set
+Suppose that $\rho=\rho(\xi,h)<1$, and set
 \begin{equation}\label{eq:lambda-star}
-\lambda_*:=\frac{\kappa(q)^{-1}-\beta^2}{4}
+\lambda_*:=\frac{\kappa(q)^{-1}-\Gamma(q)}{4}
 =\frac{1-\rho}{4\kappa(q)}.
 \end{equation}
 For every $N\geq1$ and $t\in[0,1]$,
@@ -326,7 +397,7 @@ For every $N\geq1$ and $t\in[0,1]$,
 \end{proposition}
 
 \begin{proof}
-Fix $t\in[0,1]$. For $\Lambda\geq0$, introduce the  coupled free energy
+Fix $t\in[0,1]$. For $\Lambda\geq0$, introduce the coupled free energy
 \[
 \phi_N(s,\Lambda)
 :=
@@ -342,100 +413,71 @@ Fix $t\in[0,1]$. For $\Lambda\geq0$, introduce the  coupled free energy
 \right\}\right)\right].
 \]
 Clearly,
-\(
-\phi_N(s,0)=\phi_N(s).
-\)  Let $C_s(\sigma,\tau)$ be the covariance of ${H}_{N,s}(\sigma)$ and ${H}_{N,s}(\tau)$. Then, we have
+$\phi_N(s,0)=\phi_N(s)$.
+Let $C_s(\sigma,\tau)$ be the covariance of the Gaussian part of ${H}_{N,s}(\sigma)$ and ${H}_{N,s}(\tau)$. Then, we have
 \[
 C_s(\sigma,\tau)
-=\beta^2\left(
-\frac{s}{N}\sum_{i<j}\sigma_i\tau_i\sigma_j\tau_j
-+
-(1-s)q\sum_{i=1}^N\sigma_i\tau_i\right).
+=N\left(s\xi(R(\sigma,\tau))+(1-s)\xi'(q)R(\sigma,\tau)\right).
 \]
-For $\sigma,\tau\in\Sigma_N$, write
-\[
-R(\sigma,\tau):=\frac1N\sum_{i=1}^N\sigma_i\tau_i.
-\]
-Using
-\begin{equation}\label{eq:R^2}
-\sum_{i<j}\sigma_i\tau_i\sigma_j\tau_j
-=
-\frac12\left(N^2R(\sigma,\tau)^2-N\right),
-\end{equation}
-we obtain
+We obtain
 \begin{equation}\label{eq:covariance-derivative}
 \dot{C}_s(\sigma,\tau):=\frac{\rm d}{{\rm d}s} C_s(\sigma,\tau)
-=
-\frac{\beta^2 N}2\left((R(\sigma,\tau)-q)^2-q^2\right)-\frac{\beta^2}{2}.
+=N\left(\xi(R(\sigma,\tau))-\xi'(q)R(\sigma,\tau)\right).
 \end{equation}
 
-Since
-\[
-\frac{\rm d}{{\rm d}s} \phi_N(s) = \frac{\beta }{2N} \E\left[\frac{1}{Z_{N,s}} \sum _{\sigma \in \Sigma _N} e^{H_{N,s}(\sigma )} \left( \frac{1}{\sqrt{sN}}
-\sum_{i<j}g_{ij}\sigma_i\sigma_j
-- \sqrt{\frac{q}{1-s}}
-\sum_{i=1}^N
-z_i \sigma_i \right) \right],
-\]
-by Gaussian integration by parts (see \cite[Vol.~1,~Sec.~A.4]{Talagrand2}), we have 
-\begin{align*}
-\frac{\rm d}{{\rm d}s} \phi_N(s) &= \frac{\beta }{2N} \sum _{\sigma \in \Sigma _N} \sum_{i<j} \sigma _i \sigma _j \E\left[ \frac{e^{H_{N,s}(\sigma )}}{Z_{N,s}} \frac{\beta}{N} \sigma _i \sigma _j -\frac{e^{H_{N,s}(\sigma )}}{Z_{N,s}^2}  \frac{\beta}{N} \sum _{\tau \in \Sigma _N} \tau _i \tau _j e^{H_{N,s}(\tau )}\right] \\
-&\quad - \frac{\beta }{2N} \sum _{\sigma \in \Sigma _N} \sum_{i=1}^N \sigma _i \E\left[ \frac{e^{H_{N,s}(\sigma )}}{Z_{N,s}} \beta q \sigma _i -\frac{e^{H_{N,s}(\sigma )}}{Z_{N,s}^2} \beta q \sum _{\tau \in \Sigma _N} \tau _i e^{H_{N,s}(\tau )}\right] \\
-%
-&= \frac{\beta ^2 (N-1)}{4N} -\frac{\beta ^2}{2} \sum _{\sigma \in \Sigma _N} \E\left[ \sum _{\sigma , \tau \in \Sigma _N} \frac{e^{H_{N,s}(\sigma )}}{Z_{N,s}} \frac{e^{H_{N,s}(\tau )}}{Z_{N,s}} \cdot \frac{1}{N^2} \sum_{i<j} \sigma _i \sigma _j \tau _i \tau _j \right] \\
-&\quad - \frac{\beta ^2 q}{2} + \frac{\beta ^2 q}{2} \E\left[ \sum _{\sigma , \tau \in \Sigma _N} \frac{e^{H_{N,s}(\sigma )}}{Z_{N,s}} \frac{e^{H_{N,s}(\tau )}}{Z_{N,s}} \cdot \frac{1}{N}\sum _{i=1}^N \sigma _i \tau _i \right] .
-\end{align*}
-Hence, in view of \eqref{eq:R^2} it holds that
-\begin{equation}\label{eq:p-derivative}
-\frac{\rm d}{{\rm d}s} \phi_N(s)
-=\frac{\beta^2}{4}\left(
-(1-q)^2
--
-\nu_s[Q_{12}^2]\right).
-\end{equation}
+By Gaussian integration by parts (see \cite[Vol.~1,~Sec.~A.4]{Talagrand2}), we have
+\begin{align}
+\frac{\rm d}{{\rm d}s}\phi_N(s)
+&=
+\frac{1}{2N}\E\left\langle
+\dot C_s(\sigma^1,\sigma^1)
+-\dot C_s(\sigma^1,\sigma^2)
+\right\rangle_s
+\notag\\
+&=
+\frac12\left(
+\Delta_q(1)-\nu_s[\Delta_q(R_{12})]
+\right).
+\label{eq:p-derivative}
+\end{align}
 
 Let $\widehat\nu_{s,\Lambda}$ denote expectation with respect to two independent pairs
-$(\sigma^1,\sigma^2)$ and $(\sigma^3,\sigma^4)$ sampled from the coupled Gibbs measure defining $\phi_N(s,\Lambda)$, i.e. 
+$(\sigma^1,\sigma^2)$ and $(\sigma^3,\sigma^4)$ sampled from the coupled Gibbs measure defining $\phi_N(s,\Lambda)$, i.e.
 \[
-\widehat\nu_{s,\Lambda}[F] := \E\left[\frac{ \sum_{\sigma^1,\sigma^2,\sigma^3,\sigma^4\in\Sigma_N} F(\sigma ^1, \sigma ^2, \sigma ^3,\sigma ^4) 
-e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)} 
+\widehat\nu_{s,\Lambda}[F] := \E\left[\frac{ \sum_{\sigma^1,\sigma^2,\sigma^3,\sigma^4\in\Sigma_N} F(\sigma ^1, \sigma ^2, \sigma ^3, \sigma ^4)
+e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)}
 e^{H_{N,s}^\Lambda (\sigma ^3, \sigma ^4)}
 }{\left(
 \sum_{\sigma^1,\sigma^2\in\Sigma_N}
-e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)} \right) ^2 }\right]
+e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)} \right)^2 }\right]
 \]
-where $H_{N,s}^\Lambda (\sigma ^1, \sigma ^2) := {H}_{N,s}(\sigma^1) + {H}_{N,s}(\sigma^2) + \frac{\Lambda N}{2}Q_{12}^2$.
-Denote $\sum_{\sigma^1,\sigma^2\in\Sigma_N} e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)}$ by $Z_{N,s}^\Lambda$.
-Similarly to \eqref{eq:p-derivative} we are able to calculate $\frac{\partial}{\partial s} \phi_N(s,\Lambda)$ as
+where
+\[
+H_{N,s}^\Lambda(\sigma^1,\sigma^2)
+:=
+H_{N,s}(\sigma^1)+H_{N,s}(\sigma^2)
++\frac{\Lambda N}{2}Q_{12}^2.
+\]
+Similarly to \eqref{eq:p-derivative}, we are able to calculate $\frac{\partial}{\partial s}\phi_N(s,\Lambda)$ as
 \begin{align*}
-&\frac{\partial}{\partial s} \phi_N(s,\Lambda) \\
-%
-&= \frac{\beta }{4N} \sum _{\sigma ^1 ,\sigma ^2 \in \Sigma _N} \sum_{i<j} (\sigma _i^1 \sigma _j^1 + \sigma _i^2 \sigma _j^2 ) \E\left[ \frac{e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)} }{Z_{N,s}^\Lambda } \frac{\beta}{N} (\sigma _i^1 \sigma _j^1 + \sigma _i^2 \sigma _j^2 ) \right. \\
-&\quad \hspace{6cm} \left. -\frac{e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)}}{(Z_{N,s}^\Lambda )^2}  \frac{\beta}{N} \sum _{\tau ^1, \tau ^2 \in \Sigma _N} (\tau _i^1 \tau _j^1 +\tau _i^2 \tau _j^2 ) e^{H_{N,s}^\Lambda (\tau ^1, \tau ^2)}\right] \\
-&\quad - \frac{\beta }{4N} \sum _{\sigma ^1 ,\sigma ^2 \in \Sigma _N} \sum_{i=1}^N (\sigma _i^1 + \sigma _i^2 ) \E\left[ \frac{e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)} }{Z_{N,s}^\Lambda } \beta q (\sigma _i^1 + \sigma _i^2 ) \right. \\
-&\quad \hspace{6cm} \left.  -\frac{e^{H_{N,s}^\Lambda (\sigma ^1, \sigma ^2)}}{(Z_{N,s}^\Lambda )^2} \beta q \sum _{\tau ^1, \tau ^2 \in \Sigma _N} (\tau _i^1 + \tau _i^2) e^{H_{N,s}^\Lambda (\tau ^1, \tau ^2)} \right] \\
-%
+\frac{\partial}{\partial s}\phi_N(s,\Lambda)
 &=
 \frac{1}{4N}
 \widehat\nu_{s,\Lambda}
 \left[
 2\dot C_s(\sigma^1,\sigma^1)
-+
-2\dot C_s(\sigma^1,\sigma^2)
--
-\sum_{{a\in\{1,2\},b\in\{3,4\}}}
++2\dot C_s(\sigma^1,\sigma^2)
+-\sum_{a\in\{1,2\},\,b\in\{3,4\}}
 \dot C_s(\sigma^a,\sigma^b)
-\right].  
+\right].
 \end{align*}
-By symmetry of the coupled Gibbs measure under exchange within each replica pair, the four cross terms have the same expectation.  Substitution of \eqref{eq:covariance-derivative} gives
+By symmetry of the coupled Gibbs measure under exchange within each replica pair, the four cross terms have the same expectation. Substitution of \eqref{eq:covariance-derivative} gives
 \begin{equation}\label{eq:coupled-s-derivative}
-\frac{\partial}{\partial s} \phi_N(s,\Lambda)
+\frac{\partial}{\partial s}\phi_N(s,\Lambda)
 =
-\frac{\beta^2}{4}\left((1-q)^2
-+
-\widehat\nu_{s,\Lambda}[Q_{12}^2]
--
-2\widehat\nu_{s,\Lambda}[Q_{13}^2]\right).
+\frac12\Delta_q(1)
++\frac12\widehat\nu_{s,\Lambda}[\Delta_q(R_{12})]
+-\widehat\nu_{s,\Lambda}[\Delta_q(R_{13})].
 \end{equation}
 Moreover,
 \begin{equation}\label{eq:Lambda-derivative}
@@ -446,47 +488,70 @@ Moreover,
 
 Let $\lambda_*$ be as in \eqref{eq:lambda-star}. For $0\leq s\leq t$, set
 \[
-\Lambda_s:=2\lambda_*+\beta^2(t-s),
+\Lambda_s:=2\lambda_*+\Gamma(q)(t-s),
 \qquad
-F_N(s,\Lambda ):=\phi_N(s,\Lambda )-\phi_N(s),
+F_N(s,\Lambda):=\phi_N(s,\Lambda)-\phi_N(s),
 \qquad
-D_N(s) := F_N(s,\Lambda _s).
+D_N(s):=F_N(s,\Lambda_s).
 \]
-Since $\frac{\rm d}{{\rm d}s} \Lambda_s = -\beta^2$, \eqref{eq:p-derivative}, \eqref{eq:coupled-s-derivative}, and \eqref{eq:Lambda-derivative} imply
-\begin{equation}\label{eq:D'}
-\frac{\rm d}{{\rm d}s} D_N(s)
-=\beta^2\left(
--\frac12\widehat\nu_{s,\Lambda_s}[Q_{13}^2]
-+
-\frac14\nu_s[Q_{12}^2]\right)
-\leq
-\frac{\beta^2}{4}\nu_s[Q_{12}^2].
-\end{equation}
-On the other hand, 
+Since $\frac{\rm d}{{\rm d}s}\Lambda_s=-\Gamma(q)$, \eqref{eq:p-derivative}, \eqref{eq:coupled-s-derivative}, and \eqref{eq:Lambda-derivative} imply
+\begin{align}
+\frac{\rm d}{{\rm d}s}D_N(s)
+&=
+\frac12\widehat\nu_{s,\Lambda_s}[\Delta_q(R_{12})]
+-\widehat\nu_{s,\Lambda_s}[\Delta_q(R_{13})]
++\frac12\nu_s[\Delta_q(R_{12})]
+\notag\\
+&\quad
+-\frac{\Gamma(q)}4
+\widehat\nu_{s,\Lambda_s}[Q_{12}^2].
+\label{eq:D-exact}
+\end{align}
+By \eqref{eq:Delta-bounds},
 \[
-F_N(s,\Lambda ) = 
+\frac12\Delta_q(R_{12})
+-\frac{\Gamma(q)}4Q_{12}^2\leq0,
+\qquad
+-\Delta_q(R_{13})\leq0.
+\]
+Therefore,
+\begin{equation}\label{eq:D'}
+\frac{\rm d}{{\rm d}s}D_N(s)
+\leq
+\frac12\nu_s[\Delta_q(R_{12})]
+\leq
+\frac{\Gamma(q)}4\nu_s[Q_{12}^2].
+\end{equation}
+On the other hand,
+\[
+F_N(s,\Lambda)
+=
 \frac{1}{2N}\mathbb E\log
 \left\langle\exp\left(\frac{\Lambda N}{2}Q_{12}^2\right)\right\rangle_s.
 \]
-Hence, for each $s\in [0,t]$ the function $\Lambda \mapsto F_N(s,\Lambda )$ on $[0,\infty )$ is nonnegative and convex because its second derivative is a nonnegative tilted variance. Moreover, $F_N(s,0)=0$ and
+Hence, for each $s\in[0,t]$ the function $\Lambda\mapsto F_N(s,\Lambda)$ on $[0,\infty)$ is nonnegative and convex because its second derivative is a nonnegative tilted variance. Moreover, $F_N(s,0)=0$ and
 \[
-\left( \frac{\partial}{\partial \Lambda} F_N \right) (s,0+)=\frac14\nu_s[Q_{12}^2].
+\left(\frac{\partial}{\partial\Lambda}F_N\right)(s,0+)
+=\frac14\nu_s[Q_{12}^2].
 \]
 Therefore, by convexity,
 \[
 \frac14\nu_s[Q_{12}^2]
 \leq
-\frac{F_N(s,\Lambda_s)}{\Lambda_s} = \frac{D_N(s)}{\Lambda_s}.
+\frac{F_N(s,\Lambda_s)}{\Lambda_s}
+=\frac{D_N(s)}{\Lambda_s}.
 \]
 Since $\Lambda_s\geq2\lambda_*$, from these inequalities and \eqref{eq:D'} we conclude that
 \[
-\frac{\rm d}{{\rm d}s} D_N(s) \leq \frac{\beta^2 D_N(s)}{2\lambda_*}.
+\frac{\rm d}{{\rm d}s}D_N(s)
+\leq
+\frac{\Gamma(q)D_N(s)}{2\lambda_*}.
 \]
 Hence, Gronwall's inequality yields
 \begin{equation}\label{eq:Gronwall}
 D_N(t)
 \leq
-\exp\left(\frac{\beta^2 t}{2\lambda_*}\right)D_N(0).
+\exp\left(\frac{\Gamma(q)t}{2\lambda_*}\right)D_N(0).
 \end{equation}
 
 It remains to estimate $D_N(0)$. At $s=0$, \eqref{eq:endpoint-quadratic} implies that, whenever $\kappa(q)\Lambda<1$,
@@ -494,39 +559,38 @@ It remains to estimate $D_N(0)$. At $s=0$, \eqref{eq:endpoint-quadratic} implies
 \E\braket{\exp\left(\frac{\Lambda N}{2}Q_{12}^2\right)}_0
 \leq \frac{1}{\sqrt{1-\kappa(q)\Lambda}}.
 \]
-By applying \eqref{eq:lambda-star} and recalling $\rho = \beta ^2 \kappa (q)$, for $0\leq t\leq1$, we have
+By applying \eqref{eq:lambda-star} and recalling $\rho=\Gamma(q)\kappa(q)$, for $0\leq t\leq1$, we have
 \[
-1-\kappa(q)(2\lambda_*+\beta^2t)
+1-\kappa(q)(2\lambda_*+\Gamma(q)t)
 \geq \frac{1-\rho}{2}>0.
 \]
 Since this inequality and Jensen's inequality give
 \[
 \E\log\braket{
 \exp\left(
-\frac{(2\lambda_*+\beta^2t)N}{2}Q_{12}^2
+\frac{(2\lambda_*+\Gamma(q)t)N}{2}Q_{12}^2
 \right)
-}_0 \leq
-\frac12
-\log\left(\frac{1}{1-\kappa(q)(2\lambda_*+\beta^2t)}\right)
+}_0
 \leq
-\frac12\log\left(\frac{2}{1-\rho}\right), 
+\frac12
+\log\left(\frac{1}{1-\kappa(q)(2\lambda_*+\Gamma(q)t)}\right)
+\leq
+\frac12\log\left(\frac{2}{1-\rho}\right),
 \]
 it holds that
 \begin{equation}\label{eq:D0}
-2N D_N(0) \leq \frac12\log\left(\frac{2}{1-\rho}\right)
+2N D_N(0) \leq \frac12\log\left(\frac{2}{1-\rho}\right).
 \end{equation}
 
-At $s=t$, we have $\Lambda_{t}=2\lambda_*$. Hence
-\(
+At $s=t$, we have $\Lambda_t=2\lambda_*$. Hence
+\[
 2N D_N(t)
 =
-\E\log\braket{
-e^{\lambda_*NQ_{12}^2}
-}_t.
-\) 
+\E\log\braket{e^{\lambda_*NQ_{12}^2}}_t.
+\]
 Combining this with \eqref{eq:Gronwall} and \eqref{eq:D0} and using
 \[
-\frac{\beta^2}{2\lambda_*}=\frac{2\rho}{1-\rho}
+\frac{\Gamma(q)}{2\lambda_*}=\frac{2\rho}{1-\rho}
 \]
 yields
 \[
@@ -535,13 +599,14 @@ e^{\lambda_*NQ_{12}^2}
 }_t
 \leq
 \frac12
-\exp\left(\frac{\beta^2t}{2\lambda_*}\right)
+\exp\left(\frac{\Gamma(q)t}{2\lambda_*}\right)
 \log\left(\frac{2}{1-\rho}\right)
-\leq \frac12
+\leq
+\frac12
 \exp\left(\frac{2\rho}{1-\rho}\right)
 \log\left(\frac{2}{1-\rho}\right),
 \]
-which proves \eqref{eq:quadratic-estimate}. 
+which proves \eqref{eq:quadratic-estimate}.
 \end{proof}
 
 
@@ -554,9 +619,7 @@ F_{N,t}(s)
 \frac1N\E\log\braket{e^{sNQ_{12}^2}}_t.
 \]
 The map $s\mapsto F_{N,t}(s)$ is convex, $F_{N,t}(0)=0$, and
-\(
-F_{N,t}'(0+)=\nu_t[Q_{12}^2].
-\) 
+$F_{N,t}'(0+)=\nu_t[Q_{12}^2]$.
 Set
 \[
 C_0:=\frac12
@@ -564,84 +627,80 @@ C_0:=\frac12
 \log\left(\frac{2}{1-\rho}\right).
 \]
 By the convexity of $F_{N,t}$ and Proposition~\ref{prop:quadratic}, we have
-\begin{equation}\label{eq: overlap concentratino with t}
-    \nu_t[Q_{12}^2]
+\begin{equation}\label{eq:overlap-concentration-with-t}
+\nu_t[Q_{12}^2]
 \leq
 \frac{F_{N,t}(\lambda_*)-F_{N,t}(0)}{\lambda_*}
 \leq
-\frac{C_0}{\lambda_* N}.
+\frac{C_0}{\lambda_*N}.
 \end{equation}
 Letting $t=1$ in this inequality yields
 \[
-\E\braket{(R_{12}-q)^2} = \nu_1[Q_{12}^2]
+\E\braket{(R_{12}-q)^2}
+=\nu_1[Q_{12}^2]
 \leq
 \frac{C_0}{\lambda_*N}.
 \]
 
 \subsection{Replica symmetric free energy: Proof of \eqref{eq:RS-free-energy}}
-The proof of \eqref{eq:RS-free-energy} is similar to Latała's argument. 
+The proof of \eqref{eq:RS-free-energy} is similar to Lata\l{}a's argument.
 Recall that
-\(
-\phi_N(t)=\frac1N\E\log Z_{N,t},
-\) 
+$\phi_N(t)=\frac1N\E\log Z_{N,t}$,
 where $Z_{N,t}$ is the partition function associated with \eqref{eq:smart-path} and that
 \begin{equation}\label{eq:sum-rule}
-\frac{\rm d}{{\rm d}t} \phi_N(t)
+\frac{\rm d}{{\rm d}t}\phi_N(t)
 =
-\frac{\beta^2}{4}(1-q)^2
+\frac12\Delta_q(1)
 -
-\frac{\beta^2}{4}\nu_t\left[(R_{12}-q)^2\right]
+\frac12\nu_t[\Delta_q(R_{12})]
 \end{equation}
 (see \eqref{eq:p-derivative}).
-Since $H_{N,0} (\sigma ) = \sum _{i=1}^N \left( h+ \beta \sqrt{q} z_i \right) \sigma _i$, $\{ \sigma _i\}$ are independent with respect to the Gibbs measure at $t=0$.
+Since $H_{N,0}(\sigma)=\sum_{i=1}^N\left(h+\sqrt{\xi'(q)}\,z_i\right)\sigma_i$, $\{\sigma_i\}$ are independent with respect to the Gibbs measure at $t=0$.
 Hence, it holds that
 \begin{equation}\label{eq:initial-pressure}
 \phi_N(0)
 =
 \log 2
 +
-\E\log\cosh\!\left(h+\beta\sqrt q\,Z\right)
+\E\log\cosh\!\left(h+\sqrt{\xi'(q)}\,Z\right)
 \end{equation}
 where $Z$ is a random variable with the standard normal law.
 Since $\phi_N(1)=\phi_N$, integrating both sides of \eqref{eq:sum-rule} gives
 \begin{align*}
-    \phi_N
+\phi_N
 &=
 \log 2
 +
-\E\log\cosh\!\left(h+\beta\sqrt q\,Z\right)
+\E\log\cosh\!\left(h+\sqrt{\xi'(q)}\,Z\right)
 +
-\frac{\beta^2}{4}(1-q)^2
+\frac12\Delta_q(1)
 -
-\frac{\beta^2}{4}\int_0^1\nu_t[Q_{12}^2]\,dt\\
+\frac12\int_0^1\nu_t[\Delta_q(R_{12})],dt\\
 &=
-\phi^{\mathrm{RS}}(\beta,h)
+\phi^{\mathrm{RS}}(\xi,h)
 -
-\frac{\beta^2}{4}\int_0^1\nu_t[Q_{12}^2]\,dt.
+\frac12\int_0^1\nu_t[\Delta_q(R_{12})],dt.
 \end{align*}
-This equality and \eqref{eq: overlap concentratino with t} yield
+This equality, \eqref{eq:Delta-bounds}, and \eqref{eq:overlap-concentration-with-t} yield
 \[
-0\leq \phi^{\mathrm{RS}}(\beta,h)-\phi_N
-\leq \frac{\beta^2C_0}{4\lambda_*N}.
+0\leq \phi^{\mathrm{RS}}(\xi,h)-\phi_N
+\leq
+\frac{\Gamma(q)}4\int_0^1\nu_t[Q_{12}^2],dt
+\leq
+\frac{\Gamma(q)C_0}{4\lambda_*N}.
 \]
 
 \section*{Acknowledgements}
+S.K.\ acknowledges support from JSPS KAKENHI Grant Numbers
+JP22H00099 and JP23K20801.
 S.N.\ acknowledges support from JSPS KAKENHI Grant Numbers
 JP24K16937 and JP25K00911.
 
 \section*{Statement on the Use of Artificial Intelligence}
-OpenAI Codex was used to check computations and perform sanity checks.
-The Lean~4 formalization was developed with substantial assistance from
-OpenAI Codex and Aristotle. The authors reviewed and verified all
-AI-assisted output and take full responsibility for the content of this
-work.
+
+For the generalization of Lata{\l}a's argument, the coupled free energy was proposed by the authors. ChatGPT 5.5 Plus was used to assist with extending the calculations, and Codex was used to perform sanity checks. The Lean~4 formalization was developed with substantial assistance from Codex and Aristotle. The authors take full responsibility for the content of this work.
 
 \begin{thebibliography}{10}
-
-\bibitem{brabra}
-S.~Nakajima,
-\newblock Formalization of Lata{\l}a's argument in the Sherrington--Kirkpatrick model,
-\newblock GitHub repository, \url{https://github.com/njimaMath/research_public/tree/main/generalizedLatala}.
 
 \bibitem{AizenmanLebowitzRuelle}
 M.~Aizenman, J.~L.~Lebowitz, and D.~Ruelle,
@@ -693,6 +752,11 @@ P.~Lopatto,
 Sherrington--Kirkpatrick model,
 \newblock arXiv:2604.11921 [math.PR], 2026.
 
+\bibitem{brabra}
+S.~Nakajima,
+\newblock Formalization of Lata{\l}a's argument in the Sherrington--Kirkpatrick model,
+\newblock GitHub repository, \url{https://github.com/njimaMath/research_public/tree/main/generalizedLatala}.
+
 \bibitem{Schlemm}
 E.~Schlemm,
 \newblock The Kearns--Saul inequality for Bernoulli and Poisson-binomial distributions,
@@ -703,6 +767,12 @@ E.~Schlemm,
 D.~Panchenko,
 \newblock \emph{The Sherrington--Kirkpatrick Model},
 \newblock Springer Monographs in Mathematics, Springer, New York, 2013.
+
+\bibitem{PanchenkoMixed}
+D.~Panchenko,
+\newblock The Parisi formula for mixed $p$-spin models,
+\newblock \emph{The Annals of Probability}
+\textbf{42} (2014), no.~3, 946--958.
 
 \bibitem{SherringtonKirkpatrick}
 D.~Sherrington and S.~Kirkpatrick,
