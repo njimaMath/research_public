@@ -9,16 +9,21 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amsfonts}
+\usepackage{amsthm}
 \usepackage{xcolor}
 \usepackage{url}
 
-\definecolor{donecolor}{RGB}{20,105,62}
+\definecolor{verifiedcolor}{RGB}{20,105,62}
 \definecolor{opencolor}{RGB}{160,55,35}
 \definecolor{conditionalcolor}{RGB}{135,92,18}
+
 \newcommand{\lean}[1]{\path{#1}}
-\newcommand{\done}{\textcolor{donecolor}{locally complete}}
-\newcommand{\openstate}[1]{\textcolor{opencolor}{open (#1)}}
+\newcommand{\verified}{\textcolor{verifiedcolor}{verified}}
+\newcommand{\openstate}{\textcolor{opencolor}{unverified}}
 \newcommand{\conditional}{\textcolor{conditionalcolor}{conditional}}
+
+\theoremstyle{plain}
+\newtheorem{openclaim}{Open claim}
 
 \makeatletter
 \renewcommand\section{\@startsection{section}{1}{0pt}%
@@ -33,305 +38,495 @@
 \setlength{\parskip}{0.55em}
 \setlength{\emergencystretch}{3em}
 \renewcommand{\arraystretch}{1.16}
-\renewcommand{\descriptionlabel}[1]{\hspace{\labelsep}\normalfont #1}
 
 \begin{document}
 
 \begin{center}
-  {\LARGE State and proof roadmap for \lean{Lemmas}}\\[0.6em]
-  {\large Quantitative strict-AT formalization}\\[0.4em]
-  Snapshot checked on 1 August 2026 at revision \lean{b241820}
+  {\LARGE Formalization status and proof architecture}\\[0.55em]
+  {\large Quantitative strict AT for the SK model}\\[0.35em]
+  Source audit: 2 August 2026, revision \lean{b8099e9}
 \end{center}
 
-\section{Executive status}
+\section{Executive summary}
 
-The target \lean{LatalaMeetsAT} builds successfully with Lean 4.32.1.  The
-latest check completed 3126 jobs.  The public theorem
-\lean{SpinGlass.AT.quantitative_strictAT} has no analytic hypotheses in its
-statement.  Its proof invokes the named existence theorems for the cavity
-remainder and free-energy endpoints, both of which currently contain
+The directory \lean{Lemmas} contains 24 Lean files.  Six files contain one
+\lean{sorry} each; the other eighteen contain none.  There are no local
+\lean{admit} commands or project-specific \lean{axiom} declarations in this
+directory.  The six placeholders are in
+\lean{GaussianDerivative.lean}, \lean{FreeEnergyDerivative.lean},
+\lean{GT/Interpolation.lean}, \lean{FixedDeviation.lean},
+\lean{Cavity/System.lean}, and \lean{FreeEnergy.lean}.
+
+The public theorem \lean{SpinGlass.AT.quantitative_strictAT} states the desired
+three quantitative conclusions without analytic assumptions.  Its final
+assembly is checked, but it calls existence theorems that still contain
+\lean{sorry}; hence the public theorem is not Lean-certified.  Moreover,
+removing the six placeholders would not by itself make the source a faithful
+formalization of the blueprint: the scalar strict-AT estimates and the
+analytic Guerra--Talagrand package are still hypotheses, the cavity
+interpolation is satisfied by the zero function, and the abstract smart path
+has no explicit common Gaussian-coordinate realization.
+
+The status words used below have the following meanings:
+\begin{description}
+\item[\verified] the stated local theorem has a proof with no placeholder;
+\item[\conditional] the Lean deduction is proved, but an intended analytic
+input is assumed or omitted from the specification;
+\item[\openstate] the file contains a theorem whose proof ends in
 \lean{sorry}.
+\end{description}
 
-The directory \lean{Lemmas} contains 24 Lean files.  Eighteen files have
-no local \lean{sorry}; six files contain six occurrences in total.  There are
-no project-specific \lean{axiom} declarations and no \lean{admit}s in this
-directory.  Every placeholder is now in an ordinary theorem; there are no
-placeholder definitions.
+This document follows the mathematical order recorded in
+\lean{blueprint_at.aux}.  References such as ``Blueprint (2.7),
+\lean{eq:DNprime}'' give both the printed number and the auxiliary-file label.
 
-The former analytic typeclasses have been removed.  Gaussian covariance
-differentiation, GT interpolation, the last-spin construction, the
-cavity-remainder estimate, and the free-energy endpoint facts are isolated as
-ordinary theorems with localized placeholders.  GT functional coercivity now
-has a proved algebraic assembly theorem consuming the explicit
-\lean{GTFunctionalAnalyticData} interface; its multiplier Taylor estimates and
-negative-range gap still require analytic proofs.  The current
-cavity-interpolation existence statement is discharged by a zero witness
-because it does not encode the intended endpoint identities.
-The propositions \lean{HasFreeEnergyEndpointBridge} and
-\lean{HasCavityRemainderBound} remain useful interfaces for their proved
-downstream consequences.
+\section{Mathematical setting and target}
 
-Explicit \lean{\#print axioms} checks show that both
-\lean{SpinGlass.AT.quantitative_strictAT} and
-\lean{SpinGlass.AT.SK.quantitative_strictAT_for_sk} depend on exactly
-\lean{propext}, \lean{sorryAx}, \lean{Classical.choice}, and
-\lean{Quot.sound}.  Thus the source is structurally build-complete but neither
-public theorem is certified.
+Let $Z$ be standard Gaussian and let $q=q(\beta,h)$ be the
+replica-symmetric fixed point
+\[
+  q=\mathbb E\tanh^2(h+\beta\sqrt q\,Z)
+\]
+(Blueprint (0.1), \lean{eq:q}).  Put
+\[
+  r=\mathbb E\tanh^4(h+\beta\sqrt q\,Z),
+  \qquad
+  a=1-2q+r
+    =\mathbb E\operatorname{sech}^4(h+\beta\sqrt q\,Z),
+  \qquad
+  \alpha=\beta^2a.
+\]
+On a compact parameter set $K$ in the strict AT region, compactness is used to
+obtain
+\[
+  1-\alpha(\beta,h)\geq\delta_K>0
+  \qquad ((\beta,h)\in K)
+\]
+(Blueprint (0.3)--(0.6), \lean{eq:alpha}--\lean{eq:qcompact}).
 
-The wrapper \lean{Latala_AT.lean} no longer assumes
-\lean{SmartPathBridge}.  Its endpoint overlap and free energy are defined
-directly from \lean{RSSmartPathDisorder} at $s=1$, and all three conclusions
-quantify directly over that path.  This is a bridge-free theorem at the
-strict-AT model interface, not yet a conversion theorem for the separate
-\lean{SpinGlass.SKDisorder} API.  That API has a different Hamiltonian sign
-convention and does not itself supply the independent one-site field needed
-to realize the complete path on the same probability space.
+Along the replica-symmetric smart path $s\in[0,1]$, write
+\[
+\begin{aligned}
+ A_s&=\mathbb E\langle(R_{12}-q)^2\rangle_s,\\
+ B_s&=\mathbb E\langle(R_{12}-q)(R_{13}-q)\rangle_s,\\
+ C_s&=\mathbb E\langle(R_{12}-q)(R_{34}-q)\rangle_s,\\
+ T_s&=\mathbb E\langle|R_{12}-q|^3\rangle_s.
+\end{aligned}
+\]
+The expectation includes both disorder and Gibbs replicas.  The target theorem
+asserts, uniformly for $(\beta,h)\in K$ and $s\in[0,1]$,
+\[
+  N A_s\leq M_K,
+  \qquad
+  0\leq p_{\mathrm{RS}}-p_N\leq\frac{M_K}{N},
+\]
+and
+\[
+  N(A_s-2B_s+C_s)
+  \longrightarrow
+  \frac{a(\beta,h)}{1-s\alpha(\beta,h)}.
+\]
 
-\section{Import spine}
+\section{Proof architecture}
 
-The principal dependency spine is now
+The blueprint proof has four main stages:
+\[
+  \boxed{\text{RS coercivity}}
+  \longrightarrow
+  \boxed{\text{preliminary concentration}}
+  \longrightarrow
+  \boxed{\text{cavity closure}}
+  \longrightarrow
+  \boxed{\text{quantitative conclusions}}.
+\]
 
-\begin{center}
-\begin{minipage}{0.94\textwidth}\small
-\lean{Replicas}
-$\to$ \lean{RSParameters}
-$\to$ \lean{UniformData}
-$\to$ \lean{SmartPath}
-$\to$ \lean{GaussianDerivative}
-$\to$ \lean{FreeEnergyDerivative}
-$\to$ \lean{Scalar/Semigroup}
-$\to$ \lean{Scalar/LatalaKernel}
-$\to$ \lean{Scalar/StrictATSign}
-$\to$ \lean{GT/Defs}
-$\to$ \lean{GT/Interpolation}
-$\to$ \lean{GT/Coercivity}
-$\to$ \lean{CoupledPressure}
-$\to$ \lean{FixedDeviation}
-$\to$ \lean{Absorption}
-$\to$ \lean{FreeEnergy}
-$\to$ \lean{Replicon}
-$\to$ \lean{CompactCorollary}
-$\to$ \lean{MainResult}.
-\end{minipage}
-\end{center}
+\subsection{Replica-symmetric coercivity}
 
-The cavity branch starts independently at \lean{SmartPath}.  Definitions feed
-both interpolation and coefficients; coefficients feed stability and the
-system; absorption joins stability, the system, and fixed-deviation estimates.
+The scalar Parisi equation is solved by an explicit Gaussian semigroup
+(Blueprint (1.4)--(1.9), \lean{eq:parisipde}--\lean{eq:RSpathvalue}).  The
+strict AT condition should imply the one-sided estimates
+\[
+  g_s(u)-u\geq\delta_K(q-u)\quad(0\leq u\leq q),
+  \qquad
+  u-g_s(u)\geq\delta_K(u-q)\quad(q\leq u\leq1).
+\]
+Lean proves the convolution and Lata\l a kernel identities and derives the
+sign and local linear separation of $g_s(u)-u$ from these inequalities.  It
+does not yet prove the inequalities themselves.
 
-\section{State of every Lean file}
+For two replicas constrained to have overlap $v$, introduce the explicit
+Guerra--Talagrand functional $\mathcal P_{\mathrm{GT}}(\lambda,v)$
+(Blueprint (1.19)--(1.26), \lean{eq:constrainedZ}--\lean{eq:GTfunctional}).
+The intended interpolation and coercivity statements are
+\[
+  \mathbb E p_{N,s}^{(2)}(v)
+  \leq\mathcal P_{\mathrm{GT}}(\lambda,v)
+  \leq2p_{\mathrm{RS}}(s)-c_K(v-q)^2.
+\]
+The explicit finite recursion and the algebraic Taylor minimization are
+formalized.  The first inequality, the multiplier Taylor estimates, and the
+uniform negative-overlap gap remain open.
+
+\subsection{Preliminary concentration}
+
+Introduce a positive quadratic coupling $\lambda_0$ and decompose the coupled
+partition function over the at most $N+1$ attainable overlaps.  GT coercivity
+and finite-Gaussian concentration should give the pressure envelope
+\[
+  p_{N,s}^{(2)}(\lambda_0)
+  \leq p_{\mathrm{RS}}(s)+\varepsilon_N,
+  \qquad \varepsilon_N\longrightarrow0
+\]
+(Blueprint (2.4), \lean{eq:pressureenvelope}).  This theorem is not present in
+the current \lean{CoupledPressure.lean}; only the algebraic decomposition and
+cardinality bound are proved.
+
+Let $D_N(s)=p_{\mathrm{RS}}(s)-p_N(s)$.  Gaussian differentiation yields
+\[
+  D_N'(s)=\frac{\beta^2}{4}A_s
+\]
+(Blueprint (2.7), \lean{eq:DNprime}).  Convexity in the coupling and the
+pressure envelope give a Gronwall inequality and hence a preliminary
+$A_s=o(1)$ estimate (Blueprint (2.8)--(2.9), \lean{eq:gronwallDN} and
+\lean{eq:preconcentration}).  A second concentration argument then gives,
+for every $\varepsilon>0$,
+\[
+  \mathbb E\langle
+    \mathbf1_{\{|R_{12}-q|\geq\varepsilon\}}
+  \rangle_s
+  \leq C_{K,\varepsilon}e^{-c_{K,\varepsilon}N}
+\]
+(Blueprint (2.10), \lean{eq:tail}).  The derivative and fixed-deviation
+estimates are both placeholders in Lean.
+
+\subsection{Cavity closure}
+
+For $\mathbf v_s=(A_s,B_s,C_s)^{\mathsf T}$, the last-spin expansion should
+produce
+\[
+  (I-sL)\mathbf v_s
+  =\frac1N\boldsymbol\theta+\boldsymbol\rho_s,
+  \qquad
+  \|\boldsymbol\rho_s\|
+  \leq C_K\bigl(N^{-3/2}+T_s\bigr)
+\]
+(Blueprint (3.1)--(3.5), \lean{eq:cavitysystem}--\lean{eq:rho}).  Lean proves
+the coefficient matrix, its exact algebra, and the displayed system after
+defining $\boldsymbol\rho_s$ as its residual.  It does not construct the
+last-spin interpolation needed to prove the remainder estimate.
+
+The matrix $I-sL$ is uniformly invertible in the strict AT region.  Its
+triangularization separates the anomalous and replicon factors, and
+\[
+  \sup_{(\beta,h)\in K,\,s\in[0,1]}
+  \|(I-sL)^{-1}\|<\infty
+\]
+follows from the AT gap (Blueprint (3.23)--(3.26),
+\lean{eq:gammas}--\lean{eq:inverse}).  This matrix analysis is verified.
+
+\subsection{Absorption and conclusions}
+
+Invert the cavity system, split the cubic moment at a small fixed threshold,
+and use the exponential tail to absorb the term proportional to $T_s$.  This
+gives $N A_s=O_K(1)$ (Blueprint (4.1)--(4.2), \lean{eq:preabsorb} and
+\lean{eq:thirdsplit}).  The deterministic absorption is verified conditional
+on the tail and remainder estimates.
+
+For the free energy, continuity on $[0,1]$, the product identity $D_N(0)=0$,
+and integration of $D_N'=\beta^2A_s/4$ yield
+\[
+  0\leq D_N(1)\leq C_K/N
+\]
+(Blueprint (4.3), \lean{eq:freeenergyidentity}).  The calculus is verified;
+the continuity and endpoint identity are not.
+
+Finally, concentration and $N A_s=O_K(1)$ imply $N T_s\to0$.  Multiplying the
+cavity system by the replicon row $(1,-2,1)$ gives
+\[
+  N(A_s-2B_s+C_s)
+  \longrightarrow
+  \frac{a(\beta,h)}{1-s\alpha(\beta,h)}
+\]
+(Blueprint (4.4)--(4.5), \lean{eq:repliconeq} and
+\lean{eq:repliconrho}).  This deduction is verified conditional on the earlier
+analytic inputs.
+
+\section{File-by-file ledger}
 
 \small
-\begin{longtable}{@{}p{0.28\textwidth}p{0.15\textwidth}p{0.50\textwidth}@{}}
+\begin{longtable}{@{}p{0.29\textwidth}p{0.13\textwidth}p{0.51\textwidth}@{}}
 \toprule
-File & Local state & What is present or missing \\
+File & State & Mathematical content and boundary \\
 \midrule
 \endhead
-\lean{Replicas.lean} & \done & Finite configurations, positive partition functions, Gibbs-weight bounds and normalization, permutation invariance, overlap bounds, linearity, monotonicity, and the mixed-overlap estimate. \\
-\lean{RSParameters.lean} & \done & Gaussian RS quantities, the selected fixed point, positivity and range of $q$, identities for $A$, and anomalous-versus-replicon comparison. \\
-\lean{UniformData.lean} & \done & Compact-uniform parameter package and the strict-AT path gap. \\
-\lean{SmartPath.lean} & \done & Covariance kernel, abstract centered Gaussian path, full Hamiltonian with external field, overlap second moment, and path gap.  It still has no explicit finite Gaussian coordinate realization. \\
-\lean{GaussianDerivative.lean} & \openstate{1} & The covariance derivative and finite-replica contraction are explicit.  The finite-dimensional Gaussian interpolation theorem \lean{quenchedGibbs_deriv_of_covariance_deriv} remains. \\
-\lean{FreeEnergyDerivative.lean} & \openstate{1} & Definitions and \lean{rsGap_deriv} are complete; \lean{smartPath_freeEnergy_deriv} remains. \\
-\lean{Scalar/Semigroup.lean} & \done & Both branches of \lean{scalarPsi} and \lean{scalarTrialValue_eq} are proved, including Gaussian integrability and convolution. \\
-\lean{Scalar/LatalaKernel.lean} & \done & Derivative and sign of \lean{latalaH}, antitonicity, the opposite-monotonicity covariance inequality, singular reference normalization, and the weighted kernel comparison are proved. \\
-\lean{Scalar/StrictATSign.lean} & \conditional & \lean{scalarOrderParameterCorrect} is an explicit piecewise Gaussian formula.  The order-theoretic sign and local absolute-value estimate are proved from left and right linear bounds; the analytic derivation of those bounds is not supplied. \\
-\lean{GT/Defs.lean} & \done & Attainable overlaps, constrained free energy, signed matrix path, mass profile, correction, terminal condition, and endpoint identities. \\
-\lean{GT/Interpolation.lean} & \openstate{1} & Contains the zero, half, and one operators, the constant half-mass identity, explicit Gaussian recursion steps, \lean{gtSemigroupSolution}, and \lean{gtFunctional}.  The finite-volume theorem \lean{twoReplica_GT_bound} remains. \\
-\lean{GT/Coercivity.lean} & \conditional & The local constant, abstract Taylor-loss lemma, overlap-range lemma, and algebraic coercivity assembly are proved.  \lean{GTFunctionalAnalyticData} records the remaining Taylor and negative-range analytic inputs. \\
-\lean{CoupledPressure.lean} & \conditional & Correct quadratic pressure definitions are present.  The uniform sublinear overlap estimate is proved from \lean{fixedDeviation} by a supremum envelope and a small-tail argument. \\
-\lean{FixedDeviation.lean} & \openstate{1} & Exponentially small fixed-deviation tails remain. \\
-\lean{Cavity/Defs.lean} & \done & The observables $A,B,C$, the identity between $A$ and the overlap second moment, cavity vector, source vector, and $3\times3$ cavity matrix. \\
-\lean{Cavity/Interpolation.lean} & \conditional & The third-moment bound is complete.  \lean{exists_cavityInterpolatedAverage} is proved by choosing the zero function, and the public definition and derivative estimate follow.  The statement lacks normalization and endpoint identities, so it does not construct the intended last-spin interpolation. \\
-\lean{Cavity/Coefficients.lean} & \done & Replica-edge classification, decoupled coefficients, and equality with the displayed cavity matrix. \\
-\lean{Cavity/System.lean} & \openstate{1} & The system is algebraic because the remainder is defined as the residual.  The uniform existence theorem \lean{exists_cavityRemainder_bound} remains. \\
-\lean{Cavity/Stability.lean} & \done & Explicit matrix inverse with two-sided identities, triangular determinant formula, anomalous and replicon gaps, uniform inverse estimate, and replicon left eigenvector. \\
-\lean{Absorption.lean} & \done & Pointwise cubic splitting, exact cavity-vector norm, domination of $B$ and $C$ by $A$, and the uniform $N A_s$ bound are proved from the stated cavity-remainder hypothesis. \\
-\lean{FreeEnergy.lean} & \openstate{1} & The free-energy estimate is proved using the mean-value theorem, positivity, and absorption.  The uniform endpoint theorem \lean{freeEnergy_endpoint_bridge} remains. \\
-\lean{Replicon.lean} & \done & Third-moment little-$o$ and replicon susceptibility are proved from earlier tail, absorption, stability, and assumed cavity-remainder results. \\
-\lean{CompactCorollary.lean} & \done & Compactness plus continuity and strict AT produce \lean{UniformATData}. \\
-\lean{MainResult.lean} & \conditional & The assembly has no analytic assumptions in its public statement and combines absorption, free energy, and replicon results through named existence theorems.  Those transitive placeholders still yield \lean{sorryAx}. \\
+\lean{Replicas.lean} & \verified & Finite spin configurations, Gibbs weights,
+replica averages, exchangeability, overlap bounds, and mixed-overlap
+domination. \\
+\lean{RSParameters.lean} & \verified & The selected RS fixed point, its range,
+the moments $q,r,a$, the AT parameter $\alpha=\beta^2a$, and comparison of
+anomalous and replicon eigenvalues. \\
+\lean{UniformData.lean} & \verified & Compact-uniform parameter bounds and the
+uniform path gap $1-s\alpha\geq\delta_K$. \\
+\lean{SmartPath.lean} & \conditional & Abstract centered Gaussian smart path
+with prescribed covariance.  No explicit common Gaussian-coordinate
+realization is supplied. \\
+\lean{GaussianDerivative.lean} & \openstate & Defines the covariance derivative
+and replica contraction.  Gaussian covariance differentiation is unproved. \\
+\lean{FreeEnergyDerivative.lean} & \openstate & Defines $p_N(s)$ and
+$p_{\mathrm{RS}}(s)$.  The identity
+$p_N'=\frac{\beta^2}{4}((1-q)^2-A_s)$ is unproved; the formula for $D_N'$ is
+then algebraic. \\
+\lean{Scalar/Semigroup.lean} & \verified & Explicit scalar semigroup on both
+sides of $q$ and the scalar trial-value identity. \\
+\lean{Scalar/LatalaKernel.lean} & \verified & Kernel differentiation,
+monotonicity, covariance comparison, normalization, and weighted kernel
+bound. \\
+\lean{Scalar/StrictATSign.lean} & \conditional & The scalar map is explicit and
+the sign conclusion follows from two one-sided linear estimates; those
+estimates are not derived from strict AT. \\
+\lean{GT/Defs.lean} & \verified & Constrained free energy, signed matrix path,
+mass profile, correction, terminal condition, and endpoint identities. \\
+\lean{GT/Interpolation.lean} & \openstate & Explicit finite Gaussian recursion
+and functional.  The finite-volume GT upper bound is unproved. \\
+\lean{GT/Coercivity.lean} & \conditional & Taylor minimization and coercivity
+assembly are verified from \lean{GTFunctionalAnalyticData}; the Taylor and
+negative-overlap estimates in that structure are not constructed. \\
+\lean{CoupledPressure.lean} & \conditional & Quadratic coupled pressure,
+positivity, exact overlap decomposition, and the bound of $N+1$ attainable
+overlaps.  The sublinear pressure envelope is absent. \\
+\lean{FixedDeviation.lean} & \openstate & Defines the quenched overlap tail.
+Its uniform exponential bound is unproved. \\
+\lean{Cavity/Defs.lean} & \verified & The observables $A,B,C$, cavity vector,
+source vector, and $3\times3$ cavity matrix. \\
+\lean{Cavity/Interpolation.lean} & \conditional & The elementary bound
+$T_s\leq2A_s$ is verified.  The purported interpolation is the zero function
+and has no endpoint conditions. \\
+\lean{Cavity/Coefficients.lean} & \verified & Replica-edge classification and
+identification of the decoupled coefficients with the cavity matrix. \\
+\lean{Cavity/System.lean} & \openstate & The system is algebraic because the
+remainder is defined as its residual.  The uniform quantitative remainder
+bound is unproved. \\
+\lean{Cavity/Stability.lean} & \verified & Triangularization, determinant,
+uniform inverse bound, and replicon left eigenvector. \\
+\lean{Absorption.lean} & \conditional & Cubic splitting and the deduction
+$N A_s=O_K(1)$ are verified from the fixed-deviation and cavity-remainder
+claims. \\
+\lean{FreeEnergy.lean} & \openstate & The endpoint bridge is unproved.  The
+$O(N^{-1})$ free-energy estimate is verified from that bridge and absorption. \\
+\lean{Replicon.lean} & \conditional & The facts $N T_s\to0$ and the replicon
+limit are verified from the tail, absorption, stability, and remainder
+claims. \\
+\lean{CompactCorollary.lean} & \verified & Compactness, continuity, and
+pointwise strict AT produce the uniform parameter package. \\
+\lean{MainResult.lean} & \conditional & Correctly assembles the three public
+conclusions, but invokes the unproved remainder and endpoint existence
+theorems. \\
 \bottomrule
 \end{longtable}
 \normalsize
 
-\section{Remaining work and recommended prover}
+\section{Claims not yet verified in Lean}
 
-The rating concerns the current source interfaces.  ``Codex'' should lead
-definition design, API repair, supporting lemmas, and cross-file integration.
-``Aristotle'' is useful for a focused Lean proof only after the relevant
-interfaces and mathematical estimates have stable statements.
+The following are the six assertions whose Lean proofs currently contain
+\lean{sorry}.  Constants are uniform on the fixed compact strict-AT set.
 
-\small
-\begin{longtable}{@{}p{0.25\textwidth}p{0.12\textwidth}p{0.13\textwidth}p{0.42\textwidth}@{}}
-\toprule
-File or contract & Difficulty & Better lead & Reason and possible handoff \\
-\midrule
-\endhead
-Gaussian covariance derivative & difficult & Codex & The operator is written down, but \lean{quenchedGibbs_deriv_of_covariance_deriv} still requires finite-dimensional Gaussian covariance interpolation or an explicit affine realization with domination.  Hand off the final finite-sum algebra after the analytic API is fixed. \\
-\lean{FreeEnergyDerivative.lean} & difficult & Codex & The proof must apply Gaussian covariance differentiation, derive the diagonal correction and covariance cancellation, and normalize replica sums.  Focused algebraic sublemmas may then be handed off. \\
-\lean{Scalar/StrictATSign.lean} & difficult & Codex & The formula and order-theoretic closure are explicit.  The remaining analytic work is differentiation under Gaussian integrals and the left and right linear bounds. \\
-GT interpolation theorem & difficult & Codex & The explicit recursion exists, but \lean{twoReplica_GT_bound} still requires the finite-cascade interpolation, endpoint identifications, and derivative sign. \\
-GT functional analytic package & difficult & Codex & Construct \lean{GTFunctionalAnalyticData} by proving multiplier derivatives, a uniform Taylor bound, the scalar linear bounds, and the signed far-from-$q$ estimates.  The algebraic assembly \lean{gtFunctional_coercivity} is complete. \\
-\lean{CoupledPressure.lean} & moderate & Codex & The sublinear overlap estimate is locally complete from \lean{fixedDeviation}.  Recheck its supremum construction after the concentration theorem is proved. \\
-\lean{FixedDeviation.lean} & difficult & Codex & The covariance-only disorder still lacks the explicit coordinate or direct concentration interface needed for the gradient estimate. \\
-\lean{Cavity/Interpolation.lean} & difficult & Codex & The last-spin decomposition is absent, and the derivative expansion requires replica bookkeeping, endpoint identities, and uniform estimates. \\
-Free-energy endpoints & moderate & Codex & The final calculus argument is complete.  \lean{freeEnergy_endpoint_bridge} still needs continuity of the covariance-dependent free energy and the $s=0$ product endpoint identity. \\
-Top-level certification & moderate & Codex & The assembly and bridge-free endpoint wrapper build.  Certification requires replacing the six theorem placeholders, repairing the cavity interpolation specification, and auditing the resulting axiom set. \\
-\bottomrule
-\end{longtable}
-\normalsize
+\begin{openclaim}[Gaussian covariance differentiation]
+Let $H_s$ be a centered finite Gaussian process with differentiable covariance
+$C_s$.  For every observable $F$ of $n$ replicas,
+\[
+\begin{aligned}
+ \frac d{ds}\mathbb E\langle F\rangle_s
+ =\frac12\mathbb E\Bigg\langle F\Bigg(&
+ \sum_{a,b\leq n}\dot C_s(\sigma^a,\sigma^b)
+ -2n\sum_{a\leq n}\dot C_s(\sigma^a,\sigma^{n+1})\\
+ &+n(n+1)\dot C_s(\sigma^{n+1},\sigma^{n+2})
+ -n\dot C_s(\sigma^{n+1},\sigma^{n+1})\Bigg)\Bigg\rangle_s.
+\end{aligned}
+\]
+This is \lean{quenchedGibbs_deriv_of_covariance_deriv}.
+\end{openclaim}
 
-\section{The six remaining sorry obligations}
+\begin{openclaim}[Smart-path free-energy derivative]
+For $0<s<1$,
+\[
+  p_N'(s)=\frac{\beta^2}{4}
+  \left((1-q)^2-A_s\right).
+\]
+This is \lean{smartPath_freeEnergy_deriv}.
+\end{openclaim}
+
+\begin{openclaim}[Two-replica Guerra--Talagrand bound]
+For every attainable overlap $v$, every multiplier $\lambda$, and every
+$s\in[0,1]$,
+\[
+  \mathbb E p_{N,s}^{(2)}(v)
+  \leq\mathcal P_{\mathrm{GT}}(\beta,h,q,s,\lambda,v).
+\]
+This is \lean{twoReplica_GT_bound}.
+\end{openclaim}
+
+\begin{openclaim}[Fixed-deviation overlap concentration]
+For every $\varepsilon>0$, there exist $c,C>0$ such that
+\[
+  \mathbb E\langle
+    \mathbf1_{\{|R_{12}-q|\geq\varepsilon\}}
+  \rangle_s
+  \leq Ce^{-cN}.
+\]
+This is \lean{fixedDeviation}.
+\end{openclaim}
+
+\begin{openclaim}[Cavity remainder]
+There exists $C>0$ such that the residual in the three-dimensional cavity
+system satisfies
+\[
+  \|\boldsymbol\rho_s\|
+  \leq C\left(N^{-3/2}+T_s\right).
+\]
+This is \lean{exists_cavityRemainder_bound}.
+\end{openclaim}
+
+\begin{openclaim}[Free-energy endpoint bridge]
+The function $D_N(s)=p_{\mathrm{RS}}(s)-p_N(s)$ is continuous on $[0,1]$ and
+\[
+  D_N(0)=0.
+\]
+This is \lean{freeEnergy_endpoint_bridge}.
+\end{openclaim}
+
+\section{Structural gaps beyond the six placeholders}
+
+\begin{description}
+\item[Scalar strict-AT input.] The theorem
+\lean{strictAT_sign_of_scalar_linear_bounds} proves the correct sign and local
+linear gap for $g_s(u)-u$, but assumes the two inequalities
+\[
+ g_s(u)-u\geq\delta_K(q-u),\qquad
+ u-g_s(u)\geq\delta_K(u-q)
+\]
+on the left and right of $q$.  No theorem derives them from the AT condition.
+
+\item[GT analytic input.] The structure \lean{GTFunctionalAnalyticData}
+assumes a uniform Taylor upper bound
+\[
+ \mathcal P_{\mathrm{GT}}(\lambda,v)
+ \leq\mathcal P_{\mathrm{GT}}(0,v)+d(v)\lambda+\frac M2\lambda^2,
+ \qquad |d(v)|\geq\delta_K|v-q|,
+\]
+and a uniform gap for $v\in[-1,-q]$.  Lean proves quadratic coercivity from
+these assumptions, but does not construct them from the explicit recursion.
+
+\item[Missing pressure theorem.] The blueprint requires
+\[
+ p_{N,s}^{(2)}(\lambda_0)
+ \leq p_{\mathrm{RS}}(s)+\varepsilon_N,
+ \qquad \varepsilon_N\to0.
+\]
+The current \lean{CoupledPressure.lean} contains the algebra needed to sum
+over attainable overlaps but no theorem with this conclusion.
+
+\item[Under-specified cavity interpolation.] The theorem
+\lean{exists_cavityInterpolatedAverage} only asks for
+\[
+ \left|\frac{d^2}{du^2}\nu_{s,u}(F)\right|
+ \leq C_K(T_s+N^{-3}),
+ \qquad |F|\leq1.
+\]
+It imposes neither normalization nor $u=0,1$ endpoint identities and is
+therefore proved by $\nu_{s,u}(F)\equiv0$.  The intended last-spin
+interpolation is not constructed.
+
+\item[Tautological cavity system.] Since
+$\boldsymbol\rho_s$ is defined by
+\[
+ \boldsymbol\rho_s
+ =(I-sL)\mathbf v_s-\frac1N\boldsymbol\theta,
+\]
+the theorem \lean{cavity_system} is an algebraic identity.  Its intended
+analytic content lies entirely in the unproved remainder estimate.
+
+\item[Abstract smart-path model.] The structure \lean{RSSmartPathDisorder}
+specifies Gaussian marginals, means, and covariances, but not a common
+finite-coordinate realization.  An explicit representation, schematically
+\[
+ H_s\stackrel{\mathrm{law}}=\sqrt{s}\,X+\sqrt{1-s}\,Y,
+\]
+with the correct covariance factors and independence, would provide a common
+foundation for differentiation, concentration, endpoint continuity, and the
+last-spin construction.
+
+\item[Scope of the SK wrapper.] The theorem
+\lean{quantitative_strictAT_for_sk} asserts
+\[
+ NA_1\leq C,qquad
+ 0\leq p_{\mathrm{RS}}-p_N\leq C/N,
+\]
+and the replicon limit, but quantifies over a full
+\lean{RSSmartPathDisorder}.  It does not convert an arbitrary
+\lean{SpinGlass.SKDisorder} into such a path.  A law-preserving product-space
+construction and reconciliation of Hamiltonian signs are still needed for
+that stronger interpretation.
+\end{description}
+
+\section{Recommended completion order}
 
 \begin{enumerate}
-\item \lean{GaussianDerivative.lean:quenchedGibbs_deriv_of_covariance_deriv}.
-Prove finite-dimensional Gaussian covariance interpolation for normalized
-replica expectations.
+\item Give the smart path an explicit finite Gaussian-coordinate model, or
+prove a covariance-law theorem strong enough to support differentiation,
+concentration, continuity, and cavity decomposition.
 
-\item \lean{FreeEnergyDerivative.lean:smartPath_freeEnergy_deriv}.  Apply the
-preceding interpolation theorem, prove the diagonal correction and
-cancellation, and rewrite the replica sums as \lean{overlapSecondMoment}.  The
-target derivative is
-$\frac{\beta^2}{4}((1-q)^2-\mathbb E\langle(R_{12}-q)^2\rangle)$.
+\item Prove Gaussian covariance differentiation and then the specialized
+identity
+\[
+ p_N'(s)=\frac{\beta^2}{4}((1-q)^2-A_s).
+\]
 
-\item \lean{GT/Interpolation.lean:twoReplica_GT_bound}.  Construct the
-finite-cascade Guerra--Talagrand interpolation for the explicit recursion and
-verify its endpoint and derivative identities.
+\item Complete the scalar strict-AT estimates, prove the finite-cascade GT
+bound, and construct the Taylor and negative-overlap analytic package.  This
+should yield the quadratic constrained-overlap loss
+\[
+ \mathbb E p_{N,s}^{(2)}(v)
+ \leq2p_{\mathrm{RS}}(s)-c_K(v-q)^2.
+\]
 
-\item \lean{FixedDeviation.lean:fixedDeviation}.  Prove the uniform $O_K(N)$
-squared-gradient estimate and apply finite-Gaussian concentration compatible
-with \lean{RSSmartPathDisorder}.
+\item Prove the coupled-pressure envelope and the fixed-deviation exponential
+tail using the common Gaussian concentration interface.
 
-\item \lean{Cavity/System.lean:exists_cavityRemainder_bound}.  Derive the
-uniform remainder estimate from the last-spin interpolation and coefficient
-identities.
+\item Strengthen the cavity-interpolation specification with its endpoint
+identities, construct the interpolation, and prove
+\[
+ \|\boldsymbol\rho_s\|
+ \leq C_K(N^{-3/2}+T_s).
+\]
 
-\item \lean{FreeEnergy.lean:freeEnergy_endpoint_bridge}.  Prove continuity on
-$[0,1]$ and identify the independent one-site endpoint at $s=0$.
+\item Prove continuity of $D_N$ and the product identity $D_N(0)=0$.
+The verified absorption, free-energy, and replicon arguments can then be
+assembled without analytic placeholders.
+
+\item If a theorem for the separate concrete SK API is desired, add the
+law-preserving model conversion only after the smart-path theorem is
+certified.
 \end{enumerate}
 
-\section{Named analytic interfaces}
+\section{Certification checklist}
 
-\begin{description}
-\item[Scalar linear bounds.]
-\lean{strictAT_sign_of_scalar_linear_bounds} proves the required sign and
-local absolute-value conclusion once the left and right analytic inequalities
-for \lean{scalarOrderParameterCorrect} are supplied.  No theorem currently
-derives those inequalities from \lean{UniformATData}.
+A certification claim should be made only after all of the following checks
+succeed in the configured Lean project environment:
+\begin{enumerate}
+\item build the complete \lean{LatalaMeetsAT} target;
+\item search the source for \lean{sorry}, \lean{admit}, and project-specific
+\lean{axiom} declarations;
+\item inspect
+\lean{\#print axioms SpinGlass.AT.quantitative_strictAT} and
+\lean{\#print axioms SpinGlass.AT.SK.quantitative_strictAT_for_sk};
+\item confirm that neither public theorem obtains analytic content from an
+unproved assumption or an under-specified existence statement;
+\item check the paper-to-Lean ledger and high-risk obligations recorded in
+Appendix B.36--B.37 of \lean{blueprint_at.aux}.
+\end{enumerate}
 
-\item[Free-energy endpoints.]
-\lean{HasFreeEnergyEndpointBridge path} packages continuity on $[0,1]$ and the
-$s=0$ product identity.  The theorem \lean{freeEnergy_endpoint_bridge} is the
-localized placeholder that supplies it uniformly.
-
-\item[Cavity remainder.]
-\lean{HasCavityRemainderBound data C} is the analytic input to absorption and
-the final conclusions.  The theorem \lean{exists_cavityRemainder_bound} is the
-localized placeholder that supplies such a constant.
-
-\item[GT functional coercivity.]
-\lean{GTFunctionalAnalyticData} packages the multiplier Taylor estimate and
-the uniform negative-range gap required by the proved algebraic assembly
-\lean{gtFunctional_coercivity}.  The package itself still needs analytic
-construction from the explicit GT recursion.
-\end{description}
-
-These interfaces make dependencies visible.  Their placeholder existence
-theorems and the GT analytic package must be supplied before certification.
-
-\section{Recommended proof roadmap}
-
-\begin{description}
-\item[Model and Gaussian API.] Construct
-\lean{quenchedGibbs_deriv_of_covariance_deriv} from a finite-index Gaussian-law
-module or strengthen the smart path with an explicit affine realization.  Use
-the same model for concentration and last-spin decomposition, then finish the
-free-energy derivative.
-
-\item[Scalar package.] Prove the left and right linear bounds used by
-\lean{strictAT_sign_of_scalar_linear_bounds}.  The order-theoretic closure,
-convolution identity, and Lata\l a kernel lemmas needed by this stage are
-complete.
-
-\item[GT package.] Prove \lean{twoReplica_GT_bound} for the explicit recursion,
-then construct \lean{GTFunctionalAnalyticData} by exposing multiplier
-derivatives, Taylor control, and factorization as reusable named lemmas.  The
-algebraic assembly \lean{gtFunctional_coercivity} is already complete.
-
-\item[Pressure and tails.] Prove \lean{fixedDeviation} using the common
-finite-Gaussian concentration interface, then audit the completed
-\lean{coupledPressure_sublinear} deduction from that tail bound.
-
-\item[Cavity package.] Define the last-spin interpolation, prove its
-second-derivative bound, and use it to prove
-\lean{exists_cavityRemainder_bound}.  This is the missing analytic connection
-between the cavity expansion and absorption.
-
-\item[Free-energy endpoints.] Construct
-\lean{freeEnergy_endpoint_bridge} using covariance-law continuity and the
-independent one-site endpoint.  The $O(N^{-1})$ estimate and its top-level
-assembly are already complete from that theorem.
-
-\item[Concrete SK API.] If a statement for \lean{SpinGlass.SKDisorder} is
-required, construct a law-preserving product-space realization of the
-reference field and reconcile the Hamiltonian sign conventions.  The
-bridge-free theorem in \lean{Latala_AT.lean} already applies at the
-\lean{RSSmartPathDisorder} endpoint.
-
-\item[Certification.] Run \lean{lake build LatalaMeetsAT}, search the Lean
-sources for \lean{sorry}, \lean{admit}, and project-specific \lean{axiom}, and
-inspect \lean{\#print axioms SpinGlass.AT.quantitative_strictAT} and
-\lean{\#print axioms SpinGlass.AT.SK.quantitative_strictAT_for_sk}.
-Certification requires a successful build and absence of \lean{sorryAx}; it
-also requires that the public theorems no longer obtain their analytic content
-from unproved assumptions.
-\end{description}
-
-\section{Structural issues}
-
-\begin{itemize}
-\item[Cavity system.] The theorem \lean{cavity_system} follows by unfolding the
-definition of \lean{cavityRemainder}.  Its analytic content is the separate,
-unconstructed remainder bound.
-
-\item[Cavity interpolation.] The theorem
-\lean{exists_cavityInterpolatedAverage} currently chooses the constant zero
-function.  This satisfies the displayed derivative bound because the theorem
-does not require normalization or the $u=0,1$ endpoint identities.  The
-specification must be strengthened before it represents the paper's
-last-spin interpolation.
-
-\item In \lean{GaussianDerivative.lean}, the theorem
-\lean{quenchedGibbs_deriv_of_covariance_deriv} is the localized placeholder.
-It does not yet prove Gaussian interpolation from the covariance assumptions
-in \lean{SmartPath.lean}.
-
-\item \lean{GT/Interpolation.lean:twoReplica_GT_bound} remains a localized
-placeholder.  In \lean{GT/Coercivity.lean}, the explicit recursion and the
-composition theorem \lean{gt_quadratic_coercivity} are present, and the
-coercivity assembly is proved under \lean{GTFunctionalAnalyticData}; the
-analytic package itself is not yet constructed.
-
-\item \lean{FreeEnergy.lean} contains the placeholder theorem
-\lean{freeEnergy_endpoint_bridge}.  The subsequent mean-value argument and
-public free-energy estimate are complete from that result.
-
-\item \lean{MainResult.lean:quantitative_strictAT} exposes no endpoint or
-cavity hypothesis.  Its proof calls \lean{freeEnergy_endpoint_bridge} and
-\lean{exists_cavityRemainder_bound}, so it remains uncertified until those and
-the other transitive placeholders are proved.
-
-\item \lean{Latala_AT.lean:quantitative_strictAT_for_sk} has no
-\lean{SmartPathBridge} argument.  It quantifies directly over
-\lean{RSSmartPathDisorder} and reads the SK quantities at $s=1$.  It should not
-be described as a theorem for an arbitrary concrete
-\lean{SpinGlass.SKDisorder} until a law-preserving model conversion is proved.
-
-\item \lean{SmartPath.lean} specifies Gaussian marginals and covariance but no
-concrete coordinate realization.  This single model-level gap blocks the
-Gaussian derivative theorem, direct concentration, endpoint-law continuity,
-and the last-spin decomposition.
-\end{itemize}
+At the present revision, the source is structurally assembled but fails items
+2--4.  In particular, the public theorems still depend transitively on
+\lean{sorryAx}.
 
 \end{document}

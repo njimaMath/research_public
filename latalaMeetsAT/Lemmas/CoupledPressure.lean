@@ -1,4 +1,4 @@
-import Lemmas.FixedDeviation
+import Lemmas.GT.Coercivity
 
 open MeasureTheory ProbabilityTheory Filter
 
@@ -31,192 +31,120 @@ noncomputable def rsFreeEnergyGap {Ω : Type u} [MeasureSpace Ω]
     (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) : ℝ :=
   rsPathValue β h q s - pathFreeEnergy path s
 
-private theorem quenchedReplicaAverage_one {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N n : ℕ}
-    (H : Ω → EnergySpace N) :
-    quenchedReplicaAverage H (fun _ : Replicas N n => 1) = 1 := by
-  unfold quenchedReplicaAverage
-  have hpoint : ∀ ω, replicaGibbsAverage (H ω)
-      (fun _ : Replicas N n => 1) = 1 := by
-    intro ω
-    unfold replicaGibbsAverage
-    rw [show (∑ σs : Replicas N n, (∏ a, gibbsWeight (H ω) (σs a)) * 1) =
-        ∑ σs : Replicas N n, ∏ a, gibbsWeight (H ω) (σs a) by simp]
-    rw [← Fintype.prod_sum]
-    simp only [sum_gibbsWeight, Finset.prod_const_one]
-  rw [integral_congr_ae (ae_of_all _ hpoint)]
-  simp
+theorem quadraticCoupledPartition_pos {N : ℕ}
+    (H : EnergySpace N) (q lam : ℝ) :
+    0 < quadraticCoupledPartition H q lam := by
+  unfold quadraticCoupledPartition
+  exact Finset.sum_pos
+    (fun p _ => Real.exp_pos
+      (H p.1 + H p.2 + lam * (N : ℝ) / 2 *
+        (configOverlap N p.1 p.2 - q) ^ 2))
+    Finset.univ_nonempty
 
-private theorem overlapSecondMoment_le_four {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) (hq : q ∈ Set.Icc (0 : ℝ) 1) :
-    overlapSecondMoment path s ≤ 4 := by
-  have hfull : Measurable (fullPathHamiltonian path s) := by
-    apply measurable_pi_iff.mpr
-    intro σ
-    exact ((measurable_pi_iff.mp (path.measurable s)) σ).add measurable_const
-  have hpoint : ∀ σs : Replicas N 4,
-      centeredOverlap q σs 0 1 ^ 2 ≤ 4 := by
-    intro σs
-    by_cases hN : 0 < N
-    · have habs := abs_centeredOverlap_le_two hN hq σs (0 : Fin 4) 1
-      have hsq := mul_self_le_mul_self
-        (abs_nonneg (centeredOverlap q σs (0 : Fin 4) 1)) habs
-      nlinarith [sq_abs (centeredOverlap q σs (0 : Fin 4) 1)]
-    · have hNzero : N = 0 := Nat.eq_zero_of_not_pos hN
-      subst N
-      simp [centeredOverlap, overlap, configOverlap]
-      nlinarith [hq.1, hq.2]
-  unfold overlapSecondMoment
+/-- The coupled partition function is the finite log-sum-exp envelope of
+the constrained two-replica partition functions. -/
+theorem quadraticCoupledPartition_eq_sum_constrained {N : ℕ}
+    (H : EnergySpace N) (q lam : ℝ) :
+    quadraticCoupledPartition H q lam =
+      ∑ v ∈ attainableOverlaps N,
+        Real.exp (lam * (N : ℝ) / 2 * (v - q) ^ 2) *
+          constrainedPartition H v := by
+  classical
+  unfold quadraticCoupledPartition constrainedPartition
+  symm
   calc
-    quenchedReplicaAverage (fullPathHamiltonian path s)
-        (fun σs : Replicas N 4 => centeredOverlap q σs 0 1 ^ 2)
-        ≤ quenchedReplicaAverage (fullPathHamiltonian path s)
-            (fun _ : Replicas N 4 => 4) :=
-      quenchedReplicaAverage_mono hfull hpoint
-    _ = 4 := by
-      rw [show (fun _ : Replicas N 4 => (4 : ℝ)) = fun σs => 4 * (1 : ℝ) by
-        funext σs
-        ring]
-      rw [quenchedReplicaAverage_const_mul, quenchedReplicaAverage_one]
-      ring
+    (∑ v ∈ attainableOverlaps N,
+        Real.exp (lam * (N : ℝ) / 2 * (v - q) ^ 2) *
+          ∑ p : Config N × Config N,
+            if configOverlap N p.1 p.2 = v then
+              Real.exp (H p.1 + H p.2) else 0) =
+        ∑ v ∈ attainableOverlaps N, ∑ p : Config N × Config N,
+          Real.exp (lam * (N : ℝ) / 2 * (v - q) ^ 2) *
+            (if configOverlap N p.1 p.2 = v then
+              Real.exp (H p.1 + H p.2) else 0) := by
+          simp_rw [Finset.mul_sum]
+    _ = ∑ p : Config N × Config N, ∑ v ∈ attainableOverlaps N,
+          Real.exp (lam * (N : ℝ) / 2 * (v - q) ^ 2) *
+            (if configOverlap N p.1 p.2 = v then
+              Real.exp (H p.1 + H p.2) else 0) := by
+          rw [Finset.sum_comm]
+    _ = ∑ p : Config N × Config N,
+          Real.exp (H p.1 + H p.2 +
+            lam * (N : ℝ) / 2 * (configOverlap N p.1 p.2 - q) ^ 2) := by
+      apply Finset.sum_congr rfl
+      intro p _
+      rw [Finset.sum_eq_single (configOverlap N p.1 p.2)]
+      · simp [overlap_mem_attainableOverlaps, ← Real.exp_add, add_comm]
+      · intro v _ hne
+        simp [hne.symm]
+      · exact fun hnot => (hnot (overlap_mem_attainableOverlaps p.1 p.2)).elim
 
-private theorem overlapSecondMoment_le_sq_add_tail {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q s eps : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) (hN : 0 < N)
-    (hq : q ∈ Set.Icc (0 : ℝ) 1) (heps : 0 ≤ eps) :
-    overlapSecondMoment path s ≤ eps ^ 2 + 4 * quenchedTail path s eps := by
-  have hfull : Measurable (fullPathHamiltonian path s) := by
-    apply measurable_pi_iff.mpr
-    intro σ
-    exact ((measurable_pi_iff.mp (path.measurable s)) σ).add measurable_const
-  have hpoint : ∀ σs : Replicas N 4,
-      centeredOverlap q σs 0 1 ^ 2 ≤
-        eps ^ 2 + 4 * (if eps ≤ |centeredOverlap q σs 0 1| then 1 else 0) := by
-    intro σs
-    let x := centeredOverlap q σs (0 : Fin 4) 1
-    have hx := abs_centeredOverlap_le_two hN hq σs (0 : Fin 4) 1
-    change x ^ 2 ≤ eps ^ 2 + 4 * (if eps ≤ |x| then 1 else 0)
-    by_cases hlarge : eps ≤ |x|
-    · simp only [if_pos hlarge, mul_one]
-      nlinarith [sq_abs x, sq_nonneg eps]
-    · simp only [if_neg hlarge, mul_zero, add_zero]
-      have hxeps : |x| ≤ eps := le_of_not_ge hlarge
-      simpa [pow_two] using mul_self_le_mul_self (abs_nonneg x) hxeps
-  unfold overlapSecondMoment quenchedTail
-  calc
-    quenchedReplicaAverage (fullPathHamiltonian path s)
-        (fun σs : Replicas N 4 => centeredOverlap q σs 0 1 ^ 2)
-        ≤ quenchedReplicaAverage (fullPathHamiltonian path s)
-            (fun σs : Replicas N 4 => eps ^ 2 +
-              4 * (if eps ≤ |centeredOverlap q σs 0 1| then 1 else 0)) :=
-      quenchedReplicaAverage_mono hfull hpoint
-    _ = quenchedReplicaAverage (fullPathHamiltonian path s)
-          (fun _ : Replicas N 4 => eps ^ 2) +
-        quenchedReplicaAverage (fullPathHamiltonian path s)
-          (fun σs : Replicas N 4 =>
-            4 * (if eps ≤ |centeredOverlap q σs 0 1| then 1 else 0)) := by
-      rw [quenchedReplicaAverage_add hfull]
-    _ = eps ^ 2 + 4 * quenchedReplicaAverage (fullPathHamiltonian path s)
-          (fun σs : Replicas N 4 =>
-            if eps ≤ |centeredOverlap q σs 0 1| then 1 else 0) := by
-      rw [show (fun _ : Replicas N 4 => eps ^ 2) =
-          fun σs => eps ^ 2 * (1 : ℝ) by funext σs; ring]
-      rw [quenchedReplicaAverage_const_mul, quenchedReplicaAverage_one]
-      rw [quenchedReplicaAverage_const_mul]
-      ring
-
-/-- Sublinear coupled-pressure and Gronwall estimate.  Its finite-dimensional
-Gaussian maximum and concentration proof is isolated here. -/
-theorem coupledPressure_sublinear {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)]
-    {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
-      {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),
-      (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
-      overlapSecondMoment path s ≤ epsN N := by
-  let momentSet : ℕ → Set ℝ := fun N =>
-    {x | x = 0 ∨ ∃ (β h q s : ℝ)
-        (path : RSSmartPathDisorder Ω N β h q),
-        (β, h) ∈ K ∧ q = rsQ β h ∧ s ∈ Set.Icc (0 : ℝ) 1 ∧
-          x = overlapSecondMoment path s}
-  let epsN : ℕ → ℝ := fun N => sSup (momentSet N)
-  have hnonempty : ∀ N, (momentSet N).Nonempty := by
-    intro N
-    exact ⟨0, Or.inl rfl⟩
-  have hbdd : ∀ N, BddAbove (momentSet N) := by
-    intro N
-    refine ⟨4, ?_⟩
-    intro x hx
-    rcases hx with rfl | ⟨β, h, q, s, path, hp, hq, hs, rfl⟩
-    · norm_num
-    · exact overlapSecondMoment_le_four path (by
-        subst q
-        exact rsQ_mem_Icc β h)
-  have heps_nonneg : ∀ N, 0 ≤ epsN N := by
-    intro N
-    exact le_csSup (hbdd N) (Or.inl rfl)
-  have heps_tendsto : Tendsto epsN atTop (nhds 0) := by
-    apply Metric.tendsto_atTop.2
-    intro ε hε
-    let δ : ℝ := Real.sqrt (ε / 4)
-    have hδ : 0 < δ := by
-      dsimp [δ]
-      positivity
-    obtain ⟨c, C, hc, hC, htail⟩ := fixedDeviation (Ω := Ω) data δ hδ
-    have hscale : Tendsto (fun N : ℕ => c * (N : ℝ)) atTop atTop :=
-      tendsto_natCast_atTop_atTop.const_mul_atTop hc
-    have hdecay : Tendsto (fun N : ℕ => C * Real.exp (-c * (N : ℝ)))
-        atTop (nhds 0) := by
-      have hexp := Real.tendsto_exp_neg_atTop_nhds_zero.comp hscale
-      simpa using hexp.const_mul C
-    obtain ⟨N0, hN0⟩ :=
-      (Metric.tendsto_atTop.1 hdecay) (ε / 16) (by positivity)
-    refine ⟨max 1 N0, ?_⟩
-    intro N hN
-    have hNpos : 0 < N := lt_of_lt_of_le Nat.zero_lt_one
-      (le_trans (Nat.le_max_left 1 N0) hN)
-    have htail_small : C * Real.exp (-c * (N : ℝ)) < ε / 16 := by
-      have hdist := hN0 N (le_trans (Nat.le_max_right 1 N0) hN)
-      rw [Real.dist_eq, sub_zero, abs_of_nonneg
-        (mul_nonneg hC.le (Real.exp_pos _).le)] at hdist
-      exact hdist
-    have hsup : epsN N ≤ ε / 2 := by
-      apply csSup_le (hnonempty N)
-      intro x hx
-      rcases hx with rfl | ⟨β, h, q, s, path, hp, hq, hs, rfl⟩
-      · linarith
-      · have hqIcc : q ∈ Set.Icc (0 : ℝ) 1 := by
-          subst q
-          exact rsQ_mem_Icc β h
-        have hmoment := overlapSecondMoment_le_sq_add_tail
-          (s := s) path hNpos hqIcc hδ.le
-        have htail_bound := htail path hp hq hs
-        have hδsq : δ ^ 2 = ε / 4 := by
-          dsimp [δ]
-          rw [Real.sq_sqrt (by positivity)]
-        calc
-          overlapSecondMoment path s
-              ≤ δ ^ 2 + 4 * quenchedTail path s δ := hmoment
-          _ ≤ δ ^ 2 + 4 * (C * Real.exp (-c * (N : ℝ))) := by gcongr
-          _ ≤ ε / 2 := by rw [hδsq]; linarith
-    rw [Real.dist_eq, sub_zero, abs_of_nonneg (heps_nonneg N)]
-    exact lt_of_le_of_lt hsup (by linarith)
-  refine ⟨epsN, heps_tendsto, ?_⟩
-  intro N β h q s path hp hq hs
-  apply le_csSup (hbdd N)
-  exact Or.inr ⟨β, h, q, s, path, hp, hq, hs, rfl⟩
-
-theorem preliminary_overlap_bound {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)]
-    {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ epsN : ℕ → ℝ, Tendsto epsN atTop (nhds 0) ∧ ∀ {N : ℕ}
-      {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q),
-      (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
-      overlapSecondMoment path s ≤ epsN N := by
-  -- Proof route: this is only the public name for `coupledPressure_sublinear`.
-  exact coupledPressure_sublinear data
+/-- There are at most `N + 1` attainable normalized overlaps. -/
+theorem card_attainableOverlaps_le (N : ℕ) :
+    (attainableOverlaps N).card ≤ N + 1 := by
+  classical
+  by_cases hNzero : N = 0
+  · subst N
+    have hzero : attainableOverlaps 0 = {0} := by
+      ext v
+      simp [attainableOverlaps, configOverlap, eq_comm]
+    rw [hzero]
+    norm_num
+  let mismatchCount : Config N × Config N → ℕ := fun p =>
+    (Finset.univ.filter fun i => p.1 i ≠ p.2 i).card
+  have hoverlap_of_count (p : Config N × Config N) :
+      configOverlap N p.1 p.2 =
+        1 - 2 * (mismatchCount p : ℝ) / (N : ℝ) := by
+    have hNreal : (N : ℝ) ≠ 0 := by exact_mod_cast hNzero
+    have hterm (i : Fin N) :
+        spin p.1 i * spin p.2 i =
+          1 - 2 * (if p.1 i ≠ p.2 i then (1 : ℝ) else 0) := by
+      simp only [spin]
+      cases h1 : p.1 i <;> cases h2 : p.2 i <;> simp_all <;> norm_num
+    unfold configOverlap
+    rw [Finset.sum_congr rfl (fun i _ => hterm i)]
+    simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+      Fintype.card_fin, nsmul_eq_mul, Nat.cast_ofNat, one_mul,
+      ← Finset.mul_sum, Finset.sum_boole]
+    dsimp [mismatchCount]
+    field_simp [hNreal]
+  let countImage : Finset ℕ := Finset.univ.image mismatchCount
+  have hcardImage : countImage.card ≤ N + 1 := by
+    calc
+      countImage.card ≤ (Finset.range (N + 1)).card := by
+        apply Finset.card_le_card
+        intro k hk
+        simp only [countImage, Finset.mem_image, Finset.mem_univ,
+          true_and] at hk
+        obtain ⟨p, rfl⟩ := hk
+        simp only [Finset.mem_range]
+        have := Finset.card_le_card
+          (Finset.filter_subset (fun i => p.1 i ≠ p.2 i) Finset.univ)
+        simpa [mismatchCount] using Nat.lt_succ_of_le this
+      _ = N + 1 := by simp
+  let overlapOfCount : ℕ → ℝ := fun k => 1 - 2 * (k : ℝ) / (N : ℝ)
+  have hset : attainableOverlaps N = countImage.image overlapOfCount := by
+    ext v
+    constructor
+    · intro hv
+      simp only [attainableOverlaps, Finset.mem_image, Finset.mem_univ,
+        true_and] at hv
+      obtain ⟨p, rfl⟩ := hv
+      rw [hoverlap_of_count p]
+      simp only [Finset.mem_image]
+      refine ⟨mismatchCount p, ?_, rfl⟩
+      simp [countImage]
+    · intro hv
+      simp only [Finset.mem_image] at hv
+      obtain ⟨k, hk, rfl⟩ := hv
+      simp only [countImage, Finset.mem_image, Finset.mem_univ,
+        true_and] at hk
+      obtain ⟨p, rfl⟩ := hk
+      change (1 - 2 * (mismatchCount p : ℝ) / (N : ℝ)) ∈
+        attainableOverlaps N
+      rw [← hoverlap_of_count p]
+      exact overlap_mem_attainableOverlaps p.1 p.2
+  rw [hset]
+  exact (Finset.card_image_le.trans hcardImage)
 
 end SpinGlass.AT

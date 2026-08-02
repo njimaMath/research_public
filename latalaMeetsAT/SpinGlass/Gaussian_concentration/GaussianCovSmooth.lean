@@ -1,4 +1,4 @@
-import SYK.super_concentration.Gaussian_concentration.GaussianConcentrationAux
+import GaussianConcentrationAux
 
 /-!
 # Smooth-case Gaussian covariance bound: supporting lemmas
