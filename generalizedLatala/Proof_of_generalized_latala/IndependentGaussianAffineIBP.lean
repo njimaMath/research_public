@@ -403,8 +403,9 @@ end GenericHelpers
 section JointDisorder
 
 variable (N : ℕ) [NeZero N] (β h q : ℝ)
-variable (sk : SKDisorder.{uΩ} (Ω := Ω) N β h)
-variable (sim : SimpleDisorder.{uΩ} (Ω := Ω) N β q)
+variable {covU covV : Config N → Config N → ℝ}
+variable (sk : GaussianDisorder.{uΩ} (Ω := Ω) N β h covU)
+variable (sim : ReferenceDisorder.{uΩ} (Ω := Ω) N β q covV)
 
 private noncomputable def affineIBP_jointAffineCLM
     (a b : ℝ) :
@@ -941,7 +942,7 @@ lemma independent_gaussian_affine_ibp_reproved
       (a * a') *
         ∫ w,
           (∑ σ : Config N, ∑ τ : Config N,
-            sk_cov_kernel N β σ τ *
+            covU σ τ *
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ))
@@ -949,8 +950,7 @@ lemma independent_gaussian_affine_ibp_reproved
       (b * b') *
         ∫ w,
           (∑ σ : Config N, ∑ τ : Config N,
-            simple_cov_kernel N β
-                (fun x => q * x) σ τ *
+            covV σ τ *
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ))
@@ -985,14 +985,13 @@ lemma independent_gaussian_affine_ibp_reproved
                 (sk := sk) (sim := sim) hIndep).w i))) =
         (a * a') *
           (∑ σ : Config N, ∑ τ : Config N,
-            sk_cov_kernel N β σ τ *
+            covU σ τ *
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ)) +
         (b * b') *
           (∑ σ : Config N, ∑ τ : Config N,
-            simple_cov_kernel N β
-                (fun x => q * x) σ τ *
+            covV σ τ *
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ)) := by
@@ -1021,7 +1020,7 @@ lemma independent_gaussian_affine_ibp_reproved
   have hsk : Integrable
       (fun w =>
         ∑ σ : Config N, ∑ τ : Config N,
-          sk_cov_kernel N β σ τ *
+          covU σ τ *
             hessian_free_energy N
               (a • sk.U w + b • sim.V w + field)
               (std_basis N σ) (std_basis N τ))
@@ -1029,12 +1028,11 @@ lemma independent_gaussian_affine_ibp_reproved
     affineIBP_integrable_kernel_hessian_trace
       (N := N) (β := β) (h := h) (q := q)
       (sk := sk) (sim := sim)
-      (sk_cov_kernel N β) a b field
+      covU a b field
   have hsim : Integrable
       (fun w =>
         ∑ σ : Config N, ∑ τ : Config N,
-          simple_cov_kernel N β
-              (fun x => q * x) σ τ *
+          covV σ τ *
             hessian_free_energy N
               (a • sk.U w + b • sim.V w + field)
               (std_basis N σ) (std_basis N τ))
@@ -1042,7 +1040,7 @@ lemma independent_gaussian_affine_ibp_reproved
     affineIBP_integrable_kernel_hessian_trace
       (N := N) (β := β) (h := h) (q := q)
       (sk := sk) (sim := sim)
-      (simple_cov_kernel N β (fun x => q * x))
+      covV
       a b field
   rw [
     MeasureTheory.integral_add
