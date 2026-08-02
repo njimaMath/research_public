@@ -28,7 +28,9 @@ which is an induction on `N`.
 
 variable {Ω : Type*} [MeasureSpace Ω] [IsProbabilityMeasure (ℙ : Measure Ω)]
 variable (N : ℕ) (β h q : ℝ)
-variable (sk : SKDisorder (Ω := Ω) N β h) (sim : SimpleDisorder (Ω := Ω) N β q)
+variable {covU covV : Config N → Config N → ℝ}
+variable (sk : GaussianDisorder (Ω := Ω) N β h covU)
+variable (sim : ReferenceDisorder (Ω := Ω) N β q covV)
 
 section ReplicaCalculus
 

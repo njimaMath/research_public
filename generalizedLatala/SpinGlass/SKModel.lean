@@ -42,34 +42,45 @@ noncomputable def gibbs_average (H : EnergySpace N) (f : Config N → ℝ) : ℝ
 
 /-! ### Gaussian disorder specifications -/
 
+/-- A centered finite-dimensional Gaussian disorder with a prescribed covariance kernel.
+
+Keeping the kernel as an index lets the interpolation/IBP infrastructure be reused for
+mixed `p`-spin covariances as well as for the quadratic SK kernel. -/
+structure GaussianDisorder (β h : ℝ)
+    (covarianceKernel : Config N → Config N → ℝ) where
+  /-- The random Hamiltonian. -/
+  U : Ω → EnergySpace N
+  /-- Centered Gaussian structure in the Hilbert space `EnergySpace N`. -/
+  hU : IsGaussianHilbert.{u, 0, 0} U
+  /-- Covariance on the canonical basis. -/
+  cov_eq : ∀ σ τ, inner ℝ ((covOp (g := U) hU)
+    (std_basis N σ)) (std_basis N τ) = covarianceKernel σ τ
+
 /--
 SK disorder: a centered Gaussian Hamiltonian with covariance kernel `sk_cov_kernel`.
 
 This corresponds (up to the usual normalizations) to the classical SK Hamiltonian
 \(H_N(\sigma) = \frac{\beta}{\sqrt{N}}\sum_{i < j} g_{ij}\sigma_i\sigma_j\).
 -/
-structure SKDisorder (β h : ℝ) where
-  /-- The (random) Hamiltonian. -/
-  U : Ω → EnergySpace N
-  /-- Centered Gaussian structure in the Hilbert space `EnergySpace N`. -/
-  hU : IsGaussianHilbert.{u, 0, 0} U
-  /-- Covariance on the canonical basis. -/
-  cov_eq : ∀ σ τ, inner ℝ ((covOp (g := U) hU)
-    (std_basis N σ)) (std_basis N τ) =  sk_cov_kernel N β σ τ
+abbrev SKDisorder (β h : ℝ) :=
+  GaussianDisorder (Ω := Ω) N β h (sk_cov_kernel N β)
 
-/--
-Simple (reference) disorder: a centered Gaussian Hamiltonian with covariance kernel
-`simple_cov_kernel`.
-
-This matches the “magnetic field” comparison model used in Guerra's bound.
--/
-structure SimpleDisorder (β q : ℝ) where
+/-- A centered Gaussian reference disorder with a prescribed covariance kernel. -/
+structure ReferenceDisorder (β q : ℝ)
+    (covarianceKernel : Config N → Config N → ℝ) where
   /-- The (random) Hamiltonian. -/
   V : Ω → EnergySpace N
   /-- Centered Gaussian structure in the Hilbert space `EnergySpace N`. -/
   hV : IsGaussianHilbert.{u, 0, 0} V
   /-- Covariance on the canonical basis. -/
   cov_eq : ∀ σ τ, inner ℝ ((covOp (g := V) hV) (std_basis N σ))
-    (std_basis N τ) = simple_cov_kernel N β (fun x => q * x) σ τ
+    (std_basis N τ) = covarianceKernel σ τ
+
+/--
+Simple (reference) disorder for the SK smart path.
+
+Its covariance is `N β² q R(σ,τ)`. -/
+abbrev SimpleDisorder (β q : ℝ) :=
+  ReferenceDisorder (Ω := Ω) N β q (simple_cov_kernel N β (fun x => q * x))
 
 end SpinGlass
