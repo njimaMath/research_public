@@ -40,7 +40,7 @@
 \begin{center}
   {\LARGE State and proof roadmap for \lean{Lemmas}}\\[0.6em]
   {\large Quantitative strict-AT formalization}\\[0.4em]
-  Snapshot checked on 1 August 2026 at revision \lean{b241820}
+  Snapshot checked on 2 August 2026 at revision \lean{01cb6d5}
 \end{center}
 
 \section{Executive status}
@@ -182,34 +182,362 @@ Top-level certification & moderate & Codex & The assembly and bridge-free endpoi
 \end{longtable}
 \normalsize
 
-\section{The six remaining sorry obligations}
+\section{Structure of the complete proof}
+
+This section follows the mathematical order recorded in
+\lean{blueprint_at.aux}.  Parenthetical references give the equation or
+result number in the blueprint together with its auxiliary-file label.  The
+proof has four principal stages:
+\[
+  \boxed{\text{RS coercivity}}
+  \longrightarrow
+  \boxed{\text{overlap concentration}}
+  \longrightarrow
+  \boxed{\text{cavity closure}}
+  \longrightarrow
+  \boxed{\text{quantitative conclusions}}.
+\]
+The logical role of each stage, and its present Lean status, is as follows.
+
+\subsection{Parameters, fixed point, and smart path}
+
+Fix a compact set $K$ of parameters $(\beta,h)$ in the strict AT region.  For
+each $(\beta,h)\in K$, let $q=q(\beta,h)$ solve the replica-symmetric fixed
+point equation (Blueprint (0.1), \lean{eq:q}), and set
+\[
+  \alpha(\beta,h)
+  =\beta^2\,\mathbb E\!\left[\operatorname{sech}^4
+    (h+\beta\sqrt q\,Z)\right].
+\]
+Strict AT means that $\alpha<1$; compactness gives a uniform gap
+$1-\alpha\geq\delta>0$ (Blueprint (0.3)--(0.6),
+\lean{eq:alpha}--\lean{eq:qcompact}).  Interpolate between the independent
+one-site random-field model at $s=0$ and the SK Hamiltonian at $s=1$ by the
+replica-symmetric smart path (Blueprint (0.7), \lean{eq:path}).  Write
+\[
+  A_s=\mathbb E\langle(R_{12}-q)^2\rangle_s,
+  \qquad
+  D_N(s)=p_{\mathrm{RS}}(s)-p_N(s).
+\]
+The finite spin space, Gibbs measure, fixed-point identities, compact
+uniformity package, and covariance kernel of this path are formalized in
+\lean{Replicas.lean}, \lean{RSParameters.lean}, \lean{UniformData.lean}, and
+\lean{SmartPath.lean}.
+
+The first analytic identity is Gaussian covariance differentiation.  It
+gives
+\[
+  D_N'(s)=\frac{\beta^2}{4}A_s,
+  \qquad 0<s<1,
+\]
+which is Blueprint (2.7), \lean{eq:DNprime}, and is also the derivative form
+of the free-energy identity used at the end.  The general Gaussian
+integration-by-parts rule (Blueprint (1.1), \lean{eq:GIBP}) and this
+specialized derivative identity are not yet verified in Lean; they are the
+placeholders in \lean{GaussianDerivative.lean} and
+\lean{FreeEnergyDerivative.lean}.
+
+\subsection{Stage I: replica-symmetric coercivity}
+
+The purpose of this stage is to prove that forcing the overlap away from $q$
+costs a quantity of order $(v-q)^2$, uniformly on $K$ and along the whole
+smart path.
+
+First solve the scalar replica-symmetric Parisi equation by its explicit
+Gaussian semigroup (Blueprint (1.4)--(1.9),
+\lean{eq:parisipde}--\lean{eq:RSpathvalue}).  The strict AT condition must then
+be converted into the one-sided sign estimate for the scalar order parameter
+$g_s$:
+\[
+  g_s(u)-u\geq\delta(q-u)\quad(0\leq u\leq q),
+  \qquad
+  u-g_s(u)\geq\delta(u-q)\quad(q\leq u\leq1).
+\]
+These are the linear form of Blueprint (1.13)--(1.18), in particular
+\lean{eq:linearATsign}, \lean{eq:leftstrict}, and \lean{eq:fprime}.  Lean
+contains the explicit scalar formula and proves all order-theoretic
+consequences of these two inequalities, but the analytic derivation of the
+inequalities from strict AT is still missing.
+
+Next constrain two replicas to have overlap $v$ and introduce the
+two-dimensional Guerra--Talagrand functional
+$\mathcal P_{\mathrm{GT}}(\lambda,v)$ (Blueprint (1.19)--(1.26),
+\lean{eq:constrainedZ}--\lean{eq:GTfunctional}).  The specialized
+Guerra--Talagrand interpolation gives
+\[
+  \mathbb E p_{N,s}^{(2)}(v)
+  \leq \mathcal P_{\mathrm{GT}}(\lambda,v)
+\]
+(Blueprint (1.28) and Appendix A, \lean{eq:GTfunctionalbound} and
+\lean{eq:specialGTlemma}).  Taylor expansion in $\lambda$, the scalar sign
+estimate near $v=q$, and a separate signed-path estimate for negative
+overlaps then yield
+\[
+  \mathbb E p_{N,s}^{(2)}(v)
+  \leq 2p_{\mathrm{RS}}(s)-c(v-q)^2
+\]
+(Blueprint (1.29), \lean{eq:GTcoercivity}).  The explicit recursion and the
+algebraic Taylor minimization are formalized.  The finite-cascade GT bound,
+the multiplier Taylor estimates, and the uniform negative-overlap gap
+(Blueprint (1.36)--(1.52)) remain unverified.
+
+\subsection{Stage II: preliminary overlap concentration}
+
+Introduce a small quadratic coupling of two replicas and its normalized
+coupled pressure (Blueprint (2.1)--(2.3), \lean{eq:lambda0},
+\lean{eq:quadraticpressure}, and \lean{eq:normalizedcoupling}).  The coercive
+bound from Stage I controls the pressure away from $q$.  Combining that bound
+with the derivative identity for $D_N$, and closing the resulting integral
+inequality by Gronwall's lemma, gives the preliminary estimate in Blueprint
+(2.8)--(2.9), \lean{eq:gronwallDN} and \lean{eq:preconcentration}.
+
+Gaussian concentration of the constrained log-partition functions then
+upgrades this control to the fixed-deviation tail estimate: for every
+$\varepsilon>0$ there exist $c,C>0$ such that
+\[
+  \mathbb E\Bigl\langle
+    \mathbf 1_{\{|R_{12}-q|\geq\varepsilon\}}
+  \Bigr\rangle_s
+  \leq Ce^{-cN}
+\]
+uniformly in $(\beta,h)\in K$ and $s\in[0,1]$ (Blueprint (2.10),
+\lean{eq:tail}).  The deterministic pressure deduction is formalized in
+\lean{CoupledPressure.lean}, but its present Lean proof assumes the
+fixed-deviation estimate and therefore runs in the reverse direction from the
+blueprint.  The direct pressure-envelope proof and the Gaussian concentration
+step are not yet formalized; the latter is the placeholder in
+\lean{FixedDeviation.lean}.
+
+\subsection{Stage III: cavity closure}
+
+Remove the last spin and interpolate between the $N$-spin model and its
+$(N-1)$-spin cavity decomposition.  For the three overlap observables
+\[
+  \mathbf v_s=(A_s,B_s,C_s)^{\mathsf T},
+\]
+the cavity expansion gives the finite-dimensional system
+\[
+  (I-sL)\mathbf v_s=\frac1N\,\boldsymbol\theta+\boldsymbol\rho_s
+\]
+(Blueprint (3.1)--(3.5), \lean{eq:cavitysystem}--\lean{eq:rho}).  The
+last-spin interpolation, replica differentiation, endpoint factorization,
+and Taylor comparison (Blueprint (3.6)--(3.22)) must prove the uniform
+remainder estimate
+\[
+  \|\boldsymbol\rho_s\|
+  \leq C\left(N^{-3/2}+
+    \mathbb E\langle|R_{12}-q|^3\rangle_s\right).
+\]
+Lean verifies the cavity observables, coefficients, and displayed linear
+identity, but the present interpolation is under-specified and the remainder
+bound remains a placeholder in \lean{Cavity/System.lean}.
+
+The matrix $I-sL$ is invertible throughout the strict AT region.  Its
+triangularization separates the anomalous and replicon factors, and the
+uniform AT gap bounds its inverse (Blueprint (3.23)--(3.26),
+\lean{eq:gammas}--\lean{eq:inverse}).  This matrix algebra, including the
+replicon left eigenvector, is fully verified in \lean{Cavity/Stability.lean}.
+
+\subsection{Stage IV: absorption and the three conclusions}
+
+Apply the inverse bound to the cavity system.  Split the cubic moment at a
+small fixed threshold and use the exponential tail from Stage II.  The cubic
+term can then be absorbed into the left side, giving
+\[
+  \sup_{(\beta,h)\in K}\sup_{s\in[0,1]} N A_s<\infty
+\]
+(Blueprint (4.1)--(4.2), \lean{eq:preabsorb} and \lean{eq:thirdsplit}).  This
+absorption argument is verified in \lean{Absorption.lean}, conditional only
+on the unproved fixed-deviation and cavity-remainder estimates.
+
+The uniform $A_s=O(N^{-1})$ estimate has two consequences.  First, integrate
+$D_N'(s)=\beta^2A_s/4$ from $0$ to $1$.  Using continuity and the product
+identity $D_N(0)=0$ gives
+\[
+  0\leq p_{\mathrm{RS}}-p_N\leq \frac{C}{N}
+\]
+(Blueprint (4.3), \lean{eq:freeenergyidentity}).  The integration argument is
+formalized, but continuity and the $s=0$ endpoint identification remain the
+placeholder in \lean{FreeEnergy.lean}.
+
+Second, fixed-deviation concentration and $N A_s=O(1)$ imply
+\[
+  N\,\mathbb E\langle|R_{12}-q|^3\rangle_s\longrightarrow0
+\]
+uniformly.  Apply the replicon vector $(1,-2,1)$ to the cavity system.  Since
+it is a left eigenvector of $L$, one obtains
+\[
+  N(A_s-2B_s+C_s)
+  \longrightarrow
+  \frac{a(\beta,h)}{1-s\alpha(\beta,h)}
+\]
+uniformly (Blueprint (4.4)--(4.5), \lean{eq:repliconeq} and
+\lean{eq:repliconrho}).  This final linear-algebraic deduction is verified in
+\lean{Replicon.lean}, again conditional on the earlier tail and remainder
+inputs.
+
+\subsection{Final assembly and certification boundary}
+
+Compactness converts pointwise strict AT into the uniform data used above.
+The theorem \lean{SpinGlass.AT.quantitative_strictAT} then packages exactly
+the three conclusions: $N A_s=O(1)$, an $O(N^{-1})$ replica-symmetric
+free-energy error, and the uniform replicon susceptibility limit.  This
+assembly is verified in \lean{MainResult.lean}.  Its dependency chain is
+nevertheless uncertified because it invokes the unproved cavity-remainder
+and endpoint theorems, which in turn depend on the missing Gaussian, GT,
+concentration, and last-spin arguments.  In the terminology of Appendix B of
+the blueprint, certification requires the audit in subsection B.36 and the
+resolution of the high-risk obligations in subsection B.37, as recorded in
+\lean{blueprint_at.aux}.
+
+\section{Mathematical statements not yet verified in Lean}
+
+This section states the missing results in ordinary mathematical language.
+Write $R_{12}$ for the overlap of two Gibbs replicas, $q$ for the
+replica-symmetric fixed point, and
+\[
+  A_s=\mathbb E\bigl\langle (R_{12}-q)^2\bigr\rangle_s,
+  \qquad
+  T_s=\mathbb E\bigl\langle |R_{12}-q|^3\bigr\rangle_s.
+\]
+The expectation includes both the Gaussian disorder and the Gibbs measure.
+The constants below are required to be uniform when $(\beta,h)$ ranges over
+the fixed compact strict-AT parameter set and $s\in[0,1]$.
+
+\subsection{The six assertions currently containing \lean{sorry}}
 
 \begin{enumerate}
 \item \lean{GaussianDerivative.lean:quenchedGibbs_deriv_of_covariance_deriv}.
-Prove finite-dimensional Gaussian covariance interpolation for normalized
-replica expectations.
+Let $(H_s(\sigma))_{\sigma\in\{-1,1\}^N}$ be a centered finite-dimensional
+Gaussian process whose covariance matrix $C_s(\sigma,\tau)$ is affine in
+$s$.  For every bounded observable $F$ of $n$ replicas, prove that
+$s\mapsto\mathbb E\langle F\rangle_s$ is differentiable for $0<s<1$ and
+that its derivative is one half of the contraction of
+$\dot C_s$ with the Hessian of the normalized Gibbs expectation.  In replica
+notation this is the standard formula involving the original $n$ replicas
+and two additional replicas, including all terms arising from
+differentiating the partition function.  The Lean file defines this
+contraction explicitly as \lean{replicaCovarianceOperator}; what is missing
+is the Gaussian integration-by-parts argument proving the formula.
 
-\item \lean{FreeEnergyDerivative.lean:smartPath_freeEnergy_deriv}.  Apply the
-preceding interpolation theorem, prove the diagonal correction and
-cancellation, and rewrite the replica sums as \lean{overlapSecondMoment}.  The
-target derivative is
-$\frac{\beta^2}{4}((1-q)^2-\mathbb E\langle(R_{12}-q)^2\rangle)$.
+\item \lean{FreeEnergyDerivative.lean:smartPath_freeEnergy_deriv}.
+For
+\[
+  p_N(s)=\frac1N\,\mathbb E\log Z_N(s),
+\]
+prove, for $0<s<1$, the smart-path identity
+\[
+  p_N'(s)=\frac{\beta^2}{4}
+  \left((1-q)^2-
+  \mathbb E\bigl\langle(R_{12}-q)^2\bigr\rangle_s\right).
+\]
+This requires applying the preceding Gaussian interpolation formula and
+checking the diagonal term, the covariance cancellation, and the
+normalization of the replica sums.
 
-\item \lean{GT/Interpolation.lean:twoReplica_GT_bound}.  Construct the
-finite-cascade Guerra--Talagrand interpolation for the explicit recursion and
-verify its endpoint and derivative identities.
+\item \lean{GT/Interpolation.lean:twoReplica_GT_bound}.
+For every attainable overlap $v$, multiplier $\lambda\in\mathbb R$, and
+$s\in[0,1]$, prove the two-replica Guerra--Talagrand upper bound
+\[
+  \mathbb E\,p_{N,s}^{(2)}(v)
+  \leq \mathcal P_{\mathrm{GT}}(\beta,h,q,s,\lambda,v),
+\]
+where the left side is the free energy of two replicas constrained to have
+overlap $v$, and the right side is the explicit finite Gaussian recursion
+defined in \lean{GT/Interpolation.lean}.  The missing mathematics is the
+finite-cascade interpolation, including identification of both endpoints
+and proof that its derivative has the required sign.
 
-\item \lean{FixedDeviation.lean:fixedDeviation}.  Prove the uniform $O_K(N)$
-squared-gradient estimate and apply finite-Gaussian concentration compatible
-with \lean{RSSmartPathDisorder}.
+\item \lean{FixedDeviation.lean:fixedDeviation}.
+For every $\varepsilon>0$, prove that there are constants $c,C>0$, independent
+of $N$, $s$, and $(\beta,h)$ in the chosen compact set, such that
+\[
+  \mathbb E\Bigl\langle
+    \mathbf 1_{\{|R_{12}-q|\geq\varepsilon\}}
+  \Bigr\rangle_s
+  \leq C e^{-cN}.
+\]
+The intended proof combines the quadratic loss for constrained overlap with
+a Gaussian concentration inequality.  In particular it still needs the
+uniform $O(N)$ bound for the squared Euclidean gradient of the relevant
+log-partition functions in Gaussian coordinates.
 
-\item \lean{Cavity/System.lean:exists_cavityRemainder_bound}.  Derive the
-uniform remainder estimate from the last-spin interpolation and coefficient
-identities.
+\item \lean{Cavity/System.lean:exists_cavityRemainder_bound}.
+Let $\mathbf r_s$ denote the error in the three-component cavity system.
+Prove that there is a constant $C>0$, uniform in the above parameters, for
+which
+\[
+  \|\mathbf r_s\|
+  \leq C\left(N^{-3/2}+T_s\right).
+\]
+The displayed linear cavity system is already an algebraic identity because
+$\mathbf r_s$ is defined as its residual.  The unverified content is this
+quantitative bound, which should follow from a genuine last-spin
+interpolation and the proved coefficient identities.
 
-\item \lean{FreeEnergy.lean:freeEnergy_endpoint_bridge}.  Prove continuity on
-$[0,1]$ and identify the independent one-site endpoint at $s=0$.
+\item \lean{FreeEnergy.lean:freeEnergy_endpoint_bridge}.
+Define
+\[
+  D_N(s)=p_{\mathrm{RS}}(s)-p_N(s),
+\]
+where $p_{\mathrm{RS}}(s)$ is the replica-symmetric trial value along the
+smart path.  Prove that $D_N$ is continuous on $[0,1]$ and that
+\[
+  D_N(0)=0.
+\]
+Equivalently, identify the $s=0$ Gaussian process with the independent
+one-site random-field model and factorize its partition function.  This is
+the endpoint input needed to integrate the already stated derivative
+identity up to $s=1$.
 \end{enumerate}
+
+\subsection{Further analytic content not supplied by the current files}
+
+The absence of \lean{sorry} in the following files does not mean that all of
+the intended mathematics has been established.  In these cases the missing
+content is hidden in an explicit hypothesis or is absent from the theorem
+statement.
+
+\begin{enumerate}
+\item For the scalar order-parameter map $g_s(u)$, prove the uniform one-sided
+linear estimates
+\[
+  g_s(u)-u\geq \delta(q-u)\quad(0\leq u\leq q),
+  \qquad
+  u-g_s(u)\geq \delta(u-q)\quad(q\leq u\leq1),
+\]
+for some $\delta>0$.  Lean verifies that these inequalities imply the desired
+sign of $g_s(u)-u$ and its local linear separation from zero, but it does not
+derive the inequalities from the strict AT condition.
+
+\item For the Guerra--Talagrand functional, prove the analytic estimates used
+in its coercivity argument.  On $-q\leq v\leq1$, this means a uniform
+second-order upper Taylor bound in the multiplier $\lambda$, together with a
+lower bound proportional to $|v-q|$ for the magnitude of the first
+derivative at $\lambda=0$.  On $-1\leq v\leq-q$, prove a uniform strictly
+positive gap below twice the replica-symmetric trial value.  Lean proves the
+quadratic coercivity conclusion from these assumptions, but no theorem
+constructs the assumptions from the explicit recursion.
+
+\item Construct the actual last-spin interpolation $\nu_{s,u}(F)$, including
+its normalization and its identities at $u=0$ and $u=1$, and prove
+\[
+  \left|\frac{d^2}{du^2}\nu_{s,u}(F)\right|
+  \leq C\left(T_s+N^{-3}\right)
+  \qquad (|F|\leq1).
+\]
+The present existence theorem is formally true only because it chooses the
+identically zero function; its statement imposes no endpoint conditions and
+therefore does not yet describe the cavity interpolation used in the
+mathematical argument.
+\end{enumerate}
+
+Consequently, the two public strict-AT theorems are not Lean-certified even
+though their final assembly proofs contain no local placeholders: they depend
+transitively on the six unproved assertions above.  Completing only those six
+proofs would remove the current occurrences of \lean{sorry}, but a faithful
+formalization of the intended proof also requires the three additional
+analytic items in this subsection.
 
 \section{Named analytic interfaces}
 
@@ -243,41 +571,138 @@ theorems and the GT analytic package must be supplied before certification.
 \section{Recommended proof roadmap}
 
 \begin{description}
-\item[Model and Gaussian API.] Construct
-\lean{quenchedGibbs_deriv_of_covariance_deriv} from a finite-index Gaussian-law
-module or strengthen the smart path with an explicit affine realization.  Use
-the same model for concentration and last-spin decomposition, then finish the
-free-energy derivative.
+\item[Model and Gaussian API.] Prove the mathematical claim represented by
+\lean{quenchedGibbs_deriv_of_covariance_deriv}: if $H_s$ is a centered finite
+Gaussian process with differentiable covariance $C_s$, then for every
+observable $F$ of $n$ replicas,
+\[
+ \frac d{ds}\mathbb E\langle F\rangle_s
+ =\frac12\mathbb E\left\langle F\left(
+ \sum_{a,b\le n}\dot C_s(\sigma^a,\sigma^b)
+ -2n\sum_{a\le n}\dot C_s(\sigma^a,\sigma^{n+1})
+ +n(n+1)\dot C_s(\sigma^{n+1},\sigma^{n+2})
+ -n\dot C_s(\sigma^{n+1},\sigma^{n+1})\right)\right\rangle_s.
+\]
+Construct this result from a finite-coordinate Gaussian-law module, or give
+the smart path an explicit affine realization.  Specializing to $F=1$ after
+differentiating the logarithmic partition function must then give the claim
+in \lean{smartPath_freeEnergy_deriv},
+\[
+ p_N'(s)=\frac{\beta^2}{4}\bigl((1-q)^2-A_s\bigr),
+ \qquad
+ D_N'(s)=\frac{\beta^2}{4}A_s.
+\]
+Use the same Gaussian coordinates for concentration and the last-spin
+decomposition.
 
-\item[Scalar package.] Prove the left and right linear bounds used by
-\lean{strictAT_sign_of_scalar_linear_bounds}.  The order-theoretic closure,
-convolution identity, and Lata\l a kernel lemmas needed by this stage are
-complete.
+\item[Scalar package.] Establish the two analytic claims assumed by
+\lean{strictAT_sign_of_scalar_linear_bounds}:
+\[
+ g_s(u)-u\geq\delta(q-u)\quad(0\leq u\leq q),
+ \qquad
+ u-g_s(u)\geq\delta(u-q)\quad(q\leq u\leq1).
+\]
+The theorem bearing that name proves from these estimates that $g_s(u)-u$ is
+positive to the left of $q$, negative to its right, and satisfies
+$|g_s(u)-u|\geq c|u-q|$ locally.  The order-theoretic closure, convolution
+identity, and Lata\l a kernel lemmas are complete; the Gaussian analytic
+derivation of the two displayed inequalities is not.
 
-\item[GT package.] Prove \lean{twoReplica_GT_bound} for the explicit recursion,
-then construct \lean{GTFunctionalAnalyticData} by exposing multiplier
-derivatives, Taylor control, and factorization as reusable named lemmas.  The
-algebraic assembly \lean{gtFunctional_coercivity} is already complete.
+\item[GT package.] Prove the claim \lean{twoReplica_GT_bound}:
+\[
+ \mathbb E p_{N,s}^{(2)}(v)
+ \leq \mathcal P_{\mathrm{GT}}(\beta,h,q,s,\lambda,v)
+\]
+for every attainable overlap $v$ and multiplier $\lambda$.  Next construct
+\lean{GTFunctionalAnalyticData}, whose mathematical content is a uniform
+Taylor upper bound
+\[
+ \mathcal P_{\mathrm{GT}}(\lambda,v)
+ \leq \mathcal P_{\mathrm{GT}}(0,v)+d(v)\lambda
+       +\frac M2\lambda^2,
+ \qquad |d(v)|\geq\delta|v-q|,
+\]
+for $-q\leq v\leq1$, together with a constant $\kappa>0$ such that for
+$-1\leq v\leq-q$ some multiplier satisfies
+\[
+ \mathcal P_{\mathrm{GT}}(\lambda,v)
+ \leq2p_{\mathrm{RS}}(s)-\kappa.
+\]
+The proved theorem \lean{gtFunctional_coercivity} then yields the precise
+claim
+\[
+ \exists c>0\ \forall v\in[-1,1]\ \exists\lambda:\quad
+ \mathcal P_{\mathrm{GT}}(\lambda,v)
+ \leq2p_{\mathrm{RS}}(s)-c(v-q)^2.
+\]
 
-\item[Pressure and tails.] Prove \lean{fixedDeviation} using the common
-finite-Gaussian concentration interface, then audit the completed
-\lean{coupledPressure_sublinear} deduction from that tail bound.
+\item[Pressure and tails.] Prove directly the blueprint pressure-envelope
+claim
+\[
+ p_{N,s}^{(2)}(\lambda_0)\leq p_{\mathrm{RS}}(s)+\varepsilon_N,
+ \qquad \varepsilon_N\longrightarrow0,
+\]
+using GT coercivity, the fact that there are at most $N+1$ attainable
+overlaps, and Gaussian concentration.  Combine this with
+$D_N'=\beta^2A_s/4$ and Gronwall's inequality to obtain
+$\sup_s A_s=o(1)$.  Finally prove \lean{fixedDeviation}, namely that for each
+$\varepsilon>0$ there exist $c,C>0$ for which
+\[
+ \mathbb E\langle\mathbf1_{\{|R_{12}-q|\geq\varepsilon\}}\rangle_s
+ \leq Ce^{-cN}.
+\]
+The current \lean{CoupledPressure.lean} contains the finite overlap
+decomposition and cardinality bound, but it does not contain a theorem named
+\lean{coupledPressure_sublinear}; the roadmap should not cite that obsolete
+name.
 
-\item[Cavity package.] Define the last-spin interpolation, prove its
-second-derivative bound, and use it to prove
-\lean{exists_cavityRemainder_bound}.  This is the missing analytic connection
-between the cavity expansion and absorption.
+\item[Cavity package.] Define the genuine last-spin interpolation
+$\nu_{s,u}(F)$ with normalization and endpoint identities, and prove
+\[
+ \left|\frac{d^2}{du^2}\nu_{s,u}(F)\right|
+ \leq C\left(T_s+N^{-3}\right),
+ \qquad |F|\leq1.
+\]
+Use it to establish the mathematical claim in
+\lean{exists_cavityRemainder_bound}: for the residual $\boldsymbol\rho_s$ in
+the three-dimensional cavity system,
+\[
+ \|\boldsymbol\rho_s\|
+ \leq C\left(N^{-3/2}+T_s\right)
+\]
+uniformly on the compact strict-AT set.  This is the missing analytic link
+between the cavity expansion and the verified absorption argument.
 
-\item[Free-energy endpoints.] Construct
-\lean{freeEnergy_endpoint_bridge} using covariance-law continuity and the
-independent one-site endpoint.  The $O(N^{-1})$ estimate and its top-level
-assembly are already complete from that theorem.
+\item[Free-energy endpoints.] Prove the claim
+\lean{freeEnergy_endpoint_bridge}: the function
+\[
+ D_N(s)=p_{\mathrm{RS}}(s)-p_N(s)
+\]
+is continuous on $[0,1]$ and satisfies $D_N(0)=0$.  The proof should identify
+the $s=0$ Gaussian law with independent one-site fields and factorize its
+partition function.  Once this claim and the remainder estimate hold, the
+verified calculus gives
+\[
+ 0\leq p_{\mathrm{RS}}-p_N\leq C/N.
+\]
 
-\item[Concrete SK API.] If a statement for \lean{SpinGlass.SKDisorder} is
-required, construct a law-preserving product-space realization of the
-reference field and reconcile the Hamiltonian sign conventions.  The
-bridge-free theorem in \lean{Latala_AT.lean} already applies at the
-\lean{RSSmartPathDisorder} endpoint.
+\item[Concrete SK API.] If a theorem for an arbitrary
+\lean{SpinGlass.SKDisorder} is required, prove a law-preserving conversion to
+a product-space smart path, including an independent one-site Gaussian field
+and reconciliation of the Hamiltonian signs.  The claim currently proved by
+\lean{quantitative_strictAT_for_sk} concerns an
+\lean{RSSmartPathDisorder} and asserts, at its $s=1$ endpoint,
+\[
+ NA_1\leq C,
+ \qquad 0\leq p_{\mathrm{RS}}-p_N\leq C/N,
+\]
+together with the uniform replicon limit
+\[
+ N(A_s-2B_s+C_s)\longrightarrow
+ \frac{a(\beta,h)}{1-s\alpha(\beta,h)}.
+\]
+It is not yet a conversion theorem for an independently supplied concrete SK
+disorder.
 
 \item[Certification.] Run \lean{lake build LatalaMeetsAT}, search the Lean
 sources for \lean{sorry}, \lean{admit}, and project-specific \lean{axiom}, and
