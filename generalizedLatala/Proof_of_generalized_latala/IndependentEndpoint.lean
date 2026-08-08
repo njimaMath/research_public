@@ -39,7 +39,7 @@ noncomputable def gaussianProduct (N : ℕ) : Measure (Fin N → ℝ) :=
   Measure.pi (fun _ : Fin N => gaussianReal 0 1)
 
 noncomputable def siteVector (N : ℕ) (β q : ℝ) (i : Fin N) : EnergySpace N :=
-  WithLp.toLp 2 (fun σ => β * Real.sqrt q * spin N σ i)
+  WithLp.toLp 2 (fun σ => Real.sqrt β * spin N σ i)
 
 noncomputable def referenceFieldCLM (N : ℕ) (β q : ℝ) :
     (Fin N → ℝ) →L[ℝ] EnergySpace N :=
@@ -49,7 +49,7 @@ noncomputable def referenceField (N : ℕ) (β q : ℝ) (z : Fin N → ℝ) : En
   referenceFieldCLM N β q z
 
 lemma referenceField_apply (N : ℕ) (β q : ℝ) (z : Fin N → ℝ) (σ : Config N) :
-    referenceField N β q z σ = β * Real.sqrt q * ∑ i, z i * spin N σ i := by
+    referenceField N β q z σ = Real.sqrt β * ∑ i, z i * spin N σ i := by
   classical
   simp [referenceField, referenceFieldCLM, siteVector, Finset.mul_sum, mul_assoc, mul_left_comm]
 
@@ -220,47 +220,47 @@ lemma referenceField_mean_zero (N : ℕ) (β q : ℝ) :
   · intro i _
     exact (gaussianProduct_eval_gaussian N i).integrable.smul_const _
 
-lemma referenceField_pairing (N : ℕ) (β q : ℝ) (hN : 0 < N) (hq0 : 0 ≤ q)
+lemma referenceField_pairing (N : ℕ) (β q : ℝ) (hN : 0 < N) (hβ0 : 0 ≤ β)
     (σ τ : Config N) :
     ∫ z, referenceField N β q z σ * referenceField N β q z τ ∂gaussianProduct N =
-      simple_cov_kernel N β (fun x => q * x) σ τ := by
+      referenceCovKernel N β σ τ := by
   classical
   have hprod (z : Fin N → ℝ) :
       referenceField N β q z σ * referenceField N β q z τ =
-        ∑ i, ∑ j, (β * √q) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j) := by
+        ∑ i, ∑ j, (√β) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j) := by
     simp only [referenceField_apply, Finset.sum_mul, Finset.mul_sum]
     rw [Finset.sum_comm]
     ring
   have hterm (i j : Fin N) :
       Integrable (fun z : Fin N → ℝ =>
-        (β * √q) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)) (gaussianProduct N) := by
+        (√β) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)) (gaussianProduct N) := by
     have hij : Integrable (fun z : Fin N → ℝ => z i * z j) (gaussianProduct N) := by
       exact ((gaussianProduct_eval_gaussian N i).memLp_two.integrable_mul
         (gaussianProduct_eval_gaussian N j).memLp_two).congr
           (Filter.Eventually.of_forall fun z => by rfl)
-    convert hij.const_mul ((β * √q) ^ 2 * spin N σ i * spin N τ j) using 1 <;>
+    convert hij.const_mul ((√β) ^ 2 * spin N σ i * spin N τ j) using 1 <;>
       ext z <;> ring
   have hint (i j : Fin N) :
-      ∫ z, (β * √q) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)
+      ∫ z, (√β) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)
           ∂gaussianProduct N =
-        (β * √q) ^ 2 * spin N σ i * spin N τ j * (if i = j then 1 else 0) := by
+        (√β) ^ 2 * spin N σ i * spin N τ j * (if i = j then 1 else 0) := by
     rw [show (fun z : Fin N → ℝ =>
-        (β * √q) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)) =
-      fun z => ((β * √q) ^ 2 * spin N σ i * spin N τ j) * (z i * z j) by
+        (√β) ^ 2 * (z i * spin N σ i) * (z j * spin N τ j)) =
+      fun z => ((√β) ^ 2 * spin N σ i * spin N τ j) * (z i * z j) by
         funext z; ring]
     rw [integral_const_mul, gaussianProduct_secondMoment]
   simp_rw [hprod]
   rw [integral_finset_sum _ (fun i _ => integrable_finset_sum _ (fun j _ => hterm i j))]
   simp_rw [integral_finset_sum _ (fun j _ => hterm _ j)]
   simp_rw [hint]
-  simp [simple_cov_kernel, overlap, Finset.mul_sum]
+  simp [referenceCovKernel, overlap, Finset.mul_sum]
   have hN0 : (N : ℝ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hN)
-  simp_rw [mul_pow, Real.sq_sqrt hq0]
+  simp_rw [Real.sq_sqrt hβ0]
   field_simp [hN0]
 
 lemma simpleDisorder_law_eq_reference {Ω : Type*} [MeasureSpace Ω]
     [IsProbabilityMeasure (ℙ : Measure Ω)] (N : ℕ) (β q : ℝ)
-    (sim : SimpleDisorder (Ω := Ω) N β q) (hN : 0 < N) (hq0 : 0 ≤ q) :
+    (sim : SimpleDisorder (Ω := Ω) N β q) (hN : 0 < N) (hβ0 : 0 ≤ β) :
     Measure.map sim.V ℙ = Measure.map (referenceField N β q) (gaussianProduct N) := by
   let μ := Measure.map sim.V ℙ
   let ν := Measure.map (referenceField N β q) (gaussianProduct N)
@@ -279,7 +279,7 @@ lemma simpleDisorder_law_eq_reference {Ω : Type*} [MeasureSpace Ω]
     rw [integral_map hsimLaw.aemeasurable, integral_map hrefLaw.aemeasurable]
     · simpa [inner_std_basis_apply, real_inner_comm] using
         (gaussianHilbert_eval_pairing N sim.V sim.hV σ τ).trans
-          ((sim.cov_eq σ τ).trans (referenceField_pairing N β q hN hq0 σ τ).symm)
+          ((sim.cov_eq σ τ).trans (referenceField_pairing N β q hN hβ0 σ τ).symm)
     · fun_prop
     · fun_prop
   apply ProbabilityTheory.IsGaussian.ext
@@ -330,7 +330,7 @@ lemma gibbs_pmf_siteEnergy (N : ℕ) (a : Fin N → ℝ) (σ : Config N) :
 
 lemma reference_add_field_eq_siteEnergy (N : ℕ) (β h q : ℝ) (z : Fin N → ℝ) :
     referenceField N β q z + magnetic_field_vector (N := N) h =
-      siteEnergy N (fun i => h + β * Real.sqrt q * z i) := by
+      siteEnergy N (fun i => h + Real.sqrt β * z i) := by
   classical
   ext σ
   simp [referenceField_apply, magnetic_field_vector, siteEnergy_apply, magnetization,

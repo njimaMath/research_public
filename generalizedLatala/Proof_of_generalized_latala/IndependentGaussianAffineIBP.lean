@@ -942,7 +942,11 @@ lemma independent_gaussian_affine_ibp_reproved
       (a * a') *
         ∫ w,
           (∑ σ : Config N, ∑ τ : Config N,
+<<<<<<< Updated upstream
             covU σ τ *
+=======
+            mixedCovKernel N sk.ξ σ τ *
+>>>>>>> Stashed changes
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ))
@@ -950,7 +954,11 @@ lemma independent_gaussian_affine_ibp_reproved
       (b * b') *
         ∫ w,
           (∑ σ : Config N, ∑ τ : Config N,
+<<<<<<< Updated upstream
             covV σ τ *
+=======
+            referenceCovKernel N β σ τ *
+>>>>>>> Stashed changes
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ))
@@ -985,13 +993,21 @@ lemma independent_gaussian_affine_ibp_reproved
                 (sk := sk) (sim := sim) hIndep).w i))) =
         (a * a') *
           (∑ σ : Config N, ∑ τ : Config N,
+<<<<<<< Updated upstream
             covU σ τ *
+=======
+            mixedCovKernel N sk.ξ σ τ *
+>>>>>>> Stashed changes
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ)) +
         (b * b') *
           (∑ σ : Config N, ∑ τ : Config N,
+<<<<<<< Updated upstream
             covV σ τ *
+=======
+            referenceCovKernel N β σ τ *
+>>>>>>> Stashed changes
               hessian_free_energy N
                 (a • sk.U w + b • sim.V w + field)
                 (std_basis N σ) (std_basis N τ)) := by
@@ -1020,7 +1036,11 @@ lemma independent_gaussian_affine_ibp_reproved
   have hsk : Integrable
       (fun w =>
         ∑ σ : Config N, ∑ τ : Config N,
+<<<<<<< Updated upstream
           covU σ τ *
+=======
+          mixedCovKernel N sk.ξ σ τ *
+>>>>>>> Stashed changes
             hessian_free_energy N
               (a • sk.U w + b • sim.V w + field)
               (std_basis N σ) (std_basis N τ))
@@ -1028,11 +1048,19 @@ lemma independent_gaussian_affine_ibp_reproved
     affineIBP_integrable_kernel_hessian_trace
       (N := N) (β := β) (h := h) (q := q)
       (sk := sk) (sim := sim)
+<<<<<<< Updated upstream
       covU a b field
   have hsim : Integrable
       (fun w =>
         ∑ σ : Config N, ∑ τ : Config N,
           covV σ τ *
+=======
+      (mixedCovKernel N sk.ξ) a b field
+  have hsim : Integrable
+      (fun w =>
+        ∑ σ : Config N, ∑ τ : Config N,
+          referenceCovKernel N β σ τ *
+>>>>>>> Stashed changes
             hessian_free_energy N
               (a • sk.U w + b • sim.V w + field)
               (std_basis N σ) (std_basis N τ))
@@ -1040,7 +1068,11 @@ lemma independent_gaussian_affine_ibp_reproved
     affineIBP_integrable_kernel_hessian_trace
       (N := N) (β := β) (h := h) (q := q)
       (sk := sk) (sim := sim)
+<<<<<<< Updated upstream
       covV
+=======
+      (referenceCovKernel N β)
+>>>>>>> Stashed changes
       a b field
   rw [
     MeasureTheory.integral_add

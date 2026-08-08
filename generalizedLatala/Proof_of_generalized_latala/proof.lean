@@ -18,9 +18,9 @@ namespace SpinGlass
 namespace GeneralizedLatala
 
 /-!
-# Generalized Latała argument for the SK model
+# Generalized Latała argument for convex mixed p-spin models
 
-This file follows `blueprint_latala.txt`.  It uses the finite-volume SK and simple Gaussian
+This file follows `blueprint_latala.txt`.  It uses a finite-volume mixed p-spin and simple Gaussian
 disorders from `SpinGlass.SKModel` and the smart path, replica Gibbs averages, and annealed
 expectation `nu` from `SpinGlass.Replicas`.
 
@@ -63,34 +63,44 @@ noncomputable def standardGaussianExpectation (f : ℝ → ℝ) : ℝ :=
   ∫ z, f z ∂ProbabilityTheory.gaussianReal 0 1
 
 /-- The replica-symmetric fixed-point equation
-`q = E[tanh (h + β sqrt(q) Z)^2]`. -/
+`q = E[tanh (h + sqrt(β) Z)^2]`, where `β = ξ'(q)`. -/
 def IsRSFixedPoint (β h q : ℝ) : Prop :=
   q = standardGaussianExpectation
-    (fun z => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+    (fun z => Real.tanh (h + Real.sqrt β * z) ^ 2)
 
 /-- The sharp Bernoulli sub-Gaussian coefficient used at the independent endpoint. -/
 noncomputable def kappa (q : ℝ) : ℝ :=
   if q = 0 then 1 else q / Real.artanh q
 
-/-- The improved high-temperature parameter `ρ = β² κ(q)`. -/
-noncomputable def rho (β q : ℝ) : ℝ :=
-  β ^ 2 * kappa q
+/-- The Bregman remainder of `ξ` at `q`, with prescribed slope `d = ξ'(q)`. -/
+noncomputable def bregmanRemainder (ξ : ℝ → ℝ) (d q r : ℝ) : ℝ :=
+  ξ r - ξ q - d * (r - q)
+
+/-- The two global Bregman bounds supplied by convexity and the definition of `Γ`. -/
+def BregmanBounds (ξ : ℝ → ℝ) (d q Γ : ℝ) : Prop :=
+  ∀ r ∈ Set.Icc (-1 : ℝ) 1,
+    0 ≤ bregmanRemainder ξ d q r ∧
+      bregmanRemainder ξ d q r ≤ (Γ / 2) * (r - q) ^ 2
+
+/-- The improved high-temperature parameter `ρ = Γ κ(q)`. -/
+noncomputable def rho (Γ q : ℝ) : ℝ :=
+  Γ * kappa q
 
 /-- Coupling strength used in the quadratic replica estimate. -/
-noncomputable def lambdaStar (β q : ℝ) : ℝ :=
-  ((kappa q)⁻¹ - β ^ 2) / 4
+noncomputable def lambdaStar (Γ q : ℝ) : ℝ :=
+  ((kappa q)⁻¹ - Γ) / 4
 
 /-- The constant on the right side of the uniform logarithmic quadratic estimate. -/
-noncomputable def quadraticConstant (β q : ℝ) : ℝ :=
-  (1 / 2) * Real.exp (2 * rho β q / (1 - rho β q)) *
-    Real.log (2 / (1 - rho β q))
+noncomputable def quadraticConstant (Γ q : ℝ) : ℝ :=
+  (1 / 2) * Real.exp (2 * rho Γ q / (1 - rho Γ q)) *
+    Real.log (2 / (1 - rho Γ q))
 
 /-- The replica-symmetric free-energy prediction. -/
-noncomputable def rsPressure (β h q : ℝ) : ℝ :=
+noncomputable def rsPressure (ξ : ℝ → ℝ) (β h q : ℝ) : ℝ :=
   Real.log 2 +
     standardGaussianExpectation
-      (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
-    (β ^ 2 / 4) * (1 - q) ^ 2
+      (fun z => Real.log (Real.cosh (h + Real.sqrt β * z))) +
+    (1 / 2) * bregmanRemainder ξ β q 1
 
 lemma kappa_zero : kappa 0 = 1 := by
   simp [kappa]
@@ -103,11 +113,11 @@ lemma kappa_pos {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) : 0 < kappa q := by
     simp only [kappa, if_neg hq]
     exact div_pos hqpos ha
 
-lemma rho_eq (β q : ℝ) : rho β q = β ^ 2 * kappa q := by
+lemma rho_eq (Γ q : ℝ) : rho Γ q = Γ * kappa q := by
   rfl
 
-lemma lambdaStar_eq (β q : ℝ) :
-    lambdaStar β q = ((kappa q)⁻¹ - β ^ 2) / 4 := by
+lemma lambdaStar_eq (Γ q : ℝ) :
+    lambdaStar Γ q = ((kappa q)⁻¹ - Γ) / 4 := by
   rfl
 
 /-! ## Smart-path observables -/
@@ -148,10 +158,44 @@ noncomputable def centeredOverlap {n : ℕ} (a b : Fin n) : ReplicaFun N n :=
 noncomputable def centeredOverlapSq : ReplicaFun N 2 :=
   fun σs => (overlap N (σs 0) (σs 1) - q) ^ 2
 
+lemma overlap_mem_Icc (hN : 0 < N) (σ τ : Config N) :
+    overlap N σ τ ∈ Set.Icc (-1 : ℝ) 1 := by
+  have hterm (i : Fin N) :
+      -1 ≤ spin N σ i * spin N τ i ∧ spin N σ i * spin N τ i ≤ 1 := by
+    simp only [spin]
+    split <;> split <;> norm_num
+  have hlo : -(N : ℝ) ≤ ∑ i : Fin N, spin N σ i * spin N τ i := by
+    simpa using Finset.sum_le_sum (s := Finset.univ) (fun i _ => (hterm i).1)
+  have hhi : ∑ i : Fin N, spin N σ i * spin N τ i ≤ (N : ℝ) := by
+    simpa using Finset.sum_le_sum (s := Finset.univ) (fun i _ => (hterm i).2)
+  have hNr : (0 : ℝ) < N := by exact_mod_cast hN
+  have hNne : (N : ℝ) ≠ 0 := ne_of_gt hNr
+  constructor
+  · rw [overlap]
+    calc
+      (-1 : ℝ) = (1 / (N : ℝ)) * (-(N : ℝ)) := by field_simp
+      _ ≤ (1 / (N : ℝ)) * ∑ i, spin N σ i * spin N τ i :=
+        mul_le_mul_of_nonneg_left hlo (one_div_nonneg.mpr hNr.le)
+  · rw [overlap]
+    calc
+      (1 / (N : ℝ)) * ∑ i, spin N σ i * spin N τ i
+          ≤ (1 / (N : ℝ)) * (N : ℝ) :=
+        mul_le_mul_of_nonneg_left hhi (one_div_nonneg.mpr hNr.le)
+      _ = 1 := by field_simp
+
+/-- The Bregman remainder `Δq(R₁₂)` as a two-replica observable. -/
+noncomputable def bregmanOverlap : ReplicaFun N 2 :=
+  fun σs => bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1))
+
 /-- Annealed second moment `ν_t[Q_12²]`. -/
 noncomputable def overlapVariance (t : ℝ) : ℝ :=
   nu (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
     2 t (centeredOverlapSq N q)
+
+/-- Annealed Gibbs expectation `ν_t[Δq(R₁₂)]`. -/
+noncomputable def bregmanAverage (t : ℝ) : ℝ :=
+  nu (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+    2 t (bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk))
 
 omit [IsProbabilityMeasure (ℙ : Measure Ω)] in
 lemma overlapVariance_nonneg (t : ℝ) :
@@ -262,6 +306,18 @@ noncomputable def tiltedCenteredOverlapSq (t coupling : ℝ) : ℝ :=
     (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ω)
     coupling ∂ℙ
 
+/-- The Bregman remainder under the quadratic two-replica tilt. -/
+noncomputable def tiltedBregmanDet (H : EnergySpace N) (coupling : ℝ) : ℝ :=
+  gibbs_average_n_det (N := N) (n := 2) H
+      (fun σs => bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk) σs *
+        Real.exp (coupling * (N : ℝ) * centeredOverlapSq N q σs)) /
+    tiltedReplicaPartitionDet (N := N) (q := q) H coupling
+
+noncomputable def tiltedBregman (t coupling : ℝ) : ℝ :=
+  ∫ ω, tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk)
+    (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ω)
+    coupling ∂ℙ
+
 /-- The average of the four cross-pair centered-overlap squares for replicas grouped as
 `(1,2)` and `(3,4)`. -/
 noncomputable def crossPairCenteredOverlapSq : ReplicaFun N 4 :=
@@ -270,6 +326,14 @@ noncomputable def crossPairCenteredOverlapSq : ReplicaFun N 4 :=
       (centeredOverlap (N := N) (q := q) (0 : Fin 4) (3 : Fin 4) σs) ^ 2 +
       (centeredOverlap (N := N) (q := q) (1 : Fin 4) (2 : Fin 4) σs) ^ 2 +
       (centeredOverlap (N := N) (q := q) (1 : Fin 4) (3 : Fin 4) σs) ^ 2) / 4
+
+/-- The average Bregman remainder of the four cross pairs. -/
+noncomputable def crossPairBregman : ReplicaFun N 4 :=
+  fun σs =>
+    (bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 2)) +
+      bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 3)) +
+      bregmanRemainder sk.ξ β q (overlap N (σs 1) (σs 2)) +
+      bregmanRemainder sk.ξ β q (overlap N (σs 1) (σs 3))) / 4
 
 /-- The four-replica cross moment at fixed disorder.  The pairs `(1,2)` and `(3,4)` receive
 independent copies of the same quadratic tilt. -/
@@ -284,6 +348,20 @@ noncomputable def coupledCrossMomentDet (H : EnergySpace N) (coupling : ℝ) : �
 /-- Annealed four-replica cross moment generated by coupled Gaussian integration by parts. -/
 noncomputable def coupledCrossMoment (t coupling : ℝ) : ℝ :=
   ∫ ω, coupledCrossMomentDet (N := N) (q := q)
+    (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ω)
+    coupling ∂ℙ
+
+/-- The cross-pair Bregman remainder generated by coupled Gaussian integration by parts. -/
+noncomputable def coupledCrossBregmanDet (H : EnergySpace N) (coupling : ℝ) : ℝ :=
+  gibbs_average_n_det (N := N) (n := 4) H
+      (fun σs => crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs *
+        Real.exp (coupling * (N : ℝ) *
+          ((centeredOverlap (N := N) (q := q) (0 : Fin 4) (1 : Fin 4) σs) ^ 2 +
+            (centeredOverlap (N := N) (q := q) (2 : Fin 4) (3 : Fin 4) σs) ^ 2))) /
+    (tiltedReplicaPartitionDet (N := N) (q := q) H coupling) ^ 2
+
+noncomputable def coupledCrossBregman (t coupling : ℝ) : ℝ :=
+  ∫ ω, coupledCrossBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk)
     (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ω)
     coupling ∂ℙ
 
@@ -311,6 +389,114 @@ lemma coupledCrossMoment_nonneg (t coupling : ℝ) :
             (sk := sk) (sim := sim) t ω)
           (σ := σs l)
   · positivity
+
+lemma coupledCrossBregman_nonneg
+    (hN : 0 < N) (hΔ : BregmanBounds sk.ξ β q Γ) (t coupling : ℝ) :
+    0 ≤ coupledCrossBregman
+      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+      t coupling := by
+  apply integral_nonneg
+  intro ω
+  unfold coupledCrossBregmanDet gibbs_average_n_det
+  apply div_nonneg
+  · apply Finset.sum_nonneg
+    intro σs _
+    apply mul_nonneg
+    · apply mul_nonneg
+      · unfold crossPairBregman
+        have h02 := (hΔ _ (overlap_mem_Icc N hN (σs 0) (σs 2))).1
+        have h03 := (hΔ _ (overlap_mem_Icc N hN (σs 0) (σs 3))).1
+        have h12 := (hΔ _ (overlap_mem_Icc N hN (σs 1) (σs 2))).1
+        have h13 := (hΔ _ (overlap_mem_Icc N hN (σs 1) (σs 3))).1
+        positivity
+      · exact Real.exp_nonneg _
+    · exact Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg
+        (N := N) (H := H_t N β h q sk sim t ω) (σ := σs l)
+  · positivity
+
+lemma bregmanAverage_le
+    (hN : 0 < N) (hΔ : BregmanBounds sk.ξ β q Γ) (t : ℝ) :
+    bregmanAverage (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ≤
+      (Γ / 2) * overlapVariance
+        (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t := by
+  rw [bregmanAverage, overlapVariance]
+  unfold nu
+  rw [← integral_const_mul]
+  apply integral_mono
+  · exact integrable_gibbs_average_n N β h q sk sim 2 t _
+  · exact (integrable_gibbs_average_n N β h q sk sim 2 t _).const_mul (Γ / 2)
+  · intro ω
+    simp only [gibbs_average_n, gibbs_average_n_det, bregmanOverlap, centeredOverlapSq]
+    rw [Finset.mul_sum]
+    apply Finset.sum_le_sum
+    intro σs _
+    calc
+      bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) *
+            ∏ l, gibbs_pmf N (H_t N β h q sk sim t ω) (σs l)
+          ≤ ((Γ / 2) * (overlap N (σs 0) (σs 1) - q) ^ 2) *
+              ∏ l, gibbs_pmf N (H_t N β h q sk sim t ω) (σs l) :=
+        mul_le_mul_of_nonneg_right
+          ((hΔ _ (overlap_mem_Icc N hN (σs 0) (σs 1))).2)
+          (Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg
+            (N := N) (H := H_t N β h q sk sim t ω) (σ := σs l))
+      _ = Γ / 2 * ((overlap N (σs 0) (σs 1) - q) ^ 2 *
+            ∏ l, gibbs_pmf N (H_t N β h q sk sim t ω) (σs l)) := by ring
+
+lemma bregmanAverage_nonneg
+    (hN : 0 < N) (hΔ : BregmanBounds sk.ξ β q Γ) (t : ℝ) :
+    0 ≤ bregmanAverage
+      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t := by
+  rw [bregmanAverage]
+  unfold nu
+  apply integral_nonneg
+  intro ω
+  unfold gibbs_average_n gibbs_average_n_det bregmanOverlap
+  apply Finset.sum_nonneg
+  intro σs _
+  exact mul_nonneg
+    ((hΔ _ (overlap_mem_Icc N hN (σs 0) (σs 1))).1)
+    (Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg
+      (N := N) (H := H_t N β h q sk sim t ω) (σ := σs l))
+
+lemma tiltedBregman_le
+    (hN : 0 < N) (hΔ : BregmanBounds sk.ξ β q Γ)
+    (H : EnergySpace N) (coupling : ℝ) :
+    tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling ≤
+      (Γ / 2) * tiltedCenteredOverlapSqDet (N := N) (q := q) H coupling := by
+  unfold tiltedBregmanDet tiltedCenteredOverlapSqDet bregmanOverlap gibbs_average_n_det
+  change
+    (∑ σs,
+        bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) *
+          Real.exp (coupling * (N : ℝ) * centeredOverlapSq N q σs) *
+          ∏ l, gibbs_pmf N H (σs l)) /
+        tiltedReplicaPartitionDet N q H coupling ≤
+      (Γ / 2) *
+        ((∑ σs,
+            centeredOverlapSq N q σs *
+              Real.exp (coupling * (N : ℝ) * centeredOverlapSq N q σs) *
+              ∏ l, gibbs_pmf N H (σs l)) /
+          tiltedReplicaPartitionDet N q H coupling)
+  have hZ : 0 < tiltedReplicaPartitionDet N q H coupling :=
+    tiltedReplicaPartitionDet_pos N q H coupling
+  apply (div_le_iff₀ hZ).2
+  simp only [mul_assoc, div_mul_cancel₀ _ hZ.ne']
+  rw [Finset.mul_sum]
+  apply Finset.sum_le_sum
+  intro σs _
+  let w : ℝ := Real.exp (coupling * ((N : ℝ) * centeredOverlapSq N q σs)) *
+    ∏ l, gibbs_pmf N H (σs l)
+  have hw : 0 ≤ w := mul_nonneg (Real.exp_nonneg _)
+    (Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg
+      (N := N) (H := H) (σ := σs l))
+  change
+    bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) * w ≤
+      Γ / 2 * (centeredOverlapSq N q σs * w)
+  calc
+    bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) * w
+        ≤ ((Γ / 2) * centeredOverlapSq N q σs) * w :=
+      mul_le_mul_of_nonneg_right
+        ((hΔ _ (overlap_mem_Icc N hN (σs 0) (σs 1))).2) hw
+    _ = Γ / 2 * (centeredOverlapSq N q σs * w) := by ring
 
 omit [IsProbabilityMeasure (ℙ : Measure Ω)] in
 /-- Finite-volume Jensen inequality for an arbitrary replica observable. -/
@@ -466,7 +652,7 @@ private lemma localPairMGF_eq (a q c : ℝ) :
 
 /-- Kearns--Saul at the independent endpoint, in the form needed for the smart path. -/
 lemma endpoint_subGaussian
-    (hN : 0 < N) (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hN : 0 < N) (hβ0 : 0 ≤ β) (hq0 : 0 ≤ q) (hq1 : q < 1)
     (hfp : IsRSFixedPoint β h q) (u : ℝ) :
     nu (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
         2 0
@@ -510,14 +696,14 @@ lemma endpoint_subGaussian
       _ = ∫ H, F H ∂Measure.map sim.V ℙ := by
             rw [integral_map sim.hV.repr_measurable.aemeasurable hFcont.aestronglyMeasurable]
       _ = ∫ H, F H ∂Measure.map (referenceField N β q) (gaussianProduct N) := by
-            rw [simpleDisorder_law_eq_reference N β q sim hN hq0]
+            rw [simpleDisorder_law_eq_reference N β q sim hN hβ0]
       _ = ∫ z, F (referenceField N β q z) ∂gaussianProduct N := by
             rw [integral_map hrefLaw.aemeasurable hFcont.aestronglyMeasurable]
   let A : ℝ :=
     ((1 + q) / 2) * Real.exp (c * (1 - q)) +
       ((1 - q) / 2) * Real.exp (-c * (1 + q))
   have htanh : Integrable
-      (fun z : ℝ => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+      (fun z : ℝ => Real.tanh (h + Real.sqrt β * z) ^ 2)
       (gaussianReal 0 1) := by
     have htanh_cont : Continuous Real.tanh := by
       rw [show Real.tanh = fun x => Real.sinh x / Real.cosh x by
@@ -532,15 +718,15 @@ lemma endpoint_subGaussian
       rw [sq_abs]
       exact (Real.tanh_sq_lt_one _).le
   have hlocal :
-      ∫ z, localPairMGF (h + β * Real.sqrt q * z) q c ∂gaussianReal 0 1 = A := by
+      ∫ z, localPairMGF (h + Real.sqrt β * z) q c ∂gaussianReal 0 1 = A := by
     have hT :
-        ∫ z, Real.tanh (h + β * Real.sqrt q * z) ^ 2 ∂gaussianReal 0 1 = q := by
+        ∫ z, Real.tanh (h + Real.sqrt β * z) ^ 2 ∂gaussianReal 0 1 = q := by
       simpa [IsRSFixedPoint, standardGaussianExpectation] using hfp.symm
-    rw [show (∫ z, localPairMGF (h + β * Real.sqrt q * z) q c
+    rw [show (∫ z, localPairMGF (h + Real.sqrt β * z) q c
           ∂gaussianReal 0 1) =
         ∫ z,
           ((Real.exp (c * (1 - q)) + Real.exp (-c * (1 + q))) / 2 +
-            Real.tanh (h + β * Real.sqrt q * z) ^ 2 *
+            Real.tanh (h + Real.sqrt β * z) ^ 2 *
               ((Real.exp (c * (1 - q)) - Real.exp (-c * (1 + q))) / 2))
           ∂gaussianReal 0 1 by
       apply integral_congr_ae
@@ -551,12 +737,12 @@ lemma endpoint_subGaussian
       (htanh.mul_const ((Real.exp (c * (1 - q)) - Real.exp (-c * (1 + q))) / 2))]
     simp only [integral_const, probReal_univ, one_smul, integral_mul_const, hT]
     simp only [A]
-    ring
+    ring_nf
   have hfactor :
       ∫ z, F (referenceField N β q z) ∂gaussianProduct N = A ^ N := by
     rw [show (∫ z, F (referenceField N β q z) ∂gaussianProduct N) =
         ∫ z, ∏ i : Fin N,
-          localPairMGF (h + β * Real.sqrt q * z i) q c ∂gaussianProduct N by
+          localPairMGF (h + Real.sqrt β * z i) q c ∂gaussianProduct N by
       apply integral_congr_ae
       filter_upwards with z
       simp only [F]
@@ -567,12 +753,12 @@ lemma endpoint_subGaussian
     rw [gaussianProduct]
     calc
       (∫ z : Fin N → ℝ, ∏ i : Fin N,
-          localPairMGF (h + β * Real.sqrt q * z i) q c
+          localPairMGF (h + Real.sqrt β * z i) q c
           ∂Measure.pi (fun _ : Fin N => gaussianReal 0 1)) =
-          (∫ z, localPairMGF (h + β * Real.sqrt q * z) q c
+          (∫ z, localPairMGF (h + Real.sqrt β * z) q c
             ∂gaussianReal 0 1) ^ Fintype.card (Fin N) :=
         MeasureTheory.integral_fintype_prod_eq_pow
-          (f := fun z : ℝ => localPairMGF (h + β * Real.sqrt q * z) q c)
+          (f := fun z : ℝ => localPairMGF (h + Real.sqrt β * z) q c)
       _ = A ^ N := by simpa using congrArg (fun x => x ^ N) hlocal
   have hkappa : kappa q = ksCoefficient q := by
     simp [kappa, ksCoefficient]
@@ -605,7 +791,7 @@ lemma endpoint_subGaussian
 
 /-- Hubbard--Stratonovich combined with `endpoint_subGaussian`. -/
 lemma endpoint_quadratic
-    (hN : 0 < N) (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hN : 0 < N) (hβ0 : 0 ≤ β) (hq0 : 0 ≤ q) (hq1 : q < 1)
     (hfp : IsRSFixedPoint β h q) {Λ : ℝ}
     (hΛ0 : 0 ≤ Λ) (hΛ : kappa q * Λ < 1) :
     logQuadraticMoment
@@ -742,7 +928,7 @@ lemma endpoint_quadratic
       (∫ ω, B z ω ∂ℙ) ≤ Real.exp (kappa q * Λ * z ^ 2 / 2) := by
     have hend := endpoint_subGaussian
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      hN hq0 hq1 hfp (Real.sqrt Λ * z)
+      hN hβ0 hq0 hq1 hfp (Real.sqrt Λ * z)
     simpa only [B, S, nu, mul_pow, Real.sq_sqrt hΛ0, mul_assoc] using hend
   have hquad_int : Integrable (fun z : ℝ => Real.exp (kappa q * Λ * z ^ 2 / 2))
       (gaussianReal 0 1) := by
@@ -1321,11 +1507,11 @@ lemma independent_gaussian_affine_ibp
       fderiv ℝ (fun H : EnergySpace N => free_energy_density (N := N) H)
         (a • sk.U w + b • sim.V w + field) (a' • sk.U w + b' • sim.V w) ∂ℙ) =
       (a * a') * ∫ w, (∑ σ : Config N, ∑ τ : Config N,
-        sk_cov_kernel N β σ τ * hessian_free_energy N
+        mixedCovKernel N sk.ξ σ τ * hessian_free_energy N
           (a • sk.U w + b • sim.V w + field)
           (std_basis N σ) (std_basis N τ)) ∂ℙ +
       (b * b') * ∫ w, (∑ σ : Config N, ∑ τ : Config N,
-        simple_cov_kernel N β (fun x => q * x) σ τ * hessian_free_energy N
+        referenceCovKernel N β σ τ * hessian_free_energy N
           (a • sk.U w + b • sim.V w + field)
           (std_basis N σ) (std_basis N τ)) ∂ℙ := by
   exact independent_gaussian_affine_ibp_reproved
@@ -1344,8 +1530,8 @@ lemma pressure_derivative_ibp_trace
         ∂ℙ) =
       (1 / 2) * ∫ w,
         (∑ σ : Config N, ∑ τ : Config N,
-          (sk_cov_kernel N β σ τ -
-            simple_cov_kernel N β (fun x => q * x) σ τ) *
+          (mixedCovKernel N sk.ξ σ τ -
+            referenceCovKernel N β σ τ) *
           hessian_free_energy N
             (H_t (N := N) (β := β) (h := h) (q := q)
               (sk := sk) (sim := sim) t w)
@@ -1381,19 +1567,19 @@ lemma pressure_derivative_ibp_trace
   -- Rewrite h_ibp using the equalities
   have h_ibp' : ∫ w, fderiv ℝ (fun H : EnergySpace N => free_energy_density (N := N) H) (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (dH_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) ∂ℙ =
     (a * a') * ∫ w, (∑ σ : Config N, ∑ τ : Config N,
-      sk_cov_kernel N β σ τ * hessian_free_energy N (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (std_basis N σ) (std_basis N τ)) ∂ℙ +
+      mixedCovKernel N sk.ξ σ τ * hessian_free_energy N (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (std_basis N σ) (std_basis N τ)) ∂ℙ +
     (b * b') * ∫ w, (∑ σ : Config N, ∑ τ : Config N,
-      simple_cov_kernel N β (fun x => q * x) σ τ * hessian_free_energy N (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (std_basis N σ) (std_basis N τ)) ∂ℙ := by
+      referenceCovKernel N β σ τ * hessian_free_energy N (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) (std_basis N σ) (std_basis N τ)) ∂ℙ := by
     simp only [h_eq_H, h_eq_dH] at *
     convert h_ibp using 2
   -- Substitute a * a' = 1/2 and b * b' = -1/2
   rw [ha_aa', hb_bb'] at h_ibp'
   -- Combine the integrals
   convert h_ibp' using 1
-  have integral_eq : ∀ w, ∑ σ, ∑ τ, (sk_cov_kernel N β σ τ - simple_cov_kernel N β (fun x => q * x) σ τ) *
+  have integral_eq : ∀ w, ∑ σ, ∑ τ, (mixedCovKernel N sk.ξ σ τ - referenceCovKernel N β σ τ) *
       hessian_free_energy N (H_t N β h q sk sim t w) (std_basis N σ) (std_basis N τ) =
-      (∑ σ, ∑ τ, sk_cov_kernel N β σ τ * hessian_free_energy N (H_t N β h q sk sim t w) (std_basis N σ) (std_basis N τ)) -
-      (∑ σ, ∑ τ, simple_cov_kernel N β (fun x => q * x) σ τ * hessian_free_energy N (H_t N β h q sk sim t w) (std_basis N σ) (std_basis N τ)) := by
+      (∑ σ, ∑ τ, mixedCovKernel N sk.ξ σ τ * hessian_free_energy N (H_t N β h q sk sim t w) (std_basis N σ) (std_basis N τ)) -
+      (∑ σ, ∑ τ, referenceCovKernel N β σ τ * hessian_free_energy N (H_t N β h q sk sim t w) (std_basis N σ) (std_basis N τ)) := by
     intro w
     simp_rw [sub_mul]
     simp only [Finset.sum_sub_distrib]
@@ -1404,13 +1590,13 @@ lemma pressure_derivative_ibp_trace
   -- Integrability of finite sums of bounded functions
   have h_int1 : MeasureTheory.Integrable
       (fun x => ∑ σ : Config N, ∑ τ : Config N,
-        sk_cov_kernel N β σ τ * hessian_free_energy N (H_t N β h q sk sim t x) (std_basis N σ) (std_basis N τ))
+        mixedCovKernel N sk.ξ σ τ * hessian_free_energy N (H_t N β h q sk sim t x) (std_basis N σ) (std_basis N τ))
       ℙ := by
     apply MeasureTheory.integrable_finset_sum _
     intro σ _
     apply MeasureTheory.integrable_finset_sum _
     intro τ _
-    refine MeasureTheory.Integrable.const_mul ?_ (sk_cov_kernel N β σ τ)
+    refine MeasureTheory.Integrable.const_mul ?_ (mixedCovKernel N sk.ξ σ τ)
     refine MeasureTheory.Integrable.mono' (MeasureTheory.integrable_const (1 / (N : ℝ))) ?_ ?_
     · have hH_meas : Measurable (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t) := by
         have hU := sk.hU.repr_measurable.const_smul (Real.sqrt t)
@@ -1427,13 +1613,13 @@ lemma pressure_derivative_ibp_trace
         (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t x) σ τ
   have h_int2 : MeasureTheory.Integrable
       (fun x => ∑ σ : Config N, ∑ τ : Config N,
-        simple_cov_kernel N β (fun x => q * x) σ τ * hessian_free_energy N (H_t N β h q sk sim t x) (std_basis N σ) (std_basis N τ))
+        referenceCovKernel N β σ τ * hessian_free_energy N (H_t N β h q sk sim t x) (std_basis N σ) (std_basis N τ))
       ℙ := by
     apply MeasureTheory.integrable_finset_sum _
     intro σ _
     apply MeasureTheory.integrable_finset_sum _
     intro τ _
-    refine MeasureTheory.Integrable.const_mul ?_ (simple_cov_kernel N β (fun x => q * x) σ τ)
+    refine MeasureTheory.Integrable.const_mul ?_ (referenceCovKernel N β σ τ)
     refine MeasureTheory.Integrable.mono' (MeasureTheory.integrable_const (1 / (N : ℝ))) ?_ ?_
     · have hH_meas : Measurable (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t) := by
         have hU := sk.hU.repr_measurable.const_smul (Real.sqrt t)
@@ -1452,34 +1638,114 @@ lemma pressure_derivative_ibp_trace
   rw [mul_sub]
   ring
 
-/-
-The covariance-trace difference is the centered-overlap square, pointwise in the disorder.
--/
+/- The covariance-trace difference is the Bregman remainder, pointwise in the disorder. -/
 lemma pressure_trace_algebra
     (hN : 0 < N) (H : EnergySpace N) :
     (1 / 2) *
         (∑ σ : Config N, ∑ τ : Config N,
-          (sk_cov_kernel N β σ τ -
-            simple_cov_kernel N β (fun x => q * x) σ τ) *
+          (mixedCovKernel N sk.ξ σ τ - referenceCovKernel N β σ τ) *
           hessian_free_energy N H (std_basis N σ) (std_basis N τ)) =
-      (β ^ 2 / 4) * ((1 - q) ^ 2 -
-        gibbs_average_n_det (N := N) (n := 2) H (centeredOverlapSq N q)) := by
-  unfold gibbs_average_n_det centeredOverlapSq;
-  have h_sum_gibbs_pmf : ∑ σ : Config N, gibbs_pmf N H σ = 1 := by
-    exact sum_gibbs_pmf (N := N) (H := H)
-  have h_sum_prod_gibbs_pmf : ∑ σs : ReplicaSpace N 2, (∏ l, gibbs_pmf N H (σs l)) * (overlap N (σs 0) (σs 1) - q) ^ 2 = ∑ σ : Config N, ∑ τ : Config N, gibbs_pmf N H σ * gibbs_pmf N H τ * (overlap N σ τ - q) ^ 2 := by
-    rw [ ← Finset.sum_product' ];
-    refine' Finset.sum_bij ( fun x _ => ( x 0, x 1 ) ) _ _ _ _ <;> simp +decide;
-    · exact fun a₁ a₂ h₀ h₁ => funext fun i => by fin_cases i <;> assumption;
-    · exact fun a b => ⟨ fun i => if i = 0 then a else b, rfl, rfl ⟩;
-  convert congr_arg ( fun x : ℝ => β ^ 2 / 4 * ( ( 1 - q ) ^ 2 - x ) ) h_sum_prod_gibbs_pmf using 1;
-  · convert SpinGlass.guerra_derivative_bound_algebra_core hN H ( fun x => q * x ) using 1;
-    any_goals exact β;
-    · simp +decide only [sub_mul, Finset.sum_sub_distrib];
-    · rw [ h_sum_prod_gibbs_pmf ] ; ring;
-      norm_num [ Finset.sum_add_distrib, Finset.mul_sum _ _ _, Finset.sum_mul _ _ _ ] ; ring;
-      norm_num [ ← Finset.mul_sum _ _ _, ← Finset.sum_mul, h_sum_gibbs_pmf ] ; ring;
-  · simp_all +decide [ mul_assoc, mul_comm, mul_left_comm, Finset.mul_sum _ _ _, Finset.sum_mul ]
+      (1 / 2) * (bregmanRemainder sk.ξ β q 1 -
+        gibbs_average_n_det (N := N) (n := 2) H
+          (bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk))) := by
+  classical
+  let K : Config N → Config N → ℝ := fun σ τ =>
+    mixedCovKernel N sk.ξ σ τ - referenceCovKernel N β σ τ
+  let D : ℝ → ℝ := bregmanRemainder sk.ξ β q
+  have hN0 : (N : ℝ) ≠ 0 := by exact_mod_cast hN.ne'
+  have hp : ∑ σ : Config N, gibbs_pmf N H σ = 1 := sum_gibbs_pmf N H
+  have hrep :
+      gibbs_average_n_det (N := N) (n := 2) H
+          (bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk)) =
+        ∑ σ : Config N, ∑ τ : Config N,
+          gibbs_pmf N H σ * gibbs_pmf N H τ * D (overlap N σ τ) := by
+    unfold gibbs_average_n_det bregmanOverlap
+    rw [← Finset.sum_product']
+    simpa +decide [Fin.prod_univ_two, D, mul_assoc, mul_comm, mul_left_comm] using
+      (Equiv.sum_comp (finTwoArrowEquiv (Config N))
+        (fun p : Config N × Config N =>
+          gibbs_pmf N H p.1 * gibbs_pmf N H p.2 * D (overlap N p.1 p.2)))
+  rw [show (∑ σ : Config N, ∑ τ : Config N, K σ τ *
+      hessian_free_energy N H (std_basis N σ) (std_basis N τ)) =
+      (1 / (N : ℝ)) *
+        ((∑ σ, gibbs_pmf N H σ * K σ σ) -
+          ∑ σ, ∑ τ, gibbs_pmf N H σ * gibbs_pmf N H τ * K σ τ) by
+        exact trace_formula N H K]
+  rw [hrep]
+  simp only [K, D, mixedCovKernel, referenceCovKernel]
+  simp_rw [overlap_self (N := N) hN]
+  simp only [bregmanRemainder]
+  field_simp [hN0]
+  have hp2 : (∑ σ : Config N, ∑ τ : Config N,
+      gibbs_pmf N H σ * gibbs_pmf N H τ) = 1 := by
+    simpa only [← Finset.mul_sum, hp, mul_one]
+  let c : ℝ := sk.ξ q - β * q
+  have hkernel (r : ℝ) : sk.ξ r - β * r =
+      (sk.ξ r - sk.ξ q - β * (r - q)) + c := by
+    dsimp only [c]
+    ring
+  have hkernelOne : sk.ξ 1 - β =
+      (sk.ξ 1 - sk.ξ q - β * (1 - q)) + c := by
+    dsimp only [c]
+    ring
+  simp_rw [hkernelOne]
+  simp_rw [hkernel]
+  let A : ℝ := sk.ξ 1 - sk.ξ q - β * (1 - q)
+  let S : ℝ := ∑ σ : Config N, ∑ τ : Config N,
+    gibbs_pmf N H σ * gibbs_pmf N H τ *
+      (sk.ξ (overlap N σ τ) - sk.ξ q - β * (overlap N σ τ - q))
+  have hsum1 : (∑ σ : Config N,
+      (N : ℝ) * gibbs_pmf N H σ * (A + c)) = (N : ℝ) * (A + c) := by
+    calc
+      _ = ((N : ℝ) * (A + c)) * ∑ σ : Config N, gibbs_pmf N H σ := by
+        rw [Finset.mul_sum]
+        apply Finset.sum_congr rfl
+        intro σ _
+        ring
+      _ = _ := by rw [hp, mul_one]
+  have hsumAffine : (∑ σ : Config N, ∑ τ : Config N,
+      gibbs_pmf N H σ * gibbs_pmf N H τ *
+        ((sk.ξ (overlap N σ τ) - sk.ξ q - β * (overlap N σ τ - q)) + c)) =
+      S + c := by
+    calc
+      _ = S + (∑ σ : Config N, ∑ τ : Config N,
+          gibbs_pmf N H σ * gibbs_pmf N H τ * c) := by
+        dsimp only [S]
+        simp only [mul_add, Finset.sum_add_distrib]
+      _ = S + c := by
+        rw [show (∑ σ : Config N, ∑ τ : Config N,
+            gibbs_pmf N H σ * gibbs_pmf N H τ * c) = c by
+          calc
+            _ = (∑ σ : Config N, ∑ τ : Config N,
+                gibbs_pmf N H σ * gibbs_pmf N H τ) * c := by
+              rw [Finset.sum_mul]
+              apply Finset.sum_congr rfl
+              intro σ _
+              rw [Finset.sum_mul]
+            _ = c := by rw [hp2, one_mul]]
+  have hsum2 : (∑ σ : Config N, ∑ τ : Config N,
+      (N : ℝ) * gibbs_pmf N H σ * gibbs_pmf N H τ *
+        ((sk.ξ (overlap N σ τ) - sk.ξ q - β * (overlap N σ τ - q)) + c)) =
+      (N : ℝ) * (S + c) := by
+    calc
+      _ = (N : ℝ) * (∑ σ : Config N, ∑ τ : Config N,
+          gibbs_pmf N H σ * gibbs_pmf N H τ *
+            ((sk.ξ (overlap N σ τ) - sk.ξ q - β * (overlap N σ τ - q)) + c)) := by
+        rw [Finset.mul_sum]
+        apply Finset.sum_congr rfl
+        intro σ _
+        rw [Finset.mul_sum]
+        apply Finset.sum_congr rfl
+        intro τ _
+        ring
+      _ = _ := by rw [hsumAffine]
+  change (∑ σ : Config N, (N : ℝ) * gibbs_pmf N H σ * (A + c)) -
+      (∑ σ : Config N, ∑ τ : Config N,
+        (N : ℝ) * gibbs_pmf N H σ * gibbs_pmf N H τ *
+          ((sk.ξ (overlap N σ τ) - sk.ξ q - β * (overlap N σ τ - q)) + c)) =
+    (N : ℝ) * (A - S)
+  rw [hsum1, hsum2]
+  ring
 
 /-- The annealed Gibbs average of the centered overlap square is `overlapVariance`. -/
 lemma integral_centeredOverlapSq_eq_overlapVariance (t : ℝ) :
@@ -1487,6 +1753,15 @@ lemma integral_centeredOverlapSq_eq_overlapVariance (t : ℝ) :
         (H_t (N := N) (β := β) (h := h) (q := q)
           (sk := sk) (sim := sim) t w) (centeredOverlapSq N q) ∂ℙ) =
       overlapVariance
+        (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t := by
+  rfl
+
+lemma integral_bregmanOverlap_eq_bregmanAverage (t : ℝ) :
+    (∫ w, gibbs_average_n_det (N := N) (n := 2)
+        (H_t (N := N) (β := β) (h := h) (q := q)
+          (sk := sk) (sim := sim) t w)
+        (bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk)) ∂ℙ) =
+      bregmanAverage
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t := by
   rfl
 
@@ -1502,15 +1777,18 @@ lemma pressure_derivative_ibp
           (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w)
           (dH_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w)
         ∂ℙ) =
-      (β ^ 2 / 4) * ((1 - q) ^ 2 -
-        overlapVariance
+      (1 / 2) * (bregmanRemainder sk.ξ β q 1 -
+        bregmanAverage
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t) := by
   have := @SpinGlass.GeneralizedLatala.pressure_derivative_ibp_trace;
   rw [ this N β h q sk sim hIndep ht, MeasureTheory.integral_congr_ae ( Filter.Eventually.of_forall fun w => ?_ ) ];
-  any_goals exact fun w => ( β ^ 2 / 4 ) * ( ( 1 - q ) ^ 2 - gibbs_average_n_det ( N := N ) ( n := 2 ) ( H_t N β h q sk sim t w ) ( centeredOverlapSq N q ) ) * 2;
+  any_goals exact fun w => (1 / 2) *
+    (bregmanRemainder sk.ξ β q 1 - gibbs_average_n_det (N := N) (n := 2)
+      (H_t N β h q sk sim t w)
+      (bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk))) * 2;
   · rw [ MeasureTheory.integral_mul_const, MeasureTheory.integral_const_mul ];
     rw [ MeasureTheory.integral_sub ] <;> norm_num;
-    · rw [ integral_centeredOverlapSq_eq_overlapVariance ] ; ring;
+    · rw [integral_bregmanOverlap_eq_bregmanAverage] ; ring;
     · apply_rules [ SpinGlass.integrable_gibbs_average_n ];
   · grind +suggestions
 
@@ -1526,8 +1804,8 @@ lemma pressure_derivative
     HasDerivAt
       (interpolatedPressure
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim))
-      ((β ^ 2 / 4) * ((1 - q) ^ 2 -
-        overlapVariance
+      ((1 / 2) * (bregmanRemainder sk.ξ β q 1 -
+        bregmanAverage
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t)) t := by
   rw [← pressure_derivative_ibp
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
@@ -3832,8 +4110,8 @@ lemma coupledFreeEnergy_time_ibp_trace_workspace
       (1 / 2) *
         ∫ w,
           (∑ σ : Config N, ∑ τ : Config N,
-            (sk_cov_kernel N β σ τ -
-              simple_cov_kernel N β (fun x => q * x) σ τ) *
+            (mixedCovKernel N sk.ξ σ τ -
+              referenceCovKernel N β σ τ) *
               coupledHessianDet
                 (N := N) (q := q)
                 (H_t
@@ -3971,13 +4249,12 @@ private lemma weighted_sum_sub_constant
           _ = _ := (Finset.mul_sum _ _ _).symm
       · exact (Finset.mul_sum _ _ _).symm
 
-lemma covKernelDiff_eq_centered_sq_workspace
+lemma covKernelDiff_eq_bregman_workspace
     (σ τ : Config N) :
-    sk_cov_kernel N β σ τ -
-        simple_cov_kernel N β (fun x => q * x) σ τ =
-      ((N : ℝ) * β ^ 2 / 2) *
-        ((overlap N σ τ - q) ^ 2 - q ^ 2) := by
-  simp [sk_cov_kernel, simple_cov_kernel]
+    mixedCovKernel N sk.ξ σ τ - referenceCovKernel N β σ τ =
+      (N : ℝ) * (bregmanRemainder sk.ξ β q (overlap N σ τ) +
+        (sk.ξ q - β * q)) := by
+  simp [mixedCovKernel, referenceCovKernel, bregmanRemainder]
   ring
 
 lemma sum_crossPairCenteredOverlapSq_workspace
@@ -4038,17 +4315,15 @@ lemma coupled_trace_algebra_workspace
     (H : EnergySpace N) (coupling : ℝ) :
     (1 / 2) *
         (∑ σ : Config N, ∑ τ : Config N,
-          (sk_cov_kernel N β σ τ -
-            simple_cov_kernel N β (fun x => q * x) σ τ) *
+          (mixedCovKernel N sk.ξ σ τ - referenceCovKernel N β σ τ) *
             coupledHessianDet
               (N := N) (q := q) H coupling
               (std_basis N σ) (std_basis N τ)) =
-      (β ^ 2 / 4) *
-        ((1 - q) ^ 2 +
-          tiltedCenteredOverlapSqDet
-            (N := N) (q := q) H coupling -
-          2 * coupledCrossMomentDet
-            (N := N) (q := q) H coupling) := by
+      (1 / 2) *
+        (bregmanRemainder sk.ξ β q 1 +
+          tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling -
+          2 * coupledCrossBregmanDet
+            (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling) := by
   /-
   Useful ingredients:
 
@@ -4062,8 +4337,9 @@ lemma coupled_trace_algebra_workspace
   -/
   classical
 
+    let c : ℝ := sk.ξ q - β * q
     let D : Config N → Config N → ℝ := fun σ τ =>
-      (overlap N σ τ - q) ^ 2 - q ^ 2
+      bregmanRemainder sk.ξ β q (overlap N σ τ) + c
 
     let W₂ : ReplicaSpace N 2 → ℝ := fun σs =>
       Real.exp (coupling * (N : ℝ) * centeredOverlapSq N q σs) *
@@ -4133,12 +4409,12 @@ lemma coupled_trace_algebra_workspace
       dsimp only [W₂]
       ring
 
-    have htiltedSq :
-        tiltedCenteredOverlapSqDet (N := N) (q := q) H coupling =
+    have htiltedBregman :
+        tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling =
           (∑ σs : ReplicaSpace N 2,
-              centeredOverlapSq N q σs * W₂ σs) /
+              bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) * W₂ σs) /
             (∑ σs : ReplicaSpace N 2, W₂ σs) := by
-      unfold tiltedCenteredOverlapSqDet gibbs_average_n_det
+      unfold tiltedBregmanDet bregmanOverlap gibbs_average_n_det
       rw [hpart]
       congr 1
       apply Finset.sum_congr rfl
@@ -4147,11 +4423,11 @@ lemma coupled_trace_algebra_workspace
       ring
 
     have hcross :
-        coupledCrossMomentDet (N := N) (q := q) H coupling =
+        coupledCrossBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling =
           (∑ σs : ReplicaSpace N 4,
-              crossPairCenteredOverlapSq (N := N) (q := q) σs * W₄ σs) /
+              crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs * W₄ σs) /
             (∑ σs : ReplicaSpace N 2, W₂ σs) ^ 2 := by
-      unfold coupledCrossMomentDet gibbs_average_n_det
+      unfold coupledCrossBregmanDet gibbs_average_n_det
       rw [hpart]
       congr 1
       apply Finset.sum_congr rfl
@@ -4191,25 +4467,25 @@ lemma coupled_trace_algebra_workspace
 
     have hfour_pair :
         (∑ σs : ReplicaSpace N 4,
-            (4 * crossPairCenteredOverlapSq (N := N) (q := q) σs - 4 * q ^ 2) *
+            (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs + c)) *
               W₄ σs) =
           ∑ σs : ReplicaSpace N 2, ∑ ρs : ReplicaSpace N 2,
-            (4 * crossPairCenteredOverlapSq (N := N) (q := q)
-                (e.symm (σs, ρs)) - 4 * q ^ 2) * W₂ σs * W₂ ρs := by
+            (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk)
+                (e.symm (σs, ρs)) + c)) * W₂ σs * W₂ ρs := by
       calc
         (∑ σs : ReplicaSpace N 4,
-            (4 * crossPairCenteredOverlapSq (N := N) (q := q) σs - 4 * q ^ 2) *
+            (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs + c)) *
               W₄ σs) =
             ∑ p : ReplicaSpace N 2 × ReplicaSpace N 2,
-              (4 * crossPairCenteredOverlapSq (N := N) (q := q) (e.symm p) -
-                4 * q ^ 2) * W₂ p.1 * W₂ p.2 := by
+              (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) (e.symm p) + c)) *
+                W₂ p.1 * W₂ p.2 := by
           exact Fintype.sum_equiv e
             (fun σs =>
-              (4 * crossPairCenteredOverlapSq (N := N) (q := q) σs - 4 * q ^ 2) *
+              (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs + c)) *
                 W₄ σs)
             (fun p =>
-              (4 * crossPairCenteredOverlapSq (N := N) (q := q) (e.symm p) -
-                4 * q ^ 2) * W₂ p.1 * W₂ p.2)
+              (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) (e.symm p) + c)) *
+                W₂ p.1 * W₂ p.2)
             (fun σs => by
               simpa only [hsplit_weight σs, Equiv.symm_apply_apply, mul_assoc])
         _ = _ := by
@@ -4219,25 +4495,26 @@ lemma coupled_trace_algebra_workspace
         (∑ σ : Config N, ∑ τ : Config N,
           D σ τ * pairEval N (std_basis N σ) σs *
             pairEval N (std_basis N τ) σs) =
-          2 * (1 - q) ^ 2 + 2 * centeredOverlapSq N q σs - 4 * q ^ 2 := by
+          2 * (bregmanRemainder sk.ξ β q 1 + c) +
+            2 * (bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) + c) := by
       rw [sum_pairEval_std_basis_product_workspace
         (N := N) (D := D) σs]
       dsimp only [D]
       rw [overlap_self (N := N) hN (σs 0),
         overlap_self (N := N) hN (σs 1),
         hoverlap_comm (σs 1) (σs 0)]
-      dsimp only [centeredOverlapSq]
+      dsimp only [bregmanRemainder]
       ring
 
     have hcross_point (σs ρs : ReplicaSpace N 2) :
         (∑ σ : Config N, ∑ τ : Config N,
           D σ τ * pairEval N (std_basis N σ) σs *
             pairEval N (std_basis N τ) ρs) =
-          4 * crossPairCenteredOverlapSq (N := N) (q := q)
-              (e.symm (σs, ρs)) - 4 * q ^ 2 := by
+          4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk)
+              (e.symm (σs, ρs)) + c) := by
       rw [sum_pairEval_std_basis_cross_workspace
         (N := N) (D := D) σs ρs]
-      simp +decide [D, e, crossPairCenteredOverlapSq, centeredOverlap]
+      simp +decide [D, c, e, crossPairBregman, bregmanRemainder]
       ring
 
     have hwithin_num :
@@ -4247,7 +4524,8 @@ lemma coupled_trace_algebra_workspace
               (pairEval N (std_basis N σ) σs *
                 pairEval N (std_basis N τ) σs) * W₂ σs)) =
           ∑ σs : ReplicaSpace N 2,
-            (2 * (1 - q) ^ 2 + 2 * centeredOverlapSq N q σs - 4 * q ^ 2) *
+            (2 * (bregmanRemainder sk.ξ β q 1 + c) +
+              2 * (bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) + c)) *
               W₂ σs := by
       calc
         (∑ σ : Config N, ∑ τ : Config N,
@@ -4308,7 +4586,7 @@ lemma coupled_trace_algebra_workspace
             (∑ ρs : ReplicaSpace N 2,
               pairEval N (std_basis N τ) ρs * W₂ ρs)) =
           ∑ σs : ReplicaSpace N 4,
-            (4 * crossPairCenteredOverlapSq (N := N) (q := q) σs - 4 * q ^ 2) *
+            (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs + c)) *
               W₄ σs := by
       calc
         (∑ σ : Config N, ∑ τ : Config N,
@@ -4413,8 +4691,8 @@ lemma coupled_trace_algebra_workspace
             _ = _ := by
               ring
         _ = ∑ σs : ReplicaSpace N 2, ∑ ρs : ReplicaSpace N 2,
-            (4 * crossPairCenteredOverlapSq (N := N) (q := q)
-                (e.symm (σs, ρs)) - 4 * q ^ 2) * W₂ σs * W₂ ρs := by
+            (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk)
+                (e.symm (σs, ρs)) + c)) * W₂ σs * W₂ ρs := by
           apply Finset.sum_congr rfl
           intro σs _
           apply Finset.sum_congr rfl
@@ -4428,9 +4706,9 @@ lemma coupled_trace_algebra_workspace
             tiltedReplicaAverageDet (N := N) (q := q) H coupling
               (fun σs => pairEval N (std_basis N σ) σs *
                 pairEval N (std_basis N τ) σs)) =
-          2 * (1 - q) ^ 2 +
-            2 * tiltedCenteredOverlapSqDet (N := N) (q := q) H coupling -
-            4 * q ^ 2 := by
+          2 * (bregmanRemainder sk.ξ β q 1 + c) +
+            2 * tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling +
+            2 * c := by
       calc
         (∑ σ : Config N, ∑ τ : Config N,
           D σ τ *
@@ -4481,29 +4759,33 @@ lemma coupled_trace_algebra_workspace
                   (∑ σs : ReplicaSpace N 2, W₂ σs)⁻¹ := by
               rw [Finset.sum_mul]
         _ = (∑ σs : ReplicaSpace N 2,
-              (2 * (1 - q) ^ 2 + 2 * centeredOverlapSq N q σs - 4 * q ^ 2) *
+              (2 * (bregmanRemainder sk.ξ β q 1 + c) +
+                2 * (bregmanRemainder sk.ξ β q (overlap N (σs 0) (σs 1)) + c)) *
                 W₂ σs) /
               (∑ σs : ReplicaSpace N 2, W₂ σs) := by
           rw [hwithin_num]
-        _ = 2 * (1 - q) ^ 2 +
-            2 * tiltedCenteredOverlapSqDet (N := N) (q := q) H coupling -
-            4 * q ^ 2 := by
-          rw [htiltedSq]
+        _ = 2 * (bregmanRemainder sk.ξ β q 1 + c) +
+            2 * tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling +
+            2 * c := by
+          rw [htiltedBregman]
           field_simp [hZ0]
           calc
             (∑ σs : ReplicaSpace N 2,
-                (2 * ((1 - q) ^ 2 + centeredOverlapSq N q σs) - q ^ 2 * 4) *
-                  W₂ σs) =
+                2 * ((bregmanRemainder sk.ξ β q 1 + c) +
+                  (bregmanRemainder sk.ξ β q
+                    (overlap N (σs 0) (σs 1)) + c)) * W₂ σs) =
                 ∑ σs : ReplicaSpace N 2,
-                  ((2 * (1 - q) ^ 2 - 4 * q ^ 2) * W₂ σs +
-                    2 * (centeredOverlapSq N q σs * W₂ σs)) := by
+                  ((2 * (bregmanRemainder sk.ξ β q 1 + c) + 2 * c) * W₂ σs +
+                    2 * (bregmanRemainder sk.ξ β q
+                      (overlap N (σs 0) (σs 1)) * W₂ σs)) := by
               apply Finset.sum_congr rfl
               intro σs _
               ring
             _ = (∑ σs : ReplicaSpace N 2,
-                  (2 * (1 - q) ^ 2 - 4 * q ^ 2) * W₂ σs) +
+                  (2 * (bregmanRemainder sk.ξ β q 1 + c) + 2 * c) * W₂ σs) +
                 ∑ σs : ReplicaSpace N 2,
-                  2 * (centeredOverlapSq N q σs * W₂ σs) :=
+                  2 * (bregmanRemainder sk.ξ β q
+                    (overlap N (σs 0) (σs 1)) * W₂ σs) :=
               Finset.sum_add_distrib
             _ = _ := by
               rw [← Finset.mul_sum, ← Finset.mul_sum]
@@ -4516,8 +4798,7 @@ lemma coupled_trace_algebra_workspace
               (pairEval N (std_basis N σ)) *
             tiltedReplicaAverageDet (N := N) (q := q) H coupling
               (pairEval N (std_basis N τ))) =
-          4 * coupledCrossMomentDet (N := N) (q := q) H coupling -
-            4 * q ^ 2 := by
+          4 * (coupledCrossBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling + c) := by
       calc
         (∑ σ : Config N, ∑ τ : Config N,
           D σ τ *
@@ -4576,16 +4857,26 @@ lemma coupled_trace_algebra_workspace
                   ((∑ σs : ReplicaSpace N 2, W₂ σs)⁻¹) ^ 2 := by
               rw [Finset.sum_mul]
         _ = (∑ σs : ReplicaSpace N 4,
-              (4 * crossPairCenteredOverlapSq (N := N) (q := q) σs - 4 * q ^ 2) *
+              (4 * (crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs + c)) *
                 W₄ σs) /
               (∑ σs : ReplicaSpace N 2, W₂ σs) ^ 2 := by
           rw [hcross_num]
-        _ = 4 * coupledCrossMomentDet (N := N) (q := q) H coupling -
-            4 * q ^ 2 := by
+        _ = 4 * (coupledCrossBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling + c) := by
           rw [hcross]
           field_simp [hZ0]
           rw [← hweight_sq]
-          rw [weighted_sum_sub_constant]
+          simp_rw [show ∀ a b w : ℝ, 4 * (a + b) * w = 4 * a * w + 4 * b * w by
+            intro a b w
+            ring]
+          rw [Finset.sum_add_distrib, ← Finset.mul_sum]
+          have hfactorCross : (∑ x : ReplicaSpace N 4,
+              4 * crossPairBregman N β h q sk x * W₄ x) =
+              4 * ∑ x : ReplicaSpace N 4, crossPairBregman N β h q sk x * W₄ x := by
+            rw [Finset.mul_sum]
+            apply Finset.sum_congr rfl
+            intro x _
+            ring
+          rw [hfactorCross]
           ring
 
     have hcore :
@@ -4598,9 +4889,10 @@ lemma coupled_trace_algebra_workspace
                 (pairEval N (std_basis N σ)) *
               tiltedReplicaAverageDet (N := N) (q := q) H coupling
                 (pairEval N (std_basis N τ)))) =
-          2 * ((1 - q) ^ 2 +
-            tiltedCenteredOverlapSqDet (N := N) (q := q) H coupling -
-            2 * coupledCrossMomentDet (N := N) (q := q) H coupling) := by
+          2 * (bregmanRemainder sk.ξ β q 1 +
+            tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling -
+            2 * coupledCrossBregmanDet
+              (N := N) (β := β) (h := h) (q := q) (sk := sk) H coupling) := by
       calc
         (∑ σ : Config N, ∑ τ : Config N,
           D σ τ *
@@ -4627,14 +4919,14 @@ lemma coupled_trace_algebra_workspace
           rw [hwithin, hbetween]
           ring
 
-    simp_rw [covKernelDiff_eq_centered_sq_workspace
-      (N := N) (β := β) (q := q)]
+    simp_rw [covKernelDiff_eq_bregman_workspace
+      (N := N) (β := β) (h := h) (q := q) (sk := sk)]
     unfold coupledHessianDet
 
     have hfactor :
         (∑ σ : Config N, ∑ τ : Config N,
-          (((N : ℝ) * β ^ 2 / 2) *
-            ((overlap N σ τ - q) ^ 2 - q ^ 2)) *
+          ((N : ℝ) *
+            (bregmanRemainder sk.ξ β q (overlap N σ τ) + (sk.ξ q - β * q))) *
             ((1 / (2 * (N : ℝ))) *
               (tiltedReplicaAverageDet (N := N) (q := q) H coupling
                   (fun σs => pairEval N (std_basis N σ) σs *
@@ -4643,7 +4935,7 @@ lemma coupled_trace_algebra_workspace
                     (pairEval N (std_basis N σ)) *
                   tiltedReplicaAverageDet (N := N) (q := q) H coupling
                     (pairEval N (std_basis N τ))))) =
-          (((N : ℝ) * β ^ 2 / 2) * (1 / (2 * (N : ℝ)))) *
+          ((N : ℝ) * (1 / (2 * (N : ℝ)))) *
             (∑ σ : Config N, ∑ τ : Config N,
               D σ τ *
                 (tiltedReplicaAverageDet (N := N) (q := q) H coupling
@@ -4664,7 +4956,6 @@ lemma coupled_trace_algebra_workspace
 
     rw [hfactor, hcore]
     field_simp [hN0]
-    ring
 
 /-! ## Integrability of the normalized finite-state observables -/
 
@@ -4687,7 +4978,7 @@ lemma fourReplicaTiltWeight_sum_workspace
     tauto;
   · exact fun a b => ⟨ fun i => if i = 0 then a 0 else if i = 1 then a 1 else if i = 2 then b 0 else b 1, by ext i; fin_cases i <;> rfl, by ext i; fin_cases i <;> rfl ⟩;
   · simp +decide [ Fin.prod_univ_four, centeredOverlapSq ];
-    simp +decide [ centeredOverlap, overlap ] ; intros ; ring;
+    simp +decide [ centeredOverlap, overlap ] ; intros ; ring_nf;
     simpa only [ mul_assoc, ← Real.exp_add ] using by ring;
 
 lemma measurable_H_t_workspace (t : ℝ) :
@@ -4808,6 +5099,120 @@ lemma integrable_coupledCrossMomentDet_Ht_workspace
         rw [ mul_assoc ];
       · exact mul_nonneg ( Real.exp_nonneg _ ) ( Finset.prod_nonneg fun _ _ => div_nonneg ( Real.exp_nonneg _ ) ( Finset.sum_nonneg fun _ _ => Real.exp_nonneg _ ) )
 
+lemma integrable_tiltedBregmanDet_Ht_workspace (t coupling : ℝ) :
+    Integrable
+      (fun ω => tiltedBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk)
+        (H_t (N := N) (β := β) (h := h) (q := q)
+          (sk := sk) (sim := sim) t ω) coupling) ℙ := by
+  let B : ℝ := ∑ σs : ReplicaSpace N 2,
+    |bregmanOverlap (N := N) (β := β) (h := h) (q := q) (sk := sk) σs|
+  apply (integrable_const B).mono'
+  · apply Measurable.aestronglyMeasurable
+    have hHt := measurable_H_t_workspace N β h q sk sim t
+    have hf : Measurable (fun H : EnergySpace N =>
+        tiltedBregmanDet N β h q sk H coupling) := by
+      unfold tiltedBregmanDet tiltedReplicaPartitionDet gibbs_average_n_det
+      apply Measurable.div
+      · apply Finset.measurable_sum
+        intro σs _
+        apply measurable_const.mul
+        apply Finset.measurable_prod
+        intro l _
+        exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs l)).continuous.measurable
+      · apply Finset.measurable_sum
+        intro σs _
+        apply measurable_const.mul
+        apply Finset.measurable_prod
+        intro l _
+        exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs l)).continuous.measurable
+    exact hf.comp hHt
+  · filter_upwards with ω
+    let H := H_t N β h q sk sim t ω
+    let w : ReplicaSpace N 2 → ℝ := fun σs =>
+      Real.exp (coupling * (N : ℝ) * centeredOverlapSq N q σs) *
+        ∏ l, gibbs_pmf N H (σs l)
+    have hw (σs : ReplicaSpace N 2) : 0 ≤ w σs :=
+      mul_nonneg (Real.exp_nonneg _) (Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg N H (σs l))
+    have hZ : 0 < ∑ σs : ReplicaSpace N 2, w σs := by
+      change 0 < tiltedReplicaPartitionDet (N := N) (q := q) H coupling
+      exact tiltedReplicaPartitionDet_pos N q H coupling
+    have hbound : ‖(∑ σs, bregmanOverlap N β h q sk σs * w σs) /
+        (∑ σs, w σs)‖ ≤ B := by
+      rw [norm_div, Real.norm_of_nonneg hZ.le]
+      apply (div_le_iff₀ hZ).2
+      calc
+        ‖∑ σs, bregmanOverlap N β h q sk σs * w σs‖
+            ≤ ∑ σs, ‖bregmanOverlap N β h q sk σs * w σs‖ := norm_sum_le _ _
+        _ ≤ ∑ σs, |bregmanOverlap N β h q sk σs| * (∑ ρs, w ρs) := by
+          apply Finset.sum_le_sum
+          intro σs _
+          rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw σs)]
+          exact mul_le_mul_of_nonneg_left
+            (Finset.single_le_sum (fun ρs _ => hw ρs) (Finset.mem_univ σs)) (abs_nonneg _)
+        _ = B * ∑ σs, w σs := by rw [Finset.sum_mul]
+    simpa only [tiltedBregmanDet, tiltedReplicaPartitionDet, gibbs_average_n_det,
+      w, H, mul_assoc] using hbound
+
+lemma integrable_coupledCrossBregmanDet_Ht_workspace (t coupling : ℝ) :
+    Integrable
+      (fun ω => coupledCrossBregmanDet (N := N) (β := β) (h := h) (q := q) (sk := sk)
+        (H_t (N := N) (β := β) (h := h) (q := q)
+          (sk := sk) (sim := sim) t ω) coupling) ℙ := by
+  let B : ℝ := ∑ σs : ReplicaSpace N 4,
+    |crossPairBregman (N := N) (β := β) (h := h) (q := q) (sk := sk) σs|
+  apply (integrable_const B).mono'
+  · apply Measurable.aestronglyMeasurable
+    have hHt := measurable_H_t_workspace N β h q sk sim t
+    have hf : Measurable (fun H : EnergySpace N =>
+        coupledCrossBregmanDet N β h q sk H coupling) := by
+      unfold coupledCrossBregmanDet tiltedReplicaPartitionDet gibbs_average_n_det
+      apply Measurable.div
+      · apply Finset.measurable_sum
+        intro σs _
+        apply measurable_const.mul
+        apply Finset.measurable_prod
+        intro l _
+        exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs l)).continuous.measurable
+      · apply Measurable.pow_const
+        apply Finset.measurable_sum
+        intro σs _
+        apply measurable_const.mul
+        apply Finset.measurable_prod
+        intro l _
+        exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs l)).continuous.measurable
+    exact hf.comp hHt
+  · filter_upwards with ω
+    let H := H_t N β h q sk sim t ω
+    let w : ReplicaSpace N 4 → ℝ := fun σs =>
+      Real.exp (coupling * (N : ℝ) *
+        ((centeredOverlap (N := N) (q := q) (0 : Fin 4) (1 : Fin 4) σs) ^ 2 +
+          (centeredOverlap (N := N) (q := q) (2 : Fin 4) (3 : Fin 4) σs) ^ 2)) *
+        ∏ l, gibbs_pmf N H (σs l)
+    have hw (σs : ReplicaSpace N 4) : 0 ≤ w σs :=
+      mul_nonneg (Real.exp_nonneg _) (Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg N H (σs l))
+    have hZ : 0 < ∑ σs : ReplicaSpace N 4, w σs := by
+      rw [fourReplicaTiltWeight_sum_workspace (N := N) (q := q) H coupling]
+      exact sq_pos_of_pos (tiltedReplicaPartitionDet_pos N q H coupling)
+    have hbound : ‖(∑ σs, crossPairBregman N β h q sk σs * w σs) /
+        (∑ σs, w σs)‖ ≤ B := by
+      rw [norm_div, Real.norm_of_nonneg hZ.le]
+      apply (div_le_iff₀ hZ).2
+      calc
+        ‖∑ σs, crossPairBregman N β h q sk σs * w σs‖
+            ≤ ∑ σs, ‖crossPairBregman N β h q sk σs * w σs‖ := norm_sum_le _ _
+        _ ≤ ∑ σs, |crossPairBregman N β h q sk σs| * (∑ ρs, w ρs) := by
+          apply Finset.sum_le_sum
+          intro σs _
+          rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw σs)]
+          exact mul_le_mul_of_nonneg_left
+            (Finset.single_le_sum (fun ρs _ => hw ρs) (Finset.mem_univ σs)) (abs_nonneg _)
+        _ = B * ∑ σs, w σs := by rw [Finset.sum_mul]
+    simp only [w, H] at hbound
+    rw [fourReplicaTiltWeight_sum_workspace (N := N) (q := q)
+      (H_t N β h q sk sim t ω) coupling] at hbound
+    simpa only [coupledCrossBregmanDet, tiltedReplicaPartitionDet, gibbs_average_n_det,
+      mul_assoc] using hbound
+
 /-! ## Evaluate the raw differentiated integral -/
 
 lemma coupledFreeEnergy_time_derivative_ibp_formula_workspace
@@ -4825,24 +5230,24 @@ lemma coupledFreeEnergy_time_derivative_ibp_formula_workspace
             (N := N) (β := β) (h := h) (q := q)
             (sk := sk) (sim := sim) t ω)
         ∂ℙ) =
-      (β ^ 2 / 4) *
-        ((1 - q) ^ 2 +
-          tiltedCenteredOverlapSq
+      (1 / 2) *
+        (bregmanRemainder sk.ξ β q 1 +
+          tiltedBregman
             (N := N) (β := β) (h := h) (q := q)
             (sk := sk) (sim := sim) t (Λ / 2) -
-          2 * coupledCrossMoment
+          2 * coupledCrossBregman
             (N := N) (β := β) (h := h) (q := q)
             (sk := sk) (sim := sim) t (Λ / 2)) := by
   let T : Ω → ℝ := fun ω =>
-    tiltedCenteredOverlapSqDet
-      (N := N) (q := q)
+    tiltedBregmanDet
+      (N := N) (β := β) (h := h) (q := q) (sk := sk)
       (H_t
         (N := N) (β := β) (h := h) (q := q)
         (sk := sk) (sim := sim) t ω)
       (Λ / 2)
   let X : Ω → ℝ := fun ω =>
-    coupledCrossMomentDet
-      (N := N) (q := q)
+    coupledCrossBregmanDet
+      (N := N) (β := β) (h := h) (q := q) (sk := sk)
       (H_t
         (N := N) (β := β) (h := h) (q := q)
         (sk := sk) (sim := sim) t ω)
@@ -4850,20 +5255,20 @@ lemma coupledFreeEnergy_time_derivative_ibp_formula_workspace
 
   have hT : Integrable T ℙ := by
     simpa only [T] using
-      integrable_tiltedCenteredOverlapSqDet_Ht_workspace
+      integrable_tiltedBregmanDet_Ht_workspace
         (N := N) (β := β) (h := h) (q := q)
         (sk := sk) (sim := sim) t (Λ / 2)
 
   have hX : Integrable X ℙ := by
     simpa only [X] using
-      integrable_coupledCrossMomentDet_Ht_workspace
+      integrable_coupledCrossBregmanDet_Ht_workspace
         (N := N) (β := β) (h := h) (q := q)
         (sk := sk) (sim := sim) t (Λ / 2)
 
-  have hconst : Integrable (fun _ : Ω => (1 - q) ^ 2) ℙ :=
+  have hconst : Integrable (fun _ : Ω => bregmanRemainder sk.ξ β q 1) ℙ :=
     integrable_const _
 
-  have hsum : Integrable (fun ω => (1 - q) ^ 2 + T ω) ℙ :=
+  have hsum : Integrable (fun ω => bregmanRemainder sk.ξ β q 1 + T ω) ℙ :=
     hconst.add hT
 
   have htwiceX : Integrable (fun ω => 2 * X ω) ℙ :=
@@ -4878,7 +5283,7 @@ lemma coupledFreeEnergy_time_derivative_ibp_formula_workspace
   rw [integral_congr_ae
     (ae_of_all _ fun ω =>
       coupled_trace_algebra_workspace
-        (N := N) (β := β) (q := q) hN
+        (N := N) (β := β) (h := h) (q := q) (sk := sk) hN
         (H_t
           (N := N) (β := β) (h := h) (q := q)
           (sk := sk) (sim := sim) t ω)
@@ -4893,18 +5298,18 @@ lemma coupledFreeEnergy_time_derivative_ibp_formula_workspace
   simp only [probReal_univ, one_smul]
 
   change
-    (β ^ 2 / 4) *
-        ((1 - q) ^ 2 + (∫ ω, T ω ∂ℙ) - 2 * (∫ ω, X ω ∂ℙ)) =
-      (β ^ 2 / 4) *
-        ((1 - q) ^ 2 +
-          tiltedCenteredOverlapSq
+    (1 / 2) *
+        (bregmanRemainder sk.ξ β q 1 + (∫ ω, T ω ∂ℙ) - 2 * (∫ ω, X ω ∂ℙ)) =
+      (1 / 2) *
+        (bregmanRemainder sk.ξ β q 1 +
+          tiltedBregman
             (N := N) (β := β) (h := h) (q := q)
             (sk := sk) (sim := sim) t (Λ / 2) -
-          2 * coupledCrossMoment
+          2 * coupledCrossBregman
             (N := N) (β := β) (h := h) (q := q)
             (sk := sk) (sim := sim) t (Λ / 2))
 
-  simp only [T, X, tiltedCenteredOverlapSq, coupledCrossMoment]
+  simp only [T, X, tiltedBregman, coupledCrossBregman]
 
 /-- Gaussian IBP formula for the time derivative of the coupled free energy.
 
@@ -4931,12 +5336,12 @@ lemma coupledFreeEnergy_hasDerivAt_time_ibp
     HasDerivAt
       (fun s => coupledFreeEnergy
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) s Λ)
-      ((β ^ 2 / 4) *
-        ((1 - q) ^ 2 +
-          tiltedCenteredOverlapSq
+      ((1 / 2) *
+        (bregmanRemainder sk.ξ β q 1 +
+          tiltedBregman
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
             t (Λ / 2) -
-          2 * coupledCrossMoment
+          2 * coupledCrossBregman
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
             t (Λ / 2))) t := by
   rw [← coupledFreeEnergy_time_derivative_ibp_formula_workspace
@@ -5013,21 +5418,22 @@ lemma deriv_logQuadraticMoment_coupling (t coupling : ℝ) :
 
 Proof route: combine the two preceding derivative lemmas with the coupled Gaussian-IBP
 identity.  Drop the nonnegative cross moment, cancel the ordinary pressure derivative, and use
-the standard tilted-moment estimate to bound the remaining covariance term by
-`β² * logQuadraticMoment / (2 * coupling)`. -/
+the global Bregman bound to control the remaining covariance term by
+`Γ * logQuadraticMoment / (2 * coupling)`. -/
 lemma logQuadraticMoment_differential_inequality
     (hN : 0 < N)
+    (hΓ0 : 0 ≤ Γ) (hΔ : BregmanBounds sk.ξ β q Γ)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω))
     {t coupling : ℝ} (ht : t ∈ Set.Ioo (0 : ℝ) 1) (hcoupling : 0 < coupling) :
     deriv
         (fun s => logQuadraticMoment
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
           s coupling) t -
-        (β ^ 2 / 2) * deriv
+        (Γ / 2) * deriv
           (fun c => logQuadraticMoment
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
             t c) coupling
-      ≤ (β ^ 2 / (2 * coupling)) *
+      ≤ (Γ / (2 * coupling)) *
           logQuadraticMoment
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
             t coupling := by
@@ -5037,7 +5443,11 @@ lemma logQuadraticMoment_differential_inequality
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t
   let T : ℝ := tiltedCenteredOverlapSq
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t coupling
-  let X : ℝ := coupledCrossMoment
+  let A : ℝ := tiltedBregman
+    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t coupling
+  let B : ℝ := bregmanAverage
+    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t
+  let X : ℝ := coupledCrossBregman
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t coupling
   have hC := coupledFreeEnergy_hasDerivAt_time_ibp
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
@@ -5072,39 +5482,44 @@ lemma logQuadraticMoment_differential_inequality
       _ t at hLraw
   rw [← hfun] at hLraw
   have hL : HasDerivAt L
-      ((N : ℝ) * (β ^ 2 / 2) * (T + V - 2 * X)) t := by
-    convert hLraw using 1 <;> simp [T, V, X] <;> ring
+      ((N : ℝ) * (A + B - 2 * X)) t := by
+    convert hLraw using 1 <;> simp [A, B, X] <;> ring
   have htime : deriv L t =
-      (N : ℝ) * (β ^ 2 / 2) * (T + V - 2 * X) := hL.deriv
+      (N : ℝ) * (A + B - 2 * X) := hL.deriv
   have hcouplingDeriv : deriv
       (fun c => logQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t c)
       coupling = (N : ℝ) * T := by
     simpa [T] using deriv_logQuadraticMoment_coupling
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t coupling
-  have hX : 0 ≤ X := coupledCrossMoment_nonneg
-    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t coupling
-  have hleft : deriv L t - (β ^ 2 / 2) * ((N : ℝ) * T)
-      ≤ (β ^ 2 / 2) * ((N : ℝ) * V) := by
+  have hX : 0 ≤ X := coupledCrossBregman_nonneg
+    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+    hN hΔ t coupling
+  have hA : A ≤ (Γ / 2) * T := by
+    dsimp only [A, T]
+    rw [tiltedBregman, tiltedCenteredOverlapSq, ← integral_const_mul]
+    apply integral_mono
+    · exact integrable_tiltedBregmanDet_Ht_workspace N β h q sk sim t coupling
+    · exact (integrable_tiltedCenteredOverlapSqDet_Ht_workspace N β h q sk sim t coupling).const_mul (Γ / 2)
+    · intro ω
+      exact tiltedBregman_le (N := N) (β := β) (h := h) (q := q) (sk := sk)
+        hN hΔ _ coupling
+  have hB : B ≤ (Γ / 2) * V :=
+    bregmanAverage_le (N := N) (β := β) (h := h) (q := q)
+      (sk := sk) (sim := sim) hN hΔ t
+  have hleft : deriv L t - (Γ / 2) * ((N : ℝ) * T)
+      ≤ (Γ / 2) * ((N : ℝ) * V) := by
     rw [htime]
-    calc
-      (N : ℝ) * (β ^ 2 / 2) * (T + V - 2 * X) -
-          (β ^ 2 / 2) * ((N : ℝ) * T) =
-          (β ^ 2 / 2) * ((N : ℝ) * V) -
-            ((N : ℝ) * β ^ 2) * X := by ring
-      _ ≤ (β ^ 2 / 2) * ((N : ℝ) * V) :=
-        sub_le_self _ (mul_nonneg
-          (mul_nonneg (Nat.cast_nonneg N) (sq_nonneg β)) hX)
+    nlinarith [mul_nonneg (Nat.cast_nonneg N) hX,
+      mul_le_mul_of_nonneg_left hA (Nat.cast_nonneg N),
+      mul_le_mul_of_nonneg_left hB (Nat.cast_nonneg N)]
   have hscaled : coupling * (N : ℝ) * V ≤ logQuadraticMoment
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
       t coupling := by
-    refine' trans _ (MeasureTheory.integral_mono_of_nonneg _ _ _)
-    case refine'_2 =>
-      exact fun ω => coupling * N * gibbs_average_n_det N 2
-        (H_t N β h q sk sim t ω) (centeredOverlapSq N q)
-    · rw [MeasureTheory.integral_const_mul]
-      rfl
-    · exact Filter.Eventually.of_forall fun ω =>
+    let g : Ω → ℝ := fun ω => coupling * N * gibbs_average_n_det N 2
+      (H_t N β h q sk sim t ω) (centeredOverlapSq N q)
+    have hg0 : 0 ≤ g := by
+      exact fun ω =>
         mul_nonneg (mul_nonneg (le_of_lt hcoupling) (Nat.cast_nonneg _))
           (by
             apply Finset.sum_nonneg
@@ -5112,7 +5527,10 @@ lemma logQuadraticMoment_differential_inequality
             exact mul_nonneg (sq_nonneg _)
               (Finset.prod_nonneg fun l _ => gibbs_pmf_nonneg
                 (N := N) (H := H_t N β h q sk sim t ω) (σ := σs l)))
-    · have hi : Integrable (fun ω => gibbs_average_n N β h q sk sim 2 t
+    have hlogint : Integrable (fun ω => Real.log
+        (gibbs_average_n N β h q sk sim 2 t
+          (fun σs => Real.exp (coupling * N * centeredOverlapSq N q σs)) ω)) ℙ := by
+      have hi : Integrable (fun ω => gibbs_average_n N β h q sk sim 2 t
           (fun σs => Real.exp (coupling * N * centeredOverlapSq N q σs)) ω) ℙ := by
         apply SpinGlass.integrable_gibbs_average_n
       refine hi.mono'
@@ -5128,11 +5546,23 @@ lemma logQuadraticMoment_differential_inequality
         tiltedReplicaPartition_pos
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
           t coupling ω
-    · filter_upwards with ω
+    have hpoint : ∀ᵐ ω ∂ℙ, g ω ≤ Real.log
+        (gibbs_average_n N β h q sk sim 2 t
+          (fun σs => Real.exp (coupling * N * centeredOverlapSq N q σs)) ω) := by
+      filter_upwards with ω
       exact scaled_centeredOverlapSq_le_log_gibbs_exp
         (N := N) (q := q)
         (H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ω)
         coupling
+    calc
+      coupling * (N : ℝ) * V = ∫ ω, g ω ∂ℙ := by
+        rw [MeasureTheory.integral_const_mul]
+        rfl
+      _ ≤ ∫ ω, Real.log
+          (gibbs_average_n N β h q sk sim 2 t
+            (fun σs => Real.exp (coupling * N * centeredOverlapSq N q σs)) ω) ∂ℙ :=
+        MeasureTheory.integral_mono_of_nonneg (Filter.Eventually.of_forall hg0) hlogint hpoint
+      _ = logQuadraticMoment N β h q sk sim t coupling := rfl
   rw [hcouplingDeriv]
   refine hleft.trans ?_
   have hv : (N : ℝ) * V ≤
@@ -5141,13 +5571,13 @@ lemma logQuadraticMoment_differential_inequality
         t coupling / coupling := (le_div_iff₀ hcoupling).2 (by
           simpa [mul_comm, mul_left_comm, mul_assoc] using hscaled)
   calc
-    (β ^ 2 / 2) * ((N : ℝ) * V)
-        ≤ (β ^ 2 / 2) *
+    (Γ / 2) * ((N : ℝ) * V)
+        ≤ (Γ / 2) *
             (logQuadraticMoment
               (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
               t coupling / coupling) :=
-      mul_le_mul_of_nonneg_left hv (div_nonneg (sq_nonneg β) (by norm_num))
-    _ = (β ^ 2 / (2 * coupling)) *
+      mul_le_mul_of_nonneg_left hv (div_nonneg hΓ0 (by norm_num))
+    _ = (Γ / (2 * coupling)) *
           logQuadraticMoment
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
             t coupling := by field_simp
@@ -5169,22 +5599,22 @@ lemma logQuadraticMoment_nonneg
       hcoupling
 
 /-- Coupling followed backwards from time `u` to the independent endpoint. -/
-noncomputable def characteristicCoupling (coupling u s : ℝ) : ℝ :=
-  coupling + (β ^ 2 / 2) * (u - s)
+noncomputable def characteristicCoupling (Γ coupling u s : ℝ) : ℝ :=
+  coupling + (Γ / 2) * (u - s)
 
 /-- The logarithmic moment restricted to the moving-coupling characteristic. -/
-noncomputable def characteristicQuadraticMoment (coupling u s : ℝ) : ℝ :=
+noncomputable def characteristicQuadraticMoment (Γ coupling u s : ℝ) : ℝ :=
   logQuadraticMoment
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-    s (characteristicCoupling β coupling u s)
+    s (characteristicCoupling Γ coupling u s)
 
 /-- The moving coupling stays at least as large as its terminal value. -/
 lemma characteristicCoupling_ge
-    {coupling u s : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) u) :
-    coupling ≤ characteristicCoupling β coupling u s := by
+    {Γ coupling u s : ℝ} (hΓ0 : 0 ≤ Γ) (hs : s ∈ Set.Icc (0 : ℝ) u) :
+    coupling ≤ characteristicCoupling Γ coupling u s := by
   unfold characteristicCoupling
   have hus : 0 ≤ u - s := sub_nonneg.mpr hs.2
-  nlinarith [sq_nonneg β]
+  linarith [mul_nonneg (div_nonneg hΓ0 zero_le_two) hus]
 
 /-- A two-variable function is differentiable when its first partial derivative exists and its
 second partial derivative exists nearby and is continuous. -/
@@ -5389,11 +5819,12 @@ lemma logQuadraticMoment_differentiableAt_two_variables
 /-- Chain rule and PDE inequality along the characteristic.
 
 Proof route: obtain `HasDerivAt` in both variables, note that the coupling path has derivative
-`-β² / 2`, and use `HasDerivAt.scomp` or the two-variable Fréchet chain rule.  Apply
+`-Γ / 2`, and use `HasDerivAt.scomp` or the two-variable Fréchet chain rule.  Apply
 `logQuadraticMoment_differential_inequality`; then use `characteristicCoupling_ge` and
 nonnegativity of the logarithmic moment to replace the moving denominator by `coupling`. -/
 lemma characteristicQuadraticMoment_differential_inequality
     (hN : 0 < N)
+    (hΓ0 : 0 ≤ Γ) (hΔ : BregmanBounds sk.ξ β q Γ)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω))
     {coupling u s : ℝ} (hcoupling : 0 < coupling)
     (hu : u ∈ Set.Icc (0 : ℝ) 1) (hs : s ∈ Set.Ioo (0 : ℝ) u) :
@@ -5401,17 +5832,18 @@ lemma characteristicQuadraticMoment_differential_inequality
       HasDerivAt
         (characteristicQuadraticMoment
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-          coupling u) d s ∧
-      d ≤ (β ^ 2 / (2 * coupling)) *
+          Γ coupling u) d s ∧
+      d ≤ (Γ / (2 * coupling)) *
         characteristicQuadraticMoment
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-          coupling u s := by
-  let c : ℝ := characteristicCoupling β coupling u s
+          Γ coupling u s := by
+  let c : ℝ := characteristicCoupling Γ coupling u s
   let L : ℝ × ℝ → ℝ := fun p => logQuadraticMoment
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) p.1 p.2
   have hs01 : s ∈ Set.Ioo (0 : ℝ) 1 := ⟨hs.1, lt_of_lt_of_le hs.2 hu.2⟩
   have hcge : coupling ≤ c := characteristicCoupling_ge
-    (β := β) (coupling := coupling) (u := u) (s := s) ⟨le_of_lt hs.1, le_of_lt hs.2⟩
+    (Γ := Γ) (coupling := coupling) (u := u) (s := s) hΓ0
+    ⟨le_of_lt hs.1, le_of_lt hs.2⟩
   have hc : 0 < c := lt_of_lt_of_le hcoupling hcge
   obtain ⟨dt, hdt⟩ := logQuadraticMoment_hasDerivAt_time
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
@@ -5423,14 +5855,14 @@ lemma characteristicQuadraticMoment_differential_inequality
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
       hN hIndep hs01 (coupling := c)
   have hpath : HasDerivAt
-      (fun r : ℝ => (r, characteristicCoupling β coupling u r))
-      (1, -(β ^ 2 / 2)) s := by
+      (fun r : ℝ => (r, characteristicCoupling Γ coupling u r))
+      (1, -(Γ / 2)) s := by
     have hcpath := (hasDerivAt_const s coupling).add
-      (((hasDerivAt_const s u).sub (hasDerivAt_id s)).const_mul (β ^ 2 / 2))
-    have hcoeff : 0 + (β ^ 2 / 2) * (0 - 1) = -(β ^ 2 / 2) := by ring
+      (((hasDerivAt_const s u).sub (hasDerivAt_id s)).const_mul (Γ / 2))
+    have hcoeff : 0 + (Γ / 2) * (0 - 1) = -(Γ / 2) := by ring
     rw [hcoeff] at hcpath
     have hcpath' : HasDerivAt
-        (fun r => characteristicCoupling β coupling u r) (-(β ^ 2 / 2)) s := by
+        (fun r => characteristicCoupling Γ coupling u r) (-(Γ / 2)) s := by
       apply hcpath.congr_of_eventuallyEq
       filter_upwards with r
       simp [characteristicCoupling]
@@ -5448,26 +5880,26 @@ lemma characteristicQuadraticMoment_differential_inequality
     exact hcouplingComp.unique (by simpa [L, Function.comp_def] using hdc)
   let dc : ℝ := (N : ℝ) * tiltedCenteredOverlapSq
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) s c
-  let d : ℝ := dt - (β ^ 2 / 2) * dc
+  let d : ℝ := dt - (Γ / 2) * dc
   have hdiag' : HasDerivAt
       (characteristicQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-        coupling u) d s := by
-    have heval : fderiv ℝ L (s, c) (1, -(β ^ 2 / 2)) = d := by
-      rw [show (1, -(β ^ 2 / 2)) =
-          ((1 : ℝ), (0 : ℝ)) + (-(β ^ 2 / 2)) • ((0 : ℝ), (1 : ℝ)) by
+        Γ coupling u) d s := by
+    have heval : fderiv ℝ L (s, c) (1, -(Γ / 2)) = d := by
+      rw [show (1, -(Γ / 2)) =
+          ((1 : ℝ), (0 : ℝ)) + (-(Γ / 2)) • ((0 : ℝ), (1 : ℝ)) by
         ext <;> simp]
       rw [map_add, map_smul, htimeEval, hcouplingEval]
       simp only [smul_eq_mul, dc, d]
       ring
     rw [heval] at hdiag
     change HasDerivAt
-      (L ∘ fun r => (r, characteristicCoupling β coupling u r)) d s
+      (L ∘ fun r => (r, characteristicCoupling Γ coupling u r)) d s
     simpa [c] using hdiag
   refine ⟨d, hdiag', ?_⟩
   have hpde := logQuadraticMoment_differential_inequality
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-    hN hIndep hs01 hc
+    hN hΓ0 hΔ hIndep hs01 hc
   have hdtDeriv : deriv (fun r => logQuadraticMoment
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) r c) s = dt := hdt.deriv
   have hdcDeriv : deriv (fun z => logQuadraticMoment
@@ -5479,10 +5911,10 @@ lemma characteristicQuadraticMoment_differential_inequality
     logQuadraticMoment_nonneg
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
       (le_of_lt hc)
-  have hcoef : β ^ 2 / (2 * c) ≤ β ^ 2 / (2 * coupling) := by
+  have hcoef : Γ / (2 * c) ≤ Γ / (2 * coupling) := by
     rw [div_le_div_iff₀ (by positivity : 0 < 2 * c)
       (by positivity : 0 < 2 * coupling)]
-    nlinarith [sq_nonneg β]
+    nlinarith
   dsimp only [d]
   refine hpde.trans ?_
   simpa [characteristicQuadraticMoment, c] using
@@ -5495,14 +5927,15 @@ Proof route: use the same dominated-convergence argument as
 coupling.  On the compact characteristic its exponential tilt is uniformly bounded, which
 provides an integrable disorder-independent dominator. -/
 lemma characteristicQuadraticMoment_continuousOn
-    {coupling u : ℝ} (hcoupling : 0 < coupling) (hu : u ∈ Set.Icc (0 : ℝ) 1) :
+    {Γ coupling u : ℝ} (hΓ0 : 0 ≤ Γ) (hcoupling : 0 < coupling)
+    (hu : u ∈ Set.Icc (0 : ℝ) 1) :
     ContinuousOn
       (characteristicQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-        coupling u) (Set.Icc (0 : ℝ) u) := by
+        Γ coupling u) (Set.Icc (0 : ℝ) u) := by
   classical
   let K : ℝ := ∑ σs : ReplicaSpace N 2,
-    Real.exp ((coupling + β ^ 2 / 2) * (N : ℝ) * centeredOverlapSq N q σs)
+    Real.exp ((coupling + Γ / 2) * (N : ℝ) * centeredOverlapSq N q σs)
   unfold characteristicQuadraticMoment logQuadraticMoment
   apply MeasureTheory.continuousOn_of_dominated (bound := fun _ : Ω => K)
   · intro s _
@@ -5517,7 +5950,7 @@ lemma characteristicQuadraticMoment_continuousOn
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
           2 s
           (fun σs => Real.exp
-            (characteristicCoupling β coupling u s * (N : ℝ) *
+            (characteristicCoupling Γ coupling u s * (N : ℝ) *
               centeredOverlapSq N q σs)) w := by
       unfold gibbs_average_n gibbs_average_n_det
       apply Finset.measurable_sum
@@ -5530,14 +5963,14 @@ lemma characteristicQuadraticMoment_continuousOn
     exact hpart.log.aestronglyMeasurable
   · intro s hs
     filter_upwards with w
-    let c := characteristicCoupling β coupling u s
+    let c := characteristicCoupling Γ coupling u s
     have hc0 : 0 ≤ c :=
       le_trans (le_of_lt hcoupling)
-        (characteristicCoupling_ge (β := β) (coupling := coupling) hs)
-    have hcu : c ≤ coupling + β ^ 2 / 2 := by
+        (characteristicCoupling_ge (Γ := Γ) (coupling := coupling) hΓ0 hs)
+    have hcu : c ≤ coupling + Γ / 2 := by
       dsimp only [c, characteristicCoupling]
       have hus : u - s ≤ 1 := by linarith [hu.2, hs.1]
-      nlinarith [sq_nonneg β]
+      nlinarith
     have hpart_one : 1 ≤
         gibbs_average_n
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
@@ -5586,14 +6019,14 @@ lemma characteristicQuadraticMoment_continuousOn
         H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) s w := by
       simp only [H_t, H_gauss]
       fun_prop
-    have hc : Continuous fun s => characteristicCoupling β coupling u s := by
+    have hc : Continuous fun s => characteristicCoupling Γ coupling u s := by
       unfold characteristicCoupling
       fun_prop
     have hpart : Continuous fun s =>
         gibbs_average_n
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
           2 s (fun σs => Real.exp
-            (characteristicCoupling β coupling u s * (N : ℝ) *
+            (characteristicCoupling Γ coupling u s * (N : ℝ) *
               centeredOverlapSq N q σs)) w := by
       unfold gibbs_average_n gibbs_average_n_det
       apply continuous_finset_sum
@@ -5606,7 +6039,7 @@ lemma characteristicQuadraticMoment_continuousOn
         exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs l)).continuous.comp hHt
     exact (hpart.log fun s => (tiltedReplicaPartition_pos
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      s (characteristicCoupling β coupling u s) w).ne').continuousOn
+      s (characteristicCoupling Γ coupling u s) w).ne').continuousOn
 
 /-- One-dimensional integrating-factor estimate with explicit endpoint hypotheses.
 
@@ -5665,36 +6098,37 @@ This theorem is now only the assembly of the characteristic regularity, its diff
 inequality, and the generic integrating-factor lemma. -/
 lemma logQuadraticMoment_characteristic
     (hN : 0 < N)
+    (hΓ0 : 0 ≤ Γ) (hΔ : BregmanBounds sk.ξ β q Γ)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω))
     {coupling u : ℝ} (hcoupling : 0 < coupling)
     (hu : u ∈ Set.Icc (0 : ℝ) 1) :
     logQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
         u coupling
-      ≤ Real.exp (β ^ 2 * u / (2 * coupling)) *
+      ≤ Real.exp (Γ * u / (2 * coupling)) *
         logQuadraticMoment
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-          0 ((2 * coupling + β ^ 2 * u) / 2) := by
+          0 ((2 * coupling + Γ * u) / 2) := by
   have hgronwall := gronwall_le_endpoint
     (f := characteristicQuadraticMoment
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      coupling u)
-    (a := β ^ 2 / (2 * coupling)) hu.1
+      Γ coupling u)
+    (a := Γ / (2 * coupling)) hu.1
     (characteristicQuadraticMoment_continuousOn
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      hcoupling hu)
+      hΓ0 hcoupling hu)
     (fun s hs => characteristicQuadraticMoment_differential_inequality
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      hN hIndep hcoupling hu hs)
+      hN hΓ0 hΔ hIndep hcoupling hu hs)
   simp only [characteristicQuadraticMoment, characteristicCoupling] at hgronwall ⊢
   convert hgronwall using 1 <;> ring
 
 /-- Positivity of the coupling scale in the improved region. -/
 lemma lambdaStar_pos
-    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho β q < 1) :
-    0 < lambdaStar β q := by
+    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho Γ q < 1) :
+    0 < lambdaStar Γ q := by
   have hk : 0 < kappa q := kappa_pos hq0 hq1
-  have hβ : β ^ 2 < (kappa q)⁻¹ := by
+  have hΓ : Γ < (kappa q)⁻¹ := by
     rw [inv_eq_one_div]
     exact (lt_div_iff₀ hk).2 (by simpa [rho] using hρ)
   simp only [lambdaStar]
@@ -5702,14 +6136,14 @@ lemma lambdaStar_pos
 
 /-- The parameter `rho` is nonnegative on the physical range of `q`. -/
 lemma rho_nonneg
-    (hq0 : 0 ≤ q) (hq1 : q < 1) :
-    0 ≤ rho β q := by
-  exact mul_nonneg (sq_nonneg β) (le_of_lt (kappa_pos hq0 hq1))
+    (hΓ0 : 0 ≤ Γ) (hq0 : 0 ≤ q) (hq1 : q < 1) :
+    0 ≤ rho Γ q := by
+  exact mul_nonneg hΓ0 (le_of_lt (kappa_pos hq0 hq1))
 
 /-- The coupling scale written in terms of the distance to the boundary `rho = 1`. -/
 lemma lambdaStar_eq_one_sub_rho_div
     (hq0 : 0 ≤ q) (hq1 : q < 1) :
-    lambdaStar β q = (1 - rho β q) / (4 * kappa q) := by
+    lambdaStar Γ q = (1 - rho Γ q) / (4 * kappa q) := by
   have hk0 : kappa q ≠ 0 := ne_of_gt (kappa_pos hq0 hq1)
   simp only [lambdaStar, rho]
   field_simp [hk0]
@@ -5717,8 +6151,8 @@ lemma lambdaStar_eq_one_sub_rho_div
 /-- Algebraic identity for the moving coupling used in the quadratic interpolation. -/
 lemma kappa_mul_movingCoupling
     (hq0 : 0 ≤ q) (hq1 : q < 1) (t : ℝ) :
-    kappa q * (2 * lambdaStar β q + β ^ 2 * t) =
-      (1 - rho β q) / 2 + rho β q * t := by
+    kappa q * (2 * lambdaStar Γ q + Γ * t) =
+      (1 - rho Γ q) / 2 + rho Γ q * t := by
   have hk0 : kappa q ≠ 0 := ne_of_gt (kappa_pos hq0 hq1)
   simp only [lambdaStar, rho]
   field_simp [hk0]
@@ -5726,140 +6160,146 @@ lemma kappa_mul_movingCoupling
 
 /-- The moving coupling remains in the range allowed by the endpoint estimate. -/
 lemma movingCoupling_admissible
-    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho β q < 1)
+    (hΓ0 : 0 ≤ Γ) (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho Γ q < 1)
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    kappa q * (2 * lambdaStar β q + β ^ 2 * t) < 1 := by
-  rw [kappa_mul_movingCoupling (β := β) (q := q) hq0 hq1]
-  have hρ0 : 0 ≤ rho β q := rho_nonneg (β := β) (q := q) hq0 hq1
-  have hmul : rho β q * t ≤ rho β q :=
+    kappa q * (2 * lambdaStar Γ q + Γ * t) < 1 := by
+  rw [kappa_mul_movingCoupling (Γ := Γ) (q := q) hq0 hq1]
+  have hρ0 : 0 ≤ rho Γ q := rho_nonneg (Γ := Γ) (q := q) hΓ0 hq0 hq1
+  have hmul : rho Γ q * t ≤ rho Γ q :=
     mul_le_of_le_one_right hρ0 ht.2
   linarith
 
 /-- Quantitative slack in the endpoint admissibility inequality. -/
 lemma movingCoupling_gap
-    (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hΓ0 : 0 ≤ Γ) (hq0 : 0 ≤ q) (hq1 : q < 1)
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    (1 - rho β q) / 2 ≤
-      1 - kappa q * (2 * lambdaStar β q + β ^ 2 * t) := by
-  rw [kappa_mul_movingCoupling (β := β) (q := q) hq0 hq1]
-  have hρ0 : 0 ≤ rho β q := rho_nonneg (β := β) (q := q) hq0 hq1
-  have hmul : rho β q * t ≤ rho β q :=
+    (1 - rho Γ q) / 2 ≤
+      1 - kappa q * (2 * lambdaStar Γ q + Γ * t) := by
+  rw [kappa_mul_movingCoupling (Γ := Γ) (q := q) hq0 hq1]
+  have hρ0 : 0 ≤ rho Γ q := rho_nonneg (Γ := Γ) (q := q) hΓ0 hq0 hq1
+  have hmul : rho Γ q * t ≤ rho Γ q :=
     mul_le_of_le_one_right hρ0 ht.2
   linarith
 
 /-- The moving coupling is strictly positive throughout the interpolation interval. -/
 lemma movingCoupling_pos
-    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho β q < 1)
+    (hΓ0 : 0 ≤ Γ) (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho Γ q < 1)
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    0 < 2 * lambdaStar β q + β ^ 2 * t := by
-  have hlambda : 0 < lambdaStar β q :=
-    lambdaStar_pos (β := β) (q := q) hq0 hq1 hρ
-  have hβt : 0 ≤ β ^ 2 * t := mul_nonneg (sq_nonneg β) ht.1
+    0 < 2 * lambdaStar Γ q + Γ * t := by
+  have hlambda : 0 < lambdaStar Γ q :=
+    lambdaStar_pos (Γ := Γ) (q := q) hq0 hq1 hρ
+  have hΓt : 0 ≤ Γ * t := mul_nonneg hΓ0 ht.1
   linarith
 
 /-- Exact exponent appearing after applying Grönwall's inequality. -/
-lemma beta_sq_div_two_lambdaStar
-    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho β q < 1) :
-    β ^ 2 / (2 * lambdaStar β q) =
-      2 * rho β q / (1 - rho β q) := by
+lemma gamma_div_two_lambdaStar
+    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho Γ q < 1) :
+    Γ / (2 * lambdaStar Γ q) =
+      2 * rho Γ q / (1 - rho Γ q) := by
   have hk0 : kappa q ≠ 0 := ne_of_gt (kappa_pos hq0 hq1)
-  have hgap0 : 1 - rho β q ≠ 0 := ne_of_gt (sub_pos.mpr hρ)
-  rw [lambdaStar_eq_one_sub_rho_div (β := β) (q := q) hq0 hq1]
+  have hgap0 : 1 - rho Γ q ≠ 0 := ne_of_gt (sub_pos.mpr hρ)
+  rw [lambdaStar_eq_one_sub_rho_div (Γ := Γ) (q := q) hq0 hq1]
   simp only [rho]
   field_simp [hk0, hgap0]
   ring
 
 /-- The explicit constant in the quadratic estimate is positive in the improved region. -/
 lemma quadraticConstant_pos
-    (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho β q < 1) :
-    0 < quadraticConstant β q := by
-  have hρ0 : 0 ≤ rho β q := rho_nonneg (β := β) (q := q) hq0 hq1
-  have hgap : 0 < 1 - rho β q := sub_pos.mpr hρ
-  have hratio : 1 < 2 / (1 - rho β q) := by
+    (hΓ0 : 0 ≤ Γ) (hq0 : 0 ≤ q) (hq1 : q < 1) (hρ : rho Γ q < 1) :
+    0 < quadraticConstant Γ q := by
+  have hρ0 : 0 ≤ rho Γ q := rho_nonneg (Γ := Γ) (q := q) hΓ0 hq0 hq1
+  have hgap : 0 < 1 - rho Γ q := sub_pos.mpr hρ
+  have hratio : 1 < 2 / (1 - rho Γ q) := by
     rw [lt_div_iff₀ hgap]
     linarith
-  have hlog : 0 < Real.log (2 / (1 - rho β q)) := Real.log_pos hratio
+  have hlog : 0 < Real.log (2 / (1 - rho Γ q)) := Real.log_pos hratio
   exact mul_pos (mul_pos (by norm_num) (Real.exp_pos _)) hlog
 
 /-- Endpoint control for the moving coupling, already simplified to the uniform bound. -/
 lemma endpoint_movingCoupling
-    (hN : 0 < N) (hq0 : 0 ≤ q) (hq1 : q < 1)
-    (hfp : IsRSFixedPoint β h q) (hρ : rho β q < 1)
+    (hN : 0 < N) (hβ0 : 0 ≤ β) (hΓ0 : 0 ≤ Γ)
+    (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hfp : IsRSFixedPoint β h q) (hρ : rho Γ q < 1)
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
     logQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-        0 ((2 * lambdaStar β q + β ^ 2 * t) / 2)
-      ≤ (1 / 2) * Real.log (2 / (1 - rho β q)) := by
-  let Λ : ℝ := 2 * lambdaStar β q + β ^ 2 * t
+        0 ((2 * lambdaStar Γ q + Γ * t) / 2)
+      ≤ (1 / 2) * Real.log (2 / (1 - rho Γ q)) := by
+  let Λ : ℝ := 2 * lambdaStar Γ q + Γ * t
   have hΛ0 : 0 ≤ Λ := le_of_lt
-    (movingCoupling_pos (β := β) (q := q) hq0 hq1 hρ ht)
+    (movingCoupling_pos (Γ := Γ) (q := q) hΓ0 hq0 hq1 hρ ht)
   have hΛ : kappa q * Λ < 1 :=
-    movingCoupling_admissible (β := β) (q := q) hq0 hq1 hρ ht
+    movingCoupling_admissible (Γ := Γ) (q := q) hΓ0 hq0 hq1 hρ ht
   have hend := endpoint_quadratic
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-    hN hq0 hq1 hfp hΛ0 hΛ
-  have hgap : (1 - rho β q) / 2 ≤ 1 - kappa q * Λ :=
-    movingCoupling_gap (β := β) (q := q) hq0 hq1 ht
+    hN hβ0 hq0 hq1 hfp hΛ0 hΛ
+  have hgap : (1 - rho Γ q) / 2 ≤ 1 - kappa q * Λ :=
+    movingCoupling_gap (Γ := Γ) (q := q) hΓ0 hq0 hq1 ht
   have hdenom : 0 < 1 - kappa q * Λ := sub_pos.mpr hΛ
-  have hρgap : 0 < 1 - rho β q := sub_pos.mpr hρ
-  have hratio : 1 / (1 - kappa q * Λ) ≤ 2 / (1 - rho β q) := by
+  have hρgap : 0 < 1 - rho Γ q := sub_pos.mpr hρ
+  have hratio : 1 / (1 - kappa q * Λ) ≤ 2 / (1 - rho Γ q) := by
     rw [div_le_div_iff₀ hdenom hρgap]
     linarith
   have hlog :
       Real.log (1 / (1 - kappa q * Λ)) ≤
-        Real.log (2 / (1 - rho β q)) := by
+        Real.log (2 / (1 - rho Γ q)) := by
     exact Real.log_le_log (by positivity) hratio
   exact hend.trans (mul_le_mul_of_nonneg_left hlog (by norm_num))
 
 /-- The moving-coupling estimate obtained by following the characteristic
-`Λ(s) = 2 * coupling + β² * (t - s)` in the coupled interpolation. -/
+`Λ(s) = 2 * coupling + Γ * (t - s)` in the coupled interpolation. -/
 lemma logQuadraticMoment_le_endpoint
     (hN : 0 < N)
+    (hΓ0 : 0 ≤ Γ) (hΔ : BregmanBounds sk.ξ β q Γ)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω))
     {coupling t : ℝ} (hcoupling : 0 < coupling)
     (ht : t ∈ Set.Icc (0 : ℝ) 1) :
     logQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
         t coupling
-      ≤ Real.exp (β ^ 2 * t / (2 * coupling)) *
+      ≤ Real.exp (Γ * t / (2 * coupling)) *
         logQuadraticMoment
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-          0 ((2 * coupling + β ^ 2 * t) / 2) := by
+          0 ((2 * coupling + Γ * t) / 2) := by
   exact logQuadraticMoment_characteristic
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-    hN hIndep hcoupling ht
+    hN hΓ0 hΔ hIndep hcoupling ht
 
 /-
 Proposition `quadratic-estimate` from the blueprint.
 -/
 theorem uniform_quadratic_coupling
-    (hN : 0 < N) (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hN : 0 < N) (hβ0 : 0 ≤ β) (hΓ0 : 0 ≤ Γ)
+    (hq0 : 0 ≤ q) (hq1 : q < 1)
     (hfp : IsRSFixedPoint β h q)
-    (hρ : rho β q < 1)
+    (hΔ : BregmanBounds sk.ξ β q Γ) (hρ : rho Γ q < 1)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω))
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
     logQuadraticMoment
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-        t (lambdaStar β q)
-      ≤ quadraticConstant β q := by
-  -- Apply the lemma `logQuadraticMoment_le_endpoint` with coupling `lambdaStar β q`.
-  have h_logQuadraticMoment_le_endpoint : logQuadraticMoment N β h q sk sim t (lambdaStar β q) ≤ Real.exp (β ^ 2 * t / (2 * lambdaStar β q)) * logQuadraticMoment N β h q sk sim 0 ((2 * lambdaStar β q + β ^ 2 * t) / 2) := by
+        t (lambdaStar Γ q)
+      ≤ quadraticConstant Γ q := by
+  -- Apply `logQuadraticMoment_le_endpoint` with coupling `lambdaStar Γ q`.
+  have h_logQuadraticMoment_le_endpoint : logQuadraticMoment N β h q sk sim t (lambdaStar Γ q) ≤ Real.exp (Γ * t / (2 * lambdaStar Γ q)) * logQuadraticMoment N β h q sk sim 0 ((2 * lambdaStar Γ q + Γ * t) / 2) := by
     apply logQuadraticMoment_le_endpoint;
     · exact hN;
+    · exact hΓ0;
+    · exact hΔ;
     · exact hIndep;
-    · exact lambdaStar_pos (β := β) (q := q) hq0 hq1 hρ
+    · exact lambdaStar_pos (Γ := Γ) (q := q) hq0 hq1 hρ
     · exact ht;
-  have h_logQuadraticMoment_le_endpoint : logQuadraticMoment N β h q sk sim 0 ((2 * lambdaStar β q + β ^ 2 * t) / 2) ≤ (1 / 2) * Real.log (2 / (1 - rho β q)) := by
-    apply_rules [ endpoint_movingCoupling ];
+  have h_logQuadraticMoment_le_endpoint : logQuadraticMoment N β h q sk sim 0 ((2 * lambdaStar Γ q + Γ * t) / 2) ≤ (1 / 2) * Real.log (2 / (1 - rho Γ q)) := by
+    exact endpoint_movingCoupling (N := N) (β := β) (h := h) (q := q)
+      (sk := sk) (sim := sim) hN hβ0 hΓ0 hq0 hq1 hfp hρ ht
   refine' le_trans ‹_› ( le_trans ( mul_le_mul_of_nonneg_left h_logQuadraticMoment_le_endpoint ( Real.exp_nonneg _ ) ) _ );
-  -- Simplify the exponent using the fact that `β^2 / (2 * lambdaStar β q) = 2 * rho β q / (1 - rho β q)`.
-  have h_exp_simplified : Real.exp (β ^ 2 * t / (2 * lambdaStar β q)) ≤ Real.exp (2 * rho β q / (1 - rho β q)) := by
-    have h_exp_bound : β ^ 2 / (2 * lambdaStar β q) = 2 * rho β q / (1 - rho β q) :=
-      beta_sq_div_two_lambdaStar (β := β) (q := q) hq0 hq1 hρ
-    exact Real.exp_le_exp.mpr ( by rw [ ← h_exp_bound ] ; exact div_le_div_of_nonneg_right ( mul_le_of_le_one_right ( sq_nonneg _ ) ht.2 ) ( mul_nonneg zero_le_two ( by exact le_of_lt ( lambdaStar_pos ( hq0 := hq0 ) ( hq1 := hq1 ) ( hρ := hρ ) ) ) ) );
+  -- Simplify the exponent using `Γ / (2 * lambdaStar Γ q) = 2ρ / (1 - ρ)`.
+  have h_exp_simplified : Real.exp (Γ * t / (2 * lambdaStar Γ q)) ≤ Real.exp (2 * rho Γ q / (1 - rho Γ q)) := by
+    have h_exp_bound : Γ / (2 * lambdaStar Γ q) = 2 * rho Γ q / (1 - rho Γ q) :=
+      gamma_div_two_lambdaStar (Γ := Γ) (q := q) hq0 hq1 hρ
+    exact Real.exp_le_exp.mpr (by rw [← h_exp_bound]; exact div_le_div_of_nonneg_right (mul_le_of_le_one_right hΓ0 ht.2) (mul_nonneg zero_le_two (le_of_lt (lambdaStar_pos (Γ := Γ) (q := q) hq0 hq1 hρ))))
   refine' le_trans ( mul_le_mul_of_nonneg_right h_exp_simplified ( mul_nonneg ( by norm_num ) ( Real.log_nonneg _ ) ) ) _;
   · rw [le_div_iff₀] <;>
-      linarith [rho_nonneg (β := β) (q := q) hq0 hq1]
+      linarith [rho_nonneg (Γ := Γ) (q := q) hΓ0 hq0 hq1]
   · unfold quadraticConstant; ring_nf; norm_num;
 
 /-! ## Consequences -/
@@ -5910,27 +6350,28 @@ lemma scaled_overlapVariance_le_logQuadraticMoment
 /-- Convexity of the log moment converts the quadratic exponential estimate into an overlap
 second-moment estimate, uniformly along the smart path. -/
 theorem overlap_concentration_uniform
-    (hN : 0 < N) (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hN : 0 < N) (hβ0 : 0 ≤ β) (hΓ0 : 0 ≤ Γ)
+    (hq0 : 0 ≤ q) (hq1 : q < 1)
     (hfp : IsRSFixedPoint β h q)
-    (hρ : rho β q < 1)
+    (hΔ : BregmanBounds sk.ξ β q Γ) (hρ : rho Γ q < 1)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω))
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
     overlapVariance
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t
-      ≤ quadraticConstant β q / (lambdaStar β q * (N : ℝ)) := by
-  have hlambda : 0 < lambdaStar β q :=
-    lambdaStar_pos (β := β) (q := q) hq0 hq1 hρ
+      ≤ quadraticConstant Γ q / (lambdaStar Γ q * (N : ℝ)) := by
+  have hlambda : 0 < lambdaStar Γ q :=
+    lambdaStar_pos (Γ := Γ) (q := q) hq0 hq1 hρ
   have hNreal : (0 : ℝ) < N := by
     exact_mod_cast hN
-  have hlambdaN : 0 < lambdaStar β q * (N : ℝ) := mul_pos hlambda hNreal
+  have hlambdaN : 0 < lambdaStar Γ q * (N : ℝ) := mul_pos hlambda hNreal
   have hJensen :=
     scaled_overlapVariance_le_logQuadraticMoment
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      (coupling := lambdaStar β q) (le_of_lt hlambda) t
+      (coupling := lambdaStar Γ q) (le_of_lt hlambda) t
   have hquadratic :=
     uniform_quadratic_coupling
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      hN hq0 hq1 hfp hρ hIndep ht
+      hN hβ0 hΓ0 hq0 hq1 hfp hΔ hρ hIndep ht
   apply (le_div_iff₀ hlambdaN).2
   simpa [mul_assoc, mul_comm, mul_left_comm] using hJensen.trans hquadratic
 
@@ -5938,6 +6379,40 @@ theorem overlap_concentration_uniform
 private lemma overlapVariance_continuous : Continuous (overlapVariance
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)) := by
   let f : ReplicaFun N 2 := centeredOverlapSq N q
+  let B : ℝ := ∑ σs : ReplicaSpace N 2, ‖f σs‖
+  rw [continuous_iff_continuousAt]
+  intro t
+  apply MeasureTheory.continuousAt_of_dominated
+  · filter_upwards with s
+    exact (integrable_gibbs_average_n
+      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+      (n := 2) (t := s) (f := f)).aestronglyMeasurable
+  · filter_upwards with s
+    filter_upwards with w
+    simpa [B, Real.norm_eq_abs] using
+      (abs_gibbs_average_n_le
+        (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+        (n := 2) (t := s) (f := f) w)
+  · exact integrable_const B
+  · filter_upwards with w
+    have hHt : Continuous (fun t =>
+        H_t (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t w) := by
+      simp only [H_t, H_gauss]
+      fun_prop
+    have hg : Continuous (fun H : EnergySpace N =>
+        gibbs_average_n_det (N := N) (n := 2) H f) := by
+      simp only [gibbs_average_n_det]
+      apply continuous_finset_sum
+      intro σs _
+      apply Continuous.mul continuous_const
+      apply continuous_finset_prod
+      intro l _
+      exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs l)).continuous
+    exact (hg.comp hHt).continuousAt
+
+private lemma bregmanAverage_continuous : Continuous (bregmanAverage
+    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)) := by
+  let f : ReplicaFun N 2 := bregmanOverlap N β h q sk
   let B : ℝ := ∑ σs : ReplicaSpace N 2, ‖f σs‖
   rw [continuous_iff_continuousAt]
   intro t
@@ -6015,11 +6490,11 @@ private lemma integrable_log_cosh_affine (h a : ℝ) : Integrable
         nlinarith [Real.exp_pos (h + a * z), Real.exp_pos (-(h + a * z))]
 
 private lemma endpoint_pressure
-    (hN : 0 < N) (hq0 : 0 ≤ q) :
+    (hN : 0 < N) (hβ0 : 0 ≤ β) :
     interpolatedPressure
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 0 =
       Real.log 2 + standardGaussianExpectation
-        (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) := by
+        (fun z => Real.log (Real.cosh (h + Real.sqrt β * z))) := by
   letI : IsProbabilityMeasure (gaussianProduct N) := by
     rw [gaussianProduct]
     infer_instance
@@ -6045,15 +6520,15 @@ private lemma endpoint_pressure
           rw [integral_map sim.hV.repr_measurable.aemeasurable
             hFcont.aestronglyMeasurable]
     _ = ∫ H, F H ∂Measure.map (referenceField N β q) (gaussianProduct N) := by
-          rw [simpleDisorder_law_eq_reference N β q sim hN hq0]
+          rw [simpleDisorder_law_eq_reference N β q sim hN hβ0]
     _ = ∫ z, F (referenceField N β q z) ∂gaussianProduct N := by
           rw [integral_map hrefLaw.aemeasurable hFcont.aestronglyMeasurable]
     _ = Real.log 2 + standardGaussianExpectation
-        (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) := by
+        (fun z => Real.log (Real.cosh (h + Real.sqrt β * z))) := by
       let g : ℝ → ℝ := fun z =>
-        Real.log (Real.cosh (h + β * Real.sqrt q * z))
+        Real.log (Real.cosh (h + Real.sqrt β * z))
       have hg : Integrable g (gaussianReal 0 1) :=
-        integrable_log_cosh_affine h (β * Real.sqrt q)
+        integrable_log_cosh_affine h (Real.sqrt β)
       have hcoord (i : Fin N) : Integrable (fun z : Fin N → ℝ => g (z i))
           (gaussianProduct N) := by
         exact ((measurePreserving_eval (fun _ : Fin N => gaussianReal 0 1) i).integrable_comp
@@ -6170,25 +6645,25 @@ private lemma interpolatedPressure_continuousOn :
 
 /-- Integrated Guerra sum rule, including evaluation of the independent endpoint. -/
 lemma replica_symmetric_sum_rule
-    (hN : 0 < N) (hq0 : 0 ≤ q)
+    (hN : 0 < N) (hβ0 : 0 ≤ β)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω)) :
     MeasureTheory.IntegrableOn
-        (overlapVariance
+        (bregmanAverage
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim))
         (Set.Icc (0 : ℝ) 1) (MeasureTheory.volume : Measure ℝ) ∧
-      rsPressure β h q -
+      rsPressure sk.ξ β h q -
           interpolatedPressure
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 1
-        = (β ^ 2 / 4) *
+        = (1 / 2) *
             ∫ t in Set.Icc (0 : ℝ) 1,
-              overlapVariance
+              bregmanAverage
                 (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t := by
   let P : ℝ → ℝ := interpolatedPressure
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-  let v : ℝ → ℝ := overlapVariance
+  let v : ℝ → ℝ := bregmanAverage
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-  let g : ℝ → ℝ := fun t => (β ^ 2 / 4) * ((1 - q) ^ 2 - v t)
-  have hvcont : Continuous v := overlapVariance_continuous
+  let g : ℝ → ℝ := fun t => (1 / 2) * (bregmanRemainder sk.ξ β q 1 - v t)
+  have hvcont : Continuous v := bregmanAverage_continuous
     (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
   have hvint : IntegrableOn v (Set.Icc (0 : ℝ) 1) := hvcont.integrableOn_Icc
   have hgcont : Continuous g := by
@@ -6207,11 +6682,12 @@ lemma replica_symmetric_sum_rule
       hderiv (hgcont.intervalIntegrable 0 1)
   have hinterval :
       (∫ t in (0 : ℝ)..1, g t) =
-        (β ^ 2 / 4) * ((1 - q) ^ 2 - ∫ t in (0 : ℝ)..1, v t) := by
+        (1 / 2) * (bregmanRemainder sk.ξ β q 1 - ∫ t in (0 : ℝ)..1, v t) := by
     simp only [g]
     rw [intervalIntegral.integral_const_mul]
     rw [intervalIntegral.integral_sub
-      (intervalIntegrable_const : IntervalIntegrable (fun _ : ℝ => (1 - q) ^ 2) volume 0 1)
+      (intervalIntegrable_const :
+        IntervalIntegrable (fun _ : ℝ => bregmanRemainder sk.ξ β q 1) volume 0 1)
       (hvcont.intervalIntegrable 0 1)]
     norm_num
   have hset :
@@ -6219,11 +6695,12 @@ lemma replica_symmetric_sum_rule
     rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
       intervalIntegral.integral_of_le zero_le_one]
   have hP0 : P 0 = Real.log 2 + standardGaussianExpectation
-      (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) :=
+      (fun z => Real.log (Real.cosh (h + Real.sqrt β * z))) :=
     endpoint_pressure
-      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) hN hq0
+      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) hN hβ0
   have hrel : P 1 - P 0 =
-      (β ^ 2 / 4) * ((1 - q) ^ 2 - ∫ t in (0 : ℝ)..1, v t) :=
+      (1 / 2) *
+        (bregmanRemainder sk.ξ β q 1 - ∫ t in (0 : ℝ)..1, v t) :=
     hFTC.symm.trans hinterval
   refine ⟨hvint, ?_⟩
   rw [rsPressure, show interpolatedPressure
@@ -6231,86 +6708,100 @@ lemma replica_symmetric_sum_rule
     hset, ← hP0]
   linear_combination -hrel
 
-/-- Generalized Latała bound for the finite-volume SK model.
+/-- Generalized Latała bound for a finite-volume convex mixed p-spin model.
 
-At `t = 1`, `H_t` is the SK disorder plus the external-field vector.  The theorem gives both
+At `t = 1`, `H_t` is the mixed disorder plus the external-field vector.  The theorem gives both
 the `O(1/N)` centered-overlap estimate and the corresponding replica-symmetric pressure error.
 -/
 theorem generalized_latala
-    (hN : 0 < N) (hq0 : 0 ≤ q) (hq1 : q < 1)
+    (hN : 0 < N) (hβ0 : 0 ≤ β) (hΓ0 : 0 ≤ Γ)
+    (hq0 : 0 ≤ q) (hq1 : q < 1)
     (hfp : IsRSFixedPoint β h q)
-    (hρ : rho β q < 1)
+    (hΔ : BregmanBounds sk.ξ β q Γ)
+    (hρ : rho Γ q < 1)
     (hIndep : IndepFun sk.U sim.V (ℙ : Measure Ω)) :
     overlapVariance
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 1
-        ≤ quadraticConstant β q / (lambdaStar β q * (N : ℝ)) ∧
-      0 ≤ rsPressure β h q -
+        ≤ quadraticConstant Γ q / (lambdaStar Γ q * (N : ℝ)) ∧
+      0 ≤ rsPressure sk.ξ β h q -
         interpolatedPressure
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 1 ∧
-      rsPressure β h q -
+      rsPressure sk.ξ β h q -
         interpolatedPressure
           (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 1
-        ≤ (β ^ 2 * quadraticConstant β q) /
-            (4 * lambdaStar β q * (N : ℝ)) := by
-  let C : ℝ := quadraticConstant β q / (lambdaStar β q * (N : ℝ))
+        ≤ (Γ * quadraticConstant Γ q) /
+            (4 * lambdaStar Γ q * (N : ℝ)) := by
+  let C : ℝ := quadraticConstant Γ q / (lambdaStar Γ q * (N : ℝ))
   have hoverlap :=
     overlap_concentration_uniform
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      hN hq0 hq1 hfp hρ hIndep (t := (1 : ℝ)) (by simp)
+      hN hβ0 hΓ0 hq0 hq1 hfp hΔ hρ hIndep (t := (1 : ℝ)) (by simp)
   have hsum :=
     replica_symmetric_sum_rule
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-      hN hq0 hIndep
-  have hvar0 : ∀ t : ℝ, 0 ≤ overlapVariance
+      hN hβ0 hIndep
+  have hbreg0 : ∀ t : ℝ, 0 ≤ bregmanAverage
       (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t :=
-    fun t => overlapVariance_nonneg
-      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t
+    fun t => bregmanAverage_nonneg
+      (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+      hN hΔ t
   have hint0 : 0 ≤ ∫ t in Set.Icc (0 : ℝ) 1,
-      overlapVariance
+      bregmanAverage
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t :=
-    integral_nonneg hvar0
-  have hpressure0 : 0 ≤ rsPressure β h q -
+    integral_nonneg hbreg0
+  have hpressure0 : 0 ≤ rsPressure sk.ξ β h q -
       interpolatedPressure
         (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 1 := by
     rw [hsum.2]
-    exact mul_nonneg (div_nonneg (sq_nonneg β) (by norm_num)) hint0
+    exact mul_nonneg (by norm_num) hint0
   have hbound : ∀ t ∈ Set.Icc (0 : ℝ) 1,
-      overlapVariance
-          (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t ≤ C := by
+      bregmanAverage
+          (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t
+        ≤ (Γ / 2) * C := by
     intro t ht
-    simpa [C] using
-      overlap_concentration_uniform
-        (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
-        hN hq0 hq1 hfp hρ hIndep ht
+    calc
+      bregmanAverage N β h q sk sim t
+          ≤ (Γ / 2) * overlapVariance N β h q sk sim t :=
+        bregmanAverage_le
+          (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+          hN hΔ t
+      _ ≤ (Γ / 2) * C := by
+        apply mul_le_mul_of_nonneg_left _ (div_nonneg hΓ0 zero_le_two)
+        dsimp only [C]
+        exact overlap_concentration_uniform
+          (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+          hN hβ0 hΓ0 hq0 hq1 hfp hΔ hρ hIndep ht
   have hconstInt : MeasureTheory.IntegrableOn
-      (fun _ : ℝ => C) (Set.Icc (0 : ℝ) 1) (MeasureTheory.volume : Measure ℝ) :=
+      (fun _ : ℝ => (Γ / 2) * C) (Set.Icc (0 : ℝ) 1)
+      (MeasureTheory.volume : Measure ℝ) :=
     MeasureTheory.integrableOn_const (hs := by
       rw [Real.volume_Icc]
       finiteness)
   have hint_le :
       (∫ t in Set.Icc (0 : ℝ) 1,
-          overlapVariance
-            (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t) ≤ C := by
+          bregmanAverage
+            (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t)
+        ≤ (Γ / 2) * C := by
     calc
       (∫ t in Set.Icc (0 : ℝ) 1,
-          overlapVariance
+          bregmanAverage
             (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t)
-          ≤ ∫ _t in Set.Icc (0 : ℝ) 1, C := by
+          ≤ ∫ _t in Set.Icc (0 : ℝ) 1, (Γ / 2) * C := by
               exact integral_mono_ae hsum.1 hconstInt
                 (ae_restrict_of_forall_mem measurableSet_Icc hbound)
-      _ = C := by
+      _ = (Γ / 2) * C := by
         norm_num [MeasureTheory.integral_const, Measure.restrict_apply_univ, Real.volume_Icc]
   refine ⟨hoverlap, hpressure0, ?_⟩
   rw [hsum.2]
   calc
-    (β ^ 2 / 4) *
+    (1 / 2) *
           ∫ t in Set.Icc (0 : ℝ) 1,
-            overlapVariance
+            bregmanAverage
               (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) t
-        ≤ (β ^ 2 / 4) * C :=
-          mul_le_mul_of_nonneg_left hint_le (div_nonneg (sq_nonneg β) (by norm_num))
-    _ = (β ^ 2 * quadraticConstant β q) /
-          (4 * lambdaStar β q * (N : ℝ)) := by
+        ≤ (1 / 2) * ((Γ / 2) * C) :=
+          mul_le_mul_of_nonneg_left hint_le (by norm_num)
+    _ = (Γ * quadraticConstant Γ q) /
+          (4 * lambdaStar Γ q * (N : ℝ)) := by
       simp only [C]
       ring
 

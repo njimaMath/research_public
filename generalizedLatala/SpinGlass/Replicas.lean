@@ -744,7 +744,8 @@ lemma integrable_gibbs_average_n (t : ℝ) (f : ReplicaFun N n) :
 /--
 The Covariance function U(σ^l, σ^l') appearing in the derivative.
 U_{l,l'} = E[u(σ^l)u(σ^l')] - E[v(σ^l)v(σ^l')].
-For SK: U_{l,l'} = (β²/2)(R_{l,l'}^2 - q).
+For a mixed covariance, this kernel difference is expressed through the Bregman remainder of
+`ξ` at `q`, up to a replica-independent constant that cancels in the covariance trace.
 -/
 def U_interaction (U : InteractionKernel (N := N)) (l l' : Fin n) (σs : ReplicaSpace N n) : ℝ :=
   U (σs l) (σs l')
