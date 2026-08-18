@@ -288,28 +288,28 @@ private lemma smoothSech3_hasDerivAt_x_twice (r x : ℝ) :
   rw [heq]
   exact smoothSech3_first_hasDerivAt_x r x
 
-private lemma contDiff_sech : ContDiff ℝ ∞ sech := by
+private lemma contDiff_sech : ContDiff ℝ ⊤ sech := by
   unfold sech
   exact Real.contDiff_cosh.inv (fun x => (Real.cosh_pos x).ne')
 
-private lemma contDiff_sech3 : ContDiff ℝ ∞ sech3 := by
+private lemma contDiff_sech3 : ContDiff ℝ ⊤ sech3 := by
   unfold sech3
   exact contDiff_sech.pow 3
 
-private lemma contDiff_tanh : ContDiff ℝ ∞ (fun x : ℝ => Real.tanh x) := by
+private lemma contDiff_tanh : ContDiff ℝ ⊤ (fun x : ℝ => Real.tanh x) := by
   simp_rw [Real.tanh_eq_sinh_div_cosh]
   exact Real.contDiff_sinh.div Real.contDiff_cosh
     (fun x => (Real.cosh_pos x).ne')
 
 private lemma contDiff_sech3Deriv :
-    ContDiff ℝ ∞ (fun x => -3 * sech3 x * Real.tanh x) := by
+    ContDiff ℝ ⊤ (fun x => -3 * sech3 x * Real.tanh x) := by
   exact (contDiff_const.mul contDiff_sech3).mul contDiff_tanh
 
 private lemma sech3Deriv_comp_deriv (a b z : ℝ) :
     deriv (fun y => -3 * sech3 (a + b * y) * Real.tanh (a + b * y)) z =
       b * sech3Second (a + b * z) := by
   have harg : HasDerivAt (fun y : ℝ => a + b * y) b z := by
-    convert (hasDerivAt_const z a).add ((hasDerivAt_id z).const_mul b) using 1 <;> ring
+    exact ((hasDerivAt_id z).const_mul b).const_add a
   simpa [Function.comp_def, mul_comm] using
     ((sech3Deriv_hasDerivAt (a + b * z)).comp z harg).deriv
 
@@ -355,7 +355,7 @@ private lemma smoothSech3_hasDerivAt_r_raw {r x : ℝ} (hr : 0 < r) :
   have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (μ := gaussianReal 0 1) (F := F) (F' := F') (x₀ := r)
     (s := Set.Ioi (r / 2)) (bound := fun z => 3 * c⁻¹ * |z|)
-    (Set.Ioi_mem_nhds (by linarith))
+    (Ioi_mem_nhds (by linarith))
     (Filter.Eventually.of_forall fun t =>
       (continuous_sech3.comp
         (continuous_const.add
@@ -366,7 +366,8 @@ private lemma smoothSech3_hasDerivAt_r_raw {r x : ℝ} (hr : 0 < r) :
       apply Continuous.aestronglyMeasurable
       dsimp [F']
       exact (((continuous_const.mul (continuous_sech3.comp (by fun_prop))).mul
-        (continuous_tanh.comp (by fun_prop))).mul continuous_const))
+        (continuous_tanh.comp (by fun_prop))).mul
+          (continuous_const.mul continuous_id)))
     (by
       filter_upwards [] with z
       intro t ht
@@ -374,19 +375,21 @@ private lemma smoothSech3_hasDerivAt_r_raw {r x : ℝ} (hr : 0 < r) :
       have hroot : 0 < Real.sqrt t := Real.sqrt_pos.2 htpos
       have hrootle : c ≤ Real.sqrt t := Real.sqrt_le_sqrt ht.le
       have hinv : (Real.sqrt t)⁻¹ ≤ c⁻¹ :=
-        (inv_le_inv₀ hc hroot).2 hrootle
+        (inv_le_inv₀ hroot hc).2 hrootle
       have hcoef : |1 / (2 * Real.sqrt t)| ≤ c⁻¹ := by
         rw [abs_of_pos (by positivity : 0 < 1 / (2 * Real.sqrt t))]
         calc
           1 / (2 * Real.sqrt t) ≤ (Real.sqrt t)⁻¹ := by
             rw [one_div]
-            exact (inv_le_inv₀ hroot (by positivity)).2 (by nlinarith)
+            exact (inv_le_inv₀ (by positivity) hroot).2 (by nlinarith)
           _ ≤ c⁻¹ := hinv
       dsimp [F']
-      rw [Real.norm_eq_abs, abs_mul, abs_mul]
       calc
-        |-3 * sech3 (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)| *
-            |1 / (2 * Real.sqrt t)| * |z|
+        |(-3 * sech3 (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)) *
+            (1 / (2 * Real.sqrt t) * z)|
+            = |-3 * sech3 (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)| *
+                |1 / (2 * Real.sqrt t)| * |z| := by rw [abs_mul, abs_mul]
+        _
             ≤ 3 * c⁻¹ * |z| := by
               gcongr
               · exact sech3Deriv_abs_le_three _
@@ -414,7 +417,7 @@ private lemma smoothSech3_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
   let F : ℝ → ℝ := fun z =>
     -3 * sech3 (x + Real.sqrt r * z) * Real.tanh (x + Real.sqrt r * z)
   have hcont : ContDiff ℝ 1 F := by
-    exact contDiff_sech3Deriv.of_le (by norm_num) |>.comp x (by fun_prop)
+    exact (contDiff_sech3Deriv.of_le (by norm_num)).comp (by fun_prop)
   have hibp := gaussianReal_integration_by_parts (v := (1 : ℝ≥0)) one_ne_zero
     hcont (sech3Deriv_comp_moderate x (Real.sqrt r))
   have hderiv : deriv F = fun z => Real.sqrt r * sech3Second

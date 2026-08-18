@@ -1,6 +1,9 @@
-import Mathlib
-
-#import_bumps
+import Mathlib.Analysis.Calculus.Deriv.Pi
+import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
+import Mathlib.Tactic
+import Mathlib.Topology.EMetricSpace.Paracompact
+import Mathlib.Topology.UniformSpace.Uniformizable
 
 open scoped BigOperators ENNReal NNReal
 open MeasureTheory
