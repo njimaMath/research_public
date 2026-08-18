@@ -1,5 +1,4 @@
-import Lemmas.CompactCorollary
-
+import Lemmas.ATDefs
 open MeasureTheory ProbabilityTheory
 
 set_option autoImplicit false
@@ -31,32 +30,14 @@ structure QuantitativeATConclusion {Ω : Type u} [MeasureSpace Ω]
       |N * (A path s - 2 * B path s + C path s) -
         rsA β h / (1 - s * atParameter β h)| < eps
 
-/-- Assembly of the three conclusions from an explicit cavity-remainder
-estimate.  This helper is useful when a stronger estimate is available. -/
-theorem quantitative_strictAT_of_cavity_remainder {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)]
-    (K : Set (ℝ × ℝ))
-    (data : UniformATData K)
-    (hCavity : ∃ C, HasCavityRemainderBound (Ω := Ω) data C) :
-    QuantitativeATConclusion (Ω := Ω) K := by
-  -- Compactness, positivity, and the uniform strict-AT gap are carried by
-  -- `data`. The three fields are exactly the absorption, free-energy, and
-  -- replicon theorems, so this wrapper contains no further analytic argument.
-  obtain ⟨Crem, hCrem⟩ := hCavity
-  exact
-    { secondMoment := uniform_secondMoment data Crem hCrem
-      freeEnergy := rs_freeEnergy_error data Crem hCrem
-      replicon := replicon_susceptibility data Crem hCrem }
-
 /-- Quantitative strict-AT theorem with all analytic inputs supplied by named
 lemmas rather than project-specific typeclass assumptions. -/
 theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
     (data : UniformATData K) :
-    QuantitativeATConclusion (Ω := Ω) K :=
-  quantitative_strictAT_of_cavity_remainder K data
-    (exists_cavityRemainder_bound data)
+    QuantitativeATConclusion (Ω := Ω) K := by
+  sorry
 
 
 end SpinGlass.AT

@@ -1,0 +1,127 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["0d0d0ae42c1995e4.olean"],
+  "m": false,
+  "i": "402ceb44a9aa5d8a.ilean",
+  "c": "f55a89b06a7ec583.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\..\\latalaStrictAlmeidaThouless\\SpinGlassAT\\Gaussian_concentration\\GaussianConcentrationAux.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\.lake\\build\\lib\\lean\\GaussianConcentrationAux.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\.lake\\build\\lib\\lean\\GaussianConcentrationAux.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\.lake\\build\\ir\\GaussianConcentrationAux.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\.lake\\build\\ir\\GaussianConcentrationAux.setup.json --json",
+   "level": "trace"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:185:38: This simp argument is unused:\n  pow_one\n\nHint: Omit it from the simp argument list.\n  simp only [id_eq, Nat.cast_ofNat, p̵o̵w̵_̵o̵n̵e̵,̵ ̵mul_one]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:320:128: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:321:12: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:323:133: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:333:95: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:355:97: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:378:15: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:386:42: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:387:71: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:389:142: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:403:67: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:415:90: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:488:76: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:505:73: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:346:31: This simp argument is unused:\n  abs_mul\n\nHint: Omit it from the simp argument list.\n  simp_all +decide [̵ ̵a̵b̵s̵_̵m̵u̵l̵,̵ ̵m̵u̵l̵_̵a̵s̵s̵o̵c̵ ̵]̵[̲m̲u̲l̲_̲a̲s̲s̲o̲c̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:368:33: This simp argument is unused:\n  abs_mul\n\nHint: Omit it from the simp argument list.\n  simp_all +decide [̵ ̵a̵b̵s̵_̵m̵u̵l̵,̵ ̵m̵u̵l̵_̵a̵s̵s̵o̵c̵ ̵]̵[̲m̲u̲l̲_̲a̲s̲s̲o̲c̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:477:27: This simp argument is unused:\n  abs_mul\n\nHint: Omit it from the simp argument list.\n  simp_all +decide [̵ ̵a̵b̵s̵_̵m̵u̵l̵,̵ ̵m̵u̵l̵_̵a̵s̵s̵o̵c̵,̵ ̵m̵u̵l̵_̵d̵i̵v̵_̵a̵s̵s̵o̵c̵ ̵]̵[̲m̲u̲l̲_̲a̲s̲s̲o̲c̲,̲ ̲m̲u̲l̲_̲d̲i̲v̲_̲a̲s̲s̲o̲c̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:512:21: This simp argument is unused:\n  mul_div_assoc\n\nHint: Omit it from the simp argument list.\n  simp_all +decide ̵[̵ ̵m̵u̵l̵_̵d̵i̵v̵_̵a̵s̵s̵o̵c̵ ̵]̵\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:530:39: This simp argument is unused:\n  hs\n\nHint: Omit it from the simp argument list.\n  simp +decide [̵ ̵S̵e̵t̵.̵p̵r̵e̵i̵m̵a̵g̵e̵,̵ ̵h̵s̵ ̵]̵[̲S̲e̲t̲.̲p̲r̲e̲i̲m̲a̲g̲e̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:532:132: This simp argument is unused:\n  Set.mem_univ_pi\n\nHint: Omit it from the simp argument list.\n  simp +decide ̵[̵ ̵S̵e̵t̵.̵m̵e̵m̵_̵u̵n̵i̵v̵_̵p̵i̵ ̵]̵\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:662:84: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:619:37: Variable name `hc` is not explicitly referenced.\n\nThe binding can be removed (if unused) or named `_` (if used implicitly).\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:619:50: Variable name `hC` is not explicitly referenced.\n\nThe binding can be removed (if unused) or named `_` (if used implicitly).\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:655:25: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide ̵[̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:674:60: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide [̵ ̵h̵j̵,̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵[̲h̲j̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:680:23: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide ̵[̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:688:62: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide [̵ ̵h̵j̵,̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵[̲h̲j̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:693:58: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide [̵ ̵h̵j̵,̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵[̲h̲j̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:708:60: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide [̵ ̵h̵j̵,̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵[̲h̲j̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:730:58: This simp argument is unused:\n  Function.update_apply\n\nHint: Omit it from the simp argument list.\n  simp +decide [̵ ̵h̵j̵,̵ ̵F̵u̵n̵c̵t̵i̵o̵n̵.̵u̵p̵d̵a̵t̵e̵_̵a̵p̵p̵l̵y̵ ̵]̵[̲h̲j̲]̲\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../latalaStrictAlmeidaThouless/SpinGlassAT/Gaussian_concentration/GaussianConcentrationAux.lean:764:19: This simp argument is unused:\n  WithLp.toLp\n\nHint: Omit it from the simp argument list.\n  simp +decide ̵[̵ ̵W̵i̵t̵h̵L̵p̵.̵t̵o̵L̵p̵ ̵]̵\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"}],
+ "inputs":
+ [["GaussianConcentrationAux:deps",
+   [["deps",
+     [["GaussianMaxCheck/ATGaussianConcentration:extraDep",
+       [["@GaussianMaxCheck:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["Mathlib transitive imports (legacy)", "9a31bfcdb97c6187"],
+        ["Mathlib:importAllArts", "4824e7f5345c6b72"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
+   "4ce1780d8d26fd00"],
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\.tmp_gaussianmax_check\\..\\latalaStrictAlmeidaThouless\\SpinGlassAT\\Gaussian_concentration\\GaussianConcentrationAux.lean",
+   "3ebaefd3c0724f78"],
+  ["options", "00000000000006bb"],
+  ["isModule: false", "feefd2a0d3a1847e"],
+  ["Module.name: GaussianConcentrationAux", "ce87c5ba7deef088"],
+  ["Package.id?: (some GaussianMaxCheck)", "5cbafad0415ff59c"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "c74ae3d188252f94"}

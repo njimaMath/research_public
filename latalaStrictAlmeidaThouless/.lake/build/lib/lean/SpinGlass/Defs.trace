@@ -1,0 +1,116 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["04365947d2cbfc6a.olean"],
+  "m": false,
+  "i": "7923911416181f87.ilean",
+  "c": "1fa24646ee331399.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\..\\generalizedLatala\\SpinGlass\\Defs.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\Defs.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\Defs.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\SpinGlass\\Defs.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\SpinGlass\\Defs.setup.json --json",
+   "level": "trace"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:272:23: `ContinuousLinearMap.smul_apply` has been deprecated: Use `smul_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.smul_apply` to `smul_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:272:23: This simp argument is unused:\n  ContinuousLinearMap.smul_apply\n\nHint: Omit it from the simp argument list.\n  simp [h', evalCLM, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵m̵u̵l̵_̵a̵p̵p̵l̵y̵,̵ ̵smul_eq_mul, mul_comm]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:354:22: `ContinuousLinearMap.sum_apply` has been deprecated: Use `sum_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.sum_apply` to `sum_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:354:53: `ContinuousLinearMap.smul_apply` has been deprecated: Use `smul_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.smul_apply` to `smul_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:354:22: This simp argument is unused:\n  ContinuousLinearMap.sum_apply\n\nHint: Omit it from the simp argument list.\n  simp [hZ', evalCLM, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵u̵m̵_̵a̵p̵p̵l̵y̵,̵ ̵ContinuousLinearMap.smul_apply]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:354:53: This simp argument is unused:\n  ContinuousLinearMap.smul_apply\n\nHint: Omit it from the simp argument list.\n  simp [hZ', evalCLM, ContinuousLinearMap.sum_apply,̵ ̵C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵m̵u̵l̵_̵a̵p̵p̵l̵y̵]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:379:24: `ContinuousLinearMap.sum_apply` has been deprecated: Use `sum_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.sum_apply` to `sum_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:379:55: `ContinuousLinearMap.smul_apply` has been deprecated: Use `smul_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.smul_apply` to `smul_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:379:24: This simp argument is unused:\n  ContinuousLinearMap.sum_apply\n\nHint: Omit it from the simp argument list.\n  simp [hF', evalCLM, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵u̵m̵_̵a̵p̵p̵l̵y̵,̵ ̵ContinuousLinearMap.smul_apply, smul_eq_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:379:55: This simp argument is unused:\n  ContinuousLinearMap.smul_apply\n\nHint: Omit it from the simp argument list.\n  simp [hF', evalCLM, ContinuousLinearMap.sum_apply, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵m̵u̵l̵_̵a̵p̵p̵l̵y̵,̵ ̵smul_eq_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:394:68: `ContinuousLinearMap.sum_apply` has been deprecated: Use `sum_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.sum_apply` to `sum_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:395:4: `ContinuousLinearMap.smul_apply` has been deprecated: Use `smul_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.smul_apply` to `smul_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:394:68: This simp argument is unused:\n  ContinuousLinearMap.sum_apply\n\nHint: Omit it from the simp argument list.\n  simp [grad_free_energy_density, fderiv_free_energy_density_apply, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵u̵m̵_̵a̵p̵p̵l̵y̵,̵ContinuousLinearMap.smul_apply,\n      smul_eq_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:395:4: This simp argument is unused:\n  ContinuousLinearMap.smul_apply\n\nHint: Omit it from the simp argument list.\n  simp [grad_free_energy_density, fderiv_free_energy_density_apply, ContinuousLinearMap.sum_apply,\n      C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵m̵u̵l̵_̵a̵p̵p̵l̵y̵,̵ ̵smul_eq_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:434:41: `ContinuousLinearMap.sum_apply` has been deprecated: Use `sum_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.sum_apply` to `sum_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:434:72: `ContinuousLinearMap.smul_apply` has been deprecated: Use `smul_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.smul_apply` to `smul_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:435:14: `ContinuousLinearMap.neg_apply` has been deprecated: Use `neg_apply` instead\n\nNote: The updated constant is in a different namespace. Dot notation may need to be changed (e.g., from `x.neg_apply` to `neg_apply x`).",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:434:41: This simp argument is unused:\n  ContinuousLinearMap.sum_apply\n\nHint: Omit it from the simp argument list.\n  simp [hfderiv_grad, evalCLM, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵u̵m̵_̵a̵p̵p̵l̵y̵,̵ ̵ContinuousLinearMap.smul_apply,\n                ContinuousLinearMap.neg_apply, smul_eq_mul, mul_comm]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:434:72: This simp argument is unused:\n  ContinuousLinearMap.smul_apply\n\nHint: Omit it from the simp argument list.\n  simp [hfderiv_grad, evalCLM, ContinuousLinearMap.sum_apply, ̵C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵s̵m̵u̵l̵_̵a̵p̵p̵l̵y̵,̵\n                ContinuousLinearMap.neg_apply, smul_eq_mul, mul_comm]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "../generalizedLatala/SpinGlass/Defs.lean:435:14: This simp argument is unused:\n  ContinuousLinearMap.neg_apply\n\nHint: Omit it from the simp argument list.\n  simp [hfderiv_grad, evalCLM, ContinuousLinearMap.sum_apply,\n  ̲  ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ ̲ContinuousLinearMap.smul_apply, C̵o̵n̵t̵i̵n̵u̵o̵u̵s̵L̵i̵n̵e̵a̵r̵M̵a̵p̵.̵n̵e̵g̵_̵a̵p̵p̵l̵y̵,̵ ̵smul_eq_mul, mul_comm]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"}],
+ "inputs":
+ [["SpinGlass.Defs:deps",
+   [["deps",
+     [["LatalaMeetsAT/GeneralizedSupport:extraDep",
+       [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["SpinGlass.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert transitive imports (legacy)",
+         "9fb3cdc4779f5660"],
+        ["SpinGlass.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert:importAllArts",
+         "a5b1b926cda9ac65"],
+        ["Mathlib.Analysis.Calculus.FDeriv.CompCLM transitive imports (legacy)",
+         "43be4d7a5f7baf27"],
+        ["Mathlib.Analysis.Calculus.FDeriv.CompCLM:importAllArts",
+         "a8b1a9242e7b655d"],
+        ["Mathlib.Analysis.Calculus.FDeriv.WithLp transitive imports (legacy)",
+         "76424c1e884e0a17"],
+        ["Mathlib.Analysis.Calculus.FDeriv.WithLp:importAllArts",
+         "40b1feec41826bac"],
+        ["Mathlib.Analysis.Calculus.Deriv.Inv transitive imports (legacy)",
+         "0d120255a6b24df9"],
+        ["Mathlib.Analysis.Calculus.Deriv.Inv:importAllArts",
+         "4c91207aadddd91f"],
+        ["Mathlib.Analysis.SpecialFunctions.ExpDeriv transitive imports (legacy)",
+         "11102512f71cd46c"],
+        ["Mathlib.Analysis.SpecialFunctions.ExpDeriv:importAllArts",
+         "336c045ff93bc14e"],
+        ["Mathlib.Analysis.SpecialFunctions.Log.Deriv transitive imports (legacy)",
+         "5c597cf6b4f28a74"],
+        ["Mathlib.Analysis.SpecialFunctions.Log.Deriv:importAllArts",
+         "8569f9a96a2ff58a"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
+   "4ce1780d8d26fd00"],
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\..\\generalizedLatala\\SpinGlass\\Defs.lean",
+   "865d398c3042513f"],
+  ["options", "00000000000006bb"],
+  ["isModule: false", "feefd2a0d3a1847e"],
+  ["Module.name: SpinGlass.Defs", "65eeb3e27c94243d"],
+  ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "c0af19d435c99c7c"}
