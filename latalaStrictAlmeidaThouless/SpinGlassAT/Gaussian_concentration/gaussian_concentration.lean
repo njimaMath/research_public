@@ -1,17 +1,10 @@
+import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Analysis.Calculus.Gradient.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.Probability.Moments.SubGaussian
-import Mathlib.Tactic.Continuity
-import Mathlib.Tactic.FunProp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.Topology.UniformSpace.Uniformizable
-import Mathlib.Tactic.GCongr
 
 /-!
 # Finite-dimensional Gaussian concentration
@@ -208,7 +201,7 @@ lemma quadratic_bound_of_deriv_sub_le {Φ : ℝ → ℝ} {m c : ℝ}
         Φ x - (m * x + c * x ^ 2 / 2)
       rfl
     rw [hfun, hsub]
-    simp only [id_eq, Nat.cast_ofNat, pow_one, mul_one]
+    simp only [id_eq, Nat.cast_ofNat, mul_one]
     ring
   by_cases ht : 0 ≤ t
   · have h_antitone : AntitoneOn psi (Set.Icc 0 t) := by
@@ -343,10 +336,10 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
       · rw [ MeasureTheory.lintegral_withDensity_eq_lintegral_mul, MeasureTheory.lintegral_withDensity_eq_lintegral_mul ] <;> norm_num [ gaussianPDF ];
         · congr! 2;
           · congr! 1;
-            ext; rw [ ← ENNReal.ofReal_mul ( by exact ( by rw [ gaussianPDFReal ] ; positivity ) ) ] ; rw [ gaussianPDFReal ] ; ring; norm_num [ Real.sqrt_ne_zero'.mpr Real.pi_pos ] ;
-            ring;
+            ext; rw [ ← ENNReal.ofReal_mul ( by exact ( by rw [ gaussianPDFReal ] ; positivity ) ) ] ; rw [ gaussianPDFReal ] ; ring_nf; norm_num [ Real.sqrt_ne_zero'.mpr Real.pi_pos ] ;
+            ring_nf;
           · refine' MeasureTheory.lintegral_congr fun x => _;
-            rw [ ← ENNReal.ofReal_mul ( by exact mul_nonneg ( by positivity ) ( by positivity ) ) ] ; norm_num [ gaussianPDFReal ] ; ring;
+            rw [ ← ENNReal.ofReal_mul ( by exact mul_nonneg ( by positivity ) ( by positivity ) ) ] ; norm_num [ gaussianPDFReal ] ; ring_nf;
         · fun_prop;
         · exact Measurable.ennreal_ofReal ( Measurable.neg ( measurable_id.mul ( show Measurable g from by exact Continuous.measurable ( by exact continuous_iff_continuousAt.mpr fun x => HasDerivAt.continuousAt ( hg x ) ) ) ) );
         · fun_prop;
@@ -356,7 +349,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
             have h_integrable : MeasureTheory.Integrable (fun x => x * Real.exp (c * |x|) * Real.exp (-x^2 / 2)) MeasureTheory.volume := by
               have h_integrable : MeasureTheory.Integrable (fun x => x * Real.exp (-x^2 / 4)) MeasureTheory.volume := by
                 have := @integrable_rpow_mul_exp_neg_mul_sq;
-                convert @this ( 1 / 4 ) ( by norm_num ) 1 ( by norm_num ) using 3 ; norm_num ; ring;
+                convert @this ( 1 / 4 ) ( by norm_num ) 1 ( by norm_num ) using 3 ; norm_num ; ring_nf;
               have h_integrable : ∀ x : ℝ, |x * Real.exp (c * |x|) * Real.exp (-x^2 / 2)| ≤ |x * Real.exp (-x^2 / 4)| * Real.exp (c^2) := by
                 intro x; rw [ abs_mul, abs_mul, abs_mul ] ; norm_num [ ← Real.exp_add ] ; ring_nf; norm_num;
                 norm_num [ mul_assoc, ← Real.exp_add ];
@@ -369,7 +362,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
             convert h_integrable.const_mul C using 2 ; ring;
           refine' h_integrable.norm.mono' _ _;
           · exact MeasureTheory.AEStronglyMeasurable.mul ( MeasureTheory.AEStronglyMeasurable.mul ( measurable_id.aestronglyMeasurable ) ( Continuous.aestronglyMeasurable ( show Continuous g from continuous_iff_continuousAt.mpr fun x => HasDerivAt.continuousAt ( hg x ) ) ) ) ( Continuous.aestronglyMeasurable ( show Continuous fun x => Real.exp ( -x ^ 2 / 2 ) from Real.continuous_exp.comp <| by continuity ) );
-          · simp_all +decide [ abs_mul, mul_assoc ];
+          · simp_all +decide [ mul_assoc ];
             filter_upwards [ ] with x using mul_le_mul_of_nonneg_left ( by rw [ ← mul_assoc ] ; exact mul_le_mul_of_nonneg_right ( le_trans ( hgbound x ) ( mul_le_mul_of_nonneg_right ( le_abs_self _ ) ( Real.exp_nonneg _ ) ) ) ( Real.exp_nonneg _ ) ) ( abs_nonneg _ );
         convert h_integrable.div_const ( Real.sqrt 2 * Real.sqrt Real.pi ) using 2 ; ring;
       · have h_integrable : MeasureTheory.Integrable (fun x => x * g x * (Real.exp (-x^2 / 2) / Real.sqrt (2 * Real.pi))) MeasureTheory.volume := by
@@ -378,7 +371,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
               have h_integrable : MeasureTheory.Integrable (fun x => x * Real.exp (c * |x|) * Real.exp (-x^2 / 2)) MeasureTheory.volume := by
                 have h_integrable : MeasureTheory.Integrable (fun x => x * Real.exp (-x^2 / 4)) MeasureTheory.volume := by
                   have := @integrable_rpow_mul_exp_neg_mul_sq;
-                  convert @this ( 1 / 4 ) ( by norm_num ) 1 ( by norm_num ) using 3 ; norm_num ; ring;
+                  convert @this ( 1 / 4 ) ( by norm_num ) 1 ( by norm_num ) using 3 ; norm_num ; ring_nf;
                 have h_integrable : ∀ x : ℝ, |x * Real.exp (c * |x|) * Real.exp (-x^2 / 2)| ≤ |x * Real.exp (-x^2 / 4)| * Real.exp (c^2) := by
                   intro x; rw [ abs_mul, abs_mul, abs_mul ] ; norm_num [ ← Real.exp_add ] ; ring_nf; norm_num;
                   norm_num [ mul_assoc, ← Real.exp_add ];
@@ -391,7 +384,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
               convert h_integrable.const_mul C using 2 ; ring;
             refine' h_integrable.norm.mono' _ _;
             · exact MeasureTheory.AEStronglyMeasurable.mul ( MeasureTheory.AEStronglyMeasurable.mul ( measurable_id.aestronglyMeasurable ) ( Continuous.aestronglyMeasurable ( show Continuous g from continuous_iff_continuousAt.mpr fun x => HasDerivAt.continuousAt ( hg x ) ) ) ) ( Continuous.aestronglyMeasurable ( show Continuous fun x => Real.exp ( -x ^ 2 / 2 ) from Real.continuous_exp.comp <| by continuity ) );
-            · simp_all +decide [ abs_mul, mul_assoc ];
+            · simp_all +decide [ mul_assoc ];
               filter_upwards [ ] with x using mul_le_mul_of_nonneg_left ( by rw [ ← mul_assoc ] ; exact mul_le_mul_of_nonneg_right ( le_trans ( hgbound x ) ( mul_le_mul_of_nonneg_right ( le_abs_self _ ) ( Real.exp_nonneg _ ) ) ) ( Real.exp_nonneg _ ) ) ( abs_nonneg _ );
           convert h_integrable.div_const ( Real.sqrt ( 2 * Real.pi ) ) using 2 ; ring;
         rw [ MeasureTheory.integrable_withDensity_iff ];
@@ -401,7 +394,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
             | (funext x
                rw [toReal_gaussianPDF]
                norm_num [gaussianPDFReal]
-               ring
+               ring_nf
                exact Or.inl trivial)
         · fun_prop;
         · simp [gaussianPDF];
@@ -409,10 +402,10 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
       · rw [ MeasureTheory.lintegral_withDensity_eq_lintegral_mul, MeasureTheory.lintegral_withDensity_eq_lintegral_mul ] <;> norm_num [ gaussianPDF ];
         · congr! 2;
           · congr! 1;
-            ext; rw [ gaussianPDFReal ] ; ring;
-            rw [ ← ENNReal.ofReal_mul ( by positivity ) ] ; norm_num ; ring;
+            ext; rw [ gaussianPDFReal ] ; ring_nf;
+            rw [ ← ENNReal.ofReal_mul ( by positivity ) ] ; norm_num ; ring_nf;
           · congr! 1;
-            ext; rw [ ← ENNReal.ofReal_mul ( by exact mul_nonneg ( by positivity ) ( Real.exp_nonneg _ ) ) ] ; norm_num [ gaussianPDFReal ] ; ring;
+            ext; rw [ ← ENNReal.ofReal_mul ( by exact mul_nonneg ( by positivity ) ( Real.exp_nonneg _ ) ) ] ; norm_num [ gaussianPDFReal ] ; ring_nf;
         · fun_prop;
         · exact Measurable.ennreal_ofReal ( hg'cont.measurable.neg );
         · fun_prop;
@@ -426,7 +419,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
               refine' h_integrable.const_mul ( Real.exp ( 2 * c ^ 2 ) ) |> fun h => h.mono' _ _;
               · exact Continuous.aestronglyMeasurable ( by continuity );
               · filter_upwards [ ] with x using by rw [ Real.norm_of_nonneg ( Real.exp_nonneg _ ) ] ; rw [ ← Real.exp_add ] ; exact Real.exp_le_exp.mpr ( by nlinarith [ sq_nonneg ( |x| - 2 * c ), abs_mul_abs_self x ] ) ;
-            convert h_integrable using 2 ; rw [ ← Real.exp_add ] ; ring;
+            convert h_integrable using 2 ; rw [ ← Real.exp_add ] ; ring_nf;
           convert h_integrable.const_mul ( C / ( Real.sqrt 2 * Real.sqrt Real.pi ) ) using 2 ; ring;
         · exact MeasureTheory.AEStronglyMeasurable.mul ( hg'cont.aestronglyMeasurable ) ( Continuous.aestronglyMeasurable ( by continuity ) );
         · filter_upwards [ ] with x using by rw [ Real.norm_eq_abs, abs_mul, abs_of_nonneg ( by positivity : 0 ≤ Real.exp ( -x ^ 2 / 2 ) / ( Real.sqrt 2 * Real.sqrt Real.pi ) ) ] ; exact mul_le_mul_of_nonneg_right ( hg'bound x ) ( by positivity ) ;
@@ -438,7 +431,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
               refine' h_integrable.const_mul ( Real.exp ( 2 * c ^ 2 ) ) |> fun h => h.mono' _ _;
               · exact Continuous.aestronglyMeasurable ( by continuity );
               · filter_upwards [ ] with x using by rw [ Real.norm_of_nonneg ( Real.exp_nonneg _ ) ] ; rw [ ← Real.exp_add ] ; exact Real.exp_le_exp.mpr ( by nlinarith [ sq_nonneg ( |x| - 2 * c ), abs_mul_abs_self x ] ) ;
-            convert h_integrable.const_mul C using 2 ; rw [ mul_assoc, ← Real.exp_add ] ; ring;
+            convert h_integrable.const_mul C using 2 ; rw [ mul_assoc, ← Real.exp_add ] ; ring_nf;
           refine' h_integrable.mono' _ _;
           · exact MeasureTheory.AEStronglyMeasurable.mul ( hg'cont.aestronglyMeasurable ) ( Continuous.aestronglyMeasurable ( by continuity ) );
           · filter_upwards [ ] using fun x => by simpa [ abs_mul ] using mul_le_mul_of_nonneg_right ( hg'bound x ) ( Real.exp_nonneg _ ) ;
@@ -465,7 +458,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
           (-x * (Real.exp (-x ^ 2 / 2) / Real.sqrt (2 * Real.pi))) x := by
         convert (((hasDerivAt_pow 2 x).neg.div_const 2).exp.div_const
           (Real.sqrt (2 * Real.pi))) using 1 <;>
-          first | rfl | (simp only [Pi.neg_apply]; ring)
+          first | rfl | (simp only [Pi.neg_apply]; ring_nf)
       have hint : HasDerivAt
           (fun y : ℝ ↦ ∫ u in a..y,
             g' u * (Real.exp (-u ^ 2 / 2) / Real.sqrt (2 * Real.pi)))
@@ -476,7 +469,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
           (hg'cont.continuousAt.mul (by fun_prop))
       have htotal := ((hg x).neg.mul hden).add hint
       convert htotal using 1 <;>
-        first | rfl | (simp only [Pi.neg_apply]; ring)
+        first | rfl | (simp only [Pi.neg_apply]; ring_nf)
     · exact Continuous.intervalIntegrable ( by exact Continuous.mul ( Continuous.mul continuous_id ( show Continuous g from continuous_iff_continuousAt.mpr fun x => HasDerivAt.continuousAt ( hg x ) ) ) ( by continuity ) ) _ _;
   -- Let's choose any two points $a$ and $b$ such that $a < b$.
   have h_lim : Filter.Tendsto (fun b => ∫ x in (-b)..b, x * g x * (Real.exp (-x^2 / 2) / Real.sqrt (2 * Real.pi))) Filter.atTop (nhds (∫ x, x * g x * (Real.exp (-x^2 / 2) / Real.sqrt (2 * Real.pi)))) := by
@@ -498,9 +491,9 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
       refine' MeasureTheory.Integrable.mono' _ _ _;
       refine' fun x => |x| * C * Real.exp ( c * |x| ) * Real.exp ( -x ^ 2 / 2 ) / Real.sqrt ( 2 * Real.pi );
       · convert h_integrable.const_mul ( C / Real.sqrt ( 2 * Real.pi ) ) using 1 <;>
-          first | rfl | (funext x; ring)
+          first | rfl | (funext x; ring_nf)
       · exact Continuous.aestronglyMeasurable ( by exact Continuous.mul ( Continuous.mul continuous_id ( show Continuous g from continuous_iff_continuousAt.mpr fun x => HasDerivAt.continuousAt ( hg x ) ) ) ( by continuity ) );
-      · simp_all +decide [ abs_mul, mul_assoc, mul_div_assoc ];
+      · simp_all +decide [ mul_assoc, mul_div_assoc ];
         filter_upwards [ ] with x using by rw [ abs_of_nonneg ( Real.sqrt_nonneg _ ), abs_of_nonneg ( Real.sqrt_nonneg _ ) ] ; exact mul_le_mul_of_nonneg_left ( by simpa only [ mul_assoc, mul_div_assoc ] using mul_le_mul_of_nonneg_right ( hgbound x ) ( by positivity ) ) ( by positivity ) ;
     · exact Filter.tendsto_neg_atTop_atBot;
     · exact Filter.tendsto_id;
@@ -511,7 +504,7 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
       have h_exp : Filter.Tendsto (fun b => Real.exp (-b^2 / 2 + c * |b|)) Filter.atTop (nhds 0) := by
         norm_num [ Filter.tendsto_atTop_atBot ];
         exact fun b => ⟨ |b| * 2 + |c| * 2 + 1, fun x hx => by cases abs_cases b <;> cases abs_cases c <;> cases abs_cases x <;> nlinarith ⟩;
-      convert h_exp.const_mul ( C / Real.sqrt ( 2 * Real.pi ) ) using 2 <;> ring;
+      convert h_exp.const_mul ( C / Real.sqrt ( 2 * Real.pi ) ) using 2 <;> ring_nf;
       rw [ Real.exp_add ] ; ring;
     refine' ⟨ squeeze_zero_norm _ h_lim_zero, squeeze_zero_norm _ h_lim_zero ⟩;
     · exact fun x => by simpa [ abs_mul, abs_div, abs_of_nonneg ( Real.sqrt_nonneg _ ) ] using mul_le_mul_of_nonneg_right ( hgbound x ) ( by positivity ) ;
@@ -528,14 +521,14 @@ lemma gaussianReal_stein (g g' : ℝ → ℝ)
             refine' h_integrable.const_mul ( Real.exp ( c ^ 2 ) ) |> fun h => h.mono' _ _;
             · exact Continuous.aestronglyMeasurable ( by continuity );
             · filter_upwards [ ] with x using by rw [ Real.norm_of_nonneg ( Real.exp_nonneg _ ) ] ; rw [ ← Real.exp_add ] ; exact Real.exp_le_exp.mpr ( by nlinarith [ sq_nonneg ( |x| - 2 * c ), abs_mul_abs_self x ] ) ;
-          convert h_integrable using 1 ; ext x ; rw [ ← Real.exp_add ] ; ring;
+          convert h_integrable using 1 ; ext x ; rw [ ← Real.exp_add ] ; ring_nf;
         convert h_integrable.const_mul ( C / Real.sqrt ( 2 * Real.pi ) ) using 2 ; ring;
       refine' h_integrable.mono' _ _;
       · exact MeasureTheory.AEStronglyMeasurable.mul ( hg'cont.aestronglyMeasurable ) ( Continuous.aestronglyMeasurable ( by continuity ) );
       · filter_upwards [ ] with x using by rw [ Real.norm_eq_abs, abs_mul, abs_of_nonneg ( by positivity : 0 ≤ Real.exp ( -x ^ 2 / 2 ) / Real.sqrt ( 2 * Real.pi ) ) ] ; exact mul_le_mul_of_nonneg_right ( hg'bound x ) ( by positivity ) ;
     · exact Filter.tendsto_neg_atTop_atBot;
     · exact Filter.tendsto_id;
-  simp_all +decide [ mul_div_assoc ];
+  simp_all +decide;
   exact tendsto_nhds_unique h_lim ( by simpa using Filter.Tendsto.add ( Filter.Tendsto.add ( Filter.Tendsto.neg ( ‹Filter.Tendsto ( fun b => g b * ( Real.exp ( -b ^ 2 / 2 ) / ( Real.sqrt 2 * Real.sqrt Real.pi ) ) ) Filter.atTop ( nhds 0 ) ∧ Filter.Tendsto ( fun b => g ( -b ) * ( Real.exp ( -b ^ 2 / 2 ) / ( Real.sqrt 2 * Real.sqrt Real.pi ) ) ) Filter.atTop ( nhds 0 ) ›.1 ) ) ( ‹Filter.Tendsto ( fun b => g b * ( Real.exp ( -b ^ 2 / 2 ) / ( Real.sqrt 2 * Real.sqrt Real.pi ) ) ) Filter.atTop ( nhds 0 ) ∧ Filter.Tendsto ( fun b => g ( -b ) * ( Real.exp ( -b ^ 2 / 2 ) / ( Real.sqrt 2 * Real.sqrt Real.pi ) ) ) Filter.atTop ( nhds 0 ) ›.2 ) ) h_lim_zero )
 
 /-
@@ -553,9 +546,9 @@ lemma standardGaussianMeasureOnEuclidean_integral_id {ι : Type*} [Fintype ι] :
       have h_gauss_symm : MeasureTheory.Measure.map (fun x : ι → ℝ => fun i => -x i) (Measure.pi fun _ : ι => gaussianReal 0 1) = Measure.pi fun _ : ι => gaussianReal 0 1 := by
         refine' ( MeasureTheory.Measure.pi_eq _ ).symm;
         intro s hs; rw [ MeasureTheory.Measure.map_apply ];
-        · simp +decide [ Set.preimage, hs ];
+        · simp +decide [ Set.preimage ];
           convert MeasureTheory.Measure.pi_pi _ _ using 1;
-          · rw [ show { x : ι → ℝ | ∀ i, -x i ∈ s i } = ( Set.pi Set.univ fun i => ( fun x => -x ) ⁻¹' s i ) by ext; simp +decide [ Set.mem_univ_pi ] ];
+          · rw [ show { x : ι → ℝ | ∀ i, -x i ∈ s i } = ( Set.pi Set.univ fun i => ( fun x => -x ) ⁻¹' s i ) by ext; simp +decide ];
             rw [ MeasureTheory.Measure.pi_pi, MeasureTheory.Measure.pi_pi ];
             exact Finset.prod_congr rfl fun i _ => by rw [ ← MeasureTheory.Measure.map_apply ( measurable_neg ) ( hs i ), h_gauss_symm _ rfl ] ;
           · exact fun i => by infer_instance;
@@ -642,7 +635,7 @@ one-dimensional Stein identity `gaussianReal_stein`.
 -/
 lemma pi_gaussian_stein_coord {ι : Type*} [Fintype ι] [DecidableEq ι]
     (h : (ι → ℝ) → ℝ) (i : ι)
-    (hh : ContDiff ℝ 1 h) (C c : ℝ) (hc : 0 ≤ c) (hC : 0 ≤ C)
+    (hh : ContDiff ℝ 1 h) (C c : ℝ) (_hc : 0 ≤ c) (_hC : 0 ≤ C)
     (hhb : ∀ y, |h y| ≤ C * Real.exp (c * ∑ j, |y j|))
     (hdb : ∀ y j, |fderiv ℝ h y (Pi.single j 1)| ≤ C * Real.exp (c * ∑ k, |y k|)) :
     ∫ y, y i * h y ∂(Measure.pi fun _ : ι => gaussianReal 0 1)
@@ -678,14 +671,14 @@ lemma pi_gaussian_stein_coord {ι : Type*} [Fintype ι] [DecidableEq ι]
       have h_sum : ∑ j, |(Function.update Yb i x) j| = |x| + ∑ j, |y j| := by
         rw [Finset.sum_eq_add_sum_sdiff_singleton_of_mem (Finset.mem_univ i)];
         refine' congr_arg₂ ( · + · ) _ _;
-        · simp +decide [ Function.update_apply ];
+        · simp +decide;
         · refine' Finset.sum_bij ( fun j _ => ⟨ j, by aesop ⟩ ) _ _ _ _ <;> simp +decide [ Function.update_apply ];
           aesop;
       exact ⟨ by simpa only [ h_sum ] using hhb ( Function.update Yb i x ), by simpa only [ h_sum ] using hdb ( Function.update Yb i x ) i ⟩;
     have := @gaussianReal_stein;
     convert this ( fun x => h ( Function.update Yb i x ) ) ( fun x => ( fderiv ℝ h ( Function.update Yb i x ) ) ( Pi.single i 1 ) ) h_G _ ( C * Real.exp ( c * ∑ j, |y j| ) ) c _ _ using 1;
     · fun_prop;
-    · intro x; convert h_G_bound x |>.1 using 1; rw [ mul_assoc, ← Real.exp_add ] ; ring;
+    · intro x; convert h_G_bound x |>.1 using 1; rw [ mul_assoc, ← Real.exp_add ] ; ring_nf;
     · intro x; specialize h_G_bound x; rw [ mul_assoc, ← Real.exp_add ] ; ring_nf at *; aesop;
   have h_split : ∫ y : ι → ℝ, y i * h y ∂(Measure.pi fun _ : ι => gaussianReal 0 1) = ∫ y : {j // j ≠ i} → ℝ, ∫ x : ℝ, x * h (Function.update (fun j => if h : j = i then 0 else y ⟨j,h⟩) i x) ∂(gaussianReal 0 1) ∂(Measure.pi fun _ : {j // j ≠ i} => gaussianReal 0 1) := by
     have h_split : Measure.pi (fun _ : ι => gaussianReal 0 1) = Measure.map (fun p : ℝ × ({j // j ≠ i} → ℝ) => Function.update (fun j => if h : j = i then 0 else p.2 ⟨j,h⟩) i p.1) (gaussianReal 0 1 |> Measure.prod <| Measure.pi fun _ : {j // j ≠ i} => gaussianReal 0 1) := by
@@ -697,13 +690,13 @@ lemma pi_gaussian_stein_coord {ι : Type*} [Fintype ι] [DecidableEq ι]
           refine' congr rfl ( Finset.prod_bij ( fun j _ => j ) _ _ _ _ ) <;> simp +decide;
         · grind;
       · refine' measurable_pi_lambda _ _;
-        intro j; by_cases hj : j = i <;> simp +decide [ hj, Function.update_apply ] ;
+        intro j; by_cases hj : j = i <;> simp +decide [ hj ] ;
         · exact measurable_fst;
         · exact measurable_pi_apply _ |> Measurable.comp <| measurable_snd;
       · exact MeasurableSet.univ_pi hs;
     rw [ h_split, MeasureTheory.integral_map ];
     · erw [ MeasureTheory.integral_prod_symm ];
-      · simp +decide [ Function.update_apply ];
+      · simp +decide;
       · convert h_integrable.1 using 1;
         rw [ h_split ];
         rw [ MeasureTheory.integrable_map_measure ];
@@ -711,12 +704,12 @@ lemma pi_gaussian_stein_coord {ι : Type*} [Fintype ι] [DecidableEq ι]
         · exact h_split ▸ h_integrable.1.aestronglyMeasurable;
         · refine' Measurable.aemeasurable _;
           refine' measurable_pi_lambda _ _;
-          intro j; by_cases hj : j = i <;> simp +decide [ hj, Function.update_apply ] ;
+          intro j; by_cases hj : j = i <;> simp +decide [ hj ] ;
           · exact measurable_fst;
           · exact measurable_pi_apply _ |> Measurable.comp <| measurable_snd;
     · refine' Measurable.aemeasurable _;
       refine' measurable_pi_lambda _ _;
-      intro j; by_cases hj : j = i <;> simp +decide [ hj, Function.update_apply ] ;
+      intro j; by_cases hj : j = i <;> simp +decide [ hj ] ;
       · exact measurable_fst;
       · exact measurable_pi_apply _ |> Measurable.comp <| measurable_snd;
     · exact h_split ▸ h_integrable.1.aestronglyMeasurable;
@@ -731,7 +724,7 @@ lemma pi_gaussian_stein_coord {ι : Type*} [Fintype ι] [DecidableEq ι]
           refine' congr rfl ( Finset.prod_bij ( fun j _ => j ) _ _ _ _ ) <;> simp +decide;
         · grind;
       · refine' measurable_pi_lambda _ _;
-        intro j; by_cases hj : j = i <;> simp +decide [ hj, Function.update_apply ] ;
+        intro j; by_cases hj : j = i <;> simp +decide [ hj ] ;
         · exact measurable_fst;
         · exact measurable_pi_apply _ |> Measurable.comp <| measurable_snd;
       · exact MeasurableSet.univ_pi hs;
@@ -753,7 +746,7 @@ lemma pi_gaussian_stein_coord {ι : Type*} [Fintype ι] [DecidableEq ι]
       rfl
     · refine' Measurable.aemeasurable _;
       refine' measurable_pi_lambda _ _;
-      intro j; by_cases hj : j = i <;> simp +decide [ hj, Function.update_apply ] ;
+      intro j; by_cases hj : j = i <;> simp +decide [ hj ] ;
       · exact measurable_fst;
       · exact measurable_pi_apply _ |> Measurable.comp <| measurable_snd;
     · convert h_integrable.2.aestronglyMeasurable using 1;
@@ -787,7 +780,7 @@ lemma gradient_toLp_coord_eq_fderiv {ι : Type*} [Fintype ι] [DecidableEq ι]
     rw [ EuclideanSpace.inner_single_right ] ; norm_num;
   · refine' ⟨ _, hasFDerivAt_iff_tendsto.mpr _ ⟩;
     exact ( ContinuousLinearEquiv.toContinuousLinearMap ( ContinuousLinearEquiv.symm ( EuclideanSpace.equiv ι ℝ ) ) );
-    simp +decide [ WithLp.toLp ]
+    simp +decide
 
 /-
 The value and gradient of `g` are integrable against the standard Gaussian when they have
@@ -919,12 +912,12 @@ lemma gaussian_ibp {ι : Type*} [Fintype ι] (g : EuclideanSpace ℝ ι → ℝ)
   -- integral and the per-coordinate identity.
   simp +decide only [inner];
   simp +decide only [Finset.sum_mul];
-  rw [ MeasureTheory.integral_finset_sum, MeasureTheory.integral_finset_sum ];
-  · simp_all +decide [ mul_assoc, MeasureTheory.integral_const_mul ];
+  rw [ MeasureTheory.integral_finsetSum, MeasureTheory.integral_finsetSum ];
+  · simp_all +decide [ mul_assoc ];
     exact Finset.sum_congr rfl fun i _ => by rw [ show ( fun w => w.ofLp i * ( v.ofLp i * g w ) ) = fun w => v.ofLp i * ( w.ofLp i * g w ) by ext; ring, show ( fun w => ( gradient g w ).ofLp i * v.ofLp i ) = fun w => v.ofLp i * ( gradient g w ).ofLp i by ext; ring, MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul, hcoord i ] ;
-  · simp_all +decide [ inner, Finset.mul_sum _ _ _ ];
+  · simp_all +decide;
     exact fun i => ( ‹∀ i, Integrable ( fun w => w.ofLp i * g w ) ( standardGaussianMeasureOnEuclidean ι ) ∧ Integrable ( fun w => ( gradient g w ).ofLp i ) ( standardGaussianMeasureOnEuclidean ι ) › i ).2.mul_const _;
-  · simp +decide [ inner, mul_assoc ];
+  · simp +decide [ mul_assoc ];
     exact fun i => by simpa only [ mul_left_comm, mul_assoc ] using ( ‹∀ i, Integrable ( fun w => w.ofLp i * g w ) ( standardGaussianMeasureOnEuclidean ι ) ∧ Integrable ( fun w => ( gradient g w ).ofLp i ) ( standardGaussianMeasureOnEuclidean ι ) › i |>.1 ).const_mul ( v.ofLp i ) ;
 
 /-- A `C¹` function with gradient bounded by `L` grows at most linearly. -/
@@ -1144,7 +1137,7 @@ lemma integrable_cov_psi (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0 �
     have h_abs : |F (Real.cos θ • p.1 - Real.sin θ • p.2)| ≤ |F 0| + L * ‖p.1‖ + L * ‖p.2‖ := by
       have h_triangle : ‖Real.cos θ • p.1 - Real.sin θ • p.2‖ ≤ ‖p.1‖ + ‖p.2‖ := by
         exact le_trans ( norm_sub_le _ _ ) ( add_le_add ( by rw [ norm_smul, Real.norm_eq_abs ] ; exact mul_le_of_le_one_left ( norm_nonneg _ ) ( Real.abs_cos_le_one _ ) ) ( by rw [ norm_smul, Real.norm_eq_abs ] ; exact mul_le_of_le_one_left ( norm_nonneg _ ) ( Real.abs_sin_le_one _ ) ) );
-      have := contDiff_abs_le_of_gradient_le F L hL hF hgrad ( Real.cos θ • p.1 - Real.sin θ • p.2 ) ; simp_all +decide [ mul_add, add_assoc ] ; nlinarith;
+      have := contDiff_abs_le_of_gradient_le F L hL hF hgrad ( Real.cos θ • p.1 - Real.sin θ • p.2 ) ; simp_all +decide [ add_assoc ] ; nlinarith;
     have h_grad : ‖gradient (fun z => Real.exp (s * F z)) p.1‖ ≤ |s| * L * Real.exp (|s| * |F 0|) * Real.exp (|s| * L * ‖p.1‖) := by
       have h_grad : ‖gradient (fun z => Real.exp (s * F z)) p.1‖ = |s| * Real.exp (s * F p.1) * ‖gradient F p.1‖ := by
         rw [ gradient_exp_smul F hF s p.1 ] ; norm_num [ norm_smul, abs_mul ];
@@ -1155,7 +1148,7 @@ lemma integrable_cov_psi (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0 �
         exact Real.exp_le_exp.mpr ( by cases abs_cases s <;> cases abs_cases ( F p.1 ) <;> nlinarith [ abs_le.mp h_exp ] );
       nlinarith [ show 0 ≤ |s| * Real.exp ( s * F p.1 ) by positivity, show 0 ≤ |s| * L by positivity, hgrad p.1 ]
     generalize_proofs at *;
-    simp_all +decide [ abs_mul, inner_self_eq_norm_sq_to_K ];
+    simp_all +decide;
     exact mul_le_mul h_abs ( by simpa [ abs_mul ] using abs_real_inner_le_norm ( gradient ( fun z => Real.exp ( s * F z ) ) p.1 ) p.2 |> le_trans <| mul_le_mul_of_nonneg_right h_grad <| norm_nonneg _ ) ( by positivity ) ( by positivity )
 
 /-
@@ -1217,7 +1210,7 @@ lemma gaussian_cov_change_of_var (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (
       rw [ rotation_measurePreserving θ |>.map_eq ];
     rw [ h_psi_integrable, MeasureTheory.integral_map ];
     · simp +decide [ ContinuousLinearMap.rotation ];
-      congr with p ; ring;
+      congr with p ; ring_nf;
       rw [ show Real.cos θ • Real.cos θ • p.1 + Real.cos θ • Real.sin θ • p.2 - ( - ( Real.sin θ • Real.sin θ • p.1 ) + Real.sin θ • Real.cos θ • p.2 ) = p.1 by ext i; simpa using by ring_nf; rw [ Real.sin_sq, Real.cos_sq ] ; ring ] ; ring;
     · exact Continuous.aemeasurable ( by continuity );
     · refine' MeasureTheory.Integrable.aestronglyMeasurable _;
@@ -1245,7 +1238,7 @@ lemma gaussian_cov_ibp_step (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 
     intro x;
     convert gaussian_ibp ( fun y => F ( Real.cos θ • x - Real.sin θ • y ) ) ( gradient ( fun z => Real.exp ( s * F z ) ) x ) ( show ContDiff ℝ 1 ( fun y => F ( Real.cos θ • x - Real.sin θ • y ) ) from ?_ ) ( |F 0| + L * ‖x‖ + L ) 1 ?_ ?_ using 1;
     · ac_rfl;
-    · rw [ ← MeasureTheory.integral_const_mul ] ; congr ; ext ; rw [ gradient_affine_comp ] ; ring;
+    · rw [ ← MeasureTheory.integral_const_mul ] ; congr ; ext ; rw [ gradient_affine_comp ] ; ring_nf;
       · simp +decide [ inner_smul_right ];
       · exact ContDiff.differentiable_one hF;
     · fun_prop;
@@ -1327,7 +1320,7 @@ lemma integrable_cov_joint (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0
       have h_integrable : MeasureTheory.Integrable (fun (p : EuclideanSpace ℝ ι) => (1 + ‖p‖) * Real.exp (|s| * L * ‖p‖)) (standardGaussianMeasureOnEuclidean ι) := by
         convert ‹∀ a b : ℝ, 0 ≤ a → 0 ≤ b → Integrable ( fun p : EuclideanSpace ℝ ι => ( 1 + ‖p‖ ) ^ a * Real.exp ( b * ‖p‖ ) ) ( standardGaussianMeasureOnEuclidean ι ) › 1 ( |s| * L ) zero_le_one ( mul_nonneg ( abs_nonneg s ) hL ) using 1 ; norm_num;
       convert MeasureTheory.Integrable.mul_prod ‹Integrable ( fun p : EuclideanSpace ℝ ι => ( |F 0| + L * ‖p‖ ) * Real.exp ( |s| * L * ‖p‖ ) * ( 1 + ‖p‖ ) ) ( standardGaussianMeasureOnEuclidean ι ) › ‹Integrable ( fun p : EuclideanSpace ℝ ι => ( 1 + ‖p‖ ) * Real.exp ( |s| * L * ‖p‖ ) ) ( standardGaussianMeasureOnEuclidean ι ) › using 1;
-    convert h_integrable.const_mul ( |s| * L * Real.exp ( |s| * |F 0| ) ) |> MeasureTheory.Integrable.comp_fst <| MeasureTheory.Measure.restrict ( MeasureTheory.MeasureSpace.volume ) ( Set.Ioc 0 ( Real.pi / 2 ) ) using 1 ; ext ; ring!;
+    convert h_integrable.const_mul ( |s| * L * Real.exp ( |s| * |F 0| ) ) |> MeasureTheory.Integrable.comp_fst <| MeasureTheory.Measure.restrict ( MeasureTheory.MeasureSpace.volume ) ( Set.Ioc 0 ( Real.pi / 2 ) ) using 1 ; ext ; ring_nf;
   · have h_measurable : Continuous (fun q : (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) × ℝ => F q.1.1 * ⟪gradient (fun z => Real.exp (s * F z)) (Real.cos q.2 • q.1.1 + Real.sin q.2 • q.1.2), -Real.sin q.2 • q.1.1 + Real.cos q.2 • q.1.2⟫_ℝ) := by
       refine' Continuous.mul ( hF.continuous.comp continuous_fst.fst ) _;
       have h_cont : Continuous (fun q : EuclideanSpace ℝ ι => gradient (fun z => Real.exp (s * F z)) q) := by
@@ -1426,7 +1419,7 @@ lemma gaussian_cov_repr (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0 �
   · refine' MeasureTheory.Integrable.mono' _ _ _;
     refine' fun x => |F 0| + L * Real.exp ( ‖x‖ );
     · refine' MeasureTheory.Integrable.add _ _;
-      · simp +decide [ MeasureTheory.integrable_const_iff ];
+      · simp +decide;
       · refine' MeasureTheory.Integrable.const_mul _ _;
         convert integrable_exp_mul_norm 1 using 1;
         norm_num;
@@ -1434,7 +1427,7 @@ lemma gaussian_cov_repr (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0 �
     · filter_upwards [ ] with x using le_trans ( contDiff_abs_le_of_gradient_le F L hL hF hgrad x ) ( by nlinarith [ Real.add_one_le_exp ‖x‖, norm_nonneg x ] );
   · refine' MeasureTheory.Integrable.mono' _ _ _;
     refine' fun x => Real.exp ( |s| * ( |F 0| + L * ‖x‖ ) );
-    · convert integrable_exp_mul_norm ( |s| * L ) |> fun h => h.const_mul ( Real.exp ( |s| * |F 0| ) ) using 1 ; ext ; ring;
+    · convert integrable_exp_mul_norm ( |s| * L ) |> fun h => h.const_mul ( Real.exp ( |s| * |F 0| ) ) using 1 ; ext ; ring_nf;
       rw [ ← Real.exp_add ];
     · exact Continuous.aestronglyMeasurable ( by exact Real.continuous_exp.comp ( continuous_const.mul hF.continuous ) );
     · have h_bound : ∀ x, |F x| ≤ |F 0| + L * ‖x‖ := by
@@ -1492,7 +1485,7 @@ lemma gaussian_cov_H_bound (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0
       exact h_abs_le x;
     refine' MeasureTheory.Integrable.mono' _ _ _;
     refine' fun x => Real.exp ( |s| * ( |F 0| + L * ‖x‖ ) );
-    · convert integrable_exp_mul_norm ( |s| * L ) |> fun h => h.const_mul ( Real.exp ( |s| * |F 0| ) ) using 2 ; ring;
+    · convert integrable_exp_mul_norm ( |s| * L ) |> fun h => h.const_mul ( Real.exp ( |s| * |F 0| ) ) using 2 ; ring_nf;
       rw [ ← Real.exp_add ];
     · exact Continuous.aestronglyMeasurable ( by exact Real.continuous_exp.comp ( continuous_const.mul hF.continuous ) );
     · filter_upwards [ ] with x using by rw [ Real.norm_of_nonneg ( Real.exp_nonneg _ ) ] ; exact Real.exp_le_exp.mpr ( by cases abs_cases s <;> cases abs_cases ( F x ) <;> nlinarith [ h_integrable x ] ) ;
@@ -1505,9 +1498,9 @@ lemma gaussian_cov_H_bound (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ) (hL : 0
     · have h_grad_exp : gradient (fun z => Real.exp (s * F z)) x = (s * Real.exp (s * F x)) • gradient F x := by
         unfold gradient;
         rw [ fderiv_exp ] <;> norm_num [ hF.contDiffAt.differentiableAt ];
-        rw [ fderiv_const_mul ] <;> norm_num [ hF.contDiffAt.differentiableAt ] ; ring;
+        rw [ fderiv_const_mul ] <;> norm_num [ hF.contDiffAt.differentiableAt ] ; ring_nf;
         rw [ smul_smul, mul_comm ];
-      simp_all +decide [ norm_smul, abs_mul ];
+      simp_all +decide [ norm_smul ];
       nlinarith [ show 0 ≤ |s| * Real.exp ( s * F x ) * L by positivity, show 0 ≤ |s| * Real.exp ( s * F x ) * ‖gradient F x‖ by positivity, hgrad x, mul_le_mul_of_nonneg_left ( hgrad x ) ( show 0 ≤ |s| * Real.exp ( s * F x ) by positivity ) ];
   · rw [ MeasureTheory.integral_const_mul ]
 
@@ -1661,7 +1654,7 @@ lemma tendsto_integrals_of_approx {ι : Type*} [Fintype ι]
   · refine' MeasureTheory.tendsto_integral_of_dominated_convergence _ _ _ _ _;
     refine' fun x => Real.exp ( |s| * ( C + L * ‖x‖ ) );
     · exact fun n => Continuous.aestronglyMeasurable ( Real.continuous_exp.comp ( continuous_const.mul ( hcont n ) ) );
-    · convert integrable_exp_mul_norm ( |s| * L ) |> fun h => h.const_mul ( Real.exp ( |s| * C ) ) using 1 ; ext ; ring;
+    · convert integrable_exp_mul_norm ( |s| * L ) |> fun h => h.const_mul ( Real.exp ( |s| * C ) ) using 1 ; ext ; ring_nf;
       rw [ ← Real.exp_add ];
     · intro n; filter_upwards [ ] with x; rw [ Real.norm_of_nonneg ( Real.exp_nonneg _ ) ] ; exact Real.exp_le_exp.mpr ( by cases abs_cases s <;> nlinarith [ abs_le.mp ( hbound n x ) ] ) ;
     · exact Filter.Eventually.of_forall fun x => Real.continuous_exp.continuousAt.tendsto.comp ( Filter.Tendsto.mul tendsto_const_nhds ( htend x ) );
@@ -1679,10 +1672,10 @@ lemma tendsto_integrals_of_approx {ι : Type*} [Fintype ι]
             convert integrable_exp_mul_norm ( |s| * L ) using 1;
           simpa only [ mul_assoc ] using h_integrable.const_mul C;
         · exact h_integrable.const_mul L;
-      convert h_integrable.const_mul ( Real.exp ( |s| * C ) ) using 2 ; ring;
+      convert h_integrable.const_mul ( Real.exp ( |s| * C ) ) using 2 ; ring_nf;
       simp only [mul_assoc, ← Real.exp_add];
     · intro n
-      simp [hbound];
+      simp;
       filter_upwards [ ] with x using mul_le_mul ( hbound n x ) ( Real.exp_le_exp.mpr ( by cases abs_cases s <;> nlinarith [ abs_le.mp ( hbound n x ) ] ) ) ( by positivity ) ( by positivity );
     · exact Filter.Eventually.of_forall fun x => Filter.Tendsto.mul ( htend x ) ( Real.continuous_exp.continuousAt.tendsto.comp ( tendsto_const_nhds.mul ( htend x ) ) )
 

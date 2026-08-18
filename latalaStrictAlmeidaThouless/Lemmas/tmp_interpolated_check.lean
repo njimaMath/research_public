@@ -463,6 +463,16 @@ private lemma sech3Deriv_neg (x : ℝ) :
   rw [sech3_neg, Real.tanh_neg]
   ring
 
+private lemma integral_comp_neg_standard (f : ℝ → ℝ) (hf : Continuous f) :
+    (∫ z, f (-z) ∂gaussianReal 0 1) = ∫ z, f z ∂gaussianReal 0 1 := by
+  have hmap : Measure.map (fun z : ℝ => -z) (gaussianReal 0 1) =
+      gaussianReal 0 1 := by simpa using gaussianReal_map_neg (μ := (0 : ℝ)) (v := (1 : ℝ≥0))
+  calc
+    (∫ z, f (-z) ∂gaussianReal 0 1) =
+        ∫ z, f z ∂Measure.map (fun z : ℝ => -z) (gaussianReal 0 1) := by
+          rw [integral_map (by fun_prop) hf.aestronglyMeasurable]
+    _ = ∫ z, f z ∂gaussianReal 0 1 := by rw [hmap]
+
 private lemma smoothSech3_neg (r x : ℝ) : smoothSech3 r (-x) = smoothSech3 r x := by
   unfold smoothSech3 standardGaussianExpectation
   calc
@@ -470,12 +480,14 @@ private lemma smoothSech3_neg (r x : ℝ) : smoothSech3 r (-x) = smoothSech3 r x
         ∫ z, sech3 (x + Real.sqrt r * (-z)) ∂gaussianReal 0 1 := by
           apply integral_congr_ae
           filter_upwards [] with z
-          rw [← sech3_neg]
-          congr 2
-          ring
+          calc
+            sech3 (-x + Real.sqrt r * z) =
+                sech3 (-(x + Real.sqrt r * (-z))) := by congr 1 <;> ring
+            _ = sech3 (x + Real.sqrt r * (-z)) := sech3_neg _
     _ = ∫ z, sech3 (x + Real.sqrt r * z) ∂gaussianReal 0 1 := by
-      simpa using integral_neg_eq_self
-        (fun z => sech3 (x + Real.sqrt r * z)) (gaussianReal 0 1)
+      simpa using integral_comp_neg_standard
+        (fun z => sech3 (x + Real.sqrt r * z))
+        (continuous_sech3.comp (by fun_prop))
 
 private lemma smoothSech3_first_neg (r x : ℝ) :
     standardGaussianExpectation (fun z =>
@@ -492,16 +504,23 @@ private lemma smoothSech3_first_neg (r x : ℝ) :
           Real.tanh (x + Real.sqrt r * (-z))) ∂gaussianReal 0 1 := by
             apply integral_congr_ae
             filter_upwards [] with z
-            rw [← sech3Deriv_neg]
-            congr 3
-            ring
+            calc
+              -3 * sech3 (-x + Real.sqrt r * z) *
+                  Real.tanh (-x + Real.sqrt r * z) =
+                  -3 * sech3 (-(x + Real.sqrt r * (-z))) *
+                    Real.tanh (-(x + Real.sqrt r * (-z))) := by
+                      congr 2 <;> ring
+              _ = -(-3 * sech3 (x + Real.sqrt r * (-z)) *
+                    Real.tanh (x + Real.sqrt r * (-z))) := sech3Deriv_neg _
     _ = -∫ z, -3 * sech3 (x + Real.sqrt r * z) *
           Real.tanh (x + Real.sqrt r * z) ∂gaussianReal 0 1 := by
       rw [integral_neg]
       congr 1
-      simpa using integral_neg_eq_self
+      simpa using integral_comp_neg_standard
         (fun z => -3 * sech3 (x + Real.sqrt r * z) *
-          Real.tanh (x + Real.sqrt r * z)) (gaussianReal 0 1)
+          Real.tanh (x + Real.sqrt r * z))
+        (((continuous_const.mul (continuous_sech3.comp (by fun_prop))).mul
+          (continuous_tanh.comp (by fun_prop))))
 
 private lemma standard_affine_integral_eq_gaussian
     {r : ℝ} (hr : 0 ≤ r) (x : ℝ) {f : ℝ → ℝ} (hf : Continuous f) :
@@ -510,21 +529,35 @@ private lemma standard_affine_integral_eq_gaussian
   let v : ℝ≥0 := ⟨r, hr⟩
   have hmul : Measure.map (fun z : ℝ => Real.sqrt r * z) (gaussianReal 0 1) =
       gaussianReal 0 v := by
-    simpa [v, Real.sq_sqrt hr] using
-      gaussianReal_map_const_mul (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (Real.sqrt r)
+    rw [gaussianReal_map_const_mul]
+    simp only [mul_zero]
+    apply congrArg (gaussianReal 0)
+    apply NNReal.eq
+    simp only [NNReal.coe_mul, NNReal.coe_mk, NNReal.coe_one, mul_one]
+    exact Real.sq_sqrt hr
   have hadd : Measure.map (fun y : ℝ => x + y) (gaussianReal 0 v) =
       gaussianReal x v := by
     simpa using gaussianReal_map_const_add (μ := (0 : ℝ)) (v := v) x
   have hmap : Measure.map (fun z : ℝ => x + Real.sqrt r * z)
       (gaussianReal 0 1) = gaussianReal x v := by
-    rw [← hadd, ← hmul, Measure.map_map]
-    · rfl
-    · fun_prop
-    · fun_prop
-  rw [← hmap, integral_map]
-  · rfl
-  · fun_prop
-  · exact hf.aestronglyMeasurable
+    calc
+      Measure.map (fun z : ℝ => x + Real.sqrt r * z) (gaussianReal 0 1) =
+          Measure.map (fun y : ℝ => x + y)
+            (Measure.map (fun z : ℝ => Real.sqrt r * z) (gaussianReal 0 1)) := by
+              simpa [Function.comp_def] using
+                (Measure.map_map
+                  (μ := gaussianReal 0 1)
+                  (g := fun y : ℝ => x + y)
+                  (f := fun z : ℝ => Real.sqrt r * z)
+                  (by fun_prop) (by fun_prop)).symm
+      _ = Measure.map (fun y : ℝ => x + y) (gaussianReal 0 v) := by rw [hmul]
+      _ = gaussianReal x v := hadd
+  calc
+    (∫ z, f (x + Real.sqrt r * z) ∂gaussianReal 0 1) =
+        ∫ y, f y ∂Measure.map (fun z : ℝ => x + Real.sqrt r * z)
+          (gaussianReal 0 1) := by
+            rw [integral_map (by fun_prop) hf.aestronglyMeasurable]
+    _ = ∫ y, f y ∂gaussianReal x ⟨r, hr⟩ := by rw [hmap]
 
 private lemma gaussianPDFReal_neg_le_self {v : ℝ≥0} (hv : v ≠ 0)
     {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
@@ -532,7 +565,8 @@ private lemma gaussianPDFReal_neg_le_self {v : ℝ≥0} (hv : v ≠ 0)
   rw [gaussianPDFReal, gaussianPDFReal]
   apply mul_le_mul_of_nonneg_left _ (by positivity)
   apply Real.exp_le_exp.mpr
-  have hvpos : 0 < (v : ℝ) := NNReal.coe_pos.mpr hv
+  have hvpos : 0 < (v : ℝ) := by
+    exact_mod_cast (bot_lt_iff_ne_bot.mpr hv)
   apply div_le_div_of_nonneg_right _ (by positivity : 0 ≤ 2 * (v : ℝ))
   nlinarith [sq_nonneg (y - x), sq_nonneg (y + x)]
 
@@ -548,9 +582,13 @@ private lemma smoothSech3_first_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x)
       rw [Real.tanh_eq_sinh_div_cosh]
       exact div_nonneg ((Real.sinh_nonneg_iff).2 hx) (Real.cosh_pos x).le
     exact mul_nonpos_of_nonpos_of_nonneg
-      (mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sech_pos x).le) ht
+      (mul_nonpos_of_nonpos_of_nonneg (by norm_num)
+        (pow_nonneg (sech_pos x).le 3)) ht
   let v : ℝ≥0 := ⟨r, hr⟩
-  have hv : v ≠ 0 := by exact NNReal.ne_iff.mpr (lt_of_le_of_ne hr (Ne.symm hr0))
+  have hvpos : 0 < v := by
+    change 0 < r
+    exact lt_of_le_of_ne hr (Ne.symm hr0)
+  have hv : v ≠ 0 := hvpos.ne'
   let D : ℝ → ℝ := fun y => -3 * sech3 y * Real.tanh y
   have hshift : standardGaussianExpectation (fun z => D (x + Real.sqrt r * z)) =
       ∫ y, D y ∂gaussianReal x v := by
@@ -564,31 +602,185 @@ private lemma smoothSech3_first_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x)
         ((continuous_const.mul continuous_sech3).mul continuous_tanh).measurable)
         |>.aestronglyMeasurable
     · filter_upwards [] with y
-      rw [Real.norm_eq_abs, abs_mul]
       have hp := gaussianPDFReal_nonneg x v y
-      rw [abs_of_nonneg hp]
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hp]
+      dsimp [D]
       calc
-        gaussianPDFReal x v y * |D y| ≤ gaussianPDFReal x v y * 3 := by
-          gcongr
-          exact sech3Deriv_abs_le_three y
-        _ = |3 * gaussianPDFReal x v y| := by
-          rw [abs_of_nonneg (mul_nonneg (by norm_num) hp)]
-          ring
+        gaussianPDFReal x v y *
+            |-3 * sech3 y * Real.tanh y| ≤
+            gaussianPDFReal x v y * 3 :=
+          mul_le_mul_of_nonneg_left (sech3Deriv_abs_le_three y) hp
+        _ = 3 * gaussianPDFReal x v y := by ring
+  simp only [smul_eq_mul]
   rw [integral_eq_integral_Ioi_add_neg hvol]
-  apply integral_nonpos
-  filter_upwards [] with y hy
+  apply integral_nonpos_of_ae
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with y hy
   have hy0 : 0 ≤ y := hy.le
   have hD : D y ≤ 0 := by
     have ht : 0 ≤ Real.tanh y := by
       rw [Real.tanh_eq_sinh_div_cosh]
       exact div_nonneg ((Real.sinh_nonneg_iff).2 hy0) (Real.cosh_pos y).le
     exact mul_nonpos_of_nonpos_of_nonneg
-      (mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sech_pos y).le) ht
+      (mul_nonpos_of_nonpos_of_nonneg (by norm_num)
+        (pow_nonneg (sech_pos y).le 3)) ht
   have hp := gaussianPDFReal_neg_le_self hv hx hy0
   change gaussianPDFReal x v y * D y + gaussianPDFReal x v (-y) * D (-y) ≤ 0
   have hDneg : D (-y) = -D y := by
     exact sech3Deriv_neg y
   rw [hDneg]
   nlinarith [mul_nonpos_of_nonpos_of_nonneg hD (sub_nonneg.mpr hp)]
+
+private noncomputable def smoothSech3First (r x : ℝ) : ℝ :=
+  standardGaussianExpectation (fun z =>
+    -3 * sech3 (x + Real.sqrt r * z) *
+      Real.tanh (x + Real.sqrt r * z))
+
+private noncomputable def smoothSech3Second (r x : ℝ) : ℝ :=
+  standardGaussianExpectation (fun z => sech3Second (x + Real.sqrt r * z))
+
+private lemma smoothSech3_nonneg (r x : ℝ) : 0 ≤ smoothSech3 r x := by
+  unfold smoothSech3 standardGaussianExpectation
+  apply integral_nonneg
+  intro z
+  exact pow_nonneg (sech_pos _).le 3
+
+private lemma abs_smoothSech3_le_one (r x : ℝ) : |smoothSech3 r x| ≤ 1 := by
+  rw [abs_of_nonneg (smoothSech3_nonneg r x)]
+  unfold smoothSech3 standardGaussianExpectation
+  calc
+    (∫ z, sech3 (x + Real.sqrt r * z) ∂gaussianReal 0 1) ≤
+        ∫ _z : ℝ, (1 : ℝ) ∂gaussianReal 0 1 := by
+          apply integral_mono (integrable_sech3_affine x (Real.sqrt r)) (integrable_const 1)
+          intro z
+          exact le_trans (le_abs_self _) (sech3_abs_le_one _)
+    _ = 1 := by simp
+
+private lemma abs_smoothSech3First_le_three (r x : ℝ) :
+    |smoothSech3First r x| ≤ 3 := by
+  unfold smoothSech3First standardGaussianExpectation
+  calc
+    |∫ z, -3 * sech3 (x + Real.sqrt r * z) *
+        Real.tanh (x + Real.sqrt r * z) ∂gaussianReal 0 1| ≤
+        ∫ z, |-3 * sech3 (x + Real.sqrt r * z) *
+          Real.tanh (x + Real.sqrt r * z)| ∂gaussianReal 0 1 :=
+      abs_integral_le_integral_abs
+    _ ≤ ∫ _z : ℝ, (3 : ℝ) ∂gaussianReal 0 1 := by
+      apply integral_mono
+      · exact (integrable_sech3Deriv_affine x (Real.sqrt r)).abs
+      · exact integrable_const 3
+      · intro z
+        exact sech3Deriv_abs_le_three _
+    _ = 3 := by simp
+
+private lemma abs_smoothSech3Second_le_twelve (r x : ℝ) :
+    |smoothSech3Second r x| ≤ 12 := by
+  unfold smoothSech3Second standardGaussianExpectation
+  calc
+    |∫ z, sech3Second (x + Real.sqrt r * z) ∂gaussianReal 0 1| ≤
+        ∫ z, |sech3Second (x + Real.sqrt r * z)| ∂gaussianReal 0 1 :=
+      abs_integral_le_integral_abs
+    _ ≤ ∫ _z : ℝ, (12 : ℝ) ∂gaussianReal 0 1 := by
+      apply integral_mono
+      · exact (integrable_sech3Second_affine x (Real.sqrt r)).abs
+      · exact integrable_const 12
+      · intro z
+        exact sech3Second_abs_le_twelve _
+    _ = 12 := by simp
+
+private lemma sech_hasDerivAt (x : ℝ) :
+    HasDerivAt sech (-sech x * Real.tanh x) x := by
+  unfold sech
+  have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
+  apply ((Real.hasDerivAt_cosh x).inv hc).congr_deriv
+  rw [Real.tanh_eq_sinh_div_cosh]
+  field_simp [hc]
+
+private lemma tanh_sq_add_sech_sq (x : ℝ) :
+    Real.tanh x ^ 2 + sech x ^ 2 = 1 := by
+  unfold sech
+  rw [Real.tanh_eq_sinh_div_cosh]
+  have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
+  simp only [div_pow, inv_pow]
+  field_simp [hc]
+  nlinarith [Real.cosh_sq_sub_sinh_sq x]
+
+private noncomputable def tiltedSech4Value (r x : ℝ) : ℝ :=
+  Real.exp (-r / 2) * smoothSech3 r x * sech x
+
+private noncomputable def tiltedSech4First (r x : ℝ) : ℝ :=
+  Real.exp (-r / 2) * sech x *
+    (smoothSech3First r x - smoothSech3 r x * Real.tanh x)
+
+private noncomputable def tiltedSech4Second (r x : ℝ) : ℝ :=
+  Real.exp (-r / 2) * sech x *
+    (smoothSech3Second r x - 2 * smoothSech3First r x * Real.tanh x +
+      smoothSech3 r x * (Real.tanh x ^ 2 - sech x ^ 2))
+
+private lemma tiltedSech4Value_hasDerivAt_x (r x : ℝ) :
+    HasDerivAt (tiltedSech4Value r) (tiltedSech4First r x) x := by
+  have ha : HasDerivAt (smoothSech3 r) (smoothSech3First r x) x := by
+    simpa [smoothSech3First] using smoothSech3_hasDerivAt_x r x
+  have hs := sech_hasDerivAt x
+  unfold tiltedSech4Value tiltedSech4First
+  apply ((ha.const_mul (Real.exp (-r / 2))).mul hs).congr_deriv
+  ring
+
+private lemma tiltedSech4First_hasDerivAt_x (r x : ℝ) :
+    HasDerivAt (tiltedSech4First r) (tiltedSech4Second r x) x := by
+  have ha : HasDerivAt (smoothSech3 r) (smoothSech3First r x) x := by
+    simpa [smoothSech3First] using smoothSech3_hasDerivAt_x r x
+  have ha₁ : HasDerivAt (smoothSech3First r) (smoothSech3Second r x) x := by
+    simpa [smoothSech3First, smoothSech3Second] using
+      smoothSech3_first_hasDerivAt_x r x
+  have hs := sech_hasDerivAt x
+  have ht := tanh_hasDerivAt x
+  unfold tiltedSech4First tiltedSech4Second
+  have hbracket := ha₁.sub (ha.mul ht)
+  apply ((hs.const_mul (Real.exp (-r / 2))).mul hbracket).congr_deriv
+  ring
+
+private lemma tiltedSech4_generator (r x : ℝ) :
+    (1 / 2) * tiltedSech4Second r x +
+        Real.tanh x * tiltedSech4First r x =
+      (1 / 2) * Real.exp (-r / 2) * sech x *
+        (smoothSech3Second r x - smoothSech3 r x) := by
+  have hid := tanh_sq_add_sech_sq x
+  have ht : Real.tanh x ^ 2 = 1 - sech x ^ 2 := by linarith
+  unfold tiltedSech4Second tiltedSech4First
+  rw [ht]
+  ring
+
+private lemma tiltedSech4Value_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun t => tiltedSech4Value t x)
+      ((1 / 2) * Real.exp (-r / 2) * sech x *
+        (smoothSech3Second r x - smoothSech3 r x)) r := by
+  have he : HasDerivAt (fun t : ℝ => Real.exp (-t / 2))
+      ((-1 / 2) * Real.exp (-r / 2)) r := by
+    have hinner : HasDerivAt (fun t : ℝ => -t / 2) (-1 / 2) r := by
+      convert ((hasDerivAt_id r).neg.div_const 2) using 1 <;> ring
+    simpa [mul_comm] using (Real.hasDerivAt_exp (-r / 2)).comp r hinner
+  have ha := smoothSech3_hasDerivAt_r (x := x) hr
+  unfold tiltedSech4Value smoothSech3Second
+  apply ((he.mul ha).mul_const (sech x)).congr_deriv
+  ring
+
+private lemma tiltedSech4First_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) :
+    tiltedSech4First r x ≤ 0 := by
+  have ha₁ : smoothSech3First r x ≤ 0 :=
+    smoothSech3_first_nonpos hr hx
+  have ha : 0 ≤ smoothSech3 r x := smoothSech3_nonneg r x
+  have ht : 0 ≤ Real.tanh x := by
+    rw [Real.tanh_eq_sinh_div_cosh]
+    exact div_nonneg ((Real.sinh_nonneg_iff).2 hx) (Real.cosh_pos x).le
+  unfold tiltedSech4First smoothSech3First
+  exact mul_nonpos_of_nonneg_of_nonpos
+    (mul_nonneg (Real.exp_pos _).le (sech_pos x).le)
+    (by linarith [mul_nonneg ha ht])
+
+private lemma tiltedSech4First_neg (r x : ℝ) :
+    tiltedSech4First r (-x) = -tiltedSech4First r x := by
+  unfold tiltedSech4First smoothSech3First
+  rw [sech_neg, Real.tanh_neg, smoothSech3_neg, smoothSech3_first_neg]
+  ring
 
 end SpinGlass.AT
