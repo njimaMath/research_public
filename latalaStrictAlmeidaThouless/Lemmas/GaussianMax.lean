@@ -1,4 +1,4 @@
-import gaussian_concentration
+import SpinGlassAT.Gaussian_concentration.gaussian_concentration
 import Mathlib.Analysis.Convex.Integral
 
 open MeasureTheory ProbabilityTheory Real BigOperators
@@ -16,10 +16,26 @@ noncomputable def centeredGaussianMax
   fun x ↦ Finset.univ.sup' hI fun v ↦
     F v x - ∫ y, F v y ∂SYK.standardGaussianMeasureOnEuclidean ι
 
+private theorem integrable_lipschitz_standardGaussian
+    {ι : Type*} [Fintype ι]
+    (F : EuclideanSpace ℝ ι → ℝ) (L : ℝ)
+    (hL : 0 < L) (hLip : LipschitzWith L.toNNReal F) :
+    Integrable F (SYK.standardGaussianMeasureOnEuclidean ι) := by
+  let μ := SYK.standardGaussianMeasureOnEuclidean ι
+  have habs : Integrable (fun x ↦ |F x|) μ := by
+    simpa using
+      integrable_pow_abs_of_integrable_exp_mul
+        (μ := μ) (X := F) (t := (1 : ℝ)) one_ne_zero
+        (SYK.integrable_exp_smul_lipschitz F L hL hLip 1)
+        (by simpa using
+          (SYK.integrable_exp_smul_lipschitz F L hL hLip (-1))) 1
+  exact (integrable_norm_iff hLip.continuous.aestronglyMeasurable).mp (by
+    simpa [Real.norm_eq_abs] using habs)
+
 private theorem gaussian_max_exponential_bound
     {ι I : Type*} [Fintype ι] [Fintype I]
     (F : I → EuclideanSpace ℝ ι → ℝ) (L t : ℝ)
-    (hL : 0 < L) (ht : 0 < t)
+    (hL : 0 < L)
     (hLip : ∀ v, LipschitzWith L.toNNReal (F v))
     (hI : (Finset.univ : Finset I).Nonempty) :
     Real.exp (t * ∫ x, centeredGaussianMax hI F x
@@ -96,7 +112,7 @@ private theorem gaussian_max_exponential_bound
 private theorem gaussian_max_log_bound
     {ι I : Type*} [Fintype ι] [Fintype I]
     (F : I → EuclideanSpace ℝ ι → ℝ) (L t : ℝ)
-    (hL : 0 < L) (ht : 0 < t)
+    (hL : 0 < L)
     (hLip : ∀ v, LipschitzWith L.toNNReal (F v))
     (hI : (Finset.univ : Finset I).Nonempty) :
     t * ∫ x, centeredGaussianMax hI F x
@@ -104,7 +120,7 @@ private theorem gaussian_max_log_bound
       Real.log (Fintype.card I : ℝ) + L ^ 2 * t ^ 2 / 2 := by
   have hcard : 0 < (Fintype.card I : ℝ) := by
     exact_mod_cast Finset.card_pos.mpr hI
-  have h := gaussian_max_exponential_bound F L t hL ht hLip hI
+  have h := gaussian_max_exponential_bound F L t hL hLip hI
   have hlog := Real.log_le_log (Real.exp_pos _) h
   rw [Real.log_exp, Real.log_mul hcard.ne' (Real.exp_pos _).ne',
     Real.log_exp] at hlog
@@ -132,7 +148,7 @@ theorem gaussian_max_estimate_of_two_le_card
   have harg : 0 ≤ 2 * a := mul_nonneg (by norm_num) ha.le
   have hr : 0 < r := Real.sqrt_pos.2 (mul_pos (by norm_num) ha)
   have ht : 0 < t := div_pos hr hL
-  have hlog := gaussian_max_log_bound F L t hL ht hLip hI
+  have hlog := gaussian_max_log_bound F L t hL hLip hI
   refine le_of_mul_le_mul_left (a := t) ?_ ht
   calc
     t * ∫ x, centeredGaussianMax hI F x
@@ -146,5 +162,56 @@ theorem gaussian_max_estimate_of_two_le_card
       nlinarith [hrsq]
     _ = t * (L * Real.sqrt (2 * Real.log (Fintype.card I : ℝ))) := by
       rfl
+
+/-- Expected maximum estimate for every nonempty finite family, including the
+singleton-family and zero-Lipschitz cases. -/
+theorem gaussian_max_estimate
+    {ι I : Type*} [Fintype ι] [Fintype I] [Nonempty I]
+    (F : I → EuclideanSpace ℝ ι → ℝ) (L : ℝ)
+    (hL : 0 ≤ L)
+    (hLip : ∀ v, LipschitzWith L.toNNReal (F v)) :
+    (∫ x, centeredGaussianMax Finset.univ_nonempty F x
+        ∂SYK.standardGaussianMeasureOnEuclidean ι) ≤
+      L * Real.sqrt (2 * Real.log (Fintype.card I : ℝ)) := by
+  by_cases hLzero : L = 0
+  · subst L
+    have hconst (v : I) (x : EuclideanSpace ℝ ι) : F v x = F v 0 := by
+      have hdist := (hLip v).dist_le_mul x 0
+      have hz : dist (F v x) (F v 0) = 0 := by
+        apply le_antisymm
+        · simpa using hdist
+        · exact dist_nonneg
+      exact dist_eq_zero.mp hz
+    have hint (v : I) :
+        (∫ x, F v x ∂SYK.standardGaussianMeasureOnEuclidean ι) = F v 0 := by
+      simp_rw [hconst v]
+      simp
+    have hmax (x : EuclideanSpace ℝ ι) :
+        centeredGaussianMax Finset.univ_nonempty F x = 0 := by
+      apply Finset.sup'_eq_of_forall
+      intro v _
+      simp [hconst v x, hint v]
+    simp_rw [hmax]
+    simp
+  · have hLpos : 0 < L := lt_of_le_of_ne hL (Ne.symm hLzero)
+    by_cases hcard : Fintype.card I = 1
+    · obtain ⟨i, hi⟩ := Fintype.card_eq_one_iff.mp hcard
+      have huniv : (Finset.univ : Finset I) = {i} := by
+        ext v
+        simp [hi v]
+      have hmax (x : EuclideanSpace ℝ ι) :
+          centeredGaussianMax Finset.univ_nonempty F x =
+            F i x - ∫ y, F i y
+              ∂SYK.standardGaussianMeasureOnEuclidean ι := by
+        simp [centeredGaussianMax, huniv]
+      have hFint :=
+        integrable_lipschitz_standardGaussian (F i) L hLpos (hLip i)
+      simp_rw [hmax]
+      rw [integral_sub hFint (integrable_const _)]
+      simp [hcard]
+    · have hcardpos : 0 < Fintype.card I := Fintype.card_pos
+      have hcardtwo : 2 ≤ Fintype.card I := by omega
+      simpa using
+        gaussian_max_estimate_of_two_le_card F L hLpos hcardtwo hLip
 
 end SpinGlass.AT

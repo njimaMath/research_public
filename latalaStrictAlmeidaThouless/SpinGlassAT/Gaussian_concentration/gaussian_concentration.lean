@@ -1,6 +1,6 @@
-import GaussianConcentrationAux
-import GaussianCovSmooth
-import GaussianCovMollify
+import SpinGlassAT.Gaussian_concentration.GaussianConcentrationAux
+import SpinGlassAT.Gaussian_concentration.GaussianCovSmooth
+import SpinGlassAT.Gaussian_concentration.GaussianCovMollify
 
 open scoped BigOperators ENNReal NNReal
 open MeasureTheory

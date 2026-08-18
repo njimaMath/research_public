@@ -1,0 +1,46 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["342157f0f96ea91d.olean"],
+  "m": false,
+  "i": "aeff6b699e66c708.ilean",
+  "c": "d76d4ccc405fd192.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\SpinGlassAT\\Gaussian_concentration\\GaussianCovMollify.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlassAT\\Gaussian_concentration\\GaussianCovMollify.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlassAT\\Gaussian_concentration\\GaussianCovMollify.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\SpinGlassAT\\Gaussian_concentration\\GaussianCovMollify.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\SpinGlassAT\\Gaussian_concentration\\GaussianCovMollify.setup.json --json",
+   "level": "trace"},
+  {"message":
+   "SpinGlassAT/Gaussian_concentration/GaussianCovMollify.lean:136:115: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "SpinGlassAT/Gaussian_concentration/GaussianCovMollify.lean:154:72: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "SpinGlassAT/Gaussian_concentration/GaussianCovMollify.lean:157:12: This simp argument is unused:\n  hbound\n\nHint: Omit it from the simp argument list.\n  simp ̵[̵h̵b̵o̵u̵n̵d̵]̵\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"}],
+ "inputs":
+ [["SpinGlassAT.Gaussian_concentration.GaussianCovMollify:deps",
+   [["deps",
+     [["LatalaMeetsAT/LatalaMeetsAT:extraDep",
+       [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["SpinGlassAT.Gaussian_concentration.GaussianConcentrationAux transitive imports (legacy)",
+         "0c72aca3e353b9e4"],
+        ["SpinGlassAT.Gaussian_concentration.GaussianConcentrationAux:importAllArts",
+         "c51150951a01bb10"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
+   "4ce1780d8d26fd00"],
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\SpinGlassAT\\Gaussian_concentration\\GaussianCovMollify.lean",
+   "4cccb310cf425f25"],
+  ["options", "00000000000006bb"],
+  ["isModule: false", "feefd2a0d3a1847e"],
+  ["Module.name: SpinGlassAT.Gaussian_concentration.GaussianCovMollify",
+   "e7379399cc01891c"],
+  ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "7480307fd52f8cd7"}
