@@ -50,8 +50,10 @@ open scoped MeasureTheory NNReal
 #check one_div_le_one_div_of_le
 #check Real.sqrt_le_sqrt
 #check Real.sqrt_lt_sqrt
+#check integral_neg_eq_self
+#check integrable_gaussianPDFReal
 
-example {f : ℝ → ℝ} (hf : Integrable f) :
+private lemma integral_eq_integral_Ioi_add_neg {f : ℝ → ℝ} (hf : Integrable f) :
     ∫ x, f x = ∫ x in Set.Ioi (0 : ℝ), (f x + f (-x)) := by
   have hsplit := setIntegral_union (f := f)
     (Set.Iic_disjoint_Ioi (a := (0 : ℝ)) (b := 0) le_rfl)
@@ -309,7 +311,8 @@ private lemma sech3Deriv_comp_deriv (a b z : ℝ) :
     deriv (fun y => -3 * sech3 (a + b * y) * Real.tanh (a + b * y)) z =
       b * sech3Second (a + b * z) := by
   have harg : HasDerivAt (fun y : ℝ => a + b * y) b z := by
-    exact ((hasDerivAt_id z).const_mul b).const_add a
+    simpa only [id_eq, mul_one] using
+      ((hasDerivAt_id z).const_mul b).const_add a
   simpa [Function.comp_def, mul_comm] using
     ((sech3Deriv_hasDerivAt (a + b * z)).comp z harg).deriv
 
@@ -388,13 +391,17 @@ private lemma smoothSech3_hasDerivAt_r_raw {r x : ℝ} (hr : 0 < r) :
         |(-3 * sech3 (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)) *
             (1 / (2 * Real.sqrt t) * z)|
             = |-3 * sech3 (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)| *
-                |1 / (2 * Real.sqrt t)| * |z| := by rw [abs_mul, abs_mul]
+                |1 / (2 * Real.sqrt t)| * |z| := by
+                  simp only [abs_mul]
+                  ring
         _
             ≤ 3 * c⁻¹ * |z| := by
-              gcongr
-              · exact sech3Deriv_abs_le_three _
-              · exact hcoef
-        _ = 3 * c⁻¹ * |z| := rfl)
+              have hp :
+                  |-3 * sech3 (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)| *
+                      |1 / (2 * Real.sqrt t)| ≤ 3 * c⁻¹ :=
+                mul_le_mul (sech3Deriv_abs_le_three _) hcoef
+                  (abs_nonneg _) (by norm_num)
+              exact mul_le_mul_of_nonneg_right hp (abs_nonneg z))
     hboundInt
     (by
       filter_upwards [] with z
@@ -441,5 +448,147 @@ private lemma smoothSech3_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
           ∂gaussianReal 0 1 := by
           rw [integral_const_mul]
           field_simp [hsqrt]
+
+private lemma sech_neg (x : ℝ) : sech (-x) = sech x := by
+  unfold sech
+  rw [Real.cosh_neg]
+
+private lemma sech3_neg (x : ℝ) : sech3 (-x) = sech3 x := by
+  unfold sech3
+  rw [sech_neg]
+
+private lemma sech3Deriv_neg (x : ℝ) :
+    -3 * sech3 (-x) * Real.tanh (-x) =
+      -(-3 * sech3 x * Real.tanh x) := by
+  rw [sech3_neg, Real.tanh_neg]
+  ring
+
+private lemma smoothSech3_neg (r x : ℝ) : smoothSech3 r (-x) = smoothSech3 r x := by
+  unfold smoothSech3 standardGaussianExpectation
+  calc
+    ∫ z, sech3 (-x + Real.sqrt r * z) ∂gaussianReal 0 1 =
+        ∫ z, sech3 (x + Real.sqrt r * (-z)) ∂gaussianReal 0 1 := by
+          apply integral_congr_ae
+          filter_upwards [] with z
+          rw [← sech3_neg]
+          congr 2
+          ring
+    _ = ∫ z, sech3 (x + Real.sqrt r * z) ∂gaussianReal 0 1 := by
+      simpa using integral_neg_eq_self
+        (fun z => sech3 (x + Real.sqrt r * z)) (gaussianReal 0 1)
+
+private lemma smoothSech3_first_neg (r x : ℝ) :
+    standardGaussianExpectation (fun z =>
+      -3 * sech3 (-x + Real.sqrt r * z) *
+        Real.tanh (-x + Real.sqrt r * z)) =
+      -standardGaussianExpectation (fun z =>
+        -3 * sech3 (x + Real.sqrt r * z) *
+          Real.tanh (x + Real.sqrt r * z)) := by
+  unfold standardGaussianExpectation
+  calc
+    ∫ z, -3 * sech3 (-x + Real.sqrt r * z) *
+        Real.tanh (-x + Real.sqrt r * z) ∂gaussianReal 0 1 =
+        ∫ z, -(-3 * sech3 (x + Real.sqrt r * (-z)) *
+          Real.tanh (x + Real.sqrt r * (-z))) ∂gaussianReal 0 1 := by
+            apply integral_congr_ae
+            filter_upwards [] with z
+            rw [← sech3Deriv_neg]
+            congr 3
+            ring
+    _ = -∫ z, -3 * sech3 (x + Real.sqrt r * z) *
+          Real.tanh (x + Real.sqrt r * z) ∂gaussianReal 0 1 := by
+      rw [integral_neg]
+      congr 1
+      simpa using integral_neg_eq_self
+        (fun z => -3 * sech3 (x + Real.sqrt r * z) *
+          Real.tanh (x + Real.sqrt r * z)) (gaussianReal 0 1)
+
+private lemma standard_affine_integral_eq_gaussian
+    {r : ℝ} (hr : 0 ≤ r) (x : ℝ) {f : ℝ → ℝ} (hf : Continuous f) :
+    (∫ z, f (x + Real.sqrt r * z) ∂gaussianReal 0 1) =
+      ∫ y, f y ∂gaussianReal x ⟨r, hr⟩ := by
+  let v : ℝ≥0 := ⟨r, hr⟩
+  have hmul : Measure.map (fun z : ℝ => Real.sqrt r * z) (gaussianReal 0 1) =
+      gaussianReal 0 v := by
+    simpa [v, Real.sq_sqrt hr] using
+      gaussianReal_map_const_mul (μ := (0 : ℝ)) (v := (1 : ℝ≥0)) (Real.sqrt r)
+  have hadd : Measure.map (fun y : ℝ => x + y) (gaussianReal 0 v) =
+      gaussianReal x v := by
+    simpa using gaussianReal_map_const_add (μ := (0 : ℝ)) (v := v) x
+  have hmap : Measure.map (fun z : ℝ => x + Real.sqrt r * z)
+      (gaussianReal 0 1) = gaussianReal x v := by
+    rw [← hadd, ← hmul, Measure.map_map]
+    · rfl
+    · fun_prop
+    · fun_prop
+  rw [← hmap, integral_map]
+  · rfl
+  · fun_prop
+  · exact hf.aestronglyMeasurable
+
+private lemma gaussianPDFReal_neg_le_self {v : ℝ≥0} (hv : v ≠ 0)
+    {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    gaussianPDFReal x v (-y) ≤ gaussianPDFReal x v y := by
+  rw [gaussianPDFReal, gaussianPDFReal]
+  apply mul_le_mul_of_nonneg_left _ (by positivity)
+  apply Real.exp_le_exp.mpr
+  have hvpos : 0 < (v : ℝ) := NNReal.coe_pos.mpr hv
+  apply div_le_div_of_nonneg_right _ (by positivity : 0 ≤ 2 * (v : ℝ))
+  nlinarith [sq_nonneg (y - x), sq_nonneg (y + x)]
+
+private lemma smoothSech3_first_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) :
+    standardGaussianExpectation (fun z =>
+      -3 * sech3 (x + Real.sqrt r * z) *
+        Real.tanh (x + Real.sqrt r * z)) ≤ 0 := by
+  by_cases hr0 : r = 0
+  · subst r
+    simp only [Real.sqrt_zero, zero_mul, add_zero, standardGaussianExpectation,
+      integral_const, probReal_univ, one_smul]
+    have ht : 0 ≤ Real.tanh x := by
+      rw [Real.tanh_eq_sinh_div_cosh]
+      exact div_nonneg ((Real.sinh_nonneg_iff).2 hx) (Real.cosh_pos x).le
+    exact mul_nonpos_of_nonpos_of_nonneg
+      (mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sech_pos x).le) ht
+  let v : ℝ≥0 := ⟨r, hr⟩
+  have hv : v ≠ 0 := by exact NNReal.ne_iff.mpr (lt_of_le_of_ne hr (Ne.symm hr0))
+  let D : ℝ → ℝ := fun y => -3 * sech3 y * Real.tanh y
+  have hshift : standardGaussianExpectation (fun z => D (x + Real.sqrt r * z)) =
+      ∫ y, D y ∂gaussianReal x v := by
+    unfold standardGaussianExpectation
+    simpa [v] using standard_affine_integral_eq_gaussian hr x
+      ((continuous_const.mul continuous_sech3).mul continuous_tanh)
+  rw [hshift, integral_gaussianReal_eq_integral_smul hv]
+  have hvol : Integrable (fun y => gaussianPDFReal x v y * D y) := by
+    apply Integrable.mono' ((integrable_gaussianPDFReal x v).const_mul 3)
+    · exact ((measurable_gaussianPDFReal x v).mul
+        ((continuous_const.mul continuous_sech3).mul continuous_tanh).measurable)
+        |>.aestronglyMeasurable
+    · filter_upwards [] with y
+      rw [Real.norm_eq_abs, abs_mul]
+      have hp := gaussianPDFReal_nonneg x v y
+      rw [abs_of_nonneg hp]
+      calc
+        gaussianPDFReal x v y * |D y| ≤ gaussianPDFReal x v y * 3 := by
+          gcongr
+          exact sech3Deriv_abs_le_three y
+        _ = |3 * gaussianPDFReal x v y| := by
+          rw [abs_of_nonneg (mul_nonneg (by norm_num) hp)]
+          ring
+  rw [integral_eq_integral_Ioi_add_neg hvol]
+  apply integral_nonpos
+  filter_upwards [] with y hy
+  have hy0 : 0 ≤ y := hy.le
+  have hD : D y ≤ 0 := by
+    have ht : 0 ≤ Real.tanh y := by
+      rw [Real.tanh_eq_sinh_div_cosh]
+      exact div_nonneg ((Real.sinh_nonneg_iff).2 hy0) (Real.cosh_pos y).le
+    exact mul_nonpos_of_nonpos_of_nonneg
+      (mul_nonpos_of_nonpos_of_nonneg (by norm_num) (sech_pos y).le) ht
+  have hp := gaussianPDFReal_neg_le_self hv hx hy0
+  change gaussianPDFReal x v y * D y + gaussianPDFReal x v (-y) * D (-y) ≤ 0
+  have hDneg : D (-y) = -D y := by
+    exact sech3Deriv_neg y
+  rw [hDneg]
+  nlinarith [mul_nonpos_of_nonpos_of_nonneg hD (sub_nonneg.mpr hp)]
 
 end SpinGlass.AT
