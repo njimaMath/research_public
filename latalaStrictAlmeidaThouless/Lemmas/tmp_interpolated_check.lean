@@ -730,13 +730,17 @@ private lemma tiltedSech4First_hasDerivAt_x (r x : ℝ) :
   have ha : HasDerivAt (smoothSech3 r) (smoothSech3First r x) x := by
     simpa [smoothSech3First] using smoothSech3_hasDerivAt_x r x
   have ha₁ : HasDerivAt (smoothSech3First r) (smoothSech3Second r x) x := by
-    simpa [smoothSech3First, smoothSech3Second] using
-      smoothSech3_first_hasDerivAt_x r x
+    change HasDerivAt
+      (fun y => standardGaussianExpectation (fun z =>
+        -3 * sech3 (y + Real.sqrt r * z) * Real.tanh (y + Real.sqrt r * z)))
+      (standardGaussianExpectation (fun z => sech3Second (x + Real.sqrt r * z))) x
+    exact smoothSech3_first_hasDerivAt_x r x
   have hs := sech_hasDerivAt x
   have ht := tanh_hasDerivAt x
   unfold tiltedSech4First tiltedSech4Second
   have hbracket := ha₁.sub (ha.mul ht)
   apply ((hs.const_mul (Real.exp (-r / 2))).mul hbracket).congr_deriv
+  simp only [Pi.sub_apply, Pi.mul_apply]
   ring
 
 private lemma tiltedSech4_generator (r x : ℝ) :
@@ -747,8 +751,8 @@ private lemma tiltedSech4_generator (r x : ℝ) :
   have hid := tanh_sq_add_sech_sq x
   have ht : Real.tanh x ^ 2 = 1 - sech x ^ 2 := by linarith
   unfold tiltedSech4Second tiltedSech4First
-  rw [ht]
-  ring
+  linear_combination
+    -(Real.exp (-r / 2) * sech x * smoothSech3 r x / 2) * hid
 
 private lemma tiltedSech4Value_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
     HasDerivAt (fun t => tiltedSech4Value t x)
@@ -757,8 +761,12 @@ private lemma tiltedSech4Value_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
   have he : HasDerivAt (fun t : ℝ => Real.exp (-t / 2))
       ((-1 / 2) * Real.exp (-r / 2)) r := by
     have hinner : HasDerivAt (fun t : ℝ => -t / 2) (-1 / 2) r := by
-      convert ((hasDerivAt_id r).neg.div_const 2) using 1 <;> ring
-    simpa [mul_comm] using (Real.hasDerivAt_exp (-r / 2)).comp r hinner
+      rw [show (fun t : ℝ => -t / 2) = fun t => (-1 / 2) * t by
+        funext t
+        ring]
+      simpa using (hasDerivAt_id r).const_mul (-1 / 2)
+    simpa only [Function.comp_def, mul_comm] using
+      (Real.hasDerivAt_exp (-r / 2)).comp r hinner
   have ha := smoothSech3_hasDerivAt_r (x := x) hr
   unfold tiltedSech4Value smoothSech3Second
   apply ((he.mul ha).mul_const (sech x)).congr_deriv
@@ -772,7 +780,7 @@ private lemma tiltedSech4First_nonpos {r x : ℝ} (hr : 0 ≤ r) (hx : 0 ≤ x) 
   have ht : 0 ≤ Real.tanh x := by
     rw [Real.tanh_eq_sinh_div_cosh]
     exact div_nonneg ((Real.sinh_nonneg_iff).2 hx) (Real.cosh_pos x).le
-  unfold tiltedSech4First smoothSech3First
+  unfold tiltedSech4First
   exact mul_nonpos_of_nonneg_of_nonpos
     (mul_nonneg (Real.exp_pos _).le (sech_pos x).le)
     (by linarith [mul_nonneg ha ht])
@@ -782,5 +790,342 @@ private lemma tiltedSech4First_neg (r x : ℝ) :
   unfold tiltedSech4First smoothSech3First
   rw [sech_neg, Real.tanh_neg, smoothSech3_neg, smoothSech3_first_neg]
   ring
+
+private lemma continuous_smoothSech3 (r : ℝ) : Continuous (smoothSech3 r) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  exact (smoothSech3_hasDerivAt_x r x).continuousAt
+
+private lemma continuous_smoothSech3First (r : ℝ) : Continuous (smoothSech3First r) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  change ContinuousAt
+    (fun y => standardGaussianExpectation (fun z =>
+      -3 * sech3 (y + Real.sqrt r * z) * Real.tanh (y + Real.sqrt r * z))) x
+  exact (smoothSech3_first_hasDerivAt_x r x).continuousAt
+
+private lemma continuous_smoothSech3Second (r : ℝ) : Continuous (smoothSech3Second r) := by
+  unfold smoothSech3Second standardGaussianExpectation
+  rw [continuous_iff_continuousAt]
+  intro x
+  have hmeas : ∀ᶠ y in nhds x,
+      AEStronglyMeasurable (fun z => sech3Second (y + Real.sqrt r * z))
+        (gaussianReal 0 1) := by
+    exact Filter.Eventually.of_forall fun y =>
+      (by
+        apply Continuous.aestronglyMeasurable
+        unfold sech3Second
+        exact (((continuous_const.mul (continuous_sech3.comp (by fun_prop))).mul
+          ((continuous_tanh.comp (by fun_prop)).pow 2)).sub
+          ((continuous_const.mul (continuous_sech3.comp (by fun_prop))).mul
+            (((Real.continuous_cosh.comp (by fun_prop)).inv₀
+              (fun z => (Real.cosh_pos _).ne')).pow 2))))
+  have hbound : ∀ᶠ y in nhds x, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖sech3Second (y + Real.sqrt r * z)‖ ≤ (12 : ℝ) := by
+    exact Filter.Eventually.of_forall fun y => ae_of_all _ fun z => by
+      simpa [Real.norm_eq_abs] using sech3Second_abs_le_twelve (y + Real.sqrt r * z)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Filter.Tendsto (fun y => sech3Second (y + Real.sqrt r * z)) (nhds x)
+        (nhds (sech3Second (x + Real.sqrt r * z))) := by
+    exact ae_of_all _ fun z => by
+      apply ContinuousAt.tendsto
+      unfold sech3Second
+      exact (((continuous_const.mul (continuous_sech3.comp (by fun_prop))).mul
+        ((continuous_tanh.comp (by fun_prop)).pow 2)).sub
+        ((continuous_const.mul (continuous_sech3.comp (by fun_prop))).mul
+          (((Real.continuous_cosh.comp (by fun_prop)).inv₀
+            (fun y => (Real.cosh_pos _).ne')).pow 2))).continuousAt
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds x) (F := fun y z => sech3Second (y + Real.sqrt r * z))
+    (f := fun z => sech3Second (x + Real.sqrt r * z))
+    (bound := fun _ => (12 : ℝ)) hmeas hbound (integrable_const 12) hlim
+
+private lemma continuous_tiltedSech4Value (r : ℝ) : Continuous (tiltedSech4Value r) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  exact (tiltedSech4Value_hasDerivAt_x r x).continuousAt
+
+private lemma continuous_tiltedSech4First (r : ℝ) : Continuous (tiltedSech4First r) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  exact (tiltedSech4First_hasDerivAt_x r x).continuousAt
+
+private lemma continuous_sech : Continuous sech := contDiff_sech.continuous
+
+private lemma continuous_tiltedSech4Second (r : ℝ) : Continuous (tiltedSech4Second r) := by
+  unfold tiltedSech4Second
+  exact ((continuous_const.mul continuous_sech).mul
+    (((continuous_smoothSech3Second r).sub
+      ((continuous_const.mul (continuous_smoothSech3First r)).mul continuous_tanh)).add
+      ((continuous_smoothSech3 r).mul
+        ((continuous_tanh.pow 2).sub (continuous_sech.pow 2)))))
+
+private lemma abs_tiltedSech4Value_le_one {r x : ℝ} (hr : 0 ≤ r) :
+    |tiltedSech4Value r x| ≤ 1 := by
+  unfold tiltedSech4Value
+  rw [abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_of_pos (sech_pos _)]
+  have he : Real.exp (-r / 2) ≤ 1 := by
+    rw [← Real.exp_zero]
+    exact Real.exp_le_exp.mpr (by linarith)
+  calc
+    Real.exp (-r / 2) * |smoothSech3 r x| * sech x ≤ 1 * 1 * 1 := by
+      have h₁ : Real.exp (-r / 2) * |smoothSech3 r x| ≤ 1 * 1 :=
+        mul_le_mul he (abs_smoothSech3_le_one r x) (abs_nonneg _) (by norm_num)
+      exact mul_le_mul h₁ (sech_le_one x) (sech_pos x).le (by norm_num)
+    _ = 1 := by norm_num
+
+private lemma abs_tiltedSech4First_le_four {r x : ℝ} (hr : 0 ≤ r) :
+    |tiltedSech4First r x| ≤ 4 := by
+  unfold tiltedSech4First
+  rw [abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_of_pos (sech_pos _)]
+  have he : Real.exp (-r / 2) ≤ 1 := by
+    rw [← Real.exp_zero]
+    exact Real.exp_le_exp.mpr (by linarith)
+  have hb : |smoothSech3First r x - smoothSech3 r x * Real.tanh x| ≤ 4 := by
+    calc
+      |smoothSech3First r x - smoothSech3 r x * Real.tanh x| ≤
+          |smoothSech3First r x| + |smoothSech3 r x| * |Real.tanh x| := by
+            simpa [abs_mul] using abs_sub (smoothSech3First r x)
+              (smoothSech3 r x * Real.tanh x)
+      _ ≤ 3 + 1 * 1 := by
+        gcongr
+        · exact abs_smoothSech3First_le_three r x
+        · exact abs_smoothSech3_le_one r x
+        · exact abs_tanh_le_one x
+      _ = 4 := by norm_num
+  calc
+    Real.exp (-r / 2) * sech x *
+        |smoothSech3First r x - smoothSech3 r x * Real.tanh x| ≤
+        1 * 1 * 4 := by
+          have h₁ : Real.exp (-r / 2) * sech x ≤ 1 * 1 :=
+            mul_le_mul he (sech_le_one x) (sech_pos x).le (by norm_num)
+          exact mul_le_mul h₁ hb (abs_nonneg _) (by norm_num)
+    _ = 4 := by norm_num
+
+private lemma abs_tiltedSech4Second_le_twenty {r x : ℝ} (hr : 0 ≤ r) :
+    |tiltedSech4Second r x| ≤ 20 := by
+  unfold tiltedSech4Second
+  rw [abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_of_pos (sech_pos _)]
+  have he : Real.exp (-r / 2) ≤ 1 := by
+    rw [← Real.exp_zero]
+    exact Real.exp_le_exp.mpr (by linarith)
+  have hinside : |smoothSech3Second r x -
+      2 * smoothSech3First r x * Real.tanh x +
+      smoothSech3 r x * (Real.tanh x ^ 2 - sech x ^ 2)| ≤ 20 := by
+    calc
+      |smoothSech3Second r x - 2 * smoothSech3First r x * Real.tanh x +
+          smoothSech3 r x * (Real.tanh x ^ 2 - sech x ^ 2)| ≤
+          |smoothSech3Second r x| + 2 * |smoothSech3First r x| * |Real.tanh x| +
+            |smoothSech3 r x| * (|Real.tanh x| ^ 2 + |sech x| ^ 2) := by
+              calc
+                _ ≤ |smoothSech3Second r x -
+                    2 * smoothSech3First r x * Real.tanh x| +
+                    |smoothSech3 r x * (Real.tanh x ^ 2 - sech x ^ 2)| :=
+                  abs_add_le _ _
+                _ ≤ (|smoothSech3Second r x| +
+                    |2 * smoothSech3First r x * Real.tanh x|) +
+                    |smoothSech3 r x| * |Real.tanh x ^ 2 - sech x ^ 2| := by
+                      gcongr
+                      · exact abs_sub _ _
+                      · rw [abs_mul]
+                _ ≤ _ := by
+                  rw [abs_mul, abs_mul,
+                    abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
+                  gcongr
+                  calc
+                    |Real.tanh x ^ 2 - sech x ^ 2| =
+                        |Real.tanh x ^ 2 + -(sech x ^ 2)| := by ring
+                    _ ≤ |Real.tanh x ^ 2| + |-(sech x ^ 2)| := abs_add_le _ _
+                    _ = |Real.tanh x| ^ 2 + |sech x| ^ 2 := by
+                      rw [abs_neg, abs_pow, abs_pow]
+      _ ≤ 12 + 2 * 3 * 1 + 1 * (1 ^ 2 + 1 ^ 2) := by
+        gcongr
+        · exact abs_smoothSech3Second_le_twelve r x
+        · exact abs_smoothSech3First_le_three r x
+        · exact abs_tanh_le_one x
+        · exact abs_smoothSech3_le_one r x
+        · exact abs_tanh_le_one x
+        · exact abs_sech_le_one x
+      _ = 20 := by norm_num
+  calc
+    Real.exp (-r / 2) * sech x *
+        |smoothSech3Second r x - 2 * smoothSech3First r x * Real.tanh x +
+          smoothSech3 r x * (Real.tanh x ^ 2 - sech x ^ 2)| ≤
+        1 * 1 * 20 := by
+          have h₁ : Real.exp (-r / 2) * sech x ≤ 1 * 1 :=
+            mul_le_mul he (sech_le_one x) (sech_pos x).le (by norm_num)
+          exact mul_le_mul h₁ hinside (abs_nonneg _) (by norm_num)
+    _ = 20 := by norm_num
+
+private lemma tiltedSech4First_deriv (r x : ℝ) :
+    deriv (tiltedSech4First r) x = tiltedSech4Second r x :=
+  (tiltedSech4First_hasDerivAt_x r x).deriv
+
+private lemma contDiff_tiltedSech4First (r : ℝ) :
+    ContDiff ℝ 1 (tiltedSech4First r) := by
+  rw [contDiff_one_iff_deriv]
+  refine ⟨fun x => (tiltedSech4First_hasDerivAt_x r x).differentiableAt, ?_⟩
+  have heq : deriv (tiltedSech4First r) = tiltedSech4Second r := by
+    funext x
+    exact tiltedSech4First_deriv r x
+  rw [heq]
+  exact continuous_tiltedSech4Second r
+
+private lemma tiltedSech4First_shift_moderate {r : ℝ} (hr : 0 ≤ r) (h : ℝ) :
+    HasModerateGrowth (fun y => tiltedSech4First r (h + y)) := by
+  refine ⟨21, 0, by norm_num, ?_, ?_⟩
+  · intro y
+    simpa using (abs_tiltedSech4First_le_four (x := h + y) hr).trans (by norm_num)
+  · intro y
+    have hderiv : deriv (fun y => tiltedSech4First r (h + y)) y =
+        tiltedSech4Second r (h + y) := by
+      simpa [Function.comp_def] using
+        ((tiltedSech4First_hasDerivAt_x r (h + y)).comp y
+          ((hasDerivAt_id y).const_add h)).deriv
+    rw [hderiv]
+    simpa using (abs_tiltedSech4Second_le_twenty (x := h + y) hr).trans (by norm_num)
+
+private lemma continuous_smoothSech3_time (x : ℝ) :
+    Continuous (fun r => smoothSech3 r x) := by
+  unfold smoothSech3 standardGaussianExpectation
+  rw [continuous_iff_continuousAt]
+  intro r₀
+  have hmeas : ∀ᶠ r in nhds r₀,
+      AEStronglyMeasurable (fun z => sech3 (x + Real.sqrt r * z))
+        (gaussianReal 0 1) := by
+    exact Filter.Eventually.of_forall fun r =>
+      (continuous_sech3.comp (by fun_prop)).aestronglyMeasurable
+  have hbound : ∀ᶠ r in nhds r₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖sech3 (x + Real.sqrt r * z)‖ ≤ (1 : ℝ) := by
+    exact Filter.Eventually.of_forall fun r => ae_of_all _ fun z => by
+      simpa [Real.norm_eq_abs] using sech3_abs_le_one (x + Real.sqrt r * z)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Filter.Tendsto (fun r => sech3 (x + Real.sqrt r * z)) (nhds r₀)
+        (nhds (sech3 (x + Real.sqrt r₀ * z))) := by
+    exact ae_of_all _ fun z =>
+      (continuous_sech3.comp (by fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds r₀) (F := fun r z => sech3 (x + Real.sqrt r * z))
+    (f := fun z => sech3 (x + Real.sqrt r₀ * z))
+    (bound := fun _ => (1 : ℝ)) hmeas hbound (integrable_const 1) hlim
+
+private lemma continuous_tiltedSech4Value_time (x : ℝ) :
+    Continuous (fun r => tiltedSech4Value r x) := by
+  unfold tiltedSech4Value
+  exact ((Real.continuous_exp.comp (by fun_prop)).mul
+    (continuous_smoothSech3_time x)).mul continuous_const
+
+private lemma abs_tiltedSech4Value_le_exp (r x : ℝ) :
+    |tiltedSech4Value r x| ≤ Real.exp (-r / 2) := by
+  unfold tiltedSech4Value
+  rw [abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), abs_of_pos (sech_pos _)]
+  have h₁ : |smoothSech3 r x| * sech x ≤ 1 * 1 :=
+    mul_le_mul (abs_smoothSech3_le_one r x) (sech_le_one x)
+      (sech_pos x).le (by norm_num)
+  simpa [mul_assoc] using
+    mul_le_mul_of_nonneg_left h₁ (Real.exp_pos (-r / 2)).le
+
+private noncomputable def tiltedSech4Average (v : ℝ≥0) (h r : ℝ) : ℝ :=
+  ∫ x, tiltedSech4Value r x ∂gaussianReal h v
+
+private lemma continuous_tiltedSech4Average (v : ℝ≥0) (h : ℝ) :
+    Continuous (tiltedSech4Average v h) := by
+  rw [continuous_iff_continuousAt]
+  intro r₀
+  unfold tiltedSech4Average
+  let C : ℝ := Real.exp (-r₀ / 2) + 1
+  have hC : 0 < C := by dsimp [C]; positivity
+  have hexp : ∀ᶠ r in nhds r₀, Real.exp (-r / 2) < C := by
+    have ht : Filter.Tendsto (fun r : ℝ => Real.exp (-r / 2)) (nhds r₀)
+        (nhds (Real.exp (-r₀ / 2))) := by
+      exact (Real.continuous_exp.comp (by fun_prop :
+        Continuous fun r : ℝ => -r / 2)).continuousAt.tendsto
+    exact ht.eventually (Iio_mem_nhds (by dsimp [C]; linarith))
+  have hmeas : ∀ᶠ r in nhds r₀,
+      AEStronglyMeasurable (tiltedSech4Value r) (gaussianReal h v) := by
+    exact Filter.Eventually.of_forall fun r =>
+      (continuous_tiltedSech4Value r).aestronglyMeasurable
+  have hbound : ∀ᶠ r in nhds r₀, ∀ᵐ x ∂gaussianReal h v,
+      ‖tiltedSech4Value r x‖ ≤ C := by
+    filter_upwards [hexp] with r hr
+    exact ae_of_all _ fun x => by
+      rw [Real.norm_eq_abs]
+      exact (abs_tiltedSech4Value_le_exp r x).trans hr.le
+  have hlim : ∀ᵐ x ∂gaussianReal h v,
+      Filter.Tendsto (fun r => tiltedSech4Value r x) (nhds r₀)
+        (nhds (tiltedSech4Value r₀ x)) := by
+    exact ae_of_all _ fun x => (continuous_tiltedSech4Value_time x).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds r₀) (F := fun r x => tiltedSech4Value r x)
+    (f := tiltedSech4Value r₀) (bound := fun _ => C)
+    hmeas hbound (integrable_const C) hlim
+
+private lemma tiltedSech4Average_hasDerivAt {v : ℝ≥0} {h r : ℝ} (hr : 0 < r) :
+    HasDerivAt (tiltedSech4Average v h)
+      (∫ x, (1 / 2) * Real.exp (-r / 2) * sech x *
+        (smoothSech3Second r x - smoothSech3 r x) ∂gaussianReal h v) r := by
+  unfold tiltedSech4Average
+  let F : ℝ → ℝ → ℝ := fun t x => tiltedSech4Value t x
+  let F' : ℝ → ℝ → ℝ := fun t x =>
+    (1 / 2) * Real.exp (-t / 2) * sech x *
+      (smoothSech3Second t x - smoothSech3 t x)
+  have hhalf : 0 < r / 2 := by linarith
+  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := gaussianReal h v) (F := F) (F' := F') (x₀ := r)
+    (s := Set.Ioi (r / 2)) (bound := fun _ => (7 : ℝ))
+    (Ioi_mem_nhds (by linarith))
+    (Filter.Eventually.of_forall fun t =>
+      (continuous_tiltedSech4Value t).aestronglyMeasurable)
+    (by
+      apply Integrable.of_bound (C := 1)
+      · exact (continuous_tiltedSech4Value r).aestronglyMeasurable
+      · filter_upwards [] with x
+        simpa [Real.norm_eq_abs] using abs_tiltedSech4Value_le_one (x := x) hr.le)
+    (by
+      apply Continuous.aestronglyMeasurable
+      dsimp [F']
+      exact ((((continuous_const.mul continuous_const).mul continuous_sech).mul
+        ((continuous_smoothSech3Second r).sub (continuous_smoothSech3 r)))))
+    (by
+      filter_upwards [] with x
+      intro t ht
+      have ht0 : 0 ≤ t := (lt_trans hhalf ht).le
+      dsimp [F']
+      rw [abs_mul, abs_mul, abs_mul,
+        abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2),
+        abs_of_pos (Real.exp_pos _), abs_of_pos (sech_pos _)]
+      have he : Real.exp (-t / 2) ≤ 1 := by
+        rw [← Real.exp_zero]
+        exact Real.exp_le_exp.mpr (by linarith)
+      have hd : |smoothSech3Second t x - smoothSech3 t x| ≤ 13 := by
+        calc
+          _ ≤ |smoothSech3Second t x| + |smoothSech3 t x| := abs_sub _ _
+          _ ≤ 12 + 1 := by
+            gcongr
+            · exact abs_smoothSech3Second_le_twelve t x
+            · exact abs_smoothSech3_le_one t x
+          _ = 13 := by norm_num
+      have hp : (1 / 2) * Real.exp (-t / 2) * sech x ≤ (1 / 2) * 1 * 1 := by
+        have h₁ : (1 / 2) * Real.exp (-t / 2) ≤ (1 / 2) * 1 :=
+          mul_le_mul_of_nonneg_left he (by norm_num)
+        exact mul_le_mul h₁ (sech_le_one x) (sech_pos x).le (by norm_num)
+      have hconst : (0 : ℝ) ≤ ((1 : ℝ) / 2) * 1 * 1 := by norm_num
+      have hmul := mul_le_mul hp hd (abs_nonneg _) hconst
+      nlinarith [hmul]
+    (integrable_const 7)
+    (by
+      filter_upwards [] with x
+      intro t ht
+      exact tiltedSech4Value_hasDerivAt_r (x := x) (lt_trans hhalf ht))
+  simpa [F, F'] using h.2
+
+private lemma tiltedSech4Average_deriv_generator {v : ℝ≥0} {h r : ℝ} (hr : 0 < r) :
+    HasDerivAt (tiltedSech4Average v h)
+      (∫ x, (1 / 2) * tiltedSech4Second r x +
+        Real.tanh x * tiltedSech4First r x ∂gaussianReal h v) r := by
+  apply (tiltedSech4Average_hasDerivAt (v := v) (h := h) hr).congr_deriv
+  apply integral_congr_ae
+  filter_upwards [] with x
+  exact (tiltedSech4_generator r x).symm
 
 end SpinGlass.AT

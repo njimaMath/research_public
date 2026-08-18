@@ -644,3 +644,455 @@ This proves \eqref{eq:linearATsign}.
 \end{proof}
 
 -/
+
+import Lemmas.ATDefs
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.MeasureTheory.Group.IntegralConvolution
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import SpinGlass.Mathlib.Probability.Distributions.GaussianIntegrationByParts
+
+open MeasureTheory ProbabilityTheory Real
+open scoped MeasureTheory NNReal
+
+set_option autoImplicit false
+
+namespace SpinGlass.AT
+
+private noncomputable def propertySech (x : ℝ) : ℝ := (Real.cosh x)⁻¹
+
+private lemma propertySech_pos (x : ℝ) : 0 < propertySech x := by
+  exact inv_pos.mpr (Real.cosh_pos x)
+
+private lemma propertySech_le_one (x : ℝ) : propertySech x ≤ 1 := by
+  exact inv_le_one_of_one_le₀ (Real.one_le_cosh x)
+
+private lemma property_abs_sech_le_one (x : ℝ) : |propertySech x| ≤ 1 := by
+  rw [abs_of_pos (propertySech_pos x)]
+  exact propertySech_le_one x
+
+private lemma property_abs_tanh_le_one (x : ℝ) : |Real.tanh x| ≤ 1 :=
+  (Real.abs_tanh_lt_one x).le
+
+private lemma property_tanh_sq_add_sech_sq (x : ℝ) :
+    Real.tanh x ^ 2 + propertySech x ^ 2 = 1 := by
+  unfold propertySech
+  rw [Real.tanh_eq_sinh_div_cosh]
+  have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
+  simp only [div_pow, inv_pow]
+  field_simp [hc]
+  nlinarith [Real.cosh_sq_sub_sinh_sq x]
+
+private lemma property_continuous_tanh : Continuous (fun x : ℝ => Real.tanh x) := by
+  simp_rw [Real.tanh_eq_sinh_div_cosh]
+  exact Real.continuous_sinh.div₀ Real.continuous_cosh
+    (fun x => (Real.cosh_pos x).ne')
+
+private lemma property_continuous_sech : Continuous propertySech := by
+  unfold propertySech
+  exact Real.continuous_cosh.inv₀ fun x => (Real.cosh_pos x).ne'
+
+private lemma property_tanh_hasDerivAt (x : ℝ) :
+    HasDerivAt (fun y : ℝ => Real.tanh y) (propertySech x ^ 2) x := by
+  have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
+  rw [show (fun y : ℝ => Real.tanh y) = fun y => Real.sinh y / Real.cosh y by
+    funext y
+    exact Real.tanh_eq_sinh_div_cosh y]
+  apply ((Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x) hc).congr_deriv
+  unfold propertySech
+  simp only [Pi.inv_apply, inv_pow]
+  field_simp [hc]
+  nlinarith [Real.cosh_sq_sub_sinh_sq x]
+
+private lemma property_integrable_tanh_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => Real.tanh (a + b * z)) (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 1)
+  · exact (property_continuous_tanh.comp (by fun_prop)).aestronglyMeasurable
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_abs_tanh_le_one (a + b * z)
+
+private lemma property_integrable_sech_sq_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => propertySech (a + b * z) ^ 2)
+      (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 1)
+  · exact ((property_continuous_sech.comp (by fun_prop)).pow 2).aestronglyMeasurable
+  · filter_upwards [] with z
+    rw [Real.norm_eq_abs, abs_pow]
+    exact pow_le_one₀ (abs_nonneg _) (property_abs_sech_le_one _)
+
+private lemma property_standardGaussianExpectation_const (c : ℝ) :
+    standardGaussianExpectation (fun _ : ℝ => c) = c := by
+  simp [standardGaussianExpectation]
+
+/-- At the replica-symmetric breakpoint, the scalar order parameter equals
+the fixed point. -/
+theorem scalarOrderParameterCorrect_at_rsQ {β h : ℝ}
+    (hβ : 0 < β) (hh : 0 < h) (s : ℝ) :
+    scalarOrderParameterCorrect β h s (rsQ β h) = rsQ β h := by
+  have hq0 : 0 ≤ rsQ β h := (rsQ_mem_Icc β h).1
+  have hsqrt : Real.sqrt (β ^ 2 * ((1 - s) * rsQ β h + s * rsQ β h)) =
+      β * Real.sqrt (rsQ β h) := by
+    rw [show (1 - s) * rsQ β h + s * rsQ β h = rsQ β h by ring]
+    rw [Real.sqrt_mul (sq_nonneg β), Real.sqrt_sq_eq_abs, abs_of_pos hβ]
+  have hinner (x : ℝ) : scalarPsiX β (rsQ β h) s (rsQ β h) x =
+      Real.tanh x := by
+    unfold scalarPsiX
+    simp [standardGaussianExpectation]
+  unfold scalarOrderParameterCorrect scalarOrderParameter localFieldExpectation
+  simp only [if_pos le_rfl, hinner, heatSemigroup, hsqrt]
+  exact (rsQ_fixedPoint β h).symm
+
+private noncomputable def propertySech3 (x : ℝ) : ℝ := propertySech x ^ 3
+
+private noncomputable def propertySechSecond (x : ℝ) : ℝ :=
+  propertySech x * (Real.tanh x ^ 2 - propertySech x ^ 2)
+
+private lemma property_sech_hasDerivAt (x : ℝ) :
+    HasDerivAt propertySech (-propertySech x * Real.tanh x) x := by
+  unfold propertySech
+  have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
+  apply ((Real.hasDerivAt_cosh x).inv hc).congr_deriv
+  rw [Real.tanh_eq_sinh_div_cosh]
+  field_simp [hc]
+
+private lemma property_sechDeriv_hasDerivAt (x : ℝ) :
+    HasDerivAt (fun y => -propertySech y * Real.tanh y)
+      (propertySechSecond x) x := by
+  have hs := property_sech_hasDerivAt x
+  have ht := property_tanh_hasDerivAt x
+  apply (hs.neg.mul ht).congr_deriv
+  unfold propertySechSecond
+  simp only [Pi.neg_apply]
+  ring
+
+private lemma property_sech3_hasDerivAt (x : ℝ) :
+    HasDerivAt propertySech3 (-3 * propertySech3 x * Real.tanh x) x := by
+  unfold propertySech3
+  apply ((property_sech_hasDerivAt x).pow 3).congr_deriv
+  norm_num
+  ring
+
+private noncomputable def propertySech3Second (x : ℝ) : ℝ :=
+  9 * propertySech3 x * Real.tanh x ^ 2 -
+    3 * propertySech3 x * propertySech x ^ 2
+
+private lemma property_sech3Deriv_hasDerivAt (x : ℝ) :
+    HasDerivAt (fun y => -3 * propertySech3 y * Real.tanh y)
+      (propertySech3Second x) x := by
+  have hs := (property_sech3_hasDerivAt x).const_mul (-3)
+  have ht := property_tanh_hasDerivAt x
+  apply (hs.mul ht).congr_deriv
+  unfold propertySech3Second
+  ring
+
+private lemma property_abs_sech3_le_one (x : ℝ) : |propertySech3 x| ≤ 1 := by
+  unfold propertySech3
+  rw [abs_pow]
+  exact pow_le_one₀ (abs_nonneg _) (property_abs_sech_le_one x)
+
+private lemma property_sechDeriv_abs_le_one (x : ℝ) :
+    |-propertySech x * Real.tanh x| ≤ 1 := by
+  rw [abs_mul, abs_neg]
+  calc
+    |propertySech x| * |Real.tanh x| ≤ 1 * 1 := by
+      gcongr
+      · exact property_abs_sech_le_one x
+      · exact property_abs_tanh_le_one x
+    _ = 1 := by norm_num
+
+private lemma property_sechSecond_abs_le_two (x : ℝ) :
+    |propertySechSecond x| ≤ 2 := by
+  unfold propertySechSecond
+  calc
+    |propertySech x * (Real.tanh x ^ 2 - propertySech x ^ 2)| ≤
+        |propertySech x| * (|Real.tanh x| ^ 2 + |propertySech x| ^ 2) := by
+          rw [abs_mul]
+          gcongr
+          calc
+            |Real.tanh x ^ 2 - propertySech x ^ 2| ≤
+                |Real.tanh x ^ 2| + |propertySech x ^ 2| := abs_sub _ _
+            _ = |Real.tanh x| ^ 2 + |propertySech x| ^ 2 := by rw [abs_pow, abs_pow]
+    _ ≤ 1 * (1 ^ 2 + 1 ^ 2) := by
+      gcongr
+      · exact property_abs_sech_le_one x
+      · exact property_abs_tanh_le_one x
+      · exact property_abs_sech_le_one x
+    _ = 2 := by norm_num
+
+private lemma property_sech3Deriv_abs_le_three (x : ℝ) :
+    |-3 * propertySech3 x * Real.tanh x| ≤ 3 := by
+  rw [abs_mul, abs_mul, abs_neg]
+  norm_num
+  calc
+    3 * |propertySech3 x| * |Real.tanh x| ≤ 3 * 1 * 1 := by
+      gcongr
+      · exact property_abs_sech3_le_one x
+      · exact property_abs_tanh_le_one x
+    _ = 3 := by norm_num
+
+private lemma property_sech3Second_abs_le_twelve (x : ℝ) :
+    |propertySech3Second x| ≤ 12 := by
+  unfold propertySech3Second
+  calc
+    |9 * propertySech3 x * Real.tanh x ^ 2 -
+        3 * propertySech3 x * propertySech x ^ 2| ≤
+        |9 * propertySech3 x * Real.tanh x ^ 2| +
+          |3 * propertySech3 x * propertySech x ^ 2| := abs_sub _ _
+    _ ≤ 9 * 1 * 1 ^ 2 + 3 * 1 * 1 ^ 2 := by
+      simp only [abs_mul, abs_pow]
+      gcongr <;> norm_num
+      · exact property_abs_sech3_le_one x
+      · exact property_abs_tanh_le_one x
+      · exact property_abs_sech3_le_one x
+      · exact property_abs_sech_le_one x
+    _ = 12 := by norm_num
+
+private lemma property_integrable_sech_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => propertySech (a + b * z)) (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 1)
+  · exact (property_continuous_sech.comp (by fun_prop)).aestronglyMeasurable
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_abs_sech_le_one (a + b * z)
+
+private lemma property_integrable_sechDeriv_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => -propertySech (a + b * z) *
+      Real.tanh (a + b * z)) (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 1)
+  · have harg : Continuous (fun z : ℝ => a + b * z) :=
+      continuous_const.add (continuous_const.mul continuous_id)
+    exact (((property_continuous_sech.comp harg).neg.mul
+      (property_continuous_tanh.comp harg))).aestronglyMeasurable
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_sechDeriv_abs_le_one (a + b * z)
+
+private lemma property_integrable_sechSecond_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => propertySechSecond (a + b * z))
+      (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 2)
+  · apply Continuous.aestronglyMeasurable
+    unfold propertySechSecond
+    exact (property_continuous_sech.comp (by fun_prop)).mul
+      (((property_continuous_tanh.comp (by fun_prop)).pow 2).sub
+        ((property_continuous_sech.comp (by fun_prop)).pow 2))
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_sechSecond_abs_le_two (a + b * z)
+
+private lemma property_integrable_sech3_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => propertySech3 (a + b * z)) (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 1)
+  · exact ((property_continuous_sech.comp (by fun_prop)).pow 3).aestronglyMeasurable
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_abs_sech3_le_one (a + b * z)
+
+private lemma property_integrable_sech3Deriv_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => -3 * propertySech3 (a + b * z) *
+      Real.tanh (a + b * z)) (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 3)
+  · have harg : Continuous (fun z : ℝ => a + b * z) :=
+      continuous_const.add (continuous_const.mul continuous_id)
+    exact (((continuous_const.mul
+      ((property_continuous_sech.comp harg).pow 3)).mul
+      (property_continuous_tanh.comp harg))).aestronglyMeasurable
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_sech3Deriv_abs_le_three (a + b * z)
+
+private lemma property_integrable_sech3Second_affine (a b : ℝ) :
+    Integrable (fun z : ℝ => propertySech3Second (a + b * z))
+      (gaussianReal 0 1) := by
+  apply Integrable.of_bound (C := 12)
+  · apply Continuous.aestronglyMeasurable
+    unfold propertySech3Second propertySech3
+    have harg : Continuous (fun z : ℝ => a + b * z) :=
+      continuous_const.add (continuous_const.mul continuous_id)
+    exact (((continuous_const.mul ((property_continuous_sech.comp harg).pow 3)).mul
+      ((property_continuous_tanh.comp harg).pow 2)).sub
+      ((continuous_const.mul ((property_continuous_sech.comp harg).pow 3)).mul
+        ((property_continuous_sech.comp harg).pow 2)))
+  · filter_upwards [] with z
+    simpa [Real.norm_eq_abs] using property_sech3Second_abs_le_twelve (a + b * z)
+
+private noncomputable def propertySmoothSech (r x : ℝ) : ℝ :=
+  standardGaussianExpectation (fun z => propertySech (x + Real.sqrt r * z))
+
+private noncomputable def propertySmoothSech3 (r x : ℝ) : ℝ :=
+  standardGaussianExpectation (fun z => propertySech3 (x + Real.sqrt r * z))
+
+private lemma property_sechDeriv_comp_deriv (a b z : ℝ) :
+    deriv (fun y => -propertySech (a + b * y) * Real.tanh (a + b * y)) z =
+      b * propertySechSecond (a + b * z) := by
+  have harg : HasDerivAt (fun y : ℝ => a + b * y) b z := by
+    simpa only [id_eq, mul_one] using
+      ((hasDerivAt_id z).const_mul b).const_add a
+  simpa [Function.comp_def, mul_comm] using
+    ((property_sechDeriv_hasDerivAt (a + b * z)).comp z harg).deriv
+
+private lemma property_sech3Deriv_comp_deriv (a b z : ℝ) :
+    deriv (fun y => -3 * propertySech3 (a + b * y) *
+      Real.tanh (a + b * y)) z = b * propertySech3Second (a + b * z) := by
+  have harg : HasDerivAt (fun y : ℝ => a + b * y) b z := by
+    simpa only [id_eq, mul_one] using
+      ((hasDerivAt_id z).const_mul b).const_add a
+  simpa [Function.comp_def, mul_comm] using
+    ((property_sech3Deriv_hasDerivAt (a + b * z)).comp z harg).deriv
+
+private lemma property_contDiff_sech : ContDiff ℝ ⊤ propertySech := by
+  unfold propertySech
+  exact Real.contDiff_cosh.inv fun x => (Real.cosh_pos x).ne'
+
+private lemma property_contDiff_tanh : ContDiff ℝ ⊤ (fun x : ℝ => Real.tanh x) := by
+  simp_rw [Real.tanh_eq_sinh_div_cosh]
+  exact Real.contDiff_sinh.div Real.contDiff_cosh
+    (fun x => (Real.cosh_pos x).ne')
+
+private lemma property_sechDeriv_comp_moderate (a b : ℝ) :
+    HasModerateGrowth
+      (fun z => -propertySech (a + b * z) * Real.tanh (a + b * z)) := by
+  refine ⟨3 * (1 + |b|), 0, by positivity, ?_, ?_⟩
+  · intro z
+    simpa only [pow_zero, mul_one] using
+      (show |-propertySech (a + b * z) * Real.tanh (a + b * z)| ≤
+          3 * (1 + |b|) by
+        have hz := property_sechDeriv_abs_le_one (a + b * z)
+        have hb := abs_nonneg b
+        nlinarith)
+  · intro z
+    rw [property_sechDeriv_comp_deriv]
+    simpa only [pow_zero, mul_one] using
+      (show |b * propertySechSecond (a + b * z)| ≤ 3 * (1 + |b|) by
+        rw [abs_mul]
+        have hs := property_sechSecond_abs_le_two (a + b * z)
+        have hb := abs_nonneg b
+        nlinarith [mul_le_mul_of_nonneg_left hs hb])
+
+private lemma property_sech3Deriv_comp_moderate (a b : ℝ) :
+    HasModerateGrowth
+      (fun z => -3 * propertySech3 (a + b * z) * Real.tanh (a + b * z)) := by
+  refine ⟨16 * (1 + |b|), 0, by positivity, ?_, ?_⟩
+  · intro z
+    simpa only [pow_zero, mul_one] using
+      (show |-3 * propertySech3 (a + b * z) * Real.tanh (a + b * z)| ≤
+          16 * (1 + |b|) by
+        have hz := property_sech3Deriv_abs_le_three (a + b * z)
+        have hb := abs_nonneg b
+        nlinarith)
+  · intro z
+    rw [property_sech3Deriv_comp_deriv]
+    simpa only [pow_zero, mul_one] using
+      (show |b * propertySech3Second (a + b * z)| ≤ 16 * (1 + |b|) by
+        rw [abs_mul]
+        have hs := property_sech3Second_abs_le_twelve (a + b * z)
+        have hb := abs_nonneg b
+        nlinarith [mul_le_mul_of_nonneg_left hs hb])
+
+private lemma property_smoothSech_hasDerivAt_r_raw {r x : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun t => propertySmoothSech t x)
+      (standardGaussianExpectation (fun z =>
+        (-propertySech (x + Real.sqrt r * z) *
+          Real.tanh (x + Real.sqrt r * z)) *
+            (1 / (2 * Real.sqrt r) * z))) r := by
+  unfold propertySmoothSech standardGaussianExpectation
+  let F : ℝ → ℝ → ℝ := fun t z => propertySech (x + Real.sqrt t * z)
+  let F' : ℝ → ℝ → ℝ := fun t z =>
+    (-propertySech (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)) *
+      (1 / (2 * Real.sqrt t) * z)
+  let c : ℝ := Real.sqrt (r / 2)
+  have hhalf : 0 < r / 2 := by linarith
+  have hc : 0 < c := Real.sqrt_pos.2 hhalf
+  have hboundInt : Integrable (fun z : ℝ => c⁻¹ * |z|) (gaussianReal 0 1) := by
+    have hz : Integrable (fun z : ℝ => |z|) (gaussianReal 0 1) := by
+      simpa using integrable_abs_pow_gaussianReal_centered (1 : ℝ≥0) 1
+    exact hz.const_mul c⁻¹
+  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := gaussianReal 0 1) (F := F) (F' := F') (x₀ := r)
+    (s := Set.Ioi (r / 2)) (bound := fun z => c⁻¹ * |z|)
+    (Ioi_mem_nhds (by linarith))
+    (Filter.Eventually.of_forall fun t =>
+      (property_continuous_sech.comp
+        (continuous_const.add (continuous_const.mul continuous_id))).aestronglyMeasurable)
+    (by simpa [F] using property_integrable_sech_affine x (Real.sqrt r))
+    (by
+      apply Continuous.aestronglyMeasurable
+      dsimp [F']
+      have harg : Continuous (fun z : ℝ => x + Real.sqrt r * z) :=
+        continuous_const.add (continuous_const.mul continuous_id)
+      exact (((property_continuous_sech.comp harg).neg.mul
+        (property_continuous_tanh.comp harg)).mul
+          ((continuous_const : Continuous (fun _ : ℝ => 1 / (2 * Real.sqrt r))).mul
+            continuous_id)))
+    (by
+      filter_upwards [] with z
+      intro t ht
+      have htpos : 0 < t := lt_trans hhalf ht
+      have hroot : 0 < Real.sqrt t := Real.sqrt_pos.2 htpos
+      have hrootle : c ≤ Real.sqrt t := Real.sqrt_le_sqrt ht.le
+      have hinv : (Real.sqrt t)⁻¹ ≤ c⁻¹ := (inv_le_inv₀ hroot hc).2 hrootle
+      have hcoef : |1 / (2 * Real.sqrt t)| ≤ c⁻¹ := by
+        rw [abs_of_pos (by positivity : 0 < 1 / (2 * Real.sqrt t))]
+        calc
+          1 / (2 * Real.sqrt t) ≤ (Real.sqrt t)⁻¹ := by
+            rw [one_div]
+            exact (inv_le_inv₀ (by positivity) hroot).2 (by nlinarith)
+          _ ≤ c⁻¹ := hinv
+      dsimp [F']
+      calc
+        |(-propertySech (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)) *
+            (1 / (2 * Real.sqrt t) * z)| =
+            |-propertySech (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)| *
+              |1 / (2 * Real.sqrt t)| * |z| := by simp only [abs_mul]; ring
+        _ ≤ c⁻¹ * |z| := by
+          have hp :
+              |-propertySech (x + Real.sqrt t * z) * Real.tanh (x + Real.sqrt t * z)| *
+                  |1 / (2 * Real.sqrt t)| ≤ c⁻¹ := by
+            calc
+              _ ≤ 1 * c⁻¹ := mul_le_mul (property_sechDeriv_abs_le_one _) hcoef
+                (abs_nonneg _) (by norm_num)
+              _ = c⁻¹ := one_mul _
+          exact mul_le_mul_of_nonneg_right hp (abs_nonneg z))
+    hboundInt
+    (by
+      filter_upwards [] with z
+      intro t ht
+      have htpos : 0 < t := lt_trans hhalf ht
+      have hsqrt := Real.hasDerivAt_sqrt htpos.ne'
+      have harg : HasDerivAt (fun t => x + Real.sqrt t * z)
+          (1 / (2 * Real.sqrt t) * z) t := (hsqrt.mul_const z).const_add x
+      simpa [F, F', Function.comp_def] using
+        (property_sech_hasDerivAt _).comp t harg)
+  simpa [F, F'] using h.2
+
+private lemma property_smoothSech_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun t => propertySmoothSech t x)
+      ((1 / 2) * standardGaussianExpectation (fun z =>
+        propertySechSecond (x + Real.sqrt r * z))) r := by
+  apply (property_smoothSech_hasDerivAt_r_raw (x := x) hr).congr_deriv
+  unfold standardGaussianExpectation
+  let F : ℝ → ℝ := fun z =>
+    -propertySech (x + Real.sqrt r * z) * Real.tanh (x + Real.sqrt r * z)
+  have hcont : ContDiff ℝ 1 F := by
+    exact ((property_contDiff_sech.neg.mul property_contDiff_tanh).of_le (by norm_num)).comp
+      (by fun_prop)
+  have hibp := gaussianReal_integration_by_parts (v := (1 : ℝ≥0)) one_ne_zero
+    hcont (property_sechDeriv_comp_moderate x (Real.sqrt r))
+  have hderiv : deriv F = fun z => Real.sqrt r *
+      propertySechSecond (x + Real.sqrt r * z) := by
+    funext z
+    exact property_sechDeriv_comp_deriv x (Real.sqrt r) z
+  rw [hderiv] at hibp
+  simp only [NNReal.coe_one, one_mul] at hibp
+  have hsqrt : Real.sqrt r ≠ 0 := (Real.sqrt_pos.2 hr).ne'
+  calc
+    ∫ z, F z * (1 / (2 * Real.sqrt r) * z) ∂gaussianReal 0 1 =
+        (1 / (2 * Real.sqrt r)) * ∫ z, z * F z ∂gaussianReal 0 1 := by
+          rw [← integral_const_mul]
+          apply integral_congr_ae
+          filter_upwards [] with z
+          ring
+    _ = (1 / (2 * Real.sqrt r)) *
+        ∫ z, Real.sqrt r * propertySechSecond (x + Real.sqrt r * z)
+          ∂gaussianReal 0 1 := by rw [hibp]
+    _ = (1 / 2) * ∫ z, propertySechSecond (x + Real.sqrt r * z)
+          ∂gaussianReal 0 1 := by
+          rw [integral_const_mul]
+          field_simp [hsqrt]
+
+end SpinGlass.AT
