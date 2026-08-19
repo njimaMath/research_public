@@ -1,0 +1,98 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["4aec5e585574caeb.olean"],
+  "m": false,
+  "i": "70991f377b2ce4b3.ilean",
+  "c": "d27545684d3339aa.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\GTGauss.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTGauss.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTGauss.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\GTGauss.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\GTGauss.setup.json --json",
+   "level": "trace"},
+  {"message":
+   "Lemmas/GTGauss.lean:1747:67: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1749:67: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1751:71: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1753:71: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1792:65: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1795:65: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1798:69: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1801:69: Try this:\n  [apply] ring_nf\n  \n  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.\n    \n  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.",
+   "level": "info"},
+  {"message":
+   "Lemmas/GTGauss.lean:1747:63: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1749:63: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1751:67: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1753:67: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1792:61: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1795:61: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1798:65: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:1801:65: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice\n\nNote: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:2003:36: This simp argument is unused:\n  sign\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, r, s̵i̵g̵n̵,̵ ̵hqr, hru, scaleU]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:2039:36: This simp argument is unused:\n  sign\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, r, s̵i̵g̵n̵,̵ ̵hqr, hqu, scaleU]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:2050:38: This simp argument is unused:\n  sign\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, r, s̵i̵g̵n̵,̵ ̵hqr, hqu, hru, scaleQ, scaleUQ]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:2103:30: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [gtRankOneStep, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵standardGaussianExpectation, zero_mul, one_mul, if_true]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"}],
+ "inputs":
+ [["Lemmas.GTGauss:deps",
+   [["deps",
+     [["LatalaMeetsAT/LatalaMeetsAT:extraDep",
+       [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
+      ["imports",
+       [["Lemmas.ATDefs transitive imports (legacy)", "34c89b94492bf014"],
+        ["Lemmas.ATDefs:importAllArts", "533ee34f4cfc8dae"],
+        ["Mathlib.Analysis.Calculus.ParametricIntegral transitive imports (legacy)",
+         "7d107f4a5140e299"],
+        ["Mathlib.Analysis.Calculus.ParametricIntegral:importAllArts",
+         "d9b4b5c2a68de617"]]]]],
+    ["libs",
+     [["import dynlibs", "00000000000006bb"],
+      ["package external libraries", "00000000000006bb"],
+      ["module dynlibs", "00000000000006bb"],
+      ["module plugins", "00000000000006bb"]]]]],
+  ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
+   "4ce1780d8d26fd00"],
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\GTGauss.lean",
+   "4d371abb3ab1b5d3"],
+  ["options", "00000000000006bb"],
+  ["isModule: false", "feefd2a0d3a1847e"],
+  ["Module.name: Lemmas.GTGauss", "d54f178306bd021f"],
+  ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "c0029a910dd29a48"}

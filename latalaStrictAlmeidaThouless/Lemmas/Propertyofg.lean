@@ -646,6 +646,7 @@ This proves \eqref{eq:linearATsign}.
 -/
 
 import Lemmas.ATDefs
+import Lemmas.interpolatedAT
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Group.IntegralConvolution
@@ -700,7 +701,7 @@ private lemma property_tanh_hasDerivAt (x : ℝ) :
     exact Real.tanh_eq_sinh_div_cosh y]
   apply ((Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x) hc).congr_deriv
   unfold propertySech
-  simp only [Pi.inv_apply, inv_pow]
+  simp only [inv_pow]
   field_simp [hc]
   nlinarith [Real.cosh_sq_sub_sinh_sq x]
 
@@ -727,7 +728,7 @@ private lemma property_standardGaussianExpectation_const (c : ℝ) :
 /-- At the replica-symmetric breakpoint, the scalar order parameter equals
 the fixed point. -/
 theorem scalarOrderParameterCorrect_at_rsQ {β h : ℝ}
-    (hβ : 0 < β) (hh : 0 < h) (s : ℝ) :
+    (hβ : 0 < β) (s : ℝ) :
     scalarOrderParameterCorrect β h s (rsQ β h) = rsQ β h := by
   have hq0 : 0 ≤ rsQ β h := (rsQ_mem_Icc β h).1
   have hsqrt : Real.sqrt (β ^ 2 * ((1 - s) * rsQ β h + s * rsQ β h)) =
@@ -1095,6 +1096,166 @@ private lemma property_smoothSech_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
           rw [integral_const_mul]
           field_simp [hsqrt]
 
+private lemma property_smoothSech3_hasDerivAt_r_raw {r x : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun t => propertySmoothSech3 t x)
+      (standardGaussianExpectation (fun z =>
+        (-3 * propertySech3 (x + Real.sqrt r * z) *
+          Real.tanh (x + Real.sqrt r * z)) *
+            (1 / (2 * Real.sqrt r) * z))) r := by
+  unfold propertySmoothSech3 standardGaussianExpectation
+  let F : ℝ → ℝ → ℝ := fun t z => propertySech3 (x + Real.sqrt t * z)
+  let F' : ℝ → ℝ → ℝ := fun t z =>
+    (-3 * propertySech3 (x + Real.sqrt t * z) *
+      Real.tanh (x + Real.sqrt t * z)) * (1 / (2 * Real.sqrt t) * z)
+  let c : ℝ := Real.sqrt (r / 2)
+  have hhalf : 0 < r / 2 := by linarith
+  have hc : 0 < c := Real.sqrt_pos.2 hhalf
+  have hboundInt : Integrable (fun z : ℝ => (3 * c⁻¹) * |z|)
+      (gaussianReal 0 1) := by
+    have hz : Integrable (fun z : ℝ => |z|) (gaussianReal 0 1) := by
+      simpa using integrable_abs_pow_gaussianReal_centered (1 : ℝ≥0) 1
+    exact hz.const_mul (3 * c⁻¹)
+  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := gaussianReal 0 1) (F := F) (F' := F') (x₀ := r)
+    (s := Set.Ioi (r / 2)) (bound := fun z => (3 * c⁻¹) * |z|)
+    (Ioi_mem_nhds (by linarith))
+    (Filter.Eventually.of_forall fun t =>
+      ((property_continuous_sech.comp
+        (continuous_const.add (continuous_const.mul continuous_id))).pow 3)
+          |>.aestronglyMeasurable)
+    (by simpa [F] using property_integrable_sech3_affine x (Real.sqrt r))
+    (by
+      apply Continuous.aestronglyMeasurable
+      dsimp [F']
+      have harg : Continuous (fun z : ℝ => x + Real.sqrt r * z) :=
+        continuous_const.add (continuous_const.mul continuous_id)
+      exact (((continuous_const.mul ((property_continuous_sech.comp harg).pow 3)).mul
+        (property_continuous_tanh.comp harg)).mul
+          ((continuous_const : Continuous (fun _ : ℝ => 1 / (2 * Real.sqrt r))).mul
+            continuous_id)))
+    (by
+      filter_upwards [] with z
+      intro t ht
+      have htpos : 0 < t := lt_trans hhalf ht
+      have hroot : 0 < Real.sqrt t := Real.sqrt_pos.2 htpos
+      have hrootle : c ≤ Real.sqrt t := Real.sqrt_le_sqrt ht.le
+      have hinv : (Real.sqrt t)⁻¹ ≤ c⁻¹ := (inv_le_inv₀ hroot hc).2 hrootle
+      have hcoef : |1 / (2 * Real.sqrt t)| ≤ c⁻¹ := by
+        rw [abs_of_pos (by positivity : 0 < 1 / (2 * Real.sqrt t))]
+        calc
+          1 / (2 * Real.sqrt t) ≤ (Real.sqrt t)⁻¹ := by
+            rw [one_div]
+            exact (inv_le_inv₀ (by positivity) hroot).2 (by nlinarith)
+          _ ≤ c⁻¹ := hinv
+      dsimp [F']
+      calc
+        |(-3 * propertySech3 (x + Real.sqrt t * z) *
+              Real.tanh (x + Real.sqrt t * z)) *
+            (1 / (2 * Real.sqrt t) * z)| =
+            |-3 * propertySech3 (x + Real.sqrt t * z) *
+              Real.tanh (x + Real.sqrt t * z)| *
+              |1 / (2 * Real.sqrt t)| * |z| := by simp only [abs_mul]; ring
+        _ ≤ (3 * c⁻¹) * |z| := by
+          have hp : |-3 * propertySech3 (x + Real.sqrt t * z) *
+                Real.tanh (x + Real.sqrt t * z)| *
+                |1 / (2 * Real.sqrt t)| ≤ 3 * c⁻¹ := by
+            exact mul_le_mul (property_sech3Deriv_abs_le_three _) hcoef
+              (abs_nonneg _) (by norm_num)
+          exact mul_le_mul_of_nonneg_right hp (abs_nonneg z))
+    hboundInt
+    (by
+      filter_upwards [] with z
+      intro t ht
+      have htpos : 0 < t := lt_trans hhalf ht
+      have hsqrt := Real.hasDerivAt_sqrt htpos.ne'
+      have harg : HasDerivAt (fun t => x + Real.sqrt t * z)
+          (1 / (2 * Real.sqrt t) * z) t := (hsqrt.mul_const z).const_add x
+      simpa [F, F', Function.comp_def] using
+        (property_sech3_hasDerivAt _).comp t harg)
+  simpa [F, F'] using h.2
+
+private lemma property_smoothSech3_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun t => propertySmoothSech3 t x)
+      ((1 / 2) * standardGaussianExpectation (fun z =>
+        propertySech3Second (x + Real.sqrt r * z))) r := by
+  apply (property_smoothSech3_hasDerivAt_r_raw (x := x) hr).congr_deriv
+  unfold standardGaussianExpectation
+  let F : ℝ → ℝ := fun z =>
+    -3 * propertySech3 (x + Real.sqrt r * z) * Real.tanh (x + Real.sqrt r * z)
+  have hcont : ContDiff ℝ 1 F := by
+    exact (((contDiff_const.mul (property_contDiff_sech.pow 3)).mul property_contDiff_tanh)
+      |>.of_le (by norm_num)).comp (by fun_prop)
+  have hibp := gaussianReal_integration_by_parts (v := (1 : ℝ≥0)) one_ne_zero
+    hcont (property_sech3Deriv_comp_moderate x (Real.sqrt r))
+  have hderiv : deriv F = fun z => Real.sqrt r *
+      propertySech3Second (x + Real.sqrt r * z) := by
+    funext z
+    exact property_sech3Deriv_comp_deriv x (Real.sqrt r) z
+  rw [hderiv] at hibp
+  simp only [NNReal.coe_one, one_mul] at hibp
+  have hsqrt : Real.sqrt r ≠ 0 := (Real.sqrt_pos.2 hr).ne'
+  calc
+    ∫ z, F z * (1 / (2 * Real.sqrt r) * z) ∂gaussianReal 0 1 =
+        (1 / (2 * Real.sqrt r)) * ∫ z, z * F z ∂gaussianReal 0 1 := by
+          rw [← integral_const_mul]
+          apply integral_congr_ae
+          filter_upwards [] with z
+          ring
+    _ = (1 / (2 * Real.sqrt r)) *
+        ∫ z, Real.sqrt r * propertySech3Second (x + Real.sqrt r * z)
+          ∂gaussianReal 0 1 := by rw [hibp]
+    _ = (1 / 2) * ∫ z, propertySech3Second (x + Real.sqrt r * z)
+          ∂gaussianReal 0 1 := by
+          rw [integral_const_mul]
+          field_simp [hsqrt]
+
+private lemma property_smoothSech3Second_abs_le_twelve (r x : ℝ) :
+    |standardGaussianExpectation (fun z =>
+      propertySech3Second (x + Real.sqrt r * z))| ≤ 12 := by
+  unfold standardGaussianExpectation
+  calc
+    |∫ z, propertySech3Second (x + Real.sqrt r * z) ∂gaussianReal 0 1| ≤
+        ∫ z, |propertySech3Second (x + Real.sqrt r * z)| ∂gaussianReal 0 1 :=
+      abs_integral_le_integral_abs
+    _ ≤ ∫ _z : ℝ, (12 : ℝ) ∂gaussianReal 0 1 := by
+      exact integral_mono (property_integrable_sech3Second_affine x (Real.sqrt r)).abs
+        (integrable_const 12) fun z => property_sech3Second_abs_le_twelve _
+    _ = 12 := by simp
+
+private lemma property_continuous_sech3Second : Continuous propertySech3Second := by
+  unfold propertySech3Second propertySech3
+  exact (((continuous_const.mul (property_continuous_sech.pow 3)).mul
+    (property_continuous_tanh.pow 2)).sub
+    ((continuous_const.mul (property_continuous_sech.pow 3)).mul
+      (property_continuous_sech.pow 2)))
+
+private lemma property_continuous_smoothSech3Second (r : ℝ) :
+    Continuous (fun x => standardGaussianExpectation (fun z =>
+      propertySech3Second (x + Real.sqrt r * z))) := by
+  rw [continuous_iff_continuousAt]
+  intro x₀
+  unfold standardGaussianExpectation
+  have hmeas : ∀ᶠ x in nhds x₀,
+      AEStronglyMeasurable (fun z =>
+        propertySech3Second (x + Real.sqrt r * z)) (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun x =>
+      (property_continuous_sech3Second.comp (by fun_prop)).aestronglyMeasurable
+  have hbound : ∀ᶠ x in nhds x₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖propertySech3Second (x + Real.sqrt r * z)‖ ≤ (12 : ℝ) := by
+    exact Filter.Eventually.of_forall fun x => ae_of_all _ fun z => by
+      simpa [Real.norm_eq_abs] using property_sech3Second_abs_le_twelve
+        (x + Real.sqrt r * z)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Tendsto (fun x => propertySech3Second (x + Real.sqrt r * z)) (nhds x₀)
+        (nhds (propertySech3Second (x₀ + Real.sqrt r * z))) := by
+    exact ae_of_all _ fun z =>
+      (property_continuous_sech3Second.comp (by fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds x₀)
+    (F := fun x z => propertySech3Second (x + Real.sqrt r * z))
+    (f := fun z => propertySech3Second (x₀ + Real.sqrt r * z))
+    (bound := fun _ => (12 : ℝ)) hmeas hbound (integrable_const 12) hlim
+
 private lemma property_smoothSech_hasDerivAt_x (r x : ℝ) :
     HasDerivAt (propertySmoothSech r)
       (standardGaussianExpectation (fun z =>
@@ -1219,7 +1380,84 @@ private noncomputable def propertyTiltedTanhSq (r x : ℝ) : ℝ :=
 private noncomputable def propertyTiltedSech4 (r x : ℝ) : ℝ :=
   Real.exp (-r / 2) * propertySech x * propertySmoothSech3 r x
 
-private lemma property_tiltedSech4_nonneg {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
+private noncomputable def propertyTiltedSech4TimeDerivative (r x : ℝ) : ℝ :=
+  ((-1 / 2) * Real.exp (-r / 2) * propertySech x) * propertySmoothSech3 r x +
+    (Real.exp (-r / 2) * propertySech x) *
+      ((1 / 2) * standardGaussianExpectation (fun z =>
+        propertySech3Second (x + Real.sqrt r * z)))
+
+private lemma property_tiltedSech4_hasDerivAt_r {r x : ℝ} (hr : 0 < r) :
+    HasDerivAt (fun t => propertyTiltedSech4 t x)
+      (propertyTiltedSech4TimeDerivative r x) r := by
+  have he : HasDerivAt (fun t : ℝ => Real.exp (-t / 2))
+      ((-1 / 2) * Real.exp (-r / 2)) r := by
+    have hinner : HasDerivAt (fun t : ℝ => -t / 2) (-1 / 2) r := by
+      rw [show (fun t : ℝ => -t / 2) = fun t => (-1 / 2) * t by
+        funext t
+        ring]
+      simpa using (hasDerivAt_id r).const_mul (-1 / 2)
+    simpa only [Function.comp_def, mul_comm] using
+      (Real.hasDerivAt_exp (-r / 2)).comp r hinner
+  have hs := property_smoothSech3_hasDerivAt_r (x := x) hr
+  exact ((he.mul_const (propertySech x)).mul hs).congr_deriv (by
+    unfold propertyTiltedSech4TimeDerivative
+    ring)
+
+private lemma property_tiltedSech4TimeDerivative_abs_le_seven
+    {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
+    |propertyTiltedSech4TimeDerivative r x| ≤ 7 := by
+  have he : Real.exp (-r / 2) ≤ 1 := by
+    rw [← Real.exp_zero]
+    exact Real.exp_le_exp.mpr (by linarith)
+  have he0 : 0 ≤ Real.exp (-r / 2) := (Real.exp_pos _).le
+  have hsech0 : 0 ≤ propertySech x := (propertySech_pos x).le
+  have hsmooth0 : 0 ≤ propertySmoothSech3 r x := property_smoothSech3_nonneg r x
+  have hfirst :
+      |((-1 / 2) * Real.exp (-r / 2) * propertySech x) *
+        propertySmoothSech3 r x| ≤ 1 / 2 := by
+    rw [abs_mul, abs_mul, abs_mul, abs_of_nonneg he0,
+      abs_of_nonneg hsech0, abs_of_nonneg hsmooth0]
+    norm_num
+    have hprod : Real.exp (-r / 2) * propertySech x *
+        propertySmoothSech3 r x ≤ 1 := by
+      calc
+        Real.exp (-r / 2) * propertySech x * propertySmoothSech3 r x ≤
+            1 * propertySech x * propertySmoothSech3 r x := by
+          exact mul_le_mul_of_nonneg_right
+            (mul_le_mul_of_nonneg_right he hsech0) hsmooth0
+        _ ≤ 1 * 1 * propertySmoothSech3 r x := by
+          exact mul_le_mul_of_nonneg_right
+            (mul_le_mul_of_nonneg_left (propertySech_le_one x) (by norm_num)) hsmooth0
+        _ ≤ 1 * 1 * 1 := by
+          exact mul_le_mul_of_nonneg_left (property_smoothSech3_le_one r x) (by norm_num)
+        _ = 1 := by norm_num
+    nlinarith
+  have hsecond :
+      |(Real.exp (-r / 2) * propertySech x) *
+        ((1 / 2) * standardGaussianExpectation (fun z =>
+          propertySech3Second (x + Real.sqrt r * z)))| ≤ 6 := by
+    rw [abs_mul, abs_mul, abs_mul, abs_of_nonneg he0, abs_of_nonneg hsech0]
+    norm_num
+    have hprod : Real.exp (-r / 2) * propertySech x ≤ 1 := by
+      calc
+        Real.exp (-r / 2) * propertySech x ≤ 1 * propertySech x :=
+          mul_le_mul_of_nonneg_right he hsech0
+        _ ≤ 1 * 1 := mul_le_mul_of_nonneg_left (propertySech_le_one x) (by norm_num)
+        _ = 1 := by norm_num
+    have hinner := property_smoothSech3Second_abs_le_twelve r x
+    nlinarith [mul_le_mul hprod hinner (abs_nonneg _) (by positivity : 0 ≤ (1 : ℝ))]
+  unfold propertyTiltedSech4TimeDerivative
+  exact (abs_add_le _ _).trans (by linarith)
+
+private lemma property_continuous_tiltedSech4TimeDerivative (r : ℝ) :
+    Continuous (propertyTiltedSech4TimeDerivative r) := by
+  unfold propertyTiltedSech4TimeDerivative
+  exact (((continuous_const.mul property_continuous_sech).mul
+    (property_continuous_smoothSech3 r)).add
+      ((continuous_const.mul property_continuous_sech).mul
+        (continuous_const.mul (property_continuous_smoothSech3Second r))))
+
+private lemma property_tiltedSech4_nonneg {r : ℝ} (_hr : 0 ≤ r) (x : ℝ) :
     0 ≤ propertyTiltedSech4 r x := by
   unfold propertyTiltedSech4
   exact mul_nonneg
@@ -1429,7 +1667,7 @@ private lemma tiltedHeatSemigroup_tanh_sq_eq {r : ℝ} (hr : 0 ≤ r) (x : ℝ) 
     exact hi
   · exact property_integrable_sech_affine x (Real.sqrt r)
 
-private lemma tiltedHeatSemigroup_sech_four_eq {r : ℝ} (hr : 0 ≤ r) (x : ℝ) :
+private lemma tiltedHeatSemigroup_sech_four_eq {r : ℝ} (_hr : 0 ≤ r) (x : ℝ) :
     tiltedHeatSemigroup r (fun y => propertySech y ^ 4) x =
       propertyTiltedSech4 r x := by
   unfold tiltedHeatSemigroup heatSemigroup propertyTiltedSech4 propertySmoothSech3
@@ -1450,6 +1688,128 @@ private noncomputable def propertyUpperSech4Expectation
     (β h q s u : ℝ) : ℝ :=
   heatSemigroup (β ^ 2 * q)
     (propertyTiltedSech4 (s * β ^ 2 * (u - q))) h
+
+private noncomputable def propertyUpperSech4TimeExpectation
+    (β h q s u : ℝ) : ℝ :=
+  heatSemigroup (β ^ 2 * q)
+    (propertyTiltedSech4TimeDerivative (s * β ^ 2 * (u - q))) h
+
+private lemma propertyUpperSech4Expectation_hasDerivAt
+    {β h q s u : ℝ} (hβ : 0 < β) (hs : 0 < s) (hu : q < u) :
+    HasDerivAt (propertyUpperSech4Expectation β h q s)
+      (s * β ^ 2 * propertyUpperSech4TimeExpectation β h q s u) u := by
+  let a : ℝ := s * β ^ 2
+  have ha : 0 < a := mul_pos hs (sq_pos_of_pos hβ)
+  let b : ℝ := Real.sqrt (β ^ 2 * q)
+  unfold propertyUpperSech4Expectation propertyUpperSech4TimeExpectation
+    heatSemigroup standardGaussianExpectation
+  let F : ℝ → ℝ → ℝ := fun t z =>
+    propertyTiltedSech4 (a * (t - q)) (h + b * z)
+  let F' : ℝ → ℝ → ℝ := fun t z =>
+    a * propertyTiltedSech4TimeDerivative (a * (t - q)) (h + b * z)
+  have hderiv := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := gaussianReal 0 1) (F := F) (F' := F') (x₀ := u)
+    (s := Set.Ioi q) (bound := fun _ => 7 * a)
+    (Ioi_mem_nhds hu)
+    (Filter.Eventually.of_forall fun t =>
+      ((((continuous_const.mul property_continuous_sech).mul
+          (property_continuous_smoothSech3 (a * (t - q)))).comp
+        (continuous_const.add (continuous_const.mul continuous_id))).aestronglyMeasurable))
+    (by
+      have hr : 0 ≤ a * (u - q) := mul_nonneg ha.le (sub_nonneg.mpr hu.le)
+      apply Integrable.of_bound (C := 1)
+      · exact ((((continuous_const.mul property_continuous_sech).mul
+          (property_continuous_smoothSech3 (a * (u - q)))).comp
+            (continuous_const.add (continuous_const.mul continuous_id)))
+              |>.aestronglyMeasurable)
+      · filter_upwards [] with z
+        rw [Real.norm_eq_abs]
+        dsimp [F]
+        unfold propertyTiltedSech4
+        have he : Real.exp (-(a * (u - q)) / 2) ≤ 1 := by
+          rw [← Real.exp_zero]
+          exact Real.exp_le_exp.mpr (by linarith)
+        have hnonneg : 0 ≤ Real.exp (-(a * (u - q)) / 2) *
+            propertySech (h + b * z) *
+              propertySmoothSech3 (a * (u - q)) (h + b * z) := by
+          exact mul_nonneg
+            (mul_nonneg (Real.exp_pos _).le (propertySech_pos _).le)
+            (property_smoothSech3_nonneg _ _)
+        rw [abs_of_nonneg hnonneg]
+        calc
+          Real.exp (-(a * (u - q)) / 2) * propertySech (h + b * z) *
+              propertySmoothSech3 (a * (u - q)) (h + b * z) ≤
+              1 * propertySech (h + b * z) *
+              propertySmoothSech3 (a * (u - q)) (h + b * z) := by
+            exact mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_right he (propertySech_pos _).le)
+              (property_smoothSech3_nonneg _ _)
+          _ ≤ 1 * 1 * propertySmoothSech3 (a * (u - q)) (h + b * z) := by
+            exact mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_left (propertySech_le_one _) (by norm_num))
+              (property_smoothSech3_nonneg _ _)
+          _ ≤ 1 * 1 * 1 := by
+            exact mul_le_mul_of_nonneg_left (property_smoothSech3_le_one _ _)
+              (by norm_num)
+          _ = 1 := by norm_num)
+    (by
+      exact (continuous_const.mul
+        ((property_continuous_tiltedSech4TimeDerivative (a * (u - q))).comp
+          (continuous_const.add (continuous_const.mul continuous_id)))).aestronglyMeasurable)
+    (by
+      filter_upwards [] with z
+      intro t ht
+      have hr : 0 ≤ a * (t - q) := mul_nonneg ha.le (sub_nonneg.mpr ht.le)
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg ha.le]
+      simpa only [mul_comm] using mul_le_mul_of_nonneg_left
+        (property_tiltedSech4TimeDerivative_abs_le_seven hr _) ha.le)
+    (integrable_const (7 * a))
+    (by
+      filter_upwards [] with z
+      intro t ht
+      have hr : 0 < a * (t - q) := mul_pos ha (sub_pos.mpr ht)
+      have hinner : HasDerivAt (fun v : ℝ => a * (v - q)) a t := by
+        simpa only [id_eq, mul_one] using
+          ((hasDerivAt_id t).sub_const q).const_mul a
+      change HasDerivAt
+        (fun v => propertyTiltedSech4 (a * (v - q)) (h + b * z))
+        (a * propertyTiltedSech4TimeDerivative (a * (t - q)) (h + b * z)) t
+      apply ((property_tiltedSech4_hasDerivAt_r (x := h + b * z) hr).comp
+        t hinner).congr_deriv
+      ring)
+  have h := hderiv.2
+  dsimp only [F, F'] at h
+  rw [integral_const_mul] at h
+  simpa only [a, b] using h
+
+private lemma propertyUpperSech4TimeExpectation_abs_le_seven
+    {β h q s u : ℝ} (hs : 0 ≤ s) (hu : q ≤ u) :
+    |propertyUpperSech4TimeExpectation β h q s u| ≤ 7 := by
+  let r : ℝ := s * β ^ 2 * (u - q)
+  have hr : 0 ≤ r := mul_nonneg (mul_nonneg hs (sq_nonneg β)) (sub_nonneg.mpr hu)
+  unfold propertyUpperSech4TimeExpectation heatSemigroup standardGaussianExpectation
+  calc
+    |∫ z, propertyTiltedSech4TimeDerivative r
+        (h + Real.sqrt (β ^ 2 * q) * z) ∂gaussianReal 0 1| ≤
+        ∫ z, |propertyTiltedSech4TimeDerivative r
+          (h + Real.sqrt (β ^ 2 * q) * z)| ∂gaussianReal 0 1 :=
+      abs_integral_le_integral_abs
+    _ ≤ ∫ _z : ℝ, (7 : ℝ) ∂gaussianReal 0 1 := by
+      apply integral_mono
+      · have hi : Integrable (fun z => propertyTiltedSech4TimeDerivative r
+            (h + Real.sqrt (β ^ 2 * q) * z)) (gaussianReal 0 1) := by
+          apply Integrable.of_bound (C := 7)
+          · exact ((property_continuous_tiltedSech4TimeDerivative r).comp
+              (by fun_prop)).aestronglyMeasurable
+          · filter_upwards [] with z
+            simpa [Real.norm_eq_abs] using
+              property_tiltedSech4TimeDerivative_abs_le_seven hr
+                (h + Real.sqrt (β ^ 2 * q) * z)
+        exact hi.abs
+      · exact integrable_const 7
+      · intro z
+        exact property_tiltedSech4TimeDerivative_abs_le_seven hr _
+    _ = 7 := by simp
 
 private lemma scalarOrderParameterCorrect_eq_propertyUpperG
     {β h s u : ℝ} (hs : 0 ≤ s) (hu : rsQ β h < u) :
@@ -2054,7 +2414,7 @@ private lemma scalarOrderParameterCorrect_eq_propertyLowerG
   simp only [if_pos hu, heatSemigroup, hpsi]
   rfl
 
-private lemma property_gaussian_sechSq_ibp {r x : ℝ} (hr : 0 < r) :
+private lemma property_gaussian_sechSq_ibp {r x : ℝ} (_hr : 0 < r) :
     (∫ z, z * propertySech (x + Real.sqrt r * z) ^ 2 ∂gaussianReal 0 1) =
       Real.sqrt r * propertySmoothTanhSecond r x := by
   let F : ℝ → ℝ := fun z => propertySech (x + Real.sqrt r * z) ^ 2
@@ -2738,13 +3098,812 @@ private theorem scalarOrderParameterCorrect_lower_derivative_le_pathAT
   have heq := scalarOrderParameterCorrect_eq_propertyLowerG (h := h) hβ hs0.le huq.le
   have hderiv' : HasDerivAt (scalarOrderParameterCorrect β h s)
       (s * β ^ 2 * propertyLowerDerivativeCore β h (rsQ β h) s u) u := by
-    rw [heq]
-    exact hderiv
+    apply hderiv.congr_of_eventuallyEq
+    filter_upwards [Iio_mem_nhds huq] with v hv
+    exact scalarOrderParameterCorrect_eq_propertyLowerG hβ hs0.le hv.le
   refine ⟨hderiv', ?_⟩
   have hcore := propertyLowerDerivativeCore_le_baseSech4 (h := h) hβ hq hs0 hs1 hu0 huq
   rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
-  unfold propertySech
-  exact mul_le_mul_of_nonneg_left
+  change s * β ^ 2 * propertyLowerDerivativeCore β h (rsQ β h) s u ≤
+    s * (β ^ 2 * standardGaussianExpectation (fun z =>
+      propertySech (h + β * Real.sqrt (rsQ β h) * z) ^ 4))
+  simpa only [mul_assoc] using mul_le_mul_of_nonneg_left
     (mul_le_mul_of_nonneg_left hcore (sq_nonneg β)) hs0.le
+
+private lemma property_continuous_smoothSech_time (x : ℝ) :
+    Continuous (fun r => propertySmoothSech r x) := by
+  rw [continuous_iff_continuousAt]
+  intro r₀
+  unfold propertySmoothSech standardGaussianExpectation
+  have hmeas : ∀ᶠ r in nhds r₀,
+      AEStronglyMeasurable (fun z => propertySech (x + Real.sqrt r * z))
+        (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun r =>
+      (property_continuous_sech.comp (by fun_prop)).aestronglyMeasurable
+  have hbound : ∀ᶠ r in nhds r₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖propertySech (x + Real.sqrt r * z)‖ ≤ (1 : ℝ) := by
+    exact Filter.Eventually.of_forall fun r => ae_of_all _ fun z => by
+      simpa [Real.norm_eq_abs] using property_abs_sech_le_one (x + Real.sqrt r * z)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Tendsto (fun r => propertySech (x + Real.sqrt r * z)) (nhds r₀)
+        (nhds (propertySech (x + Real.sqrt r₀ * z))) := by
+    exact ae_of_all _ fun z =>
+      (property_continuous_sech.comp (by fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds r₀) (F := fun r z => propertySech (x + Real.sqrt r * z))
+    (f := fun z => propertySech (x + Real.sqrt r₀ * z))
+    (bound := fun _ => (1 : ℝ)) hmeas hbound (integrable_const 1) hlim
+
+private lemma property_continuous_smoothSech3_time (x : ℝ) :
+    Continuous (fun r => propertySmoothSech3 r x) := by
+  rw [continuous_iff_continuousAt]
+  intro r₀
+  unfold propertySmoothSech3 standardGaussianExpectation
+  have hmeas : ∀ᶠ r in nhds r₀,
+      AEStronglyMeasurable (fun z => propertySech3 (x + Real.sqrt r * z))
+        (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun r =>
+      ((property_continuous_sech.comp (by fun_prop)).pow 3).aestronglyMeasurable
+  have hbound : ∀ᶠ r in nhds r₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖propertySech3 (x + Real.sqrt r * z)‖ ≤ (1 : ℝ) := by
+    exact Filter.Eventually.of_forall fun r => ae_of_all _ fun z => by
+      simpa [Real.norm_eq_abs] using property_abs_sech3_le_one (x + Real.sqrt r * z)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Tendsto (fun r => propertySech3 (x + Real.sqrt r * z)) (nhds r₀)
+        (nhds (propertySech3 (x + Real.sqrt r₀ * z))) := by
+    exact ae_of_all _ fun z =>
+      ((property_continuous_sech.pow 3).comp (by fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds r₀) (F := fun r z => propertySech3 (x + Real.sqrt r * z))
+    (f := fun z => propertySech3 (x + Real.sqrt r₀ * z))
+    (bound := fun _ => (1 : ℝ)) hmeas hbound (integrable_const 1) hlim
+
+private lemma property_continuous_tiltedTanhSq_time (x : ℝ) :
+    Continuous (fun r => propertyTiltedTanhSq r x) := by
+  unfold propertyTiltedTanhSq
+  exact continuous_const.sub
+    (((Real.continuous_exp.comp (by fun_prop)).mul continuous_const).mul
+      (property_continuous_smoothSech_time x))
+
+private lemma property_continuous_tiltedSech4_time (x : ℝ) :
+    Continuous (fun r => propertyTiltedSech4 r x) := by
+  unfold propertyTiltedSech4
+  exact ((Real.continuous_exp.comp (by fun_prop)).mul continuous_const).mul
+    (property_continuous_smoothSech3_time x)
+
+private lemma property_continuous_upperSech4Expectation (β h q s : ℝ) :
+    Continuous (propertyUpperSech4Expectation β h q s) := by
+  rw [continuous_iff_continuousAt]
+  intro u₀
+  unfold propertyUpperSech4Expectation heatSemigroup standardGaussianExpectation
+  let C : ℝ := Real.exp (-(s * β ^ 2 * (u₀ - q)) / 2) + 1
+  have hC : 0 < C := by dsimp [C]; positivity
+  have hexp : ∀ᶠ u in nhds u₀,
+      Real.exp (-(s * β ^ 2 * (u - q)) / 2) < C := by
+    have ht : Tendsto (fun u : ℝ => Real.exp (-(s * β ^ 2 * (u - q)) / 2))
+        (nhds u₀) (nhds (Real.exp (-(s * β ^ 2 * (u₀ - q)) / 2))) :=
+      (Real.continuous_exp.comp (by fun_prop)).continuousAt.tendsto
+    exact ht.eventually (Iio_mem_nhds (by dsimp [C]; linarith))
+  have hmeas : ∀ᶠ u in nhds u₀,
+      AEStronglyMeasurable
+        (fun z => propertyTiltedSech4 (s * β ^ 2 * (u - q))
+          (h + Real.sqrt (β ^ 2 * q) * z)) (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun u =>
+      (property_continuous_tiltedSech4 _ |>.comp (by fun_prop)).aestronglyMeasurable
+  have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖propertyTiltedSech4 (s * β ^ 2 * (u - q))
+        (h + Real.sqrt (β ^ 2 * q) * z)‖ ≤ C := by
+    filter_upwards [hexp] with u hu
+    exact ae_of_all _ fun z => by
+      rw [Real.norm_eq_abs]
+      unfold propertyTiltedSech4
+      have hnonneg : 0 ≤ Real.exp (-(s * β ^ 2 * (u - q)) / 2) *
+          propertySech (h + Real.sqrt (β ^ 2 * q) * z) *
+          propertySmoothSech3 (s * β ^ 2 * (u - q))
+            (h + Real.sqrt (β ^ 2 * q) * z) := by
+        exact mul_nonneg
+          (mul_nonneg (Real.exp_pos _).le (propertySech_pos _).le)
+          (property_smoothSech3_nonneg _ _)
+      rw [abs_of_nonneg hnonneg]
+      calc
+        _ ≤ Real.exp (-(s * β ^ 2 * (u - q)) / 2) * 1 * 1 := by
+          exact mul_le_mul
+            (mul_le_mul_of_nonneg_left (propertySech_le_one _) (Real.exp_pos _).le)
+            (property_smoothSech3_le_one _ _) (property_smoothSech3_nonneg _ _)
+            (mul_nonneg (Real.exp_pos _).le (by norm_num))
+        _ ≤ C := by simpa using hu.le
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Tendsto
+        (fun u => propertyTiltedSech4 (s * β ^ 2 * (u - q))
+          (h + Real.sqrt (β ^ 2 * q) * z)) (nhds u₀)
+        (nhds (propertyTiltedSech4 (s * β ^ 2 * (u₀ - q))
+          (h + Real.sqrt (β ^ 2 * q) * z))) := by
+    exact ae_of_all _ fun z =>
+      (property_continuous_tiltedSech4_time _ |>.comp (by fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds u₀)
+    (F := fun u z => propertyTiltedSech4 (s * β ^ 2 * (u - q))
+      (h + Real.sqrt (β ^ 2 * q) * z))
+    (f := fun z => propertyTiltedSech4 (s * β ^ 2 * (u₀ - q))
+      (h + Real.sqrt (β ^ 2 * q) * z))
+    (bound := fun _ => C) hmeas hbound (integrable_const C) hlim
+
+private lemma property_continuous_upperG (β h q s : ℝ) :
+    Continuous (propertyUpperG β h q s) := by
+  rw [continuous_iff_continuousAt]
+  intro u₀
+  unfold propertyUpperG heatSemigroup standardGaussianExpectation
+  let C : ℝ := Real.exp (-(s * β ^ 2 * (u₀ - q)) / 2) + 1
+  have hC : 0 < C := by dsimp [C]; positivity
+  have hexp : ∀ᶠ u in nhds u₀,
+      Real.exp (-(s * β ^ 2 * (u - q)) / 2) < C := by
+    have ht : Tendsto (fun u : ℝ => Real.exp (-(s * β ^ 2 * (u - q)) / 2))
+        (nhds u₀) (nhds (Real.exp (-(s * β ^ 2 * (u₀ - q)) / 2))) :=
+      (Real.continuous_exp.comp (by fun_prop)).continuousAt.tendsto
+    exact ht.eventually (Iio_mem_nhds (by dsimp [C]; linarith))
+  have hmeas : ∀ᶠ u in nhds u₀,
+      AEStronglyMeasurable
+        (fun z => propertyTiltedTanhSq (s * β ^ 2 * (u - q))
+          (h + Real.sqrt (β ^ 2 * q) * z)) (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun u =>
+      (property_continuous_tiltedTanhSq _ |>.comp (by fun_prop)).aestronglyMeasurable
+  have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖propertyTiltedTanhSq (s * β ^ 2 * (u - q))
+        (h + Real.sqrt (β ^ 2 * q) * z)‖ ≤ 1 + C := by
+    filter_upwards [hexp] with u hu
+    exact ae_of_all _ fun z => by
+      rw [Real.norm_eq_abs]
+      unfold propertyTiltedTanhSq
+      have hp : 0 ≤ Real.exp (-(s * β ^ 2 * (u - q)) / 2) *
+          propertySech (h + Real.sqrt (β ^ 2 * q) * z) *
+          propertySmoothSech (s * β ^ 2 * (u - q))
+            (h + Real.sqrt (β ^ 2 * q) * z) := by
+        exact mul_nonneg
+          (mul_nonneg (Real.exp_pos _).le (propertySech_pos _).le)
+          (property_smoothSech_nonneg _ _)
+      have hpC : Real.exp (-(s * β ^ 2 * (u - q)) / 2) *
+          propertySech (h + Real.sqrt (β ^ 2 * q) * z) *
+          propertySmoothSech (s * β ^ 2 * (u - q))
+            (h + Real.sqrt (β ^ 2 * q) * z) ≤ C := by
+        calc
+          _ ≤ Real.exp (-(s * β ^ 2 * (u - q)) / 2) * 1 * 1 := by
+            exact mul_le_mul
+              (mul_le_mul_of_nonneg_left (propertySech_le_one _) (Real.exp_pos _).le)
+              (property_smoothSech_le_one _ _) (property_smoothSech_nonneg _ _)
+              (mul_nonneg (Real.exp_pos _).le (by norm_num))
+          _ ≤ C := by simpa using hu.le
+      exact (abs_sub (1 : ℝ) _).trans (by
+        rw [abs_of_nonneg hp]
+        nlinarith)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Tendsto
+        (fun u => propertyTiltedTanhSq (s * β ^ 2 * (u - q))
+          (h + Real.sqrt (β ^ 2 * q) * z)) (nhds u₀)
+        (nhds (propertyTiltedTanhSq (s * β ^ 2 * (u₀ - q))
+          (h + Real.sqrt (β ^ 2 * q) * z))) := by
+    exact ae_of_all _ fun z =>
+      (property_continuous_tiltedTanhSq_time _ |>.comp (by fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds u₀)
+    (F := fun u z => propertyTiltedTanhSq (s * β ^ 2 * (u - q))
+      (h + Real.sqrt (β ^ 2 * q) * z))
+    (f := fun z => propertyTiltedTanhSq (s * β ^ 2 * (u₀ - q))
+      (h + Real.sqrt (β ^ 2 * q) * z))
+    (bound := fun _ => 1 + C) hmeas hbound (integrable_const (1 + C)) hlim
+
+private lemma property_continuous_lowerInner_time (β h q s z₀ : ℝ) :
+    Continuous (fun u => propertyLowerInner β h q s u z₀) := by
+  unfold propertyLowerInner propertySmoothTanh standardGaussianExpectation
+  rw [continuous_iff_continuousAt]
+  intro u₀
+  have hmeas : ∀ᶠ u in nhds u₀,
+      AEStronglyMeasurable (fun z => Real.tanh
+        (h + Real.sqrt (propertyLowerVariance β q s u) * z₀ +
+          Real.sqrt (propertyLowerRemainder β q s u) * z))
+        (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun u =>
+      (property_continuous_tanh.comp (by fun_prop)).aestronglyMeasurable
+  have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ z ∂gaussianReal 0 1,
+      ‖Real.tanh (h + Real.sqrt (propertyLowerVariance β q s u) * z₀ +
+        Real.sqrt (propertyLowerRemainder β q s u) * z)‖ ≤ (1 : ℝ) := by
+    exact Filter.Eventually.of_forall fun u => ae_of_all _ fun z => by
+      simpa [Real.norm_eq_abs] using property_abs_tanh_le_one
+        (h + Real.sqrt (propertyLowerVariance β q s u) * z₀ +
+          Real.sqrt (propertyLowerRemainder β q s u) * z)
+  have hlim : ∀ᵐ z ∂gaussianReal 0 1,
+      Tendsto (fun u => Real.tanh
+        (h + Real.sqrt (propertyLowerVariance β q s u) * z₀ +
+          Real.sqrt (propertyLowerRemainder β q s u) * z)) (nhds u₀)
+        (nhds (Real.tanh
+          (h + Real.sqrt (propertyLowerVariance β q s u₀) * z₀ +
+            Real.sqrt (propertyLowerRemainder β q s u₀) * z))) := by
+    exact ae_of_all _ fun z =>
+      (property_continuous_tanh.comp (by
+        unfold propertyLowerVariance propertyLowerRemainder
+        fun_prop)).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds u₀)
+    (F := fun u z => Real.tanh
+      (h + Real.sqrt (propertyLowerVariance β q s u) * z₀ +
+        Real.sqrt (propertyLowerRemainder β q s u) * z))
+    (f := fun z => Real.tanh
+      (h + Real.sqrt (propertyLowerVariance β q s u₀) * z₀ +
+        Real.sqrt (propertyLowerRemainder β q s u₀) * z))
+    (bound := fun _ => (1 : ℝ)) hmeas hbound (integrable_const 1) hlim
+
+private lemma property_continuous_lowerG (β h q s : ℝ) :
+    Continuous (propertyLowerG β h q s) := by
+  rw [continuous_iff_continuousAt]
+  intro u₀
+  unfold propertyLowerG standardGaussianExpectation
+  have hmeas : ∀ᶠ u in nhds u₀,
+      AEStronglyMeasurable (fun z₀ => propertyLowerInner β h q s u z₀ ^ 2)
+        (gaussianReal 0 1) :=
+    Filter.Eventually.of_forall fun u => by
+      apply Continuous.aestronglyMeasurable
+      unfold propertyLowerInner
+      exact (property_continuous_smoothTanh _ |>.comp (by fun_prop)).pow 2
+  have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ z₀ ∂gaussianReal 0 1,
+      ‖propertyLowerInner β h q s u z₀ ^ 2‖ ≤ (1 : ℝ) := by
+    exact Filter.Eventually.of_forall fun u => ae_of_all _ fun z₀ => by
+      rw [Real.norm_eq_abs, abs_pow]
+      exact pow_le_one₀ (abs_nonneg _) (by
+        unfold propertyLowerInner
+        exact property_smoothTanh_abs_le_one _ _)
+  have hlim : ∀ᵐ z₀ ∂gaussianReal 0 1,
+      Tendsto (fun u => propertyLowerInner β h q s u z₀ ^ 2) (nhds u₀)
+        (nhds (propertyLowerInner β h q s u₀ z₀ ^ 2)) := by
+    exact ae_of_all _ fun z₀ =>
+      ((property_continuous_lowerInner_time β h q s z₀).pow 2).continuousAt.tendsto
+  exact tendsto_integral_filter_of_dominated_convergence
+    (l := nhds u₀) (F := fun u z₀ => propertyLowerInner β h q s u z₀ ^ 2)
+    (f := fun z₀ => propertyLowerInner β h q s u₀ z₀ ^ 2)
+    (bound := fun _ => (1 : ℝ)) hmeas hbound (integrable_const 1) hlim
+
+private lemma property_smoothSech3_le_smoothSech (r x : ℝ) :
+    propertySmoothSech3 r x ≤ propertySmoothSech r x := by
+  unfold propertySmoothSech3 propertySmoothSech standardGaussianExpectation propertySech3
+  apply integral_mono (property_integrable_sech3_affine x (Real.sqrt r))
+    (property_integrable_sech_affine x (Real.sqrt r))
+  intro z
+  have hp := propertySech_pos (x + Real.sqrt r * z)
+  have h1 := propertySech_le_one (x + Real.sqrt r * z)
+  let y := propertySech (x + Real.sqrt r * z)
+  have hy2 : y ^ 2 ≤ 1 := by nlinarith [sq_nonneg (y - 1)]
+  change y ^ 3 ≤ y
+  calc
+    y ^ 3 = y * y ^ 2 := by ring
+    _ ≤ y * 1 := mul_le_mul_of_nonneg_left hy2 hp.le
+    _ = y := by ring
+
+private lemma property_tiltedSech4_le_one_sub_tiltedTanhSq
+    {r x : ℝ} (_hr : 0 ≤ r) :
+    propertyTiltedSech4 r x ≤ 1 - propertyTiltedTanhSq r x := by
+  unfold propertyTiltedSech4 propertyTiltedTanhSq
+  rw [sub_sub_cancel]
+  exact mul_le_mul_of_nonneg_left (property_smoothSech3_le_smoothSech r x)
+    (mul_nonneg (Real.exp_pos _).le (propertySech_pos x).le)
+
+private lemma propertyUpperSech4Expectation_le_one_sub_upperG
+    {β h q s u : ℝ} (hs : 0 ≤ s) (hu : q ≤ u) :
+    propertyUpperSech4Expectation β h q s u ≤ 1 - propertyUpperG β h q s u := by
+  let r : ℝ := s * β ^ 2 * (u - q)
+  have hr : 0 ≤ r := mul_nonneg (mul_nonneg hs (sq_nonneg β)) (sub_nonneg.mpr hu)
+  have hleft := property_integrable_tiltedSech4_affine hr h (Real.sqrt (β ^ 2 * q))
+  have hright := property_integrable_tiltedTanhSq_affine hr h (Real.sqrt (β ^ 2 * q))
+  unfold propertyUpperSech4Expectation propertyUpperG heatSemigroup
+    standardGaussianExpectation
+  change (∫ z, propertyTiltedSech4 r (h + Real.sqrt (β ^ 2 * q) * z)
+      ∂gaussianReal 0 1) ≤
+    1 - ∫ z, propertyTiltedTanhSq r (h + Real.sqrt (β ^ 2 * q) * z)
+      ∂gaussianReal 0 1
+  have hone : (∫ _z : ℝ, (1 : ℝ) ∂gaussianReal 0 1) = 1 := by simp
+  rw [← hone, ← integral_sub (integrable_const 1) hright]
+  exact integral_mono hleft ((integrable_const 1).sub hright) fun z =>
+    property_tiltedSech4_le_one_sub_tiltedTanhSq hr
+
+private lemma propertyUpperSech4Expectation_eq_localField
+    {β h q s u : ℝ} (hs : 0 ≤ s) (hu : q < u) :
+    propertyUpperSech4Expectation β h q s u =
+      localFieldExpectation β h q s u (fun x => (Real.cosh x)⁻¹ ^ 4) := by
+  have hnot : ¬u ≤ q := not_le_of_gt hu
+  have hr : 0 ≤ s * β ^ 2 * (u - q) :=
+    mul_nonneg (mul_nonneg hs (sq_nonneg β)) (sub_nonneg.mpr hu.le)
+  unfold propertyUpperSech4Expectation localFieldExpectation
+  rw [if_neg hnot]
+  congr 2
+  funext x
+  change propertyTiltedSech4 (s * β ^ 2 * (u - q)) x =
+    tiltedHeatSemigroup (s * β ^ 2 * (u - q))
+      (fun y => propertySech y ^ 4) x
+  exact (tiltedHeatSemigroup_sech_four_eq hr x).symm
+
+private lemma propertyUpperG_at_breakpoint
+    {β h q s : ℝ} (hβ : 0 < β) (hq : q = rsQ β h) :
+    propertyUpperG β h q s q = q := by
+  subst q
+  have hzero (x : ℝ) : propertyTiltedTanhSq 0 x = Real.tanh x ^ 2 := by
+    have hsmooth : propertySmoothSech 0 x = propertySech x := by
+      unfold propertySmoothSech standardGaussianExpectation
+      simp
+    unfold propertyTiltedTanhSq
+    rw [hsmooth]
+    simp only [neg_zero, zero_div, Real.exp_zero, one_mul]
+    nlinarith [property_tanh_sq_add_sech_sq x]
+  unfold propertyUpperG heatSemigroup
+  simp only [sub_self, mul_zero, hzero]
+  have hsqrt : Real.sqrt (β ^ 2 * rsQ β h) =
+      β * Real.sqrt (rsQ β h) := by
+    rw [Real.sqrt_mul (sq_nonneg β), Real.sqrt_sq_eq_abs, abs_of_pos hβ]
+  unfold standardGaussianExpectation
+  rw [hsqrt]
+  exact (rsQ_fixedPoint β h).symm
+
+private lemma propertyLowerG_at_breakpoint
+    {β h q s : ℝ} (hβ : 0 < β) (_hh : 0 < h)
+    (hs : 0 ≤ s) (hq : q = rsQ β h) :
+    propertyLowerG β h q s q = q := by
+  subst q
+  rw [← scalarOrderParameterCorrect_eq_propertyLowerG (h := h) hβ hs le_rfl]
+  exact scalarOrderParameterCorrect_at_rsQ hβ s
+
+private lemma scalarOrderParameterCorrect_zero_path
+    {β h u : ℝ} (hβ : 0 < β) (_hh : 0 < h) :
+    scalarOrderParameterCorrect β h 0 u = rsQ β h := by
+  by_cases hu : u ≤ rsQ β h
+  · rw [scalarOrderParameterCorrect_eq_propertyLowerG (h := h) hβ (by norm_num) hu]
+    have hinner (z₀ : ℝ) : propertyLowerInner β h (rsQ β h) 0 u z₀ =
+        Real.tanh (h + Real.sqrt (β ^ 2 * rsQ β h) * z₀) := by
+      unfold propertyLowerInner propertyLowerRemainder propertyLowerVariance
+        propertySmoothTanh standardGaussianExpectation
+      simp
+    unfold propertyLowerG standardGaussianExpectation
+    apply Eq.trans (integral_congr_ae (ae_of_all _ fun z₀ => by rw [hinner z₀]))
+    have hsqrt : Real.sqrt (β ^ 2 * rsQ β h) =
+        β * Real.sqrt (rsQ β h) := by
+      rw [Real.sqrt_mul (sq_nonneg β), Real.sqrt_sq_eq_abs, abs_of_pos hβ]
+    rw [hsqrt]
+    exact (rsQ_fixedPoint β h).symm
+  · have hu' : rsQ β h < u := lt_of_not_ge hu
+    rw [scalarOrderParameterCorrect_eq_propertyUpperG (h := h) (by norm_num) hu']
+    have hupper : propertyUpperG β h (rsQ β h) 0 u =
+        propertyUpperG β h (rsQ β h) 0 (rsQ β h) := by
+      unfold propertyUpperG
+      simp only [zero_mul]
+    rw [hupper]
+    exact propertyUpperG_at_breakpoint hβ rfl
+
+private lemma property_atParameter_nonneg {β h : ℝ} (hβ : 0 < β) (hh : 0 < h) :
+    0 ≤ atParameter β h := by
+  rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
+  exact mul_nonneg (sq_nonneg β) (integral_nonneg fun z => pow_nonneg (inv_nonneg.mpr
+    (Real.cosh_pos _).le) 4)
+
+private lemma propertyLowerG_increment_le_pathAT
+    {β h s u : ℝ} (hβ : 0 < β) (hh : 0 < h)
+    (hs0 : 0 < s) (hs1 : s ≤ 1) (hu0 : 0 ≤ u) (huq : u < rsQ β h) :
+    propertyLowerG β h (rsQ β h) s (rsQ β h) -
+        propertyLowerG β h (rsQ β h) s u ≤
+      s * atParameter β h * (rsQ β h - u) := by
+  let f := propertyLowerG β h (rsQ β h) s
+  have hcont : ContinuousOn f (Set.Icc u (rsQ β h)) :=
+    (property_continuous_lowerG β h (rsQ β h) s).continuousOn
+  have hdiff : DifferentiableOn ℝ f (Set.Ioo u (rsQ β h)) := by
+    intro v hv
+    exact (propertyLowerG_hasDerivAt (h := h) hβ (rsQ_pos hβ hh) hs0 hs1
+      (lt_of_le_of_lt hu0 hv.1) hv.2).differentiableAt.differentiableWithinAt
+  obtain ⟨v, hv, hvSlope⟩ := exists_deriv_eq_slope f huq hcont hdiff
+  have hvBound := (scalarOrderParameterCorrect_lower_derivative_le_pathAT
+    hβ hh hs0 hs1 (lt_of_le_of_lt hu0 hv.1) hv.2).2
+  have hvDeriv := (propertyLowerG_hasDerivAt (h := h) hβ (rsQ_pos hβ hh)
+    hs0 hs1 (lt_of_le_of_lt hu0 hv.1) hv.2).deriv
+  have hratio :
+      (f (rsQ β h) - f u) / (rsQ β h - u) ≤ s * atParameter β h := by
+    rw [← hvSlope, hvDeriv]
+    exact hvBound
+  exact (div_le_iff₀ (sub_pos.mpr huq)).mp hratio
+
+private lemma propertyUpperSech4Expectation_at_breakpoint
+    {β h s : ℝ} (hβ : 0 < β) (hh : 0 < h) :
+    β ^ 2 * propertyUpperSech4Expectation β h (rsQ β h) s (rsQ β h) =
+      atParameter β h := by
+  have hzero (x : ℝ) : propertyTiltedSech4 0 x = propertySech x ^ 4 := by
+    have hsmooth : propertySmoothSech3 0 x = propertySech3 x := by
+      unfold propertySmoothSech3 standardGaussianExpectation
+      simp
+    unfold propertyTiltedSech4
+    rw [hsmooth]
+    simp only [neg_zero, zero_div, Real.exp_zero, one_mul]
+    unfold propertySech3
+    ring
+  have hsqrt : Real.sqrt (β ^ 2 * rsQ β h) =
+      β * Real.sqrt (rsQ β h) := by
+    rw [Real.sqrt_mul (sq_nonneg β), Real.sqrt_sq_eq_abs, abs_of_pos hβ]
+  rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
+  unfold propertyUpperSech4Expectation heatSemigroup standardGaussianExpectation
+  simp only [sub_self, mul_zero, hzero, hsqrt]
+  rfl
+
+private lemma propertyUpperSech4Expectation_increment_abs_le
+    {β h q s u : ℝ} (hβ : 0 < β) (hs : 0 < s) (hu : q < u) :
+    |propertyUpperSech4Expectation β h q s u -
+        propertyUpperSech4Expectation β h q s q| ≤
+      7 * (s * β ^ 2) * (u - q) := by
+  let f := propertyUpperSech4Expectation β h q s
+  let a : ℝ := s * β ^ 2
+  have ha : 0 < a := mul_pos hs (sq_pos_of_pos hβ)
+  have hcont : ContinuousOn f (Set.Icc q u) :=
+    (property_continuous_upperSech4Expectation β h q s).continuousOn
+  have hdiff : DifferentiableOn ℝ f (Set.Ioo q u) := by
+    intro v hv
+    exact (propertyUpperSech4Expectation_hasDerivAt (h := h) hβ hs hv.1)
+      |>.differentiableAt.differentiableWithinAt
+  obtain ⟨v, hv, hvSlope⟩ := exists_deriv_eq_slope f hu hcont hdiff
+  have hvDeriv :=
+    (propertyUpperSech4Expectation_hasDerivAt (h := h) hβ hs hv.1).deriv
+  have hvTime := propertyUpperSech4TimeExpectation_abs_le_seven
+    (β := β) (h := h) (q := q) (s := s) (u := v) hs.le hv.1.le
+  have hratio : |(f u - f q) / (u - q)| ≤ 7 * a := by
+    rw [← hvSlope, hvDeriv, abs_mul, abs_of_pos ha]
+    exact mul_le_mul_of_nonneg_left hvTime ha.le |>.trans_eq (by ring)
+  rw [abs_div, abs_of_pos (sub_pos.mpr hu)] at hratio
+  have hmul := (div_le_iff₀ (sub_pos.mpr hu)).mp hratio
+  simpa only [f, a, mul_assoc] using hmul
+
+private lemma propertyUpperG_derivative_le_pathAT_large
+    {β h s u : ℝ} (hβ : 0 < β) (hh : 0 < h)
+    (hs0 : 0 < s) (hs1 : s ≤ 1)
+    (huq : rsQ β h < u) (hu1 : u ≤ 1)
+    (hlarge : 1 < s * β ^ 2 * (1 - rsQ β h)) :
+    s * β ^ 2 * propertyUpperSech4Expectation β h (rsQ β h) s u ≤
+      s * atParameter β h := by
+  have hcomp := upperComparison hβ hh ⟨hs0.le, hs1⟩ ⟨huq.le, hu1⟩ hlarge
+  rw [← propertyUpperSech4Expectation_eq_localField hs0.le huq] at hcomp
+  simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hcomp hs0.le
+
+private lemma propertyUpperG_derivative_le_drift
+    {β h q s u : ℝ} (_hβ : 0 < β) (hs0 : 0 < s) (hu : q < u) :
+    s * β ^ 2 * propertyUpperSech4Expectation β h q s u ≤
+      (s * β ^ 2) * (1 - propertyUpperG β h q s u) := by
+  exact mul_le_mul_of_nonneg_left
+    (propertyUpperSech4Expectation_le_one_sub_upperG hs0.le hu.le)
+    (mul_nonneg hs0.le (sq_nonneg β))
+
+private lemma propertyUpperG_increment_lt_large
+    {β h s u : ℝ} (hβ : 0 < β) (hh : 0 < h)
+    (hs0 : 0 < s) (hs1 : s ≤ 1)
+    (huq : rsQ β h < u) (hu1 : u ≤ 1)
+    (hlarge : 1 < s * β ^ 2 * (1 - rsQ β h))
+    (hAT : atParameter β h < 1) :
+    propertyUpperG β h (rsQ β h) s u < u := by
+  let q := rsQ β h
+  let f := propertyUpperG β h q s
+  have hcont : ContinuousOn f (Set.Icc q u) :=
+    (property_continuous_upperG β h q s).continuousOn
+  have hdiff : DifferentiableOn ℝ f (Set.Ioo q u) := by
+    intro v hv
+    exact (propertyUpperG_hasDerivAt hβ hs0 hv.1).differentiableAt.differentiableWithinAt
+  obtain ⟨v, hv, hvSlope⟩ := exists_deriv_eq_slope f huq hcont hdiff
+  have hvDeriv := (propertyUpperG_hasDerivAt (h := h) hβ hs0 hv.1).deriv
+  have hvBound := propertyUpperG_derivative_le_pathAT_large hβ hh hs0 hs1 hv.1
+    (le_trans hv.2.le hu1) hlarge
+  have hsAT : s * atParameter β h < 1 := by
+    have hnonneg := property_atParameter_nonneg hβ hh
+    nlinarith [mul_le_mul_of_nonneg_right hs1 hnonneg]
+  have hratio : (f u - f q) / (u - q) < 1 := by
+    rw [← hvSlope, hvDeriv]
+    exact lt_of_le_of_lt hvBound hsAT
+  have hslope : f u - f q < u - q :=
+    (div_lt_one (sub_pos.mpr huq)).mp hratio
+  have hfq : f q = q := propertyUpperG_at_breakpoint hβ rfl
+  dsimp [f, q] at hfq ⊢
+  linarith
+
+private lemma propertyUpperG_lt_small
+    {β h s u : ℝ} (hβ : 0 < β) (_hh : 0 < h)
+    (hs0 : 0 < s) (huq : rsQ β h < u)
+    (hsmall : s * β ^ 2 * (1 - rsQ β h) ≤ 1) :
+    propertyUpperG β h (rsQ β h) s u < u := by
+  let q : ℝ := rsQ β h
+  let a : ℝ := s * β ^ 2
+  let g : ℝ → ℝ := propertyUpperG β h q s
+  let subq : ℝ → ℝ := id - fun _ => q
+  let linear : ℝ → ℝ := (fun y => a * y) ∘ subq
+  let expo : ℝ → ℝ := fun v => Real.exp (linear v)
+  let diff : ℝ → ℝ := g - id
+  let F : ℝ → ℝ := expo * diff
+  have ha : 0 < a := mul_pos hs0 (sq_pos_of_pos hβ)
+  have hcont : ContinuousOn F (Set.Icc q u) := by
+    have hexpoCont : Continuous expo := by
+      dsimp [expo, linear, subq]
+      fun_prop
+    have hdiffCont : Continuous diff := by
+      dsimp [diff, g]
+      exact (property_continuous_upperG β h q s).sub continuous_id
+    exact (hexpoCont.mul hdiffCont).continuousOn
+  have hdiff : DifferentiableOn ℝ F (Set.Ioo q u) := by
+    intro v hv
+    have hg := propertyUpperG_hasDerivAt (h := h) hβ hs0 hv.1
+    have hsub : HasDerivAt subq 1 v := by
+      exact (hasDerivAt_id v).sub_const q
+    have hlinear : HasDerivAt linear a v := by
+      exact (hasDerivAt_const_mul (x := subq v) a).comp v hsub |>.congr_deriv (by ring)
+    have hexpo : HasDerivAt expo (Real.exp (linear v) * a) v := hlinear.exp
+    have hdiff' : HasDerivAt diff
+        (s * β ^ 2 * propertyUpperSech4Expectation β h q s v - 1) v := by
+      exact hg.sub (hasDerivAt_id v)
+    exact (hexpo.mul hdiff').differentiableAt.differentiableWithinAt
+  obtain ⟨v, hv, hvSlope⟩ := exists_deriv_eq_slope F huq hcont hdiff
+  have hg := propertyUpperG_hasDerivAt (h := h) hβ hs0 hv.1
+  have hsub : HasDerivAt subq 1 v := by
+    exact (hasDerivAt_id v).sub_const q
+  have hlinear : HasDerivAt linear a v := by
+    exact (hasDerivAt_const_mul (x := subq v) a).comp v hsub |>.congr_deriv (by ring)
+  have hexpo : HasDerivAt expo (Real.exp (linear v) * a) v := hlinear.exp
+  have hdiff' : HasDerivAt diff
+      (s * β ^ 2 * propertyUpperSech4Expectation β h q s v - 1) v := by
+    exact hg.sub (hasDerivAt_id v)
+  have hFderiv := (hexpo.mul hdiff').deriv
+  have hFderivEq : deriv F v = Real.exp (a * (v - q)) *
+      (a * (g v - v) +
+        s * β ^ 2 * propertyUpperSech4Expectation β h q s v - 1) := by
+    rw [hFderiv]
+    dsimp [F, expo, linear, subq, diff]
+    ring
+  have hgBound := propertyUpperG_derivative_le_drift (h := h) hβ hs0 hv.1
+  have hforce : a * (1 - v) - 1 < 0 := by
+    have hav : a * (1 - v) < a * (1 - q) := by
+      exact mul_lt_mul_of_pos_left (by linarith [hv.1]) ha
+    dsimp [a, q] at hav ⊢
+    linarith
+  have hinside : a * (g v - v) +
+      s * β ^ 2 * propertyUpperSech4Expectation β h q s v - 1 < 0 := by
+    dsimp [a, g]
+    have := hgBound
+    nlinarith [hforce]
+  have hderivNeg : deriv F v < 0 := by
+    rw [hFderivEq]
+    exact mul_neg_of_pos_of_neg (Real.exp_pos _) hinside
+  have hratio : (F u - F q) / (u - q) < 0 := by
+    rw [← hvSlope]
+    exact hderivNeg
+  have hFu : F u < F q := by
+    have hden := sub_pos.mpr huq
+    rcases div_neg_iff.mp hratio with hbad | hgood
+    · linarith [hbad.2]
+    · linarith [hgood.1]
+  have hgq : g q = q := propertyUpperG_at_breakpoint hβ rfl
+  have hexpPos := Real.exp_pos (a * (u - q))
+  have hprod : Real.exp (a * (u - q)) * (g u - u) < 0 := by
+    simpa [F, expo, linear, subq, diff, hgq] using hFu
+  have hgu : g u - u < 0 := by
+    rcases (mul_neg_iff.mp hprod) with hgood | hbad
+    · exact hgood.2
+    · linarith
+  dsimp [g, q] at hgu ⊢
+  linarith
+
+private lemma propertyUpperG_local_gap {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) {β h s u : ℝ}
+    (hp : (β, h) ∈ K) (hs0 : 0 < s) (hs1 : s ≤ 1)
+    (huq : rsQ β h < u)
+    (hnear : u - rsQ β h ≤
+      data.gap / (14 * (1 + data.βmax ^ 4))) :
+    data.gap / 2 * (u - rsQ β h) ≤
+      u - propertyUpperG β h (rsQ β h) s u := by
+  let q : ℝ := rsQ β h
+  let a : ℝ := s * β ^ 2
+  let f : ℝ → ℝ := propertyUpperG β h q s
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have ha : 0 < a := mul_pos hs0 (sq_pos_of_pos hβ)
+  have hcont : ContinuousOn f (Set.Icc q u) :=
+    (property_continuous_upperG β h q s).continuousOn
+  have hdiff : DifferentiableOn ℝ f (Set.Ioo q u) := by
+    intro v hv
+    exact (propertyUpperG_hasDerivAt (h := h) hβ hs0 hv.1)
+      |>.differentiableAt.differentiableWithinAt
+  obtain ⟨v, hv, hvSlope⟩ := exists_deriv_eq_slope f huq hcont hdiff
+  have hvDeriv := (propertyUpperG_hasDerivAt (h := h) hβ hs0 hv.1).deriv
+  have hcore := propertyUpperSech4Expectation_increment_abs_le
+    (h := h) hβ hs0 hv.1
+  have hcoreUpper :
+      propertyUpperSech4Expectation β h q s v ≤
+        propertyUpperSech4Expectation β h q s q + 7 * a * (v - q) := by
+    have hle := le_abs_self
+      (propertyUpperSech4Expectation β h q s v -
+        propertyUpperSech4Expectation β h q s q)
+    change |propertyUpperSech4Expectation β h q s v -
+      propertyUpperSech4Expectation β h q s q| ≤ 7 * a * (v - q) at hcore
+    linarith
+  have hqcore := propertyUpperSech4Expectation_at_breakpoint
+    (s := s) hβ hh
+  have hβle : β ≤ data.βmax := by simpa using data.β_bound (β, h) hp
+  have hβsq : β ^ 2 ≤ data.βmax ^ 2 := by nlinarith [data.βmax_pos]
+  have hale : a ≤ data.βmax ^ 2 := by
+    dsimp [a]
+    calc
+      s * β ^ 2 ≤ 1 * β ^ 2 := mul_le_mul_of_nonneg_right hs1 (sq_nonneg β)
+      _ ≤ data.βmax ^ 2 := by simpa using hβsq
+  have haSq : a ^ 2 ≤ data.βmax ^ 4 := by
+    have hmul := mul_self_le_mul_self ha.le hale
+    nlinarith
+  have hden : 0 < 14 * (1 + data.βmax ^ 4) := by positivity
+  have hnearMul : (u - q) * (14 * (1 + data.βmax ^ 4)) ≤ data.gap := by
+    apply (le_div_iff₀ hden).mp
+    simpa [q] using hnear
+  have hvNonneg : 0 ≤ v - q := sub_nonneg.mpr hv.1.le
+  have huNonneg : 0 ≤ u - q := sub_nonneg.mpr huq.le
+  have hvu : v - q ≤ u - q := by linarith [hv.2]
+  have haSqMul : a ^ 2 * (v - q) ≤ data.βmax ^ 4 * (u - q) := by
+    calc
+      a ^ 2 * (v - q) ≤ data.βmax ^ 4 * (v - q) :=
+        mul_le_mul_of_nonneg_right haSq hvNonneg
+      _ ≤ data.βmax ^ 4 * (u - q) :=
+        mul_le_mul_of_nonneg_left hvu (by positivity)
+  have herror : 7 * a ^ 2 * (v - q) ≤ data.gap / 2 := by
+    have hβfour : 0 ≤ data.βmax ^ 4 := by positivity
+    have hC : 7 * data.βmax ^ 4 * (u - q) ≤
+        7 * (1 + data.βmax ^ 4) * (u - q) := by
+      nlinarith [huNonneg]
+    have hfirst : 7 * a ^ 2 * (v - q) ≤
+        7 * data.βmax ^ 4 * (u - q) := by nlinarith
+    nlinarith [hnearMul]
+  have hAT : atParameter β h ≤ 1 - data.gap := by
+    simpa using data.strictAT (β, h) hp
+  have hAT0 := property_atParameter_nonneg hβ hh
+  have hsAT : s * atParameter β h ≤ 1 - data.gap := by
+    have hsle := mul_le_mul_of_nonneg_right hs1 hAT0
+    rw [one_mul] at hsle
+    exact hsle.trans hAT
+  have hderivBound : deriv f v ≤ 1 - data.gap / 2 := by
+    rw [hvDeriv]
+    have hendpoint : a * propertyUpperSech4Expectation β h q s q =
+        s * atParameter β h := by
+      dsimp [a, q]
+      calc
+        s * β ^ 2 * propertyUpperSech4Expectation β h (rsQ β h) s (rsQ β h) =
+            s * (β ^ 2 * propertyUpperSech4Expectation β h
+              (rsQ β h) s (rsQ β h)) := by ring
+        _ = s * atParameter β h := by rw [hqcore]
+    change a * propertyUpperSech4Expectation β h q s v ≤ 1 - data.gap / 2
+    calc
+      a * propertyUpperSech4Expectation β h q s v ≤
+          a * (propertyUpperSech4Expectation β h q s q + 7 * a * (v - q)) :=
+        mul_le_mul_of_nonneg_left hcoreUpper ha.le
+      _ = a * propertyUpperSech4Expectation β h q s q +
+          7 * a ^ 2 * (v - q) := by ring
+      _ = s * atParameter β h + 7 * a ^ 2 * (v - q) := by rw [hendpoint]
+      _ ≤ 1 - data.gap / 2 := by linarith
+  have hratio : (f u - f q) / (u - q) ≤ 1 - data.gap / 2 := by
+    rw [← hvSlope]
+    exact hderivBound
+  have hslope := (div_le_iff₀ (sub_pos.mpr huq)).mp hratio
+  have hfq : f q = q := propertyUpperG_at_breakpoint hβ rfl
+  dsimp [f, q] at hfq ⊢
+  nlinarith
+
+/-- The scalar order parameter crosses the diagonal exactly once, at the
+replica-symmetric fixed point. -/
+theorem scalarOrderParameterCorrect_sign {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) {β h s : ℝ}
+    (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
+    (∀ u ∈ Set.Ico (0 : ℝ) (rsQ β h),
+      0 < scalarOrderParameterCorrect β h s u - u) ∧
+    scalarOrderParameterCorrect β h s (rsQ β h) - rsQ β h = 0 ∧
+    (∀ u ∈ Set.Ioc (rsQ β h) 1,
+      scalarOrderParameterCorrect β h s u - u < 0) := by
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have hAT : atParameter β h ≤ 1 - data.gap := by
+    simpa using data.strictAT (β, h) hp
+  have hATlt : atParameter β h < 1 := by linarith [data.gap_pos]
+  constructor
+  · intro u hu
+    by_cases hsZero : s = 0
+    · rw [hsZero, scalarOrderParameterCorrect_zero_path hβ hh]
+      linarith [hu.2]
+    · have hs0 : 0 < s := lt_of_le_of_ne hs.1 (Ne.symm hsZero)
+      have hinc := propertyLowerG_increment_le_pathAT hβ hh hs0 hs.2 hu.1 hu.2
+      have hleft := scalarOrderParameterCorrect_eq_propertyLowerG
+        (h := h) hβ hs.1 hu.2.le
+      have hq := propertyLowerG_at_breakpoint hβ hh hs.1 rfl
+      have hnonneg := property_atParameter_nonneg hβ hh
+      have hsAT : s * atParameter β h ≤ 1 - data.gap := by
+        have hsle := mul_le_mul_of_nonneg_right hs.2 hnonneg
+        rw [one_mul] at hsle
+        exact hsle.trans hAT
+      have hmul := mul_le_mul_of_nonneg_right hsAT (sub_nonneg.mpr hu.2.le)
+      rw [hq] at hinc
+      rw [hleft]
+      nlinarith [mul_pos data.gap_pos (sub_pos.mpr hu.2)]
+  · constructor
+    · rw [scalarOrderParameterCorrect_at_rsQ hβ]
+      ring
+    · intro u hu
+      by_cases hsZero : s = 0
+      · rw [hsZero, scalarOrderParameterCorrect_zero_path hβ hh]
+        linarith [hu.1]
+      · have hs0 : 0 < s := lt_of_le_of_ne hs.1 (Ne.symm hsZero)
+        have hupper := scalarOrderParameterCorrect_eq_propertyUpperG
+          (h := h) hs.1 hu.1
+        rw [hupper]
+        by_cases hlarge : 1 < s * β ^ 2 * (1 - rsQ β h)
+        · exact sub_neg.mpr
+            (propertyUpperG_increment_lt_large hβ hh hs0 hs.2 hu.1 hu.2 hlarge hATlt)
+        · exact sub_neg.mpr
+            (propertyUpperG_lt_small hβ hh hs0 hu.1 (le_of_not_gt hlarge))
+
+/-- Uniform linear separation from the diagonal near the replica-symmetric
+fixed point. The constants depend only on `UniformATData K`. -/
+theorem scalarOrderParameterCorrect_linear_separation {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ c ε : ℝ, 0 < c ∧ 0 < ε ∧
+      ∀ {β h s u : ℝ}, (β, h) ∈ K → s ∈ Set.Icc (0 : ℝ) 1 →
+        u ∈ Set.Icc (0 : ℝ) 1 →
+        |u - rsQ β h| ≤ ε →
+        c * |u - rsQ β h| ≤ |scalarOrderParameterCorrect β h s u - u| := by
+  refine ⟨data.gap / 2,
+    data.gap / (14 * (1 + data.βmax ^ 4)), by linarith [data.gap_pos],
+    div_pos data.gap_pos (by positivity), ?_⟩
+  intro β h s u hp hs hu hnear
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have hAT : atParameter β h ≤ 1 - data.gap := by
+    simpa using data.strictAT (β, h) hp
+  have hAT0 := property_atParameter_nonneg hβ hh
+  have hgap_le_one : data.gap ≤ 1 := by linarith
+  have hc_le_one : data.gap / 2 ≤ 1 := by linarith
+  by_cases hsZero : s = 0
+  · rw [hsZero, scalarOrderParameterCorrect_zero_path hβ hh]
+    have hmul := mul_le_mul_of_nonneg_right hc_le_one
+      (abs_nonneg (u - rsQ β h))
+    simpa [abs_sub_comm] using hmul
+  have hs0 : 0 < s := lt_of_le_of_ne hs.1 (Ne.symm hsZero)
+  by_cases huq : u < rsQ β h
+  · have hinc := propertyLowerG_increment_le_pathAT hβ hh hs0 hs.2 hu.1 huq
+    have hq := propertyLowerG_at_breakpoint hβ hh hs.1 rfl
+    have hsAT : s * atParameter β h ≤ 1 - data.gap := by
+      have hsle := mul_le_mul_of_nonneg_right hs.2 hAT0
+      rw [one_mul] at hsle
+      exact hsle.trans hAT
+    have hmul := mul_le_mul_of_nonneg_right hsAT (sub_nonneg.mpr huq.le)
+    rw [hq] at hinc
+    have hlower : data.gap * (rsQ β h - u) ≤
+        propertyLowerG β h (rsQ β h) s u - u := by
+      nlinarith
+    have hleft := scalarOrderParameterCorrect_eq_propertyLowerG
+      (h := h) hβ hs.1 huq.le
+    have hmap : data.gap * (rsQ β h - u) ≤
+        scalarOrderParameterCorrect β h s u - u := by
+      rw [hleft]
+      exact hlower
+    have hmap0 : 0 ≤ scalarOrderParameterCorrect β h s u - u := by
+      have hpos := mul_pos data.gap_pos (sub_pos.mpr huq)
+      linarith
+    rw [abs_of_nonpos (sub_nonpos.mpr huq.le), abs_of_nonneg hmap0]
+    nlinarith
+  by_cases hqu : rsQ β h < u
+  · have hnear' : u - rsQ β h ≤
+        data.gap / (14 * (1 + data.βmax ^ 4)) := by
+      rw [← abs_of_pos (sub_pos.mpr hqu)]
+      exact hnear
+    have hlocal := propertyUpperG_local_gap data hp hs0 hs.2 hqu hnear'
+    have hupper := scalarOrderParameterCorrect_eq_propertyUpperG
+      (h := h) hs.1 hqu
+    have hmap : data.gap / 2 * (u - rsQ β h) ≤
+        u - scalarOrderParameterCorrect β h s u := by
+      rw [hupper]
+      exact hlocal
+    have hmap0 : scalarOrderParameterCorrect β h s u - u ≤ 0 := by
+      have hpos := mul_pos (by linarith [data.gap_pos] : 0 < data.gap / 2)
+        (sub_pos.mpr hqu)
+      linarith
+    rw [abs_of_pos (sub_pos.mpr hqu), abs_of_nonpos hmap0]
+    linarith
+  · have hueq : u = rsQ β h :=
+      le_antisymm (le_of_not_gt hqu) (le_of_not_gt huq)
+    subst u
+    simp [scalarOrderParameterCorrect_at_rsQ hβ]
 
 end SpinGlass.AT
