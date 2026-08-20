@@ -126,6 +126,29 @@ lemma flatness_deriv_gtFunctional_s_zero_lam_zero_rsQ
   exact flatness_deriv_gtFunctional_s_zero_lam_zero
     β h (rsQ β h) v (rsQ_fixedPoint β h)
 
+/-!
+The following helper isolates the routine passage from a pointwise formula
+for the GT semigroup solution to the corresponding multiplier derivative of
+the GT functional.
+-/
+
+private lemma flatness_deriv_gtFunctional_of_solution
+    (β h q s lam v : ℝ) (U : ℝ → GTTwoField)
+    (hU : ∀ l x₁ x₂,
+      gtSemigroupSolution β q s l v 0 x₁ x₂ = U l x₁ x₂) :
+    deriv (fun l => gtFunctional β h q s l v) lam =
+      standardGaussianExpectation (fun z =>
+        deriv (fun l => U l
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+  congr 1
+  funext l
+  exact hU l _ _
+
 /-! ### Case `|v| = 0` -/
 
 lemma flatness_gtFunctional_formula_abs_v_eq_zero
@@ -161,26 +184,16 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_eq_zero
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) := by
   have hv0 : v = 0 := abs_eq_zero.mp hv
   subst v
-  rw [deriv_gtFunctional_eq]
-  simp only [sub_zero]
-  apply congrArg standardGaussianExpectation
-  funext z
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
-  have hfun :
-      (fun l =>
-        gtSemigroupSolution β q s l 0 0
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z))
-        =
+  simpa using
+    flatness_deriv_gtFunctional_of_solution β h q s lam 0
       (fun l =>
         gtDiagonalStep 0 (gtIncrementScale β s 0 q)
           (gtDiagonalStep 1 (gtIncrementScale β s q 1)
-            (gtTerminal l))
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
-    funext l
-    simp [gtSemigroupSolution, hq0]
-  rw [hfun]
+            (gtTerminal l)))
+      (by
+        intro l x₁ x₂
+        simp [gtSemigroupSolution, hq0])
 
 
 /-! ### Case `0 < |v| < q` -/
@@ -225,22 +238,12 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_lt_q
               (gtTerminal l)))
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun x : ℝ => x - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-
   have hqr : ¬ q ≤ |v| := not_le.mpr hvq
   have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hv0
   have hqpos : 0 < q := lt_trans hv0 hvq
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hqpos
-
-  have hfun :
-      (fun l =>
-        gtSemigroupSolution β q s l v 0
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z))
-        =
+  exact
+    flatness_deriv_gtFunctional_of_solution β h q s lam v
       (fun l =>
         gtRankOneStep 0
           (gtIncrementScale β s 0 |v|) (gtPathSign v)
@@ -248,13 +251,10 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_lt_q
             (gtIncrementScale β s |v| q)
             (gtDiagonalStep 1
               (gtIncrementScale β s q 1)
-              (gtTerminal l)))
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
-    funext l
-    simp [gtSemigroupSolution, hqr, hr0, hq0]
-
-  rw [hfun]
+              (gtTerminal l))))
+      (by
+        intro l x₁ x₂
+        simp [gtSemigroupSolution, hqr, hr0, hq0])
 
 
 /-! ### Case `q ≤ |v| < 1` -/
@@ -298,21 +298,11 @@ lemma flatness_deriv_gtFunctional_formula_q_le_abs_v_lt_one
               (gtTerminal l)))
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun x : ℝ => x - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
   have hrpos : 0 < |v| := lt_of_lt_of_le hq hqv
   have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
-
-  have hfun :
-      (fun l =>
-        gtSemigroupSolution β q s l v 0
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z))
-        =
+  exact
+    flatness_deriv_gtFunctional_of_solution β h q s lam v
       (fun l =>
         gtRankOneStep 0
           (gtIncrementScale β s 0 q) (gtPathSign v)
@@ -320,13 +310,10 @@ lemma flatness_deriv_gtFunctional_formula_q_le_abs_v_lt_one
             (gtIncrementScale β s q |v|) (gtPathSign v)
             (gtDiagonalStep 1
               (gtIncrementScale β s |v| 1)
-              (gtTerminal l)))
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
-    funext l
-    simp [gtSemigroupSolution, hqv, hr0, hq0]
-
-  rw [hfun]
+              (gtTerminal l))))
+      (by
+        intro l x₁ x₂
+        simp [gtSemigroupSolution, hqv, hr0, hq0])
 
 
 /-! ### Case `|v| = 1` -/
@@ -348,15 +335,9 @@ lemma flatness_gtFunctional_formula_abs_v_eq_one
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z))
       - lam * v - gtCorrection β q s := by
-  have hqv : q ≤ |v| := by
-    simpa [hv] using hq1
-  have hrpos : 0 < |v| := by
-    rw [hv]
-    norm_num
-  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
   have h10 : ¬ (1 : ℝ) ≤ 0 := by norm_num
-  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hqv, hr0, hq0, h10]
+  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hq0, h10]
 
 
 lemma flatness_deriv_gtFunctional_formula_abs_v_eq_one
@@ -375,25 +356,9 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_eq_one
               (gtTerminal l)))
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun x : ℝ => x - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-
-  have hqv : q ≤ |v| := by
-    simpa [hv] using hq1
-  have hrpos : 0 < |v| := by
-    rw [hv]
-    norm_num
-  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
-
-  have hfun :
-      (fun l =>
-        gtSemigroupSolution β q s l v 0
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z))
-        =
+  exact
+    flatness_deriv_gtFunctional_of_solution β h q s lam v
       (fun l =>
         gtRankOneStep 0
           (gtIncrementScale β s 0 q) (gtPathSign v)
@@ -401,13 +366,10 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_eq_one
             (gtIncrementScale β s q 1) (gtPathSign v)
             (gtDiagonalStep 1
               (gtIncrementScale β s 1 1)
-              (gtTerminal l)))
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
-    funext l
-    simp [gtSemigroupSolution, hv, hq1, hqv, hr0, hq0]
-
-  rw [hfun]
+              (gtTerminal l))))
+      (by
+        intro l x₁ x₂
+        simp [gtSemigroupSolution, hv, hq1, hq0])
 
 
 /-! ### Explicit formulas for ∂_λ U_s^{λ,v}|_{λ=0} -/
@@ -2292,7 +2254,7 @@ lemma flatness_gtFunctional_taylor_upper
 
   by_cases hlam0 : lam = 0
   · subst lam
-    simp [F]
+    simp
 
   by_cases hlam : 0 < lam
   · have hslope :=
@@ -2532,7 +2494,7 @@ theorem gtFunctional_uniform_quadratic_gap {K : Set (ℝ × ℝ)}
     ∃ c > 0, ∀ {β h q s v : ℝ},
       (β, h) ∈ K → q = rsQ β h → s ∈ Icc (0 : ℝ) 1 →
       v ∈ Icc (-1 : ℝ) 1 →
-      ∃ lam, gtFunctional β h q s lam v ≤
+      ∃ lam ∈ Icc (-1 : ℝ) 1, gtFunctional β h q s lam v ≤
         2 * rsPathValue β h q s - c * (v - q) ^ 2 := by
   sorry
 
