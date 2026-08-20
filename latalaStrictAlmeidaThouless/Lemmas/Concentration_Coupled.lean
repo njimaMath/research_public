@@ -244,6 +244,81 @@ theorem coupled_constrained_log_partition_lipschitz
   rw [hfun]
   exact hLip
 
+/-- The spin-product sum is determined by the number of coordinates on which
+the two configurations agree. -/
+private lemma sum_spin_mul_eq_agreement_count
+    (N : ℕ) (σ τ : SpinGlass.Config N) :
+    (∑ i : Fin N, SpinGlass.spin N σ i * SpinGlass.spin N τ i) =
+      2 * ((Finset.univ.filter fun i : Fin N => σ i = τ i).card : ℝ) - N := by
+  classical
+  have hspin (i : Fin N) :
+      SpinGlass.spin N σ i * SpinGlass.spin N τ i =
+        if σ i = τ i then (1 : ℝ) else -1 := by
+    cases hσ : σ i <;> cases hτ : τ i <;> simp [SpinGlass.spin, hσ, hτ]
+  simp_rw [hspin]
+  calc
+    (∑ i : Fin N, if σ i = τ i then (1 : ℝ) else -1)
+        = ∑ i : Fin N,
+            (2 * (if σ i = τ i then (1 : ℝ) else 0) - 1) := by
+          apply Finset.sum_congr rfl
+          intro i _
+          split <;> norm_num
+    _ = 2 * ((Finset.univ.filter fun i : Fin N => σ i = τ i).card : ℝ) - N := by
+      rw [Finset.sum_sub_distrib]
+      simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul, mul_one]
+      rw [← Finset.mul_sum]
+      congr 1
+      simp
+
+private def configAgreementLevel
+    (N : ℕ) (σ τ : SpinGlass.Config N) : Fin (N + 1) :=
+  ⟨(Finset.univ.filter fun i : Fin N => σ i = τ i).card,
+    Nat.lt_succ_iff.mpr (by
+      simpa using (Finset.univ.filter fun i : Fin N => σ i = τ i).card_le_univ)⟩
+
+private lemma overlap_eq_of_agreementLevel_eq
+    (N : ℕ) {σ τ σ' τ' : SpinGlass.Config N}
+    (hlevel : configAgreementLevel N σ τ = configAgreementLevel N σ' τ') :
+    SpinGlass.overlap N σ τ = SpinGlass.overlap N σ' τ' := by
+  have hcard := congrArg Fin.val hlevel
+  change (Finset.univ.filter fun i : Fin N => σ i = τ i).card =
+    (Finset.univ.filter fun i : Fin N => σ' i = τ' i).card at hcard
+  unfold SpinGlass.overlap
+  rw [sum_spin_mul_eq_agreement_count, sum_spin_mul_eq_agreement_count]
+  rw [hcard]
+
+private noncomputable def attainableOverlapPair
+    (N : ℕ) (v : {v : ℝ // v ∈ attainableOverlaps N}) :
+    SpinGlass.Config N × SpinGlass.Config N :=
+  Classical.choose (Finset.mem_image.mp v.2)
+
+private lemma attainableOverlapPair_spec
+    (N : ℕ) (v : {v : ℝ // v ∈ attainableOverlaps N}) :
+    SpinGlass.overlap N (attainableOverlapPair N v).1
+      (attainableOverlapPair N v).2 = v.1 :=
+  (Classical.choose_spec (Finset.mem_image.mp v.2)).2
+
+noncomputable instance attainableOverlapNonempty (N : ℕ) :
+    Nonempty {v : ℝ // v ∈ attainableOverlaps N} := by
+  let σ : SpinGlass.Config N := fun _ => false
+  refine ⟨⟨SpinGlass.overlap N σ σ, ?_⟩⟩
+  unfold attainableOverlaps
+  exact Finset.mem_image.mpr ⟨(σ, σ), Finset.mem_univ _, rfl⟩
+
+/-- Two configurations have only `N + 1` possible overlap values. -/
+lemma card_attainableOverlaps_le (N : ℕ) :
+    Fintype.card {v : ℝ // v ∈ attainableOverlaps N} ≤ N + 1 := by
+  let level : {v : ℝ // v ∈ attainableOverlaps N} → Fin (N + 1) := fun v =>
+    configAgreementLevel N (attainableOverlapPair N v).1
+      (attainableOverlapPair N v).2
+  have hlevel : Function.Injective level := by
+    intro v w hvw
+    apply Subtype.ext
+    rw [← attainableOverlapPair_spec N v, ← attainableOverlapPair_spec N w]
+    exact overlap_eq_of_agreementLevel_eq N hvw
+  simpa using Fintype.card_le_of_injective level hlevel
+
 /-- Arithmetic estimate for the squared Lipschitz constant of
 `L_v = log Z^{(2)}_{N,s}(v)`.
 The first term comes from the `N(N-1)/2` variables `g_{ij}`,
@@ -312,7 +387,7 @@ compact subset of the strict AT region.  The hypothesis `hcard` records that
 there are at most `N + 1` attainable overlap values.  Thus the right-hand
 side is a constant depending only on `K`, through `data.βmax`, times
 `√(N log(N + 1))`. -/
-theorem coupled_log_partition_gaussian_max
+private theorem coupled_log_partition_gaussian_max_of_lipschitz
     {K : Set (ℝ × ℝ)}
     (data : UniformATData K)
     {ι I : Type*} [Fintype ι] [Fintype I] [Nonempty I]
@@ -338,5 +413,63 @@ theorem coupled_log_partition_gaussian_max
           Real.sqrt (2 * Real.log ((N : ℝ) + 1)) := by
       gcongr
       exact_mod_cast hcard
+
+/-- The expected centered maximum of the constrained two-replica log
+partition functions is bounded by a compact-set constant times
+`√(N log (N + 1))`.  Here `q` is the canonical replica-symmetric fixed point
+and `s` is intrinsically restricted to the smart-path interval.  Thus the
+only proposition hypothesis is `(β, h) ∈ K`. -/
+theorem coupled_log_partition_gaussian_max
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    (N : ℕ) (β h : ℝ) (s : Set.Icc (0 : ℝ) 1)
+    (hp : (β, h) ∈ K) :
+    (∫ x, centeredGaussianMax Finset.univ_nonempty
+          (fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+            coupledConstrainedLogPartition N β h (rsQ β h) s.1 v.1) x
+          ∂SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) ≤
+      2 * data.βmax * Real.sqrt N *
+        Real.sqrt (2 * Real.log ((N : ℝ) + 1)) := by
+  have hβpos : 0 < β := data.β_pos (β, h) hp
+  have hβ : |β| ≤ data.βmax := by
+    rw [abs_of_pos hβpos]
+    exact data.β_bound (β, h) hp
+  have hLip (v : {v : ℝ // v ∈ attainableOverlaps N}) :
+      LipschitzWith
+        (2 * data.βmax * Real.sqrt N).toNNReal
+        (coupledConstrainedLogPartition N β h (rsQ β h) s.1 v.1) := by
+    by_cases hNzero : N = 0
+    · subst N
+      apply LipschitzWith.of_dist_le_mul
+      intro x y
+      have hxy : x = y := Subsingleton.elim x y
+      subst y
+      simp
+    · have hN : 0 < N := Nat.pos_of_ne_zero hNzero
+      have hsmall := coupled_constrained_log_partition_lipschitz
+        N β h (rsQ β h) s.1 v.1 hN s.2 (rsQ_mem_Icc β h) v.2
+      apply LipschitzWith.of_dist_le_mul
+      intro x y
+      have hconst :
+          2 * |β| * Real.sqrt N ≤ 2 * data.βmax * Real.sqrt N := by
+        exact mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left hβ (by norm_num)) (Real.sqrt_nonneg _)
+      calc
+        dist (coupledConstrainedLogPartition N β h (rsQ β h) s.1 v.1 x)
+            (coupledConstrainedLogPartition N β h (rsQ β h) s.1 v.1 y)
+          ≤ ((2 * |β| * Real.sqrt N).toNNReal : ℝ) * dist x y :=
+            hsmall.dist_le_mul x y
+        _ ≤ ((2 * data.βmax * Real.sqrt N).toNNReal : ℝ) * dist x y := by
+          have hsmall_nonneg : 0 ≤ 2 * |β| * Real.sqrt N := by positivity
+          have hlarge_nonneg : 0 ≤ 2 * data.βmax * Real.sqrt N := by
+            exact mul_nonneg (mul_nonneg (by norm_num) data.βmax_pos.le)
+              (Real.sqrt_nonneg _)
+          rw [Real.coe_toNNReal _ hsmall_nonneg,
+            Real.coe_toNNReal _ hlarge_nonneg]
+          exact mul_le_mul_of_nonneg_right hconst dist_nonneg
+  exact coupled_log_partition_gaussian_max_of_lipschitz data N
+    (fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+      coupledConstrainedLogPartition N β h (rsQ β h) s.1 v.1)
+    (card_attainableOverlaps_le N) hLip
 
 end SpinGlass.AT
