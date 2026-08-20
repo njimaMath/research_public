@@ -2,6 +2,8 @@ import Lemmas.Psi_continuity
 import Lemmas.ATDefs
 import Lemmas.GTGauss
 import Lemmas.interpolatedAT
+import Lemmas.Propertyofg
+import Lemmas.Price
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 
 open MeasureTheory ProbabilityTheory Set
@@ -2111,6 +2113,418 @@ lemma gtEnvelope_eq_rsPathValue_at_q
 /-!
 ## Final theorem
 -/
+
+/-- Uniform linear separation of the multiplier derivative from zero near the
+replica-symmetric overlap.  Shrinking the neighborhood by `qmin / 2` ensures
+that it lies in the nonnegative-overlap branch. -/
+lemma flatness_local_deriv_linear_separation
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ c ε : ℝ, 0 < c ∧ 0 < ε ∧
+      ∀ {β h s v : ℝ},
+        (β, h) ∈ K →
+        s ∈ Icc (0 : ℝ) 1 →
+        v ∈ Icc (-1 : ℝ) 1 →
+        |v - rsQ β h| ≤ ε →
+        c * |v - rsQ β h| ≤
+          |deriv
+            (fun lam =>
+              gtFunctional β h (rsQ β h) s lam v) 0| := by
+  obtain ⟨c, ε, hc, hε, hsep⟩ :=
+    scalarOrderParameterCorrect_linear_separation data
+
+  let ε₀ : ℝ := min ε (data.qmin / 2)
+
+  have hε₀ : 0 < ε₀ := by
+    dsimp [ε₀]
+    apply lt_min
+    · exact hε
+    · linarith [data.qmin_pos]
+
+  refine ⟨c, ε₀, hc, hε₀, ?_⟩
+
+  intro β h s v hp hs hv hnear
+
+  have hβ : 0 < β := by
+    simpa using data.β_pos (β, h) hp
+
+  have hh : 0 < h := by
+    simpa using data.h_pos (β, h) hp
+
+  have hqmin : data.qmin ≤ rsQ β h := by
+    simpa using data.q_lower (β, h) hp
+
+  have hnear_qmin :
+      |v - rsQ β h| ≤ data.qmin / 2 := by
+    exact hnear.trans (min_le_right _ _)
+
+  have hlo :
+      -(data.qmin / 2) ≤ v - rsQ β h :=
+    (abs_le.mp hnear_qmin).1
+
+  have hv0 : 0 ≤ v := by
+    nlinarith [data.qmin_pos]
+
+  have hv01 : v ∈ Icc (0 : ℝ) 1 :=
+    ⟨hv0, hv.2⟩
+
+  rw [flatness_deriv_gtFunctional_zero_eq_g_sub
+    β h s v hβ hh hs hv01]
+
+  exact hsep hp hs hv01
+    (hnear.trans (min_le_left _ _))
+
+/-- Global second-order Taylor upper bound in the multiplier. -/
+lemma flatness_gtFunctional_taylor_upper
+    (β h q s v lam : ℝ) :
+    gtFunctional β h q s lam v
+      ≤
+    gtFunctional β h q s 0 v
+      + deriv (fun l => gtFunctional β h q s l v) 0 * lam
+      + (5 / 4 : ℝ) * lam ^ 2 := by
+  let F : ℝ → ℝ :=
+    fun l => gtFunctional β h q s l v
+
+  let G : ℝ → ℝ :=
+    fun l => F l - (5 / 4 : ℝ) * l ^ 2
+
+  have hFdiff : Differentiable ℝ F := by
+    intro x
+    dsimp [F]
+    exact
+      (hasDerivAt_gtFunctional β h q s x v).differentiableAt
+
+  have hGdiff : Differentiable ℝ G := by
+    intro x
+    dsimp [G]
+    exact
+      (hFdiff x).sub
+        (by fun_prop)
+
+  have hGderiv (x : ℝ) :
+      deriv G x =
+        deriv F x - (5 / 2 : ℝ) * x := by
+    have hF :
+        HasDerivAt F (deriv F x) x :=
+      (hFdiff x).hasDerivAt
+
+    have hquad :
+        HasDerivAt
+          (fun y : ℝ => (5 / 4 : ℝ) * y ^ 2)
+          ((5 / 2 : ℝ) * x) x := by
+      have hsq : HasDerivAt (fun y : ℝ => y ^ 2) (2 * x) x := by
+        simpa using hasDerivAt_pow 2 x
+      exact (hsq.const_mul (5 / 4 : ℝ)).congr_deriv (by ring)
+
+    exact (hF.sub hquad).deriv
+
+  have hFderivDiff :
+      Differentiable ℝ (deriv F) := by
+    simpa [F] using
+      differentiable_deriv_gtFunctional β h q s v
+
+  have hGderivDiff :
+      Differentiable ℝ (deriv G) := by
+    have hfun :
+        deriv G =
+          fun x => deriv F x - (5 / 2 : ℝ) * x := by
+      funext x
+      exact hGderiv x
+
+    rw [hfun]
+    exact hFderivDiff.sub (by fun_prop)
+
+  have hGsecond (x : ℝ) :
+      deriv (deriv G) x ≤ 0 := by
+    have hfun :
+        deriv G =
+          fun y => deriv F y - (5 / 2 : ℝ) * y := by
+      funext y
+      exact hGderiv y
+
+    have hD :
+        HasDerivAt
+          (deriv F)
+          (deriv (deriv F) x) x :=
+      (hFderivDiff x).hasDerivAt
+
+    have hlin :
+        HasDerivAt
+          (fun y : ℝ => (5 / 2 : ℝ) * y)
+          (5 / 2 : ℝ) x := by
+      simpa using (hasDerivAt_id x).const_mul (5 / 2 : ℝ)
+
+    have heq :
+        deriv (deriv G) x =
+          deriv (deriv F) x - (5 / 2 : ℝ) := by
+      rw [hfun]
+      exact (hD.sub hlin).deriv
+
+    rw [heq]
+
+    have hbound :=
+      (gt_lambda_derivative_bounds
+        β h q s x v 0 0 0).2.2
+
+    change
+      deriv (deriv F) x ≤ (5 / 2 : ℝ)
+      at hbound
+
+    linarith
+
+  have hconc :
+      ConcaveOn ℝ Set.univ G := by
+    apply concaveOn_univ_of_deriv2_nonpos
+    · exact hGdiff
+    · exact hGderivDiff
+    · intro x
+      simpa only
+        [Function.iterate_succ_apply,
+         Function.iterate_zero_apply]
+        using hGsecond x
+
+  have hGzero :
+      HasDerivAt G (deriv F 0) 0 := by
+    have hz : deriv G 0 = deriv F 0 := by
+      simpa using hGderiv 0
+    rw [← hz]
+    exact (hGdiff 0).hasDerivAt
+
+  by_cases hlam0 : lam = 0
+  · subst lam
+    simp [F]
+
+  by_cases hlam : 0 < lam
+  · have hslope :=
+      hconc.slope_le_of_hasDerivAt
+        (Set.mem_univ 0)
+        (Set.mem_univ lam)
+        hlam
+        hGzero
+
+    rw [slope_def_field] at hslope
+    simp only [sub_zero] at hslope
+
+    have hmul :=
+      (div_le_iff₀ hlam).mp hslope
+
+    dsimp [G, F] at hmul ⊢
+    nlinarith
+
+  · have hlamle : lam ≤ 0 :=
+      le_of_not_gt hlam
+
+    have hlamneg : lam < 0 :=
+      lt_of_le_of_ne hlamle hlam0
+
+    have hslope :=
+      hconc.le_slope_of_hasDerivAt
+        (Set.mem_univ lam)
+        (Set.mem_univ 0)
+        hlamneg
+        hGzero
+
+    rw [slope_def_field] at hslope
+
+    have hden : 0 < 0 - lam := by
+      linarith
+
+    have hmul :=
+      (le_div_iff₀ hden).mp hslope
+
+    dsimp [G, F] at hmul ⊢
+    nlinarith
+
+/-- A linear lower bound on the multiplier derivative yields a quadratic
+improvement after optimizing a single explicit multiplier. -/
+lemma flatness_quadratic_gap_of_deriv_gap
+    (β h q s v c : ℝ)
+    (hc : 0 < c)
+    (hzero :
+      gtFunctional β h q s 0 v
+        ≤ 2 * rsPathValue β h q s)
+    (hgap :
+      c * |v - q| ≤
+        |deriv
+          (fun l => gtFunctional β h q s l v) 0|) :
+    ∃ lam,
+      gtFunctional β h q s lam v
+        ≤
+      2 * rsPathValue β h q s
+        - (c ^ 2 / 5) * (v - q) ^ 2 := by
+  let F : ℝ → ℝ :=
+    fun l => gtFunctional β h q s l v
+
+  let d : ℝ := deriv F 0
+  let lam : ℝ := -(2 / 5 : ℝ) * d
+
+  have ht :=
+    flatness_gtFunctional_taylor_upper
+      β h q s v lam
+
+  change
+    F lam ≤
+      F 0 + d * lam + (5 / 4 : ℝ) * lam ^ 2
+    at ht
+
+  have hopt :
+      d * lam + (5 / 4 : ℝ) * lam ^ 2
+        = -(d ^ 2) / 5 := by
+    dsimp [lam]
+    ring
+
+  have ht' : F lam ≤ F 0 - d ^ 2 / 5 := by
+    nlinarith [ht, hopt]
+
+  have hgap' :
+      c * |v - q| ≤ |d| := by
+    simpa [d, F] using hgap
+
+  have hsq :
+      c ^ 2 * (v - q) ^ 2 ≤ d ^ 2 := by
+    have hmul :=
+      mul_self_le_mul_self
+        (mul_nonneg hc.le (abs_nonneg (v - q)))
+        hgap'
+
+    calc
+      c ^ 2 * (v - q) ^ 2
+          =
+        (c * |v - q|) * (c * |v - q|) := by
+          nlinarith [sq_abs (v - q)]
+      _ ≤ |d| * |d| := hmul
+      _ = d ^ 2 := by
+          nlinarith [sq_abs d]
+
+  have hloss :
+      -(d ^ 2) / 5
+        ≤
+      -(c ^ 2 / 5) * (v - q) ^ 2 := by
+    nlinarith
+
+  refine ⟨lam, ?_⟩
+
+  have hzero' :
+      F 0 ≤ 2 * rsPathValue β h q s := by
+    simpa [F] using hzero
+
+  nlinarith [ht']
+
+/-- The squared distance between any two admissible overlaps is at most four. -/
+lemma sub_sq_le_four_of_overlap
+    {q v : ℝ}
+    (hq : q ∈ Icc (0 : ℝ) 1)
+    (hv : v ∈ Icc (-1 : ℝ) 1) :
+    (v - q) ^ 2 ≤ 4 := by
+  have hleft : -2 ≤ v - q := by
+    linarith [hv.1, hq.2]
+
+  have hright : v - q ≤ 2 := by
+    linarith [hv.2, hq.1]
+
+  have hprod :
+      0 ≤ ((v - q) + 2) * (2 - (v - q)) := by
+    exact mul_nonneg
+      (by linarith)
+      (by linarith)
+
+  nlinarith
+
+/-- Deterministic assembly of a local quadratic estimate and a fixed strict
+gap away from the replica-symmetric overlap. -/
+lemma gtFunctional_uniform_quadratic_gap_of_local_and_away
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    {c₀ ε κ : ℝ}
+    (hc₀ : 0 < c₀)
+    (_hε : 0 < ε)
+    (hκ : 0 < κ)
+    (hlocal :
+      ∀ {β h q s v : ℝ},
+        (β, h) ∈ K →
+        q = rsQ β h →
+        s ∈ Icc (0 : ℝ) 1 →
+        v ∈ Icc (-1 : ℝ) 1 →
+        |v - q| ≤ ε →
+        ∃ lam,
+          gtFunctional β h q s lam v ≤
+            2 * rsPathValue β h q s
+              - c₀ * (v - q) ^ 2)
+    (haway :
+      ∀ {β h q s v : ℝ},
+        (β, h) ∈ K →
+        q = rsQ β h →
+        s ∈ Icc (0 : ℝ) 1 →
+        v ∈ Icc (-1 : ℝ) 1 →
+        ε ≤ |v - q| →
+        ∃ lam,
+          gtFunctional β h q s lam v ≤
+            2 * rsPathValue β h q s - κ) :
+    ∃ c > 0, ∀ {β h q s v : ℝ},
+      (β, h) ∈ K →
+      q = rsQ β h →
+      s ∈ Icc (0 : ℝ) 1 →
+      v ∈ Icc (-1 : ℝ) 1 →
+      ∃ lam,
+        gtFunctional β h q s lam v ≤
+          2 * rsPathValue β h q s
+            - c * (v - q) ^ 2 := by
+  let c : ℝ := min c₀ (κ / 4)
+
+  have hc : 0 < c := by
+    dsimp [c]
+    exact lt_min hc₀ (div_pos hκ (by norm_num))
+
+  refine ⟨c, hc, ?_⟩
+
+  intro β h q s v hp hq hs hv
+
+  have hqIcc : q ∈ Icc (0 : ℝ) 1 := by
+    rw [hq]
+    exact rsQ_mem_Icc β h
+
+  by_cases hnear : |v - q| ≤ ε
+  · obtain ⟨lam, hlam⟩ :=
+      hlocal hp hq hs hv hnear
+
+    refine ⟨lam, hlam.trans ?_⟩
+
+    have hc_le : c ≤ c₀ := by
+      dsimp [c]
+      exact min_le_left _ _
+
+    have hmul :
+        c * (v - q) ^ 2
+          ≤ c₀ * (v - q) ^ 2 :=
+      mul_le_mul_of_nonneg_right
+        hc_le (sq_nonneg (v - q))
+
+    linarith
+
+  · have hfar : ε ≤ |v - q| := by
+      exact (lt_of_not_ge hnear).le
+
+    obtain ⟨lam, hlam⟩ :=
+      haway hp hq hs hv hfar
+
+    refine ⟨lam, hlam.trans ?_⟩
+
+    have hsq :
+        (v - q) ^ 2 ≤ 4 :=
+      sub_sq_le_four_of_overlap hqIcc hv
+
+    have hc_le : c ≤ κ / 4 := by
+      dsimp [c]
+      exact min_le_right _ _
+
+    have hprod :
+        c * (v - q) ^ 2 ≤ c * 4 :=
+      mul_le_mul_of_nonneg_left hsq hc.le
+
+    have hc4 : c * 4 ≤ κ := by
+      nlinarith
+
+    nlinarith
 
 
 theorem gtFunctional_uniform_quadratic_gap {K : Set (ℝ × ℝ)}
