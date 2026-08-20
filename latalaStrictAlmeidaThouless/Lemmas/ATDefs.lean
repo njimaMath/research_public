@@ -526,40 +526,5 @@ def HasCavityRemainderBound {Ω : Type u} [MeasureSpace Ω]
     ∀ path : RSSmartPathDisorder Ω N β h q,
       ‖cavityRemainder path s‖ ≤ C * cavityErrorScale path s
 
-/-! ## Named analytic interfaces used by later proof files -/
-
-/-- Endpoint data needed to integrate the open-interval free-energy
-derivative identity. -/
-def HasFreeEnergyEndpointBridge {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)] {N : ℕ} {β h q : ℝ}
-    (path : RSSmartPathDisorder Ω N β h q) : Prop :=
-  ContinuousOn
-      (fun s => rsPathValue β h q s - pathFreeEnergy path s)
-      (Set.Icc (0 : ℝ) 1) ∧
-    rsPathValue β h q 0 - pathFreeEnergy path 0 = 0
-
-/-- Taylor data for the multiplier dependence of the GT functional. -/
-def HasGTFunctionalTaylorPackage {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) : Prop :=
-  ∃ M > 0, ∀ {β h q s v : ℝ},
-    (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
-    v ∈ Set.Icc (-q : ℝ) 1 →
-    ∃ d : ℝ,
-      gtFunctional β h q s 0 v = 2 * rsPathValue β h q s ∧
-      |d| ≤ M ∧ data.gap * |v - q| ≤ |d| ∧
-      ∀ lam, |lam| ≤ 1 →
-        gtFunctional β h q s lam v ≤
-          gtFunctional β h q s 0 v + d * lam + M / 2 * lam ^ 2
-
-/-- Uniform negative-overlap gap for the GT functional. -/
-def HasGTFunctionalNegativeGap {K : Set (ℝ × ℝ)}
-    (_data : UniformATData K) : Prop :=
-  ∃ k > 0, ∀ {β h q s v : ℝ},
-    (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
-    v ∈ Set.Icc (-1 : ℝ) (-q : ℝ) →
-    ∃ lam,
-      gtFunctional β h q s lam v ≤ 2 * rsPathValue β h q s - k
-
-
 
 end SpinGlass.AT

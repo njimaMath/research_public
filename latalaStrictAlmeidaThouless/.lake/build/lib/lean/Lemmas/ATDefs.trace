@@ -1,9 +1,9 @@
 {"synthetic": false,
  "schemaVersion": "2025-09-10",
  "outputs":
- {"o": ["b0048a716b36eac7.olean"],
+ {"o": ["5353d98dfba755d2.olean"],
   "m": false,
-  "i": "df9ac0e1558191d2.ilean",
+  "i": "8dfd8e3be5467609.ilean",
   "c": "1443f10daa46d63c.c"},
  "log":
  [{"message":
@@ -30,10 +30,10 @@
   ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
    "4ce1780d8d26fd00"],
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\ATDefs.lean",
-   "3fc4174a5f99c21c"],
+   "446ce682f90a682e"],
   ["options", "00000000000006bb"],
   ["isModule: false", "feefd2a0d3a1847e"],
   ["Module.name: Lemmas.ATDefs", "ad91e8b71bbf92ba"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "f87d7c6bf6de798b"}
+ "depHash": "34427228abfa8662"}

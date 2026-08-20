@@ -1889,6 +1889,14 @@ private lemma diagonal_one_terminal (scale l x₁ x₂ : ℝ) :
   norm_num at h ⊢
   nlinarith
 
+/-- A level-one independent Gaussian step adds only its covariance constant
+to the two-replica terminal condition.  This public form is useful when
+computing multiplier derivatives at the endpoint. -/
+lemma gtDiagonalStep_one_terminal (scale l x₁ x₂ : ℝ) :
+    gtDiagonalStep 1 scale (gtTerminal l) x₁ x₂ =
+      gtTerminal l x₁ x₂ + scale ^ 2 :=
+  diagonal_one_terminal scale l x₁ x₂
+
 private def rankStep (m scale sign : ℝ)
     (F : Unit → ℝ → ℝ × ℝ → ℝ) : Unit → ℝ → ℝ × ℝ → ℝ :=
   GTFrame.finiteStep gauss m (fun _ => scale) (fun _ => sign * scale) F
@@ -2123,6 +2131,43 @@ theorem gt_lambda_derivative_bounds
   have hsecond := (hout.derivD () lam (h, h)).sub_const v
   rw [hsecond.deriv]
   exact ⟨hout.nonnegE () lam (h, h), (hout.bddE () lam (h, h)).trans hcOut⟩
+
+/-- The first multiplier derivative of the GT functional is differentiable.
+This is the regularity companion to `gt_lambda_derivative_bounds`. -/
+lemma differentiable_deriv_gtFunctional (β h q s v : ℝ) :
+    Differentiable ℝ (deriv (fun l => gtFunctional β h q s l v)) := by
+  obtain ⟨F₀, D₀, E₀, c₀, hF₀, _hc₀, heq₀⟩ := semigroup_package β q s v 0
+  let scale := β * Real.sqrt ((1 - s) * q)
+  let Fout := rankStep 0 scale 1 F₀
+  have hout := rankStep_good hF₀ (by norm_num : (0 : ℝ) ≤ 0) scale 1
+  have houtEq : ∀ l,
+      Fout () l (h, h) = standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s l v 0
+          (h + scale * z) (h + scale * z)) := by
+    intro l
+    dsimp [Fout]
+    rw [rankStep_apply]
+    simp only [gtRankOneStep, standardGaussianExpectation, zero_mul,
+      one_mul, if_true]
+    congr 1
+    funext z
+    rw [heq₀]
+  have hfunctional : (fun l => gtFunctional β h q s l v) = fun l =>
+      2 * Real.log 2 + Fout () l (h, h) - l * v - gtCorrection β q s := by
+    funext l
+    rw [gtFunctional, houtEq]
+  have hfirst : deriv (fun l =>
+      2 * Real.log 2 + Fout () l (h, h) - l * v - gtCorrection β q s) =
+      fun l =>
+        (GTFrame.finiteStepD gauss 0 (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () l (h, h) - v := by
+    funext l
+    have hd := (((hout.good.hasDeriv () l (h, h)).const_add (2 * Real.log 2)).sub
+      ((hasDerivAt_id l).mul_const v)).sub_const (gtCorrection β q s)
+    simpa [Fout] using hd.deriv
+  rw [hfunctional, hfirst]
+  intro l
+  exact ((hout.derivD () l (h, h)).sub_const v).differentiableAt
 
 /-! ## The deterministic coercivity step -/
 
