@@ -1,5 +1,0 @@
-/-
-
--/
-
-import Lemmas.ATDefs

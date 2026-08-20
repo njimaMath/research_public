@@ -2163,65 +2163,651 @@ lemma gt_taylor_quadratic_loss (H : ℝ → ℝ) (d M c delta : ℝ)
       exact (div_le_div_iff_of_pos_right hden).2 (by linarith)
     _ = -(c ^ 2 / (2 * M)) * delta ^ 2 := by ring
 
-/--
-The Taylor and negative-overlap packages from `Lemmas.ATDefs` imply a uniform
-quadratic gap for the canonical, unoptimized GT functional.
--/
-theorem gtFunctional_uniform_quadratic_gap {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) (analytic : GTFunctionalAnalyticData data) :
-    ∃ c > 0, ∀ {β h q s v : ℝ},
-      (β, h) ∈ K → q = rsQ β h → s ∈ Icc (0 : ℝ) 1 →
-      v ∈ Icc (-1 : ℝ) 1 →
-      ∃ lam, gtFunctional β h q s lam v ≤
-        2 * rsPathValue β h q s - c * (v - q) ^ 2 := by
-  obtain ⟨M, hM, hpackage⟩ := analytic.taylor_package
-  obtain ⟨k, hk, hnegative⟩ := analytic.negative_gap
-  let cLocal : ℝ := data.gap ^ 2 / (2 * M)
-  let cNegative : ℝ := k / 4
-  let c : ℝ := min cLocal cNegative
-  have hcLocal : 0 < cLocal := by
-    exact div_pos (pow_pos data.gap_pos 2) (mul_pos (by norm_num) hM)
-  have hcNegative : 0 < cNegative := div_pos hk (by norm_num)
-  have hc : 0 < c := lt_min hcLocal hcNegative
-  refine ⟨c, hc, ?_⟩
-  intro β h q s v hp hq hs hv
-  have hqIcc : q ∈ Icc (0 : ℝ) 1 := by
-    rw [hq]
-    exact rsQ_mem_Icc β h
-  by_cases hvneg : v < -q
-  · obtain ⟨lam, hlam⟩ := hnegative hp hq hs ⟨hv.1, le_of_lt hvneg⟩
-    refine ⟨lam, hlam.trans ?_⟩
-    have hsq : (v - q) ^ 2 ≤ 4 := by
-      nlinarith [hv.1, hv.2, hqIcc.1, hqIcc.2, sq_nonneg (v - q)]
-    have hc_le : c ≤ k / 4 := min_le_right _ _
-    have hprod : c * (v - q) ^ 2 ≤ c * 4 :=
-      mul_le_mul_of_nonneg_left hsq hc.le
-    have hprodK : c * (v - q) ^ 2 ≤ k := by
-      nlinarith [hprod, hc_le]
-    linarith
-  · have hvmain : v ∈ Icc (-q : ℝ) 1 := ⟨le_of_not_gt hvneg, hv.2⟩
-    obtain ⟨d, hzero, hdBound, hdGap, hTaylor⟩ :=
-      hpackage hp hq hs hvmain
-    let H : ℝ → ℝ := fun lam =>
-      gtFunctional β h q s lam v - 2 * rsPathValue β h q s
-    have hHzero : H 0 ≤ 0 := by
-      dsimp [H]
-      rw [hzero]
-      linarith
-    have hHTaylor : ∀ lam, |lam| ≤ 1 →
-        H lam ≤ H 0 + d * lam + M / 2 * lam ^ 2 := by
-      intro lam hlam
-      dsimp [H]
-      linarith [hTaylor lam hlam]
-    obtain ⟨lam, _hlam, hloss⟩ :=
-      gt_taylor_quadratic_loss H d M data.gap (v - q)
-        hM data.gap_pos hHzero hHTaylor hdBound hdGap
-    refine ⟨lam, ?_⟩
-    have hc_le : c ≤ data.gap ^ 2 / (2 * M) := min_le_left _ _
-    have hprod : c * (v - q) ^ 2 ≤
-        (data.gap ^ 2 / (2 * M)) * (v - q) ^ 2 :=
-      mul_le_mul_of_nonneg_right hc_le (sq_nonneg (v - q))
-    dsimp [H] at hloss
-    linarith
+
+
+/-! ## Explicit first-derivative formulas -/
+
+/-- Differentiate the outer Gaussian expectation in `gtFunctional`. -/
+lemma hasDerivAt_gtFunctional
+    (β h q s lam v : ℝ) :
+    HasDerivAt (fun l => gtFunctional β h q s l v)
+      (standardGaussianExpectation (fun z =>
+        deriv (fun l =>
+          gtSemigroupSolution β q s l v 0
+            (h + β * Real.sqrt ((1 - s) * q) * z)
+            (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v) lam := by
+  obtain ⟨F₀, D₀, E₀, c₀, hF₀, hc₀, heq₀⟩ :=
+    semigroup_package β q s v 0
+
+  let scale : ℝ := β * Real.sqrt ((1 - s) * q)
+  let Fout := rankStep 0 scale 1 F₀
+
+  have hout :=
+    rankStep_good hF₀ (by norm_num : (0 : ℝ) ≤ 0) scale 1
+
+  have houtEq : ∀ l,
+      Fout () l (h, h) =
+        standardGaussianExpectation (fun z =>
+          gtSemigroupSolution β q s l v 0
+            (h + scale * z) (h + scale * z)) := by
+    intro l
+    dsimp [Fout]
+    rw [rankStep_apply]
+    simp only [gtRankOneStep, if_pos rfl, standardGaussianExpectation,
+      zero_mul, one_mul, if_true]
+    congr 1
+    funext z
+    rw [heq₀]
+
+  have houterD :
+      (GTFrame.finiteStepD gauss 0
+        (fun _ : Unit => scale) (fun _ => 1 * scale)
+        F₀ D₀) () lam (h, h)
+        =
+      standardGaussianExpectation (fun z =>
+        deriv (fun l =>
+          gtSemigroupSolution β q s l v 0
+            (h + scale * z) (h + scale * z)) lam) := by
+    simp only [GTFrame.finiteStepD, if_pos rfl, GTFrame.step0, one_mul]
+    unfold standardGaussianExpectation
+    apply integral_congr_ae
+    filter_upwards with z
+    have hfun :
+        (fun l => F₀ () l
+          (h + scale * z, h + scale * z))
+          =
+        (fun l =>
+          gtSemigroupSolution β q s l v 0
+            (h + scale * z) (h + scale * z)) := by
+      funext l
+      exact heq₀ l _ _
+    have hd :=
+      (hF₀.good.hasDeriv () lam
+        (h + scale * z, h + scale * z)).deriv
+    rw [hfun] at hd
+    exact hd.symm
+
+  have hfunctional :
+      (fun l => gtFunctional β h q s l v)
+        =
+      (fun l =>
+        2 * Real.log 2 + Fout () l (h, h)
+          - l * v - gtCorrection β q s) := by
+    funext l
+    rw [gtFunctional, houtEq]
+
+  have hbase :
+      HasDerivAt
+        (fun l =>
+          2 * Real.log 2 + Fout () l (h, h)
+            - l * v - gtCorrection β q s)
+        ((GTFrame.finiteStepD gauss 0
+          (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () lam (h, h) - v) lam := by
+    have hd :=
+      (((hout.good.hasDeriv () lam (h, h)).const_add
+        (2 * Real.log 2)).sub
+        ((hasDerivAt_id lam).mul_const v)).sub_const
+        (gtCorrection β q s)
+    simpa [Fout] using hd
+
+  rw [houterD] at hbase
+  rw [hfunctional]
+  simpa [scale] using hbase
+
+
+lemma deriv_gtFunctional_eq
+    (β h q s lam v : ℝ) :
+    deriv (fun l => gtFunctional β h q s l v) lam
+      =
+    standardGaussianExpectation (fun z =>
+      deriv (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  exact (hasDerivAt_gtFunctional β h q s lam v).deriv
+
+
+/-! ### Case `|v| = 0` -/
+
+lemma gtFunctional_formula_abs_v_eq_zero
+    (β h q s lam v : ℝ)
+    (hq : 0 < q) (hv : |v| = 0) :
+    gtFunctional β h q s lam v
+      =
+    2 * Real.log 2
+      + standardGaussianExpectation (fun z =>
+        gtDiagonalStep 0 (gtIncrementScale β s 0 q)
+          (gtDiagonalStep 1 (gtIncrementScale β s q 1)
+            (gtTerminal lam))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+      - gtCorrection β q s := by
+  have hv0 : v = 0 := abs_eq_zero.mp hv
+  subst v
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  simp [gtFunctional, gtSemigroupSolution, hq0]
+
+
+lemma deriv_gtFunctional_formula_abs_v_eq_zero
+    (β h q s lam v : ℝ)
+    (hq : 0 < q) (hv : |v| = 0) :
+    deriv (fun l => gtFunctional β h q s l v) lam
+      =
+    standardGaussianExpectation (fun z =>
+      deriv (fun l =>
+        gtDiagonalStep 0 (gtIncrementScale β s 0 q)
+          (gtDiagonalStep 1 (gtIncrementScale β s q 1)
+            (gtTerminal l))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) lam) := by
+  have hv0 : v = 0 := abs_eq_zero.mp hv
+  subst v
+  rw [deriv_gtFunctional_eq]
+  simp only [sub_zero]
+  apply congrArg standardGaussianExpectation
+  funext z
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l 0 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
+      (fun l =>
+        gtDiagonalStep 0 (gtIncrementScale β s 0 q)
+          (gtDiagonalStep 1 (gtIncrementScale β s q 1)
+            (gtTerminal l))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hq0]
+  rw [hfun]
+
+
+/-! ### Case `0 < |v| < q` -/
+
+lemma gtFunctional_formula_abs_v_lt_q
+    (β h q s lam v : ℝ)
+    (hv0 : 0 < |v|) (hvq : |v| < q) :
+    gtFunctional β h q s lam v
+      =
+    2 * Real.log 2
+      + standardGaussianExpectation (fun z =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 |v|) (gtPathSign v)
+          (gtDiagonalStep 0
+            (gtIncrementScale β s |v| q)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s q 1)
+              (gtTerminal lam)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+      - lam * v - gtCorrection β q s := by
+  have hqr : ¬ q ≤ |v| := not_le.mpr hvq
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hv0
+  have hqpos : 0 < q := lt_trans hv0 hvq
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hqpos
+  simp [gtFunctional, gtSemigroupSolution, hqr, hr0, hq0]
+
+
+lemma deriv_gtFunctional_formula_abs_v_lt_q
+    (β h q s lam v : ℝ)
+    (hv0 : 0 < |v|) (hvq : |v| < q) :
+    deriv (fun l => gtFunctional β h q s l v) lam
+      =
+    standardGaussianExpectation (fun z =>
+      deriv (fun l =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 |v|) (gtPathSign v)
+          (gtDiagonalStep 0
+            (gtIncrementScale β s |v| q)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s q 1)
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+
+  have hqr : ¬ q ≤ |v| := not_le.mpr hvq
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hv0
+  have hqpos : 0 < q := lt_trans hv0 hvq
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hqpos
+
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
+      (fun l =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 |v|) (gtPathSign v)
+          (gtDiagonalStep 0
+            (gtIncrementScale β s |v| q)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s q 1)
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hqr, hr0, hq0]
+
+  rw [hfun]
+
+
+/-! ### Case `q ≤ |v| < 1` -/
+
+lemma gtFunctional_formula_q_le_abs_v_lt_one
+    (β h q s lam v : ℝ)
+    (hq : 0 < q) (hqv : q ≤ |v|) (_hv1 : |v| < 1) :
+    gtFunctional β h q s lam v
+      =
+    2 * Real.log 2
+      + standardGaussianExpectation (fun z =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q) (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q |v|) (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s |v| 1)
+              (gtTerminal lam)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+      - lam * v - gtCorrection β q s := by
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hrpos : 0 < |v| := lt_of_lt_of_le hq hqv
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+  simp [gtFunctional, gtSemigroupSolution, hqv, hr0, hq0]
+
+
+lemma deriv_gtFunctional_formula_q_le_abs_v_lt_one
+    (β h q s lam v : ℝ)
+    (hq : 0 < q) (hqv : q ≤ |v|) (_hv1 : |v| < 1) :
+    deriv (fun l => gtFunctional β h q s l v) lam
+      =
+    standardGaussianExpectation (fun z =>
+      deriv (fun l =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q) (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q |v|) (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s |v| 1)
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hrpos : 0 < |v| := lt_of_lt_of_le hq hqv
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
+      (fun l =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q) (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q |v|) (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s |v| 1)
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hqv, hr0, hq0]
+
+  rw [hfun]
+
+
+/-! ### Case `|v| = 1` -/
+
+lemma gtFunctional_formula_abs_v_eq_one
+    (β h q s lam v : ℝ)
+    (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
+    gtFunctional β h q s lam v
+      =
+    2 * Real.log 2
+      + standardGaussianExpectation (fun z =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q) (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q 1) (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s 1 1)
+              (gtTerminal lam)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+      - lam * v - gtCorrection β q s := by
+  have hqv : q ≤ |v| := by
+    simpa [hv] using hq1
+  have hrpos : 0 < |v| := by
+    rw [hv]
+    norm_num
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have h10 : ¬ (1 : ℝ) ≤ 0 := by norm_num
+  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hqv, hr0, hq0, h10]
+
+
+lemma deriv_gtFunctional_formula_abs_v_eq_one
+    (β h q s lam v : ℝ)
+    (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
+    deriv (fun l => gtFunctional β h q s l v) lam
+      =
+    standardGaussianExpectation (fun z =>
+      deriv (fun l =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q) (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q 1) (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s 1 1)
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+
+  have hqv : q ≤ |v| := by
+    simpa [hv] using hq1
+  have hrpos : 0 < |v| := by
+    rw [hv]
+    norm_num
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
+      (fun l =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q) (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q 1) (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s 1 1)
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hv, hq1, hqv, hr0, hq0]
+
+  rw [hfun]
+
+
+/-! ### Explicit formulas for ∂_λ U_s^{λ,v}|_{λ=0} -/
+
+/-! Case `|v| = 0`. -/
+
+lemma deriv_gtSemigroupSolution_zero_abs_v_eq_zero
+    (β q s v x₁ x₂ : ℝ)
+    (hq : 0 < q) (hv : |v| = 0) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtDiagonalStep 0
+        (gtIncrementScale β s 0 q)
+        (gtDiagonalStep 1
+          (gtIncrementScale β s q 1)
+          (gtTerminal lam))
+        x₁ x₂) 0 := by
+  have hv0 : v = 0 := abs_eq_zero.mp hv
+  subst v
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam 0 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtDiagonalStep 0
+          (gtIncrementScale β s 0 q)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s q 1)
+            (gtTerminal lam))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hq0]
+  rw [hfun]
+
+
+/-! Case `0 < |v| < q`. -/
+
+lemma deriv_gtSemigroupSolution_zero_abs_v_lt_q
+    (β q s v x₁ x₂ : ℝ)
+    (hv0 : 0 < |v|) (hvq : |v| < q) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtRankOneStep 0
+        (gtIncrementScale β s 0 |v|)
+        (gtPathSign v)
+        (gtDiagonalStep 0
+          (gtIncrementScale β s |v| q)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s q 1)
+            (gtTerminal lam)))
+        x₁ x₂) 0 := by
+  have hqr : ¬ q ≤ |v| := not_le.mpr hvq
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hv0
+  have hqpos : 0 < q := lt_trans hv0 hvq
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hqpos
+
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam v 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 |v|)
+          (gtPathSign v)
+          (gtDiagonalStep 0
+            (gtIncrementScale β s |v| q)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s q 1)
+              (gtTerminal lam)))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hqr, hr0, hq0]
+
+  rw [hfun]
+
+
+/-! Case `q ≤ |v| < 1`. -/
+
+lemma deriv_gtSemigroupSolution_zero_q_le_abs_v_lt_one
+    (β q s v x₁ x₂ : ℝ)
+    (hq : 0 < q) (hqv : q ≤ |v|) (hv1 : |v| < 1) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtRankOneStep 0
+        (gtIncrementScale β s 0 q)
+        (gtPathSign v)
+        (gtRankOneStep (1 / 2)
+          (gtIncrementScale β s q |v|)
+          (gtPathSign v)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s |v| 1)
+            (gtTerminal lam)))
+        x₁ x₂) 0 := by
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hrpos : 0 < |v| := lt_of_lt_of_le hq hqv
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam v 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q)
+          (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q |v|)
+            (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s |v| 1)
+              (gtTerminal lam)))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hqv, hr0, hq0]
+
+  rw [hfun]
+
+
+/-! Case `|v| = 1`. -/
+
+lemma deriv_gtSemigroupSolution_zero_abs_v_eq_one
+    (β q s v x₁ x₂ : ℝ)
+    (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtRankOneStep 0
+        (gtIncrementScale β s 0 q)
+        (gtPathSign v)
+        (gtRankOneStep (1 / 2)
+          (gtIncrementScale β s q 1)
+          (gtPathSign v)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s 1 1)
+            (gtTerminal lam)))
+        x₁ x₂) 0 := by
+  have hqv : q ≤ |v| := by
+    simpa [hv] using hq1
+  have hrpos : 0 < |v| := by
+    rw [hv]
+    norm_num
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have h10 : ¬ (1 : ℝ) ≤ 0 := by norm_num
+
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam v 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q)
+          (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q 1)
+            (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s 1 1)
+              (gtTerminal lam)))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hv, hq1, hqv, hr0, hq0, h10]
+
+  rw [hfun]
+
+
+/-- At `lam = 0`, the two-replica terminal function splits into
+the sum of the two one-replica terminal functions. -/
+lemma gtTerminal_zero (x₁ x₂ : ℝ) :
+    gtTerminal 0 x₁ x₂ =
+      Real.log (Real.cosh x₁) + Real.log (Real.cosh x₂) := by
+  rw [gtTerminal]
+  simp only [add_zero, sub_zero]
+
+  have h :
+      (Real.exp (x₁ + x₂) +
+          Real.exp (x₁ - x₂) +
+          Real.exp (-x₁ + x₂) +
+          Real.exp (-x₁ - x₂)) / 4
+        =
+      Real.cosh x₁ * Real.cosh x₂ := by
+    rw [Real.cosh_eq, Real.cosh_eq]
+    simp [Real.exp_add, sub_eq_add_neg]
+    ring
+
+  rw [h]
+  rw [Real.log_mul
+    (ne_of_gt (Real.cosh_pos x₁))
+    (ne_of_gt (Real.cosh_pos x₂))]
+
+
+/-- Explicit first derivative of the terminal function in `lam`. -/
+lemma deriv_gtTerminal_explicit (lam x₁ x₂ : ℝ) :
+    deriv (fun l => gtTerminal l x₁ x₂) lam
+      =
+    (Real.exp (x₁ + x₂ + lam)
+        - Real.exp (x₁ - x₂ - lam)
+        - Real.exp (-x₁ + x₂ - lam)
+        + Real.exp (-x₁ - x₂ + lam))
+      /
+    (Real.exp (x₁ + x₂ + lam)
+        + Real.exp (x₁ - x₂ - lam)
+        + Real.exp (-x₁ + x₂ - lam)
+        + Real.exp (-x₁ - x₂ + lam)) := by
+  simpa [gtTerminalNumerator, gtTerminalSum] using
+    (hasDerivAt_gtTerminal lam x₁ x₂).deriv
+
+
+/-- At `lam = 0`, the `lam`-derivative factorizes as
+`tanh x₁ * tanh x₂`. -/
+lemma deriv_gtTerminal_zero (x₁ x₂ : ℝ) :
+    deriv (fun lam => gtTerminal lam x₁ x₂) 0
+      =
+    Real.tanh x₁ * Real.tanh x₂ := by
+  rw [deriv_gtTerminal_explicit]
+  simp only [add_zero, sub_zero]
+
+  rw [Real.tanh_eq_sinh_div_cosh, Real.tanh_eq_sinh_div_cosh]
+
+  have h₁ : Real.cosh x₁ ≠ 0 :=
+    ne_of_gt (Real.cosh_pos x₁)
+  have h₂ : Real.cosh x₂ ≠ 0 :=
+    ne_of_gt (Real.cosh_pos x₂)
+
+  have hnum :
+      Real.exp (x₁ + x₂) - Real.exp (x₁ - x₂)
+          - Real.exp (-x₁ + x₂) + Real.exp (-x₁ - x₂)
+        = 4 * Real.sinh x₁ * Real.sinh x₂ := by
+    rw [Real.sinh_eq, Real.sinh_eq]
+    simp [Real.exp_add, sub_eq_add_neg]
+    ring
+
+  have hden :
+      Real.exp (x₁ + x₂) + Real.exp (x₁ - x₂)
+          + Real.exp (-x₁ + x₂) + Real.exp (-x₁ - x₂)
+        = 4 * Real.cosh x₁ * Real.cosh x₂ := by
+    rw [Real.cosh_eq, Real.cosh_eq]
+    simp [Real.exp_add, sub_eq_add_neg]
+    ring
+
+  rw [hnum, hden]
+
+  field_simp [h₁, h₂]
+
+
+
+
+
+
+
+
 
 end SpinGlass.AT

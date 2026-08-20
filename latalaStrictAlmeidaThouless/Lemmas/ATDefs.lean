@@ -560,10 +560,6 @@ def HasGTFunctionalNegativeGap {K : Set (ℝ × ℝ)}
     ∃ lam,
       gtFunctional β h q s lam v ≤ 2 * rsPathValue β h q s - k
 
-/-- Analytic estimates consumed by the algebraic GT coercivity proof. -/
-structure GTFunctionalAnalyticData {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) : Prop where
-  taylor_package : HasGTFunctionalTaylorPackage data
-  negative_gap : HasGTFunctionalNegativeGap data
+
 
 end SpinGlass.AT
