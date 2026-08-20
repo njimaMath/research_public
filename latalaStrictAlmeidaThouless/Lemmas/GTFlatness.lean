@@ -16,6 +16,114 @@ namespace SpinGlass.AT
 These formulas mirror the four overlap regimes established in `GTGauss`.
 -/
 
+/-! ### The degenerate smart-path endpoint `s = 0` -/
+
+/-- When `s = 0`, every covariance increment in the finite GT recursion
+vanishes, so the semigroup solution is just the terminal function. -/
+private lemma flatness_gtSemigroupSolution_s_zero
+    (β q lam v u x₁ x₂ : ℝ) :
+    gtSemigroupSolution β q 0 lam v u x₁ x₂ =
+      gtTerminal lam x₁ x₂ := by
+  simp [gtSemigroupSolution, gtIncrementScale,
+    gtDiagonalStep, gtRankOneStep, standardGaussianExpectation]
+
+/-- At `s = 0` and `lam = 0`, the GT functional is exactly twice the
+replica-symmetric path value. -/
+lemma flatness_gtFunctional_s_zero_lam_zero
+    (β h q v : ℝ) :
+    gtFunctional β h q 0 0 v =
+      2 * rsPathValue β h q 0 := by
+  rw [gtFunctional]
+  simp only [sub_zero, one_mul, zero_mul]
+  rw [show gtCorrection β q 0 = 0 by simp [gtCorrection]]
+  simp only [sub_zero]
+
+  simp_rw [flatness_gtSemigroupSolution_s_zero]
+  simp_rw [gtTerminal_zero]
+
+  rw [rsPathValue]
+  simp only [zero_mul, zero_div, add_zero]
+
+  have hE :
+      standardGaussianExpectation (fun z =>
+        Real.log (Real.cosh
+          (h + β * Real.sqrt q * z)) +
+        Real.log (Real.cosh
+          (h + β * Real.sqrt q * z))) =
+      2 * standardGaussianExpectation (fun z =>
+        Real.log (Real.cosh
+          (h + β * Real.sqrt q * z))) := by
+    unfold standardGaussianExpectation
+    rw [show
+      (fun z : ℝ =>
+        Real.log (Real.cosh
+          (h + β * Real.sqrt q * z)) +
+        Real.log (Real.cosh
+          (h + β * Real.sqrt q * z))) =
+      (fun z : ℝ =>
+        2 * Real.log (Real.cosh
+          (h + β * Real.sqrt q * z))) by
+      funext z
+      ring]
+    rw [integral_const_mul]
+
+  rw [hE]
+  ring
+
+/-- At `s = 0`, the multiplier derivative at `lam = 0` is `q - v`
+whenever `q` satisfies the replica-symmetric fixed-point equation. -/
+lemma flatness_deriv_gtFunctional_s_zero_lam_zero
+    (β h q v : ℝ)
+    (hfixed : IsRSFixedPoint β h q) :
+    deriv (fun lam => gtFunctional β h q 0 lam v) 0 =
+      q - v := by
+  rw [deriv_gtFunctional_eq]
+  simp only [sub_zero, one_mul]
+
+  have hE :
+      standardGaussianExpectation (fun z =>
+        deriv (fun lam =>
+          gtSemigroupSolution β q 0 lam v 0
+            (h + β * Real.sqrt q * z)
+            (h + β * Real.sqrt q * z)) 0) =
+      q := by
+    calc
+      standardGaussianExpectation (fun z =>
+        deriv (fun lam =>
+          gtSemigroupSolution β q 0 lam v 0
+            (h + β * Real.sqrt q * z)
+            (h + β * Real.sqrt q * z)) 0)
+          =
+        standardGaussianExpectation (fun z =>
+          Real.tanh (h + β * Real.sqrt q * z) ^ 2) := by
+            apply congrArg standardGaussianExpectation
+            funext z
+            let x := h + β * Real.sqrt q * z
+            have hfun :
+                (fun lam =>
+                  gtSemigroupSolution β q 0 lam v 0 x x) =
+                (fun lam => gtTerminal lam x x) := by
+              funext lam
+              exact flatness_gtSemigroupSolution_s_zero
+                β q lam v 0 x x
+            rw [hfun, deriv_gtTerminal_zero]
+            ring
+      _ = q := by
+        exact hfixed.symm
+
+  rw [hE]
+
+/-- The canonical-overlap specialization of
+`flatness_deriv_gtFunctional_s_zero_lam_zero`. -/
+lemma flatness_deriv_gtFunctional_s_zero_lam_zero_rsQ
+    (β h v : ℝ) :
+    deriv
+      (fun lam =>
+        gtFunctional β h (rsQ β h) 0 lam v) 0 =
+      rsQ β h - v := by
+  exact flatness_deriv_gtFunctional_s_zero_lam_zero
+    β h (rsQ β h) v (rsQ_fixedPoint β h)
+
 /-! ### Case `|v| = 0` -/
 
 lemma flatness_gtFunctional_formula_abs_v_eq_zero
@@ -733,6 +841,99 @@ lemma flatness_deriv_gtFunctional_zero_q_le_abs_v_lt_one
   funext z
   exact flatness_deriv_U_q_le_abs_v_lt_one β q s v _ _ hq hqv hv1
 
+/-! #### Identification with `tilde g_s` on negative overlaps -/
+
+/--
+For `|v| ≤ q`, the Gaussian correlation
+`tilde g_s(v) = E[tanh(Y₁(v)) tanh(Y₂(v))]`.
+
+The four independent standard Gaussians below give both coordinates
+variance `β² q`; their covariance is
+`β² ((1-s) q + s v)`.
+-/
+noncomputable def flatnessTildeG
+    (β h q s v : ℝ) : ℝ :=
+  standardGaussianExpectation (fun z =>
+    standardGaussianExpectation (fun z₀ =>
+      standardGaussianExpectation (fun z₁ =>
+        standardGaussianExpectation (fun z₂ =>
+          Real.tanh
+              (h + β * Real.sqrt ((1 - s) * q) * z
+                + gtIncrementScale β s 0 |v| * z₀
+                + gtIncrementScale β s |v| q * z₁) *
+            Real.tanh
+              (h + β * Real.sqrt ((1 - s) * q) * z
+                + gtPathSign v *
+                    gtIncrementScale β s 0 |v| * z₀
+                + gtIncrementScale β s |v| q * z₂)))))
+
+/--
+A zero-length mass-`1/2` step does not change the endpoint
+multiplier derivative.
+-/
+@[simp] private lemma flatness_gtHalfStepEndpoint_zero_scale
+    (upperScale sign x₁ x₂ : ℝ) :
+    gtHalfStepEndpoint 0 upperScale sign x₁ x₂ =
+      Real.tanh x₁ * Real.tanh x₂ := by
+  unfold gtHalfStepEndpoint
+  simp [standardGaussianExpectation, Real.exp_ne_zero]
+
+/--
+For every negative overlap `-q ≤ v < 0`, the endpoint multiplier derivative
+of the GT functional is `tilde g_s(v) - v`.
+-/
+lemma flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg
+    (β h q s v : ℝ)
+    (hq : q ∈ Set.Ioo (0 : ℝ) 1)
+    (hv : v ∈ Set.Ico (-q) 0) :
+    deriv (fun lam => gtFunctional β h q s lam v) 0 =
+      flatnessTildeG β h q s v - v := by
+  by_cases hvleft : v = -q
+  · subst v
+    have habs : |(-q : ℝ)| = q := by
+      rw [abs_neg, abs_of_pos hq.1]
+    have hqabs : q ≤ |(-q : ℝ)| := by
+      rw [habs]
+    have habs1 : |(-q : ℝ)| < 1 := by
+      rw [habs]
+      exact hq.2
+    rw [flatness_deriv_gtFunctional_zero_q_le_abs_v_lt_one
+      β h q s (-q) hq.1 hqabs habs1]
+    apply congrArg (fun y : ℝ => y - (-q))
+    unfold flatnessTildeG
+    rw [habs]
+    have hzero : gtIncrementScale β s q q = 0 := by
+      simp [gtIncrementScale]
+    rw [hzero]
+    simp [standardGaussianExpectation]
+  · have hvneg : v < 0 := hv.2
+    have hvne : v ≠ 0 := ne_of_lt hvneg
+    have hv0 : 0 < |v| := by
+      exact abs_pos.mpr hvne
+    have hminusqv : -q < v := by
+      exact lt_of_le_of_ne hv.1 (Ne.symm hvleft)
+    have hvq : |v| < q := by
+      rw [abs_of_neg hvneg]
+      linarith
+    simpa [flatnessTildeG] using
+      (flatness_deriv_gtFunctional_zero_abs_v_lt_q
+        β h q s v hv0 hvq)
+
+/-- Canonical version with `q = rsQ β h`. -/
+lemma flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg_rsQ
+    (β h s v : ℝ)
+    (hβ : 0 < β) (hh : 0 < h)
+    (hv : v ∈ Set.Ico (-(rsQ β h)) 0) :
+    deriv
+        (fun lam =>
+          gtFunctional β h (rsQ β h) s lam v) 0 =
+      flatnessTildeG β h (rsQ β h) s v - v := by
+  exact
+    flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg
+      β h (rsQ β h) s v
+      ⟨rsQ_pos hβ hh, rsQ_lt_one hβ hh⟩
+      hv
+
 lemma flatness_deriv_gtFunctional_zero_abs_v_eq_one
     (β h q s v : ℝ) (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
     deriv (fun l => gtFunctional β h q s l v) 0 =
@@ -862,6 +1063,600 @@ private lemma flatness_gaussian_convolution_tanh_sq (h a b c : ℝ)
     _ = ∫ z, Real.tanh (h + c * z) ^ 2 ∂gaussianReal 0 1 := by
           rw [← hmc, integral_map (by fun_prop)]
           exact ((htanh.comp (by fun_prop)).pow 2).aestronglyMeasurable
+
+/-! #### Identification of the endpoint derivative with `g_s(v) - v` -/
+
+/--
+A bounded continuous test function only sees the total variance of two
+independent centered Gaussian increments.
+-/
+private lemma flatness_gaussian_convolution_bounded
+    (f : ℝ → ℝ) (hfcont : Continuous f)
+    (hfbound : ∀ x, ‖f x‖ ≤ 1)
+    (h a b c : ℝ)
+    (hc : c ^ 2 = a ^ 2 + b ^ 2) :
+    standardGaussianExpectation (fun x =>
+      standardGaussianExpectation (fun y =>
+        f (h + a * x + b * y))) =
+    standardGaussianExpectation (fun z =>
+      f (h + c * z)) := by
+  let va : NNReal := NNReal.mk (a ^ 2) (sq_nonneg a) * 1
+  let vb : NNReal := NNReal.mk (b ^ 2) (sq_nonneg b) * 1
+  let vc : NNReal := NNReal.mk (c ^ 2) (sq_nonneg c) * 1
+
+  have hma :
+      Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) =
+        gaussianReal 0 va := by
+    simpa [va] using
+      (gaussianReal_map_const_mul
+        (μ := 0) (v := (1 : NNReal)) a)
+
+  have hmb :
+      Measure.map (fun x : ℝ => b * x) (gaussianReal 0 1) =
+        gaussianReal 0 vb := by
+    simpa [vb] using
+      (gaussianReal_map_const_mul
+        (μ := 0) (v := (1 : NNReal)) b)
+
+  have hmc :
+      Measure.map (fun x : ℝ => c * x) (gaussianReal 0 1) =
+        gaussianReal 0 vc := by
+    simpa [vc] using
+      (gaussianReal_map_const_mul
+        (μ := 0) (v := (1 : NNReal)) c)
+
+  have hv : va + vb = vc := by
+    apply NNReal.eq
+    simp [va, vb, vc, hc]
+
+  have hfint :
+      Integrable (fun z : ℝ => f (h + z))
+        (gaussianReal 0 va ∗ gaussianReal 0 vb) := by
+    rw [gaussianReal_conv_gaussianReal, hv, zero_add]
+    apply Integrable.of_bound (C := 1)
+    · exact (hfcont.comp (by fun_prop)).aestronglyMeasurable
+    · filter_upwards [] with z
+      exact hfbound (h + z)
+
+  have hprod :
+      Integrable
+        (fun p : ℝ × ℝ => f (h + (p.1 + p.2)))
+        ((gaussianReal 0 va).prod (gaussianReal 0 vb)) := by
+    rw [Measure.conv] at hfint
+    exact (integrable_map_measure hfint.1 (by fun_prop)).mp hfint
+
+  have houter :
+      AEStronglyMeasurable
+        (fun x : ℝ =>
+          ∫ y, f (h + (x + y)) ∂gaussianReal 0 vb)
+        (gaussianReal 0 va) :=
+    hprod.integral_prod_left.1
+
+  have hinner (x : ℝ) :
+      (∫ y, f (h + a * x + b * y) ∂gaussianReal 0 1) =
+        ∫ y, f (h + a * x + y) ∂gaussianReal 0 vb := by
+    have hm :
+        AEStronglyMeasurable
+          (fun y : ℝ => f (h + a * x + y))
+          (Measure.map (fun y : ℝ => b * y)
+            (gaussianReal 0 1)) :=
+      (hfcont.comp (by fun_prop)).aestronglyMeasurable
+    rw [← hmb, integral_map (by fun_prop) hm]
+
+  have houter_map :
+      (∫ x,
+          ∫ y, f (h + a * x + y) ∂gaussianReal 0 vb
+        ∂gaussianReal 0 1) =
+      ∫ x,
+          ∫ y, f (h + x + y) ∂gaussianReal 0 vb
+        ∂gaussianReal 0 va := by
+    have hm :
+        AEStronglyMeasurable
+          (fun x : ℝ =>
+            ∫ y, f (h + (x + y)) ∂gaussianReal 0 vb)
+          (Measure.map (fun x : ℝ => a * x)
+            (gaussianReal 0 1)) := by
+      simpa [hma] using houter
+    rw [← hma]
+    simpa only [add_assoc] using
+      (integral_map (by fun_prop) hm).symm
+
+  unfold standardGaussianExpectation
+  calc
+    (∫ x,
+        ∫ y, f (h + a * x + b * y) ∂gaussianReal 0 1
+      ∂gaussianReal 0 1)
+        =
+      ∫ x,
+        ∫ y, f (h + x + y) ∂gaussianReal 0 vb
+      ∂gaussianReal 0 va := by
+        rw [integral_congr_ae
+          (Filter.Eventually.of_forall hinner)]
+        exact houter_map
+
+    _ = ∫ z, f (h + z)
+          ∂(gaussianReal 0 va ∗ gaussianReal 0 vb) := by
+        simpa only [add_assoc] using (integral_conv hfint).symm
+
+    _ = ∫ z, f (h + z) ∂gaussianReal 0 vc := by
+        rw [gaussianReal_conv_gaussianReal, hv, zero_add]
+
+    _ = ∫ z, f (h + c * z) ∂gaussianReal 0 1 := by
+        rw [← hmc, integral_map (by fun_prop)]
+        exact (hfcont.comp (by fun_prop)).aestronglyMeasurable
+
+
+/--
+The lower-branch endpoint profile.  This is
+`(H_{a^2} tanh)^2`, written in the same two-Gaussian form
+which occurs naturally in the GT derivative.
+-/
+private noncomputable def flatnessLowerProfile
+    (a x : ℝ) : ℝ :=
+  standardGaussianExpectation (fun z₁ =>
+    standardGaussianExpectation (fun z₂ =>
+      Real.tanh (x + a * z₁) *
+        Real.tanh (x + a * z₂)))
+
+
+private lemma flatnessLowerProfile_eq_sq (a x : ℝ) :
+    flatnessLowerProfile a x =
+      (standardGaussianExpectation (fun z =>
+        Real.tanh (x + a * z))) ^ 2 := by
+  unfold flatnessLowerProfile standardGaussianExpectation
+  calc
+    (∫ z₁,
+        ∫ z₂,
+          Real.tanh (x + a * z₁) *
+            Real.tanh (x + a * z₂)
+        ∂gaussianReal 0 1
+      ∂gaussianReal 0 1)
+        =
+      ∫ z₁,
+        Real.tanh (x + a * z₁) *
+          (∫ z₂,
+            Real.tanh (x + a * z₂)
+            ∂gaussianReal 0 1)
+      ∂gaussianReal 0 1 := by
+        apply integral_congr_ae
+        filter_upwards [] with z₁
+        rw [integral_const_mul]
+
+    _ =
+      (∫ z, Real.tanh (x + a * z)
+        ∂gaussianReal 0 1) ^ 2 := by
+        rw [integral_mul_const]
+        ring
+
+
+private lemma flatnessLowerProfile_zero (x : ℝ) :
+    flatnessLowerProfile 0 x = Real.tanh x ^ 2 := by
+  rw [flatnessLowerProfile_eq_sq]
+  simp [standardGaussianExpectation]
+
+
+/--
+Continuity and the bound `|flatnessLowerProfile| ≤ 1` follow directly
+from the `GoodFam` package already used for the endpoint computation.
+-/
+private lemma flatnessLowerProfile_good (a : ℝ) :
+    Continuous (flatnessLowerProfile a) ∧
+      ∀ x, ‖flatnessLowerProfile a x‖ ≤ 1 := by
+  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
+    fun _ l x => GTFrame.fLbase l x + 0 ^ 2
+  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
+    fun _ l x => GTFrame.fLbaseD l x
+
+  have hF : GTFrame.GoodFam F D :=
+    flatness_upper_goodFam 0
+
+  let F₂ := GTFrame.step0 flatnessGauss
+    (fun _ : Unit => 0) (fun _ => a) F
+  let D₂ := GTFrame.step0 flatnessGauss
+    (fun _ : Unit => 0) (fun _ => a) D
+
+  have hF₂ : GTFrame.GoodFam F₂ D₂ :=
+    GTFrame.step0_good
+      (GTFrame.expMoments_gaussianReal 0 1)
+      hF continuous_const continuous_const
+
+  let F₃ := GTFrame.step0 flatnessGauss
+    (fun _ : Unit => a) (fun _ => 0) F₂
+  let D₃ := GTFrame.step0 flatnessGauss
+    (fun _ : Unit => a) (fun _ => 0) D₂
+
+  have hF₃ : GTFrame.GoodFam F₃ D₃ :=
+    GTFrame.step0_good
+      (GTFrame.expMoments_gaussianReal 0 1)
+      hF₂ continuous_const continuous_const
+
+  have hdiag : Continuous (fun x : ℝ => (x, x)) := by
+    fun_prop
+
+  have heq (x : ℝ) :
+      D₃ () 0 (x, x) = flatnessLowerProfile a x := by
+    simp [D₃, D₂, D, GTFrame.step0, flatnessGauss,
+      flatnessLowerProfile, standardGaussianExpectation,
+      flatness_fLbaseD_zero]
+
+  constructor
+  · have hc := (hF₃.contD_pt () 0).comp hdiag
+    have hfun :
+        flatnessLowerProfile a =
+          fun x => D₃ () 0 (x, x) := by
+      funext x
+      exact (heq x).symm
+    rw [hfun]
+    exact hc
+
+  · intro x
+    have hb := hF₃.bddD () 0 (x, x)
+    rw [Real.norm_eq_abs, ← heq x]
+    exact hb
+
+
+/--
+The upper-branch tilted profile written as the endpoint derivative
+of the half-mass GT step.
+-/
+private noncomputable def flatnessUpperProfile
+    (a b x : ℝ) : ℝ :=
+  gtHalfStepEndpoint a b 1 x x
+
+
+private lemma flatnessUpperProfile_good (a b : ℝ) :
+    Continuous (flatnessUpperProfile a b) ∧
+      ∀ x, ‖flatnessUpperProfile a b x‖ ≤ 1 := by
+  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
+    fun _ l x => GTFrame.fLbase l x + b ^ 2
+  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
+    fun _ l x => GTFrame.fLbaseD l x
+
+  have hF : GTFrame.GoodFam F D :=
+    flatness_upper_goodFam b
+
+  let FH := GTFrame.stepM flatnessGauss (1 / 2)
+    (fun _ : Unit => a) (fun _ => a) F
+  let DH := GTFrame.stepMD flatnessGauss (1 / 2)
+    (fun _ : Unit => a) (fun _ => a) F D
+
+  have hFH : GTFrame.GoodFam FH DH :=
+    GTFrame.stepM_good
+      (GTFrame.expMoments_gaussianReal 0 1)
+      hF (by norm_num) continuous_const continuous_const
+
+  have hdiag : Continuous (fun x : ℝ => (x, x)) := by
+    fun_prop
+
+  have heq (x : ℝ) :
+      DH () 0 (x, x) = flatnessUpperProfile a b x := by
+    simp [DH, F, D, GTFrame.stepMD, flatnessGauss,
+      standardGaussianExpectation, flatness_fLbaseD_zero,
+      flatnessUpperProfile, gtHalfStepEndpoint]
+
+  constructor
+  · have hc := (hFH.contD_pt () 0).comp hdiag
+    have hfun :
+        flatnessUpperProfile a b =
+          fun x => DH () 0 (x, x) := by
+      funext x
+      exact (heq x).symm
+    rw [hfun]
+    exact hc
+
+  · intro x
+    have hb := hFH.bddD () 0 (x, x)
+    rw [Real.norm_eq_abs, ← heq x]
+    exact hb
+
+
+private lemma flatness_incrementScale_eq_sqrt_product
+    (β s lower upper : ℝ) (hs : 0 ≤ s) :
+    gtIncrementScale β s lower upper =
+      β * Real.sqrt (s * (upper - lower)) := by
+  unfold gtIncrementScale
+  rw [Real.sqrt_mul hs]
+  ring
+
+
+/--
+Variance identity for the two outer Gaussian increments occurring
+in the GT formula.
+-/
+private lemma flatness_outer_variance_sq
+    (β q s v : ℝ)
+    (hβ : 0 ≤ β) (hs0 : 0 ≤ s) (hs1 : s ≤ 1)
+    (hq : 0 ≤ q) (hv : 0 ≤ v) :
+    (Real.sqrt
+      (β ^ 2 * ((1 - s) * q + s * v))) ^ 2 =
+      (β * Real.sqrt ((1 - s) * q)) ^ 2 +
+        (gtIncrementScale β s 0 v) ^ 2 := by
+  have h1s : 0 ≤ 1 - s := sub_nonneg.mpr hs1
+  have hbase :
+      0 ≤ (1 - s) * q + s * v :=
+    add_nonneg (mul_nonneg h1s hq) (mul_nonneg hs0 hv)
+  have hvar :
+      0 ≤ β ^ 2 * ((1 - s) * q + s * v) :=
+    mul_nonneg (sq_nonneg β) hbase
+
+  rw [Real.sq_sqrt hvar]
+  rw [mul_pow, Real.sq_sqrt (mul_nonneg h1s hq)]
+  rw [gtIncrementScale_sq_of_nonneg
+    β s 0 v hβ hs0 hv]
+  ring
+
+
+/--
+For `0 ≤ v ≤ q`, rewrite the scalar order parameter in exactly the
+Gaussian form produced by the GT endpoint derivative.
+-/
+private lemma flatness_scalarOrderParameter_lower_eq
+    (β h q s v : ℝ)
+    (hβ : 0 ≤ β)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : 0 ≤ q)
+    (hv : v ∈ Set.Icc (0 : ℝ) q) :
+    scalarOrderParameter β h q s v =
+      standardGaussianExpectation (fun z =>
+        standardGaussianExpectation (fun z₀ =>
+          flatnessLowerProfile
+            (gtIncrementScale β s v q)
+            (h + β * Real.sqrt ((1 - s) * q) * z +
+              gtIncrementScale β s 0 v * z₀))) := by
+  have hmax :
+      max (q - v) 0 = q - v :=
+    max_eq_left (sub_nonneg.mpr hv.2)
+
+  have hd :
+      gtIncrementScale β s v q =
+        β * Real.sqrt (s * (q - v)) :=
+    flatness_incrementScale_eq_sqrt_product β s v q hs.1
+
+  have hpsi (x : ℝ) :
+      scalarPsiX β q s v x ^ 2 =
+        flatnessLowerProfile
+          (gtIncrementScale β s v q) x := by
+    unfold scalarPsiX
+    rw [hmax, hd]
+    exact (flatnessLowerProfile_eq_sq _ x).symm
+
+  have hsq :=
+    flatness_outer_variance_sq
+      β q s v hβ hs.1 hs.2 hq hv.1
+
+  have hgood :=
+    flatnessLowerProfile_good
+      (gtIncrementScale β s v q)
+
+  have hconv :=
+    flatness_gaussian_convolution_bounded
+      (flatnessLowerProfile
+        (gtIncrementScale β s v q))
+      hgood.1 hgood.2
+      h
+      (β * Real.sqrt ((1 - s) * q))
+      (gtIncrementScale β s 0 v)
+      (Real.sqrt
+        (β ^ 2 * ((1 - s) * q + s * v)))
+      hsq
+
+  unfold scalarOrderParameter localFieldExpectation
+  rw [if_pos hv.2]
+  unfold heatSemigroup
+  simp_rw [hpsi]
+  exact hconv.symm
+
+
+/--
+For `q < v`, rewrite the scalar order parameter in exactly the
+tilted-semigroup form produced by the GT endpoint derivative.
+-/
+private lemma flatness_scalarOrderParameter_upper_eq
+    (β h q s v : ℝ)
+    (hβ : 0 ≤ β)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : 0 ≤ q)
+    (hqv : q < v) :
+    scalarOrderParameter β h q s v =
+      standardGaussianExpectation (fun z =>
+        standardGaussianExpectation (fun z₀ =>
+          tiltedHeatSemigroup
+            (s * β ^ 2 * (v - q))
+            (fun y => Real.tanh y ^ 2)
+            (h + β * Real.sqrt ((1 - s) * q) * z +
+              gtIncrementScale β s 0 q * z₀))) := by
+  have hmax :
+      max (q - v) 0 = 0 :=
+    max_eq_right (sub_nonpos.mpr hqv.le)
+
+  have hpsi (x : ℝ) :
+      scalarPsiX β q s v x = Real.tanh x := by
+    unfold scalarPsiX
+    rw [hmax]
+    simp [standardGaussianExpectation]
+
+  let a : ℝ := gtIncrementScale β s q v
+
+  have ha0 : 0 ≤ a := by
+    dsimp [a]
+    exact gtIncrementScale_nonneg β s q v hβ
+
+  have hasq :
+      a ^ 2 = s * β ^ 2 * (v - q) := by
+    dsimp [a]
+    exact gtIncrementScale_sq_of_nonneg
+      β s q v hβ hs.1 hqv.le
+
+  have hprofile (x : ℝ) :
+      tiltedHeatSemigroup
+        (s * β ^ 2 * (v - q))
+        (fun y => Real.tanh y ^ 2) x =
+      flatnessUpperProfile a 0 x := by
+    symm
+    unfold flatnessUpperProfile
+    rw [gtHalfStepEndpoint_diagonal_eq_tilted
+      a 0 x ha0, hasq]
+
+  have hgood := flatnessUpperProfile_good a 0
+
+  have hfcont :
+      Continuous (fun x =>
+        tiltedHeatSemigroup
+          (s * β ^ 2 * (v - q))
+          (fun y => Real.tanh y ^ 2) x) := by
+    have heq :
+        (fun x =>
+          tiltedHeatSemigroup
+            (s * β ^ 2 * (v - q))
+            (fun y => Real.tanh y ^ 2) x) =
+        flatnessUpperProfile a 0 := by
+      funext x
+      exact hprofile x
+    rw [heq]
+    exact hgood.1
+
+  have hfbound :
+      ∀ x,
+        ‖tiltedHeatSemigroup
+          (s * β ^ 2 * (v - q))
+          (fun y => Real.tanh y ^ 2) x‖ ≤ 1 := by
+    intro x
+    rw [hprofile x]
+    exact hgood.2 x
+
+  have hsq0 :=
+    flatness_outer_variance_sq
+      β q s q hβ hs.1 hs.2 hq hq
+
+  have hcollapse :
+      (1 - s) * q + s * q = q := by
+    ring
+
+  have hsq :
+      (Real.sqrt (β ^ 2 * q)) ^ 2 =
+        (β * Real.sqrt ((1 - s) * q)) ^ 2 +
+          (gtIncrementScale β s 0 q) ^ 2 := by
+    simpa [hcollapse] using hsq0
+
+  have hconv :=
+    flatness_gaussian_convolution_bounded
+      (fun x =>
+        tiltedHeatSemigroup
+          (s * β ^ 2 * (v - q))
+          (fun y => Real.tanh y ^ 2) x)
+      hfcont hfbound
+      h
+      (β * Real.sqrt ((1 - s) * q))
+      (gtIncrementScale β s 0 q)
+      (Real.sqrt (β ^ 2 * q))
+      hsq
+
+  unfold scalarOrderParameter localFieldExpectation
+  rw [if_neg (not_le_of_gt hqv)]
+  simp_rw [hpsi]
+  unfold heatSemigroup
+  exact hconv.symm
+
+
+/--
+For every positive overlap `0 ≤ v ≤ 1`, the endpoint multiplier
+derivative of the GT functional is `g_s(v) - v`.
+-/
+lemma flatness_deriv_gtFunctional_zero_eq_scalarOrderParameter_sub
+    (β h q s v : ℝ)
+    (hβ : 0 ≤ β)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q ∈ Set.Ioo (0 : ℝ) 1)
+    (hv : v ∈ Set.Icc (0 : ℝ) 1) :
+    deriv (fun lam => gtFunctional β h q s lam v) 0 =
+      scalarOrderParameter β h q s v - v := by
+
+  by_cases hvq : v < q
+
+  · by_cases hvzero : v = 0
+
+    · subst v
+      rw [flatness_deriv_gtFunctional_zero_abs_v_eq_zero
+        β h q s 0 hq.1 abs_zero]
+      rw [flatness_scalarOrderParameter_lower_eq
+        β h q s 0 hβ hs hq.1.le
+        ⟨le_rfl, hq.1.le⟩]
+      simp [flatnessLowerProfile, gtIncrementScale,
+        standardGaussianExpectation]
+
+    · have hvpos : 0 < v :=
+        lt_of_le_of_ne hv.1 (Ne.symm hvzero)
+
+      rw [flatness_deriv_gtFunctional_zero_abs_v_lt_q
+        β h q s v
+        (by simpa [abs_of_nonneg hv.1] using hvpos)
+        (by simpa [abs_of_nonneg hv.1] using hvq)]
+
+      rw [flatness_scalarOrderParameter_lower_eq
+        β h q s v hβ hs hq.1.le
+        ⟨hv.1, hvq.le⟩]
+
+      simp [flatnessLowerProfile,
+        abs_of_nonneg hv.1, gtPathSign, hv.1]
+
+  · have hqv : q ≤ v := le_of_not_gt hvq
+
+    by_cases hvqeq : v = q
+
+    · subst v
+
+      rw [flatness_deriv_gtFunctional_zero_q_le_v_lt_one
+        β h q s q hβ hs.1 hq.1 le_rfl hq.2]
+
+      rw [flatness_scalarOrderParameter_lower_eq
+        β h q s q hβ hs hq.1.le
+        ⟨hq.1.le, le_rfl⟩]
+
+      simp [flatness_tiltedHeatSemigroup_zero,
+        flatnessLowerProfile_zero, gtIncrementScale]
+
+    · have hqvlt : q < v :=
+        lt_of_le_of_ne hqv (Ne.symm hvqeq)
+
+      by_cases hvone : v = 1
+
+      · subst v
+
+        rw [flatness_deriv_gtFunctional_zero_v_eq_one
+          β h q s hβ hs.1 hq.1 hq.2.le]
+
+        rw [flatness_scalarOrderParameter_upper_eq
+          β h q s 1 hβ hs hq.1.le hq.2]
+
+      · have hvlt1 : v < 1 :=
+          lt_of_le_of_ne hv.2 hvone
+
+        rw [flatness_deriv_gtFunctional_zero_q_le_v_lt_one
+          β h q s v hβ hs.1 hq.1 hqv hvlt1]
+
+        rw [flatness_scalarOrderParameter_upper_eq
+          β h q s v hβ hs hq.1.le hqvlt]
+
+/--
+For the canonical replica-symmetric fixed point and every `0 ≤ v ≤ 1`,
+`∂_lam GT_s(0,v) = g_s(v) - v`.
+-/
+lemma flatness_deriv_gtFunctional_zero_eq_g_sub
+    (β h s v : ℝ)
+    (hβ : 0 < β) (hh : 0 < h)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hv : v ∈ Set.Icc (0 : ℝ) 1) :
+    deriv
+        (fun lam =>
+          gtFunctional β h (rsQ β h) s lam v) 0 =
+      scalarOrderParameterCorrect β h s v - v := by
+  unfold scalarOrderParameterCorrect
+  exact
+    flatness_deriv_gtFunctional_zero_eq_scalarOrderParameter_sub
+      β h (rsQ β h) s v
+      hβ.le hs
+      ⟨rsQ_pos hβ hh, rsQ_lt_one hβ hh⟩
+      hv
 
 /-- At an interior replica-symmetric fixed point, the partial derivative of
 the GT functional in the multiplier vanishes when the overlap is that fixed
