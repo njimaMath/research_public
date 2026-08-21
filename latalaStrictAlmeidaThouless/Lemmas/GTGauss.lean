@@ -1,157 +1,2321 @@
-import Lemmas.Psi_continuity
 import Lemmas.ATDefs
-import Lemmas.GTGauss
-import Lemmas.interpolatedAT
-import Lemmas.Propertyofg
-import Lemmas.Price
-import Mathlib.MeasureTheory.Group.IntegralConvolution
+import Mathlib.Analysis.Calculus.ParametricIntegral
+
+/-!
+# Gaussian estimates for the canonical GT recursion
+
+This file uses the GT objects from `Lemmas.ATDefs`. Generic analytic transforms
+are isolated in `GTFrame`; all GT-facing statements use the canonical terminal,
+semigroup solution, Gaussian expectation, and functional.
+-/
 
 open MeasureTheory ProbabilityTheory Set
 
 noncomputable section
 
-namespace SpinGlass.AT
-
 /-!
-## Branchwise formulas for the GT functional
+# Gaussian-type recursion framework and terminal function
 
-These formulas mirror the four overlap regimes established in `GTGauss`.
+This file develops the analytic machinery for Gaussian-type recursion steps and
+instantiates it for the standard Gaussian measure and the two-replica terminal function.
+
+The basic object is a family of functions
+`F : P → ℝ → (ℝ × ℝ) → ℝ`, thought of as `F p λ x`, where `p` ranges over a parameter
+space, `λ` is a distinguished real parameter that we want to differentiate in, and
+`x` is a two-dimensional 'spatial' variable.
+
+A family is *good* (`GoodFam F D`) when
+
+* `F` and `D` are jointly continuous,
+* `D` is the `λ`-derivative of `F`,
+* `F p λ ·` is `1`-Lipschitz in each spatial coordinate,
+* `|D| ≤ 1`.
+
+The two 'recursion steps'
+
+* `step0 μ α β F p λ x = ∫ z, F p λ (x.1 + α p * z, x.2 + β p * z) ∂μ`
+* `stepM μ m α β F p λ x = (1/m) * log (∫ z, exp (m * F p λ (x.1 + α p * z, x.2 + β p * z)) ∂μ)`
+
+both preserve goodness, provided `μ` is a probability measure with all exponential
+moments.
+
+Finally, the standard Gaussian measure is shown to have all exponential moments,
+and the terminal function `fLbase`, together with its `lam`-derivative `fLbaseD`,
+is shown to form a good family.
 -/
 
-/-! ### The degenerate smart-path endpoint `s = 0` -/
+open MeasureTheory ProbabilityTheory Set Filter
+open scoped Topology
 
-/-- When `s = 0`, every covariance increment in the finite GT recursion
-vanishes, so the semigroup solution is just the terminal function. -/
-private lemma flatness_gtSemigroupSolution_s_zero
-    (β q lam v u x₁ x₂ : ℝ) :
-    gtSemigroupSolution β q 0 lam v u x₁ x₂ =
-      gtTerminal lam x₁ x₂ := by
-  simp [gtSemigroupSolution, gtIncrementScale,
-    gtDiagonalStep, gtRankOneStep, standardGaussianExpectation]
+noncomputable section
 
-/-- At `s = 0` and `lam = 0`, the GT functional is exactly twice the
-replica-symmetric path value. -/
-lemma flatness_gtFunctional_s_zero_lam_zero
-    (β h q v : ℝ) :
-    gtFunctional β h q 0 0 v =
-      2 * rsPathValue β h q 0 := by
-  rw [gtFunctional]
-  simp only [sub_zero, one_mul, zero_mul]
-  rw [show gtCorrection β q 0 = 0 by simp [gtCorrection]]
-  simp only [sub_zero]
+namespace GTFrame
 
-  simp_rw [flatness_gtSemigroupSolution_s_zero]
-  simp_rw [gtTerminal_zero]
+/-! ### Measures with exponential moments -/
 
-  rw [rsPathValue]
-  simp only [zero_mul, zero_div, add_zero]
+/-- A measure on `ℝ` such that `z ↦ exp (c * |z|)` is integrable for every `c`. -/
+def ExpMoments (μ : Measure ℝ) : Prop :=
+  ∀ c : ℝ, Integrable (fun z : ℝ => Real.exp (c * |z|)) μ
 
-  have hE :
-      standardGaussianExpectation (fun z =>
-        Real.log (Real.cosh
-          (h + β * Real.sqrt q * z)) +
-        Real.log (Real.cosh
-          (h + β * Real.sqrt q * z))) =
-      2 * standardGaussianExpectation (fun z =>
-        Real.log (Real.cosh
-          (h + β * Real.sqrt q * z))) := by
-    unfold standardGaussianExpectation
-    rw [show
-      (fun z : ℝ =>
-        Real.log (Real.cosh
-          (h + β * Real.sqrt q * z)) +
-        Real.log (Real.cosh
-          (h + β * Real.sqrt q * z))) =
-      (fun z : ℝ =>
-        2 * Real.log (Real.cosh
-          (h + β * Real.sqrt q * z))) by
-      funext z
-      ring]
-    rw [integral_const_mul]
+variable {μ : Measure ℝ}
 
-  rw [hE]
+lemma ExpMoments.integrable_abs (hμ : ExpMoments μ) :
+    Integrable (fun z : ℝ => |z|) μ := by
+  refine (hμ 1).mono (by fun_prop) ?_
+  filter_upwards with z
+  have h1 : |z| ≤ Real.exp (1 * |z|) := by
+    rw [one_mul]
+    linarith [Real.add_one_le_exp |z|]
+  simpa [Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _), abs_abs] using h1
+
+lemma ExpMoments.integrable_linear (hμ : ExpMoments μ) [IsFiniteMeasure μ] (M A : ℝ) :
+    Integrable (fun z : ℝ => M + A * |z|) μ :=
+  (integrable_const M).add (hμ.integrable_abs.const_mul A)
+
+lemma ExpMoments.integrable_of_bound (hμ : ExpMoments μ) [IsFiniteMeasure μ] {g : ℝ → ℝ}
+    (hg : AEStronglyMeasurable g μ) {M A : ℝ} (h : ∀ z, |g z| ≤ M + A * |z|) :
+    Integrable g μ := by
+  refine (hμ.integrable_linear M A).mono hg ?_
+  filter_upwards with z
+  have h0 : (0:ℝ) ≤ M + A * |z| := le_trans (abs_nonneg _) (h z)
+  simpa [Real.norm_eq_abs, abs_of_nonneg h0] using h z
+
+lemma ExpMoments.integrable_exp_linear (hμ : ExpMoments μ) (c M A : ℝ) :
+    Integrable (fun z : ℝ => Real.exp (c * (M + A * |z|))) μ := by
+  have := (hμ (c * A)).const_mul (Real.exp (c * M))
+  refine this.congr ?_
+  filter_upwards with z
+  rw [← Real.exp_add]
+  ring_nf
+
+lemma ExpMoments.integrable_of_exp_bound (hμ : ExpMoments μ) {g : ℝ → ℝ}
+    (hg : AEStronglyMeasurable g μ) {c M A : ℝ}
+    (h : ∀ z, |g z| ≤ Real.exp (c * (M + A * |z|))) :
+    Integrable g μ := by
+  refine (hμ.integrable_exp_linear c M A).mono hg ?_
+  filter_upwards with z
+  simpa [Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _)] using h z
+
+/-! ### An elementary inequality for `exp` -/
+
+lemma abs_exp_sub_exp_le (u v C : ℝ) (hu : u ≤ C) (hv : v ≤ C) :
+    |Real.exp u - Real.exp v| ≤ Real.exp C * |u - v| := by
+  wlog h : v ≤ u generalizing u v
+  · rw [abs_sub_comm, abs_sub_comm u v]
+    exact this v u hv hu (le_of_not_ge h)
+  have hexp : Real.exp u - Real.exp v ≤ Real.exp C * (u - v) := by
+    have h1 : Real.exp (v - u) ≥ 1 + (v - u) := by
+      linarith [Real.add_one_le_exp (v - u)]
+    have h2 : Real.exp v ≥ Real.exp u * (1 + (v - u)) := by
+      have : Real.exp v = Real.exp u * Real.exp (v - u) := by
+        rw [← Real.exp_add]; ring_nf
+      rw [this]
+      exact mul_le_mul_of_nonneg_left h1 (Real.exp_nonneg _)
+    have h3 : Real.exp u - Real.exp v ≤ Real.exp u * (u - v) := by nlinarith
+    have h4 : Real.exp u ≤ Real.exp C := Real.exp_le_exp.2 hu
+    nlinarith [sub_nonneg.2 h]
+  have h5 : 0 ≤ Real.exp u - Real.exp v := by
+    simpa using Real.exp_le_exp.2 h
+  rw [abs_of_nonneg h5, abs_of_nonneg (sub_nonneg.2 h)]
+  exact hexp
+
+/-! ### Good families -/
+
+variable {P : Type*} [TopologicalSpace P]
+
+/--
+A *good family* is a pair `(F, D)` of functions of a parameter `p : P`, a distinguished
+real parameter `l` (playing the role of `λ`) and a two-dimensional spatial variable `x`,
+such that `F` and `D` are jointly continuous, `D` is the `l`-derivative of `F`, the map
+`x ↦ F p l x` is `1`-Lipschitz in each coordinate, and `|D| ≤ 1`.
+-/
+structure GoodFam (F D : P → ℝ → ℝ × ℝ → ℝ) : Prop where
+  contF : Continuous fun w : P × ℝ × (ℝ × ℝ) => F w.1 w.2.1 w.2.2
+  contD : Continuous fun w : P × ℝ × (ℝ × ℝ) => D w.1 w.2.1 w.2.2
+  hasDeriv : ∀ p l x, HasDerivAt (fun l' => F p l' x) (D p l x) l
+  lipx : ∀ p l x y, |F p l x - F p l y| ≤ |x.1 - y.1| + |x.2 - y.2|
+  bddD : ∀ p l x, |D p l x| ≤ 1
+
+namespace GoodFam
+
+variable {F D : P → ℝ → ℝ × ℝ → ℝ}
+
+lemma contF_pt (h : GoodFam F D) (p : P) (l : ℝ) : Continuous fun x : ℝ × ℝ => F p l x := by
+  have hc : Continuous fun x : ℝ × ℝ => ((p, l, x) : P × ℝ × (ℝ × ℝ)) := by fun_prop
+  exact h.contF.comp hc
+
+lemma contD_pt (h : GoodFam F D) (p : P) (l : ℝ) : Continuous fun x : ℝ × ℝ => D p l x := by
+  have hc : Continuous fun x : ℝ × ℝ => ((p, l, x) : P × ℝ × (ℝ × ℝ)) := by fun_prop
+  exact h.contD.comp hc
+
+/-- `F` is `1`-Lipschitz in the distinguished parameter `l`. -/
+lemma lipl (h : GoodFam F D) (p : P) (l l' : ℝ) (x : ℝ × ℝ) :
+    |F p l x - F p l' x| ≤ |l - l'| := by
+  have := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun t => F p t x) (f' := fun t => D p t x) (s := Set.univ) (C := 1)
+    (fun t _ => (h.hasDeriv p t x).hasDerivWithinAt)
+    (fun t _ => by simpa using h.bddD p t x) convex_univ (Set.mem_univ l') (Set.mem_univ l)
+  simpa [Real.norm_eq_abs] using this
+
+/-- The shifted integrand is continuous in `z`. -/
+lemma cont_shift (h : GoodFam F D) (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Continuous fun z : ℝ => F p l (x.1 + a * z, x.2 + b * z) := by
+  have hc : Continuous fun z : ℝ => ((p, l, (x.1 + a * z, x.2 + b * z)) : P × ℝ × (ℝ × ℝ)) := by
+    fun_prop
+  exact h.contF.comp hc
+
+lemma cont_shiftD (h : GoodFam F D) (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Continuous fun z : ℝ => D p l (x.1 + a * z, x.2 + b * z) := by
+  have hc : Continuous fun z : ℝ => ((p, l, (x.1 + a * z, x.2 + b * z)) : P × ℝ × (ℝ × ℝ)) := by
+    fun_prop
+  exact h.contD.comp hc
+
+/-- A linear-growth bound for the shifted integrand. -/
+lemma bound_shift (h : GoodFam F D) (p : P) (l a b : ℝ) (x : ℝ × ℝ) (z : ℝ) :
+    |F p l (x.1 + a * z, x.2 + b * z)| ≤ |F p l x| + (|a| + |b|) * |z| := by
+  have key := h.lipx p l (x.1 + a * z, x.2 + b * z) x
+  have e1 : ((x.1 + a * z, x.2 + b * z) : ℝ × ℝ).1 - x.1 = a * z := by simp
+  have e2 : ((x.1 + a * z, x.2 + b * z) : ℝ × ℝ).2 - x.2 = b * z := by simp
+  rw [e1, e2] at key
+  have h1 : |a * z| + |b * z| = (|a| + |b|) * |z| := by
+    rw [abs_mul, abs_mul]; ring
+  have h2 := abs_sub_abs_le_abs_sub (F p l (x.1 + a * z, x.2 + b * z)) (F p l x)
+  linarith
+
+/-- A linear-growth bound, uniform for `l` in a unit ball around `l₀`. -/
+lemma bound_shift_unif (h : GoodFam F D) (p : P) (l₀ l a b : ℝ) (hl : |l - l₀| ≤ 1)
+    (x : ℝ × ℝ) (z : ℝ) :
+    |F p l (x.1 + a * z, x.2 + b * z)| ≤ (|F p l₀ x| + 1) + (|a| + |b|) * |z| := by
+  have h1 := h.bound_shift p l a b x z
+  have h2 : |F p l x| ≤ |F p l₀ x| + 1 := by
+    have := h.lipl p l l₀ x
+    have := abs_sub_abs_le_abs_sub (F p l x) (F p l₀ x)
+    linarith
+  linarith
+
+end GoodFam
+
+/-! ### Integrability of the shifted integrands -/
+
+variable {F D : P → ℝ → ℝ × ℝ → ℝ}
+
+lemma GoodFam.integrable_shift (h : GoodFam F D) (hμ : ExpMoments μ) [IsFiniteMeasure μ]
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Integrable (fun z => F p l (x.1 + a * z, x.2 + b * z)) μ :=
+  hμ.integrable_of_bound (h.cont_shift p l a b x).aestronglyMeasurable (h.bound_shift p l a b x)
+
+lemma GoodFam.integrable_shiftD (h : GoodFam F D) [IsFiniteMeasure μ]
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Integrable (fun z => D p l (x.1 + a * z, x.2 + b * z)) μ := by
+  refine Integrable.mono' (integrable_const (1 : ℝ))
+    (h.cont_shiftD p l a b x).aestronglyMeasurable ?_
+  filter_upwards with z
+  simpa [Real.norm_eq_abs] using h.bddD p l _
+
+/-! ### The `m = 0` step -/
+
+/-- One Gaussian averaging step, corresponding to `m = 0` in the recursion. -/
+def step0 (μ : Measure ℝ) (α β : P → ℝ) (G : P → ℝ → ℝ × ℝ → ℝ) : P → ℝ → ℝ × ℝ → ℝ :=
+  fun p l x => ∫ z, G p l (x.1 + α p * z, x.2 + β p * z) ∂μ
+
+omit [TopologicalSpace P] in
+lemma step0_apply (μ : Measure ℝ) (α β : P → ℝ) (G : P → ℝ → ℝ × ℝ → ℝ)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    step0 μ α β G p l x = ∫ z, G p l (x.1 + α p * z, x.2 + β p * z) ∂μ := rfl
+
+/-- A local domination hypothesis used to prove continuity of `step0`. -/
+def LocDom (α β : P → ℝ) (G : P → ℝ → ℝ × ℝ → ℝ) : Prop :=
+  ∀ w₀ : P × ℝ × (ℝ × ℝ), ∃ M A : ℝ, ∀ᶠ w in 𝓝 w₀, ∀ z : ℝ,
+    |G w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)| ≤ M + A * |z|
+
+lemma locDom_of_lipx {α β : P → ℝ} (hα : Continuous α) (hβ : Continuous β)
+    (h : GoodFam F D) : LocDom α β F := by
+  intro w₀
+  refine ⟨|F w₀.1 w₀.2.1 w₀.2.2| + 1, |α w₀.1| + |β w₀.1| + 2, ?_⟩
+  have hc1 : ContinuousAt (fun w : P × ℝ × (ℝ × ℝ) => |F w.1 w.2.1 w.2.2|) w₀ :=
+    (continuous_abs.comp h.contF).continuousAt
+  have hc2 : ContinuousAt (fun w : P × ℝ × (ℝ × ℝ) => |α w.1|) w₀ :=
+    (continuous_abs.comp (hα.comp continuous_fst)).continuousAt
+  have hc3 : ContinuousAt (fun w : P × ℝ × (ℝ × ℝ) => |β w.1|) w₀ :=
+    (continuous_abs.comp (hβ.comp continuous_fst)).continuousAt
+  have e1 : ∀ᶠ w in 𝓝 w₀, |F w.1 w.2.1 w.2.2| < |F w₀.1 w₀.2.1 w₀.2.2| + 1 :=
+    Filter.eventually_iff.2 (hc1 (Iio_mem_nhds (by linarith)))
+  have e2 : ∀ᶠ w in 𝓝 w₀, |α w.1| < |α w₀.1| + 1 :=
+    Filter.eventually_iff.2 (hc2 (Iio_mem_nhds (by linarith)))
+  have e3 : ∀ᶠ w in 𝓝 w₀, |β w.1| < |β w₀.1| + 1 :=
+    Filter.eventually_iff.2 (hc3 (Iio_mem_nhds (by linarith)))
+  filter_upwards [e1, e2, e3] with w hw1 hw2 hw3 z
+  have hb := h.bound_shift w.1 w.2.1 (α w.1) (β w.1) w.2.2 z
+  have hz : (0:ℝ) ≤ |z| := abs_nonneg z
+  nlinarith [hb]
+
+lemma locDom_of_bddD {α β : P → ℝ} (h : GoodFam F D) : LocDom α β D := by
+  intro w₀
+  refine ⟨1, 0, ?_⟩
+  filter_upwards with w z
+  simpa using h.bddD w.1 w.2.1 _
+
+lemma continuous_step0 (hμ : ExpMoments μ) [IsProbabilityMeasure μ] [FirstCountableTopology P]
+    {G : P → ℝ → ℝ × ℝ → ℝ} {α β : P → ℝ}
+    (hG : Continuous fun w : P × ℝ × (ℝ × ℝ) => G w.1 w.2.1 w.2.2)
+    (hα : Continuous α) (hβ : Continuous β) (hbd : LocDom α β G) :
+    Continuous fun w : P × ℝ × (ℝ × ℝ) => step0 μ α β G w.1 w.2.1 w.2.2 := by
+  rw [continuous_iff_continuousAt]
+  intro w₀
+  obtain ⟨M, A, hU⟩ := hbd w₀
+  have hshift : ∀ z : ℝ, Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+      G w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z) := by
+    intro z
+    have hc : Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+        ((w.1, w.2.1, (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) : P × ℝ × (ℝ × ℝ)) := by
+      fun_prop
+    exact hG.comp hc
+  refine continuousAt_of_dominated (bound := fun z => M + A * |z|) ?_ ?_
+    (hμ.integrable_linear M A) ?_
+  · filter_upwards with w
+    exact ((hG.comp (by fun_prop : Continuous fun z : ℝ =>
+      ((w.1, w.2.1, (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) : P × ℝ × (ℝ × ℝ))))).aestronglyMeasurable
+  · filter_upwards [hU] with w hw
+    filter_upwards with z
+    simpa [Real.norm_eq_abs] using hw z
+  · filter_upwards with z
+    exact (hshift z).continuousAt
+
+
+lemma hasDeriv_step0 (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    {α β : P → ℝ} (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => step0 μ α β F p l' x) (step0 μ α β D p l x) l := by
+  have hlip : ∀ᵐ z ∂μ, LipschitzOnWith (Real.nnabs 1)
+      (fun l' => F p l' (x.1 + α p * z, x.2 + β p * z)) (Metric.ball l 1) := by
+    filter_upwards with z
+    refine LipschitzOnWith.of_dist_le_mul ?_
+    intro u _ v _
+    have := h.lipl p u v (x.1 + α p * z, x.2 + β p * z)
+    simpa [Real.dist_eq] using this
+  have key := hasDerivAt_integral_of_dominated_loc_of_lip
+    (F := fun l' z => F p l' (x.1 + α p * z, x.2 + β p * z))
+    (F' := fun z => D p l (x.1 + α p * z, x.2 + β p * z))
+    (x₀ := l) (bound := fun _ : ℝ => (1:ℝ)) (s := Metric.ball l 1)
+    (Metric.ball_mem_nhds l one_pos)
+    (Filter.Eventually.of_forall fun l' => (h.cont_shift p l' (α p) (β p) x).aestronglyMeasurable)
+    (h.integrable_shift hμ p l (α p) (β p) x)
+    (h.cont_shiftD p l (α p) (β p) x).aestronglyMeasurable
+    hlip (integrable_const 1)
+    (Filter.Eventually.of_forall fun z => h.hasDeriv p l (x.1 + α p * z, x.2 + β p * z))
+  exact key.2
+
+lemma lipx_step0 (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    {α β : P → ℝ} (p : P) (l : ℝ) (x y : ℝ × ℝ) :
+    |step0 μ α β F p l x - step0 μ α β F p l y| ≤ |x.1 - y.1| + |x.2 - y.2| := by
+  have hi1 := h.integrable_shift hμ p l (α p) (β p) x
+  have hi2 := h.integrable_shift hμ p l (α p) (β p) y
+  have hpt : ∀ z : ℝ,
+      |F p l (x.1 + α p * z, x.2 + β p * z) - F p l (y.1 + α p * z, y.2 + β p * z)|
+        ≤ |x.1 - y.1| + |x.2 - y.2| := by
+    intro z
+    have := h.lipx p l (x.1 + α p * z, x.2 + β p * z) (y.1 + α p * z, y.2 + β p * z)
+    have e1 : x.1 + α p * z - (y.1 + α p * z) = x.1 - y.1 := by ring
+    have e2 : x.2 + β p * z - (y.2 + β p * z) = x.2 - y.2 := by ring
+    simpa [e1, e2] using this
+  simp only [step0]
+  rw [← integral_sub hi1 hi2]
+  calc |∫ z, (F p l (x.1 + α p * z, x.2 + β p * z) - F p l (y.1 + α p * z, y.2 + β p * z)) ∂μ|
+      ≤ ∫ z, |F p l (x.1 + α p * z, x.2 + β p * z) - F p l (y.1 + α p * z, y.2 + β p * z)| ∂μ := by
+        simpa [Real.norm_eq_abs] using norm_integral_le_integral_norm
+          (μ := μ) (fun z => F p l (x.1 + α p * z, x.2 + β p * z)
+            - F p l (y.1 + α p * z, y.2 + β p * z))
+    _ ≤ ∫ _z : ℝ, (|x.1 - y.1| + |x.2 - y.2|) ∂μ :=
+        integral_mono (hi1.sub hi2).abs (integrable_const _) hpt
+    _ = |x.1 - y.1| + |x.2 - y.2| := by simp
+
+lemma bddD_step0 [IsProbabilityMeasure μ] (h : GoodFam F D)
+    {α β : P → ℝ} (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    |step0 μ α β D p l x| ≤ 1 := by
+  have hi := h.integrable_shiftD (μ := μ) p l (α p) (β p) x
+  simp only [step0]
+  calc |∫ z, D p l (x.1 + α p * z, x.2 + β p * z) ∂μ|
+      ≤ ∫ z, |D p l (x.1 + α p * z, x.2 + β p * z)| ∂μ := by
+        simpa [Real.norm_eq_abs] using norm_integral_le_integral_norm
+          (μ := μ) (fun z => D p l (x.1 + α p * z, x.2 + β p * z))
+    _ ≤ ∫ _z : ℝ, (1:ℝ) ∂μ :=
+        integral_mono hi.abs (integrable_const _) (fun z => h.bddD p l _)
+    _ = 1 := by simp
+
+/-- The `m = 0` step preserves goodness. -/
+theorem step0_good (hμ : ExpMoments μ) [IsProbabilityMeasure μ] [FirstCountableTopology P]
+    (h : GoodFam F D) {α β : P → ℝ} (hα : Continuous α) (hβ : Continuous β) :
+    GoodFam (step0 μ α β F) (step0 μ α β D) where
+  contF := continuous_step0 hμ h.contF hα hβ (locDom_of_lipx hα hβ h)
+  contD := continuous_step0 hμ h.contD hα hβ (locDom_of_bddD h)
+  hasDeriv := fun p l x => hasDeriv_step0 hμ h p l x
+  lipx := fun p l x y => lipx_step0 hμ h p l x y
+  bddD := fun p l x => bddD_step0 h p l x
+
+
+/-! ### A general continuity criterion for parametric integrals -/
+
+lemma continuous_integral_of_locdom {X : Type*} [TopologicalSpace X] [FirstCountableTopology X]
+    {g : X → ℝ → ℝ} (hg : ∀ w, Continuous (g w)) (hgw : ∀ z, Continuous fun w => g w z)
+    (hdom : ∀ w₀ : X, ∃ bound : ℝ → ℝ, Integrable bound μ ∧
+      ∀ᶠ w in 𝓝 w₀, ∀ z, |g w z| ≤ bound z) :
+    Continuous fun w => ∫ z, g w z ∂μ := by
+  rw [continuous_iff_continuousAt]
+  intro w₀
+  obtain ⟨bound, hbi, hb⟩ := hdom w₀
+  refine continuousAt_of_dominated
+    (Filter.Eventually.of_forall fun w => (hg w).aestronglyMeasurable) ?_ hbi ?_
+  · filter_upwards [hb] with w hw
+    filter_upwards with z
+    simpa [Real.norm_eq_abs] using hw z
+  · filter_upwards with z
+    exact (hgw z).continuousAt
+
+/-! ### The `m > 0` step -/
+
+/-- One log-exp Gaussian step with parameter `m`. -/
+def stepM (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ) (G : P → ℝ → ℝ × ℝ → ℝ) :
+    P → ℝ → ℝ × ℝ → ℝ :=
+  fun p l x => (1 / m) *
+    Real.log (∫ z, Real.exp (m * G p l (x.1 + α p * z, x.2 + β p * z)) ∂μ)
+
+/-- The `l`-derivative of `stepM`. -/
+def stepMD (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ) (G E : P → ℝ → ℝ × ℝ → ℝ) :
+    P → ℝ → ℝ × ℝ → ℝ :=
+  fun p l x =>
+    (∫ z, E p l (x.1 + α p * z, x.2 + β p * z) *
+        Real.exp (m * G p l (x.1 + α p * z, x.2 + β p * z)) ∂μ) /
+    (∫ z, Real.exp (m * G p l (x.1 + α p * z, x.2 + β p * z)) ∂μ)
+
+omit [TopologicalSpace P] in
+lemma stepM_apply (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ) (G : P → ℝ → ℝ × ℝ → ℝ)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    stepM μ m α β G p l x =
+      (1 / m) * Real.log (∫ z, Real.exp (m * G p l (x.1 + α p * z, x.2 + β p * z)) ∂μ) := rfl
+
+section StepM
+
+variable {m : ℝ}
+
+lemma cont_expShift (h : GoodFam F D) (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Continuous fun z : ℝ => Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) :=
+  Real.continuous_exp.comp (continuous_const.mul (h.cont_shift p l a b x))
+
+lemma integrable_expShift (hμ : ExpMoments μ) (h : GoodFam F D) (hm : 0 ≤ m)
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Integrable (fun z => Real.exp (m * F p l (x.1 + a * z, x.2 + b * z))) μ := by
+  refine hμ.integrable_of_exp_bound (c := m) (M := |F p l x|) (A := |a| + |b|)
+    (cont_expShift h p l a b x).aestronglyMeasurable ?_
+  intro z
+  rw [abs_of_nonneg (Real.exp_nonneg _)]
+  refine Real.exp_le_exp.2 ?_
+  have h1 := h.bound_shift p l a b x z
+  have h2 := le_abs_self (F p l (x.1 + a * z, x.2 + b * z))
+  nlinarith
+
+lemma integrable_DexpShift (hμ : ExpMoments μ) (h : GoodFam F D) (hm : 0 ≤ m)
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Integrable (fun z => D p l (x.1 + a * z, x.2 + b * z) *
+      Real.exp (m * F p l (x.1 + a * z, x.2 + b * z))) μ := by
+  refine hμ.integrable_of_exp_bound (c := m) (M := |F p l x|) (A := |a| + |b|)
+    (((h.cont_shiftD p l a b x).mul (cont_expShift h p l a b x))).aestronglyMeasurable ?_
+  intro z
+  rw [abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+  have hD := h.bddD p l (x.1 + a * z, x.2 + b * z)
+  have hle : Real.exp (m * F p l (x.1 + a * z, x.2 + b * z))
+      ≤ Real.exp (m * (|F p l x| + (|a| + |b|) * |z|)) := by
+    refine Real.exp_le_exp.2 ?_
+    have h1 := h.bound_shift p l a b x z
+    have h2 := le_abs_self (F p l (x.1 + a * z, x.2 + b * z))
+    nlinarith
+  nlinarith [Real.exp_pos (m * F p l (x.1 + a * z, x.2 + b * z)),
+    Real.exp_pos (m * (|F p l x| + (|a| + |b|) * |z|)), abs_nonneg (D p l (x.1 + a*z, x.2+b*z))]
+
+lemma integral_expShift_pos (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    (hm : 0 ≤ m) (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    0 < ∫ z, Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) ∂μ := by
+  rw [integral_pos_iff_support_of_nonneg (fun z => (Real.exp_pos _).le)
+    (integrable_expShift hμ h hm p l a b x)]
+  have hsupp : (Function.support fun z => Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)))
+      = Set.univ := by
+    ext z; simp [Function.mem_support, (Real.exp_pos _).ne']
+  rw [hsupp]
+  simp
+
+end StepM
+
+
+section StepM2
+
+variable {m : ℝ} {α β : P → ℝ}
+
+lemma continuous_intExp (hμ : ExpMoments μ) [FirstCountableTopology P]
+    (h : GoodFam F D) (hm : 0 ≤ m) (hα : Continuous α) (hβ : Continuous β) :
+    Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+      ∫ z, Real.exp (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) ∂μ := by
+  refine continuous_integral_of_locdom
+    (fun w => cont_expShift h w.1 w.2.1 (α w.1) (β w.1) w.2.2) (fun z => ?_) (fun w₀ => ?_)
+  · have hc : Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+        ((w.1, w.2.1, (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) : P × ℝ × (ℝ × ℝ)) := by
+      fun_prop
+    exact Real.continuous_exp.comp (continuous_const.mul (h.contF.comp hc))
+  · obtain ⟨M, A, hU⟩ := locDom_of_lipx hα hβ h w₀
+    refine ⟨fun z => Real.exp (m * (M + A * |z|)), hμ.integrable_exp_linear m M A, ?_⟩
+    filter_upwards [hU] with w hw z
+    rw [abs_of_nonneg (Real.exp_nonneg _)]
+    refine Real.exp_le_exp.2 ?_
+    have h1 := hw z
+    have h2 := le_abs_self (F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))
+    nlinarith
+
+lemma continuous_intDexp (hμ : ExpMoments μ) [FirstCountableTopology P]
+    (h : GoodFam F D) (hm : 0 ≤ m) (hα : Continuous α) (hβ : Continuous β) :
+    Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+      ∫ z, D w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z) *
+        Real.exp (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) ∂μ := by
+  refine continuous_integral_of_locdom
+    (fun w => (h.cont_shiftD w.1 w.2.1 (α w.1) (β w.1) w.2.2).mul
+      (cont_expShift h w.1 w.2.1 (α w.1) (β w.1) w.2.2)) (fun z => ?_) (fun w₀ => ?_)
+  · have hc : Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+        ((w.1, w.2.1, (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) : P × ℝ × (ℝ × ℝ)) := by
+      fun_prop
+    exact (h.contD.comp hc).mul (Real.continuous_exp.comp (continuous_const.mul (h.contF.comp hc)))
+  · obtain ⟨M, A, hU⟩ := locDom_of_lipx hα hβ h w₀
+    refine ⟨fun z => Real.exp (m * (M + A * |z|)), hμ.integrable_exp_linear m M A, ?_⟩
+    filter_upwards [hU] with w hw z
+    rw [abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+    have hD := h.bddD w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)
+    have hle : Real.exp (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))
+        ≤ Real.exp (m * (M + A * |z|)) := by
+      refine Real.exp_le_exp.2 ?_
+      have h1 := hw z
+      have h2 := le_abs_self (F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))
+      nlinarith
+    nlinarith [Real.exp_pos (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)),
+      Real.exp_pos (m * (M + A * |z|)),
+      abs_nonneg (D w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))]
+
+lemma hasDeriv_intExp (hμ : ExpMoments μ) (h : GoodFam F D) (hm : 0 < m)
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => ∫ z, Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z)) ∂μ)
+      (m * ∫ z, D p l (x.1 + a * z, x.2 + b * z) *
+        Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) ∂μ) l := by
+  set M := |F p l x| + 1 with hM
+  set A := |a| + |b| with hA
+  have hlip : ∀ᵐ z ∂μ, LipschitzOnWith (Real.nnabs (m * Real.exp (m * (M + A * |z|))))
+      (fun l' => Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z))) (Metric.ball l 1) := by
+    filter_upwards with z
+    refine LipschitzOnWith.of_dist_le_mul ?_
+    intro u hu v hv
+    have hu1 : |u - l| ≤ 1 := by
+      have := Metric.mem_ball.1 hu; rw [Real.dist_eq] at this; linarith
+    have hv1 : |v - l| ≤ 1 := by
+      have := Metric.mem_ball.1 hv; rw [Real.dist_eq] at this; linarith
+    have hbu : m * F p u (x.1 + a * z, x.2 + b * z) ≤ m * (M + A * |z|) := by
+      have h1 := h.bound_shift_unif p l u a b hu1 x z
+      have h2 := le_abs_self (F p u (x.1 + a * z, x.2 + b * z))
+      nlinarith
+    have hbv : m * F p v (x.1 + a * z, x.2 + b * z) ≤ m * (M + A * |z|) := by
+      have h1 := h.bound_shift_unif p l v a b hv1 x z
+      have h2 := le_abs_self (F p v (x.1 + a * z, x.2 + b * z))
+      nlinarith
+    have hE := abs_exp_sub_exp_le _ _ (m * (M + A * |z|)) hbu hbv
+    have hdiff : |m * F p u (x.1 + a * z, x.2 + b * z) - m * F p v (x.1 + a * z, x.2 + b * z)|
+        ≤ m * |u - v| := by
+      have := h.lipl p u v (x.1 + a * z, x.2 + b * z)
+      rw [← mul_sub, abs_mul, abs_of_pos hm]
+      exact mul_le_mul_of_nonneg_left this hm.le
+    have hcoe : ((Real.nnabs (m * Real.exp (m * (M + A * |z|))) : NNReal) : ℝ)
+        = m * Real.exp (m * (M + A * |z|)) := by
+      rw [Real.coe_nnabs, abs_of_nonneg (by positivity)]
+    rw [Real.dist_eq, Real.dist_eq, hcoe]
+    calc |Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+            - Real.exp (m * F p v (x.1 + a * z, x.2 + b * z))|
+        ≤ Real.exp (m * (M + A * |z|)) *
+            |m * F p u (x.1 + a * z, x.2 + b * z) - m * F p v (x.1 + a * z, x.2 + b * z)| := hE
+      _ ≤ Real.exp (m * (M + A * |z|)) * (m * |u - v|) :=
+          mul_le_mul_of_nonneg_left hdiff (Real.exp_nonneg _)
+      _ = m * Real.exp (m * (M + A * |z|)) * |u - v| := by ring
+  have key := hasDerivAt_integral_of_dominated_loc_of_lip
+    (F := fun l' z => Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z)))
+    (F' := fun z => Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) *
+      (m * D p l (x.1 + a * z, x.2 + b * z)))
+    (x₀ := l) (bound := fun z => m * Real.exp (m * (M + A * |z|))) (s := Metric.ball l 1)
+    (Metric.ball_mem_nhds l one_pos)
+    (Filter.Eventually.of_forall fun l' => (cont_expShift h p l' a b x).aestronglyMeasurable)
+    (integrable_expShift hμ h hm.le p l a b x)
+    (((cont_expShift h p l a b x).mul
+      (continuous_const.mul (h.cont_shiftD p l a b x))).aestronglyMeasurable)
+    hlip ((hμ.integrable_exp_linear m M A).const_mul m)
+    (Filter.Eventually.of_forall fun z =>
+      (HasDerivAt.const_mul m (h.hasDeriv p l (x.1 + a * z, x.2 + b * z))).exp)
+  have hrw : (∫ z, Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) *
+        (m * D p l (x.1 + a * z, x.2 + b * z)) ∂μ)
+      = m * ∫ z, D p l (x.1 + a * z, x.2 + b * z) *
+        Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) ∂μ := by
+    rw [← integral_const_mul]
+    congr 1
+    funext z
+    ring
+  rw [← hrw]
+  exact key.2
+
+lemma hasDeriv_stepM (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D) (hm : 0 < m)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => stepM μ m α β F p l' x) (stepMD μ m α β F D p l x) l := by
+  have hpos := integral_expShift_pos hμ h hm.le p l (α p) (β p) x
+  have hI := hasDeriv_intExp hμ h hm p l (α p) (β p) x
+  have key := HasDerivAt.const_mul (1 / m) (hI.log hpos.ne')
+  have e : (1 / m) * ((m * ∫ z, D p l (x.1 + α p * z, x.2 + β p * z) *
+        Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ) /
+      (∫ z, Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ))
+      = stepMD μ m α β F D p l x := by
+    have gen : ∀ N I : ℝ, I ≠ 0 → (1 / m) * ((m * N) / I) = N / I := by
+      intro N I hI
+      field_simp
+    simp only [stepMD]
+    exact gen _ _ hpos.ne'
+  rw [e] at key
+  exact key
+
+lemma bddD_stepM (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D) (hm : 0 < m)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    |stepMD μ m α β F D p l x| ≤ 1 := by
+  have hpos := integral_expShift_pos hμ h hm.le p l (α p) (β p) x
+  have hnum : |∫ z, D p l (x.1 + α p * z, x.2 + β p * z) *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ|
+      ≤ ∫ z, Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ := by
+    calc |∫ z, D p l (x.1 + α p * z, x.2 + β p * z) *
+            Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ|
+        ≤ ∫ z, |D p l (x.1 + α p * z, x.2 + β p * z) *
+            Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))| ∂μ := by
+          simpa [Real.norm_eq_abs] using norm_integral_le_integral_norm (μ := μ)
+            (fun z => D p l (x.1 + α p * z, x.2 + β p * z) *
+              Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)))
+      _ ≤ ∫ z, Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ := by
+          refine integral_mono (integrable_DexpShift hμ h hm.le p l (α p) (β p) x).abs
+            (integrable_expShift hμ h hm.le p l (α p) (β p) x) (fun z => ?_)
+          rw [abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+          nlinarith [h.bddD p l (x.1 + α p * z, x.2 + β p * z),
+            Real.exp_pos (m * F p l (x.1 + α p * z, x.2 + β p * z)),
+            abs_nonneg (D p l (x.1 + α p * z, x.2 + β p * z))]
+  simp only [stepMD, abs_div, abs_of_pos hpos]
+  exact div_le_one_of_le₀ hnum hpos.le
+
+lemma lipx_stepM (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D) (hm : 0 < m)
+    (p : P) (l : ℝ) (x y : ℝ × ℝ) :
+    |stepM μ m α β F p l x - stepM μ m α β F p l y| ≤ |x.1 - y.1| + |x.2 - y.2| := by
+  have main : ∀ u v : ℝ × ℝ, stepM μ m α β F p l u
+      ≤ (|u.1 - v.1| + |u.2 - v.2|) + stepM μ m α β F p l v := by
+    intro u v
+    set d := |u.1 - v.1| + |u.2 - v.2| with hd
+    have hd0 : 0 ≤ d := by positivity
+    have hIu := integral_expShift_pos hμ h hm.le p l (α p) (β p) u
+    have hIv := integral_expShift_pos hμ h hm.le p l (α p) (β p) v
+    have hpt : ∀ z : ℝ, Real.exp (m * F p l (u.1 + α p * z, u.2 + β p * z))
+        ≤ Real.exp (m * d) * Real.exp (m * F p l (v.1 + α p * z, v.2 + β p * z)) := by
+      intro z
+      rw [← Real.exp_add]
+      refine Real.exp_le_exp.2 ?_
+      have hl := h.lipx p l (u.1 + α p * z, u.2 + β p * z) (v.1 + α p * z, v.2 + β p * z)
+      have e1 : u.1 + α p * z - (v.1 + α p * z) = u.1 - v.1 := by ring
+      have e2 : u.2 + β p * z - (v.2 + β p * z) = u.2 - v.2 := by ring
+      simp only [e1, e2] at hl
+      have h2 := le_abs_self (F p l (u.1 + α p * z, u.2 + β p * z)
+        - F p l (v.1 + α p * z, v.2 + β p * z))
+      nlinarith
+    have hmono : (∫ z, Real.exp (m * F p l (u.1 + α p * z, u.2 + β p * z)) ∂μ)
+        ≤ Real.exp (m * d) * ∫ z, Real.exp (m * F p l (v.1 + α p * z, v.2 + β p * z)) ∂μ := by
+      rw [← integral_const_mul]
+      exact integral_mono (integrable_expShift hμ h hm.le p l (α p) (β p) u)
+        ((integrable_expShift hμ h hm.le p l (α p) (β p) v).const_mul _) hpt
+    have hlog : Real.log (∫ z, Real.exp (m * F p l (u.1 + α p * z, u.2 + β p * z)) ∂μ)
+        ≤ m * d + Real.log (∫ z, Real.exp (m * F p l (v.1 + α p * z, v.2 + β p * z)) ∂μ) := by
+      have := Real.log_le_log hIu hmono
+      rwa [Real.log_mul (Real.exp_ne_zero _) hIv.ne', Real.log_exp] at this
+    simp only [stepM]
+    have hm' : 0 < 1 / m := by positivity
+    have := mul_le_mul_of_nonneg_left hlog hm'.le
+    calc (1/m) * Real.log (∫ z, Real.exp (m * F p l (u.1 + α p * z, u.2 + β p * z)) ∂μ)
+        ≤ (1/m) * (m * d + Real.log (∫ z, Real.exp (m * F p l (v.1 + α p * z, v.2 + β p * z)) ∂μ)) := this
+      _ = d + (1/m) * Real.log (∫ z, Real.exp (m * F p l (v.1 + α p * z, v.2 + β p * z)) ∂μ) := by
+          have gen : ∀ L : ℝ, (1 / m) * (m * d + L) = d + (1 / m) * L := by
+            intro L
+            field_simp
+          exact gen _
+  have h1 := main x y
+  have h2 := main y x
+  rw [abs_sub_le_iff]
+  constructor
+  · linarith [h1]
+  · have e1 : |y.1 - x.1| = |x.1 - y.1| := abs_sub_comm _ _
+    have e2 : |y.2 - x.2| = |x.2 - y.2| := abs_sub_comm _ _
+    rw [e1, e2] at h2
+    linarith [h2]
+
+/-- The `m > 0` step preserves goodness. -/
+theorem stepM_good (hμ : ExpMoments μ) [IsProbabilityMeasure μ] [FirstCountableTopology P]
+    (h : GoodFam F D) (hm : 0 < m) (hα : Continuous α) (hβ : Continuous β) :
+    GoodFam (stepM μ m α β F) (stepMD μ m α β F D) where
+  contF := by
+    have hI := continuous_intExp hμ h hm.le hα hβ (m := m)
+    rw [continuous_iff_continuousAt]
+    intro w₀
+    have hpos := integral_expShift_pos hμ h hm.le w₀.1 w₀.2.1 (α w₀.1) (β w₀.1) w₀.2.2
+    exact continuousAt_const.mul (hI.continuousAt.log hpos.ne')
+  contD := by
+    have hI := continuous_intExp hμ h hm.le hα hβ (m := m)
+    have hN := continuous_intDexp hμ h hm.le hα hβ (m := m)
+    rw [continuous_iff_continuousAt]
+    intro w₀
+    have hpos := integral_expShift_pos hμ h hm.le w₀.1 w₀.2.1 (α w₀.1) (β w₀.1) w₀.2.2
+    exact hN.continuousAt.div hI.continuousAt hpos.ne'
+  hasDeriv := fun p l x => hasDeriv_stepM hμ h hm p l x
+  lipx := fun p l x y => lipx_stepM hμ h hm p l x y
+  bddD := fun p l x => bddD_stepM hμ h hm p l x
+
+end StepM2
+
+/-! ### The standard Gaussian measure -/
+
+lemma expMoments_gaussianReal (m : ℝ) (v : NNReal) : ExpMoments (gaussianReal m v) := by
+  intro c
+  have hint : Integrable (fun z : ℝ => Real.exp (c * z) + Real.exp (-c * z)) (gaussianReal m v) :=
+    (integrable_exp_mul_gaussianReal c).add (integrable_exp_mul_gaussianReal (-c))
+  refine hint.mono (by fun_prop) ?_
+  filter_upwards with z
+  have hcases : c * |z| = c * z ∨ c * |z| = -c * z := by
+    rcases abs_cases z with ⟨h, _⟩ | ⟨h, _⟩
+    · left; rw [h]
+    · right; rw [h]; ring
+  have hle : Real.exp (c * |z|) ≤ Real.exp (c * z) + Real.exp (-c * z) := by
+    rcases hcases with h | h <;> rw [h]
+    · linarith [Real.exp_pos (-c * z)]
+    · linarith [Real.exp_pos (c * z)]
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _),
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ Real.exp (c * z) + Real.exp (-c * z))]
+  exact hle
+
+/-! ### The terminal function -/
+
+/-- The (unnormalised) sum of the four exponentials appearing in the terminal function. -/
+def fS (lam : ℝ) (x : ℝ × ℝ) : ℝ :=
+  Real.exp (x.1 + x.2 + lam) + Real.exp (x.1 - x.2 - lam)
+    + Real.exp (-x.1 + x.2 - lam) + Real.exp (-x.1 - x.2 + lam)
+
+/-- The two-replica terminal function. -/
+abbrev fLbase (lam : ℝ) (x : ℝ × ℝ) : ℝ := SpinGlass.AT.gtTerminal lam x.1 x.2
+
+/-- The `lam`-derivative of the terminal function. -/
+def fLbaseD (lam : ℝ) (x : ℝ × ℝ) : ℝ :=
+  (Real.exp (x.1 + x.2 + lam) - Real.exp (x.1 - x.2 - lam)
+    - Real.exp (-x.1 + x.2 - lam) + Real.exp (-x.1 - x.2 + lam)) / fS lam x
+
+lemma fS_pos (lam : ℝ) (x : ℝ × ℝ) : 0 < fS lam x := by
+  unfold fS; positivity
+
+lemma continuous_fS : Continuous fun w : ℝ × (ℝ × ℝ) => fS w.1 w.2 := by
+  unfold fS; fun_prop
+
+lemma continuous_fLbase : Continuous fun w : ℝ × (ℝ × ℝ) => fLbase w.1 w.2 := by
+  refine Continuous.log ?_ (fun w => by have := fS_pos w.1 w.2; positivity)
+  exact continuous_fS.div_const 4
+
+lemma continuous_fLbaseD : Continuous fun w : ℝ × (ℝ × ℝ) => fLbaseD w.1 w.2 := by
+  unfold fLbaseD
+  refine Continuous.div (by fun_prop) continuous_fS (fun w => (fS_pos w.1 w.2).ne')
+
+lemma hasDerivAt_fLbase (lam : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l => fLbase l x) (fLbaseD lam x) lam := by
+  have hT1 : HasDerivAt (fun l : ℝ => Real.exp (x.1 + x.2 + l))
+      (Real.exp (x.1 + x.2 + lam)) lam := by
+    simpa using ((hasDerivAt_id lam).const_add (x.1 + x.2)).exp
+  have hT2 : HasDerivAt (fun l : ℝ => Real.exp (x.1 - x.2 - l))
+      (-Real.exp (x.1 - x.2 - lam)) lam := by
+    have h : HasDerivAt (fun l : ℝ => x.1 - x.2 - l) (-1) lam := by
+      simpa using (hasDerivAt_id lam).const_sub (x.1 - x.2)
+    simpa using h.exp
+  have hT3 : HasDerivAt (fun l : ℝ => Real.exp (-x.1 + x.2 - l))
+      (-Real.exp (-x.1 + x.2 - lam)) lam := by
+    have h : HasDerivAt (fun l : ℝ => -x.1 + x.2 - l) (-1) lam := by
+      simpa using (hasDerivAt_id lam).const_sub (-x.1 + x.2)
+    simpa using h.exp
+  have hT4 : HasDerivAt (fun l : ℝ => Real.exp (-x.1 - x.2 + l))
+      (Real.exp (-x.1 - x.2 + lam)) lam := by
+    simpa using ((hasDerivAt_id lam).const_add (-x.1 - x.2)).exp
+  have hS : HasDerivAt (fun l : ℝ => fS l x)
+      (Real.exp (x.1 + x.2 + lam) + -Real.exp (x.1 - x.2 - lam)
+        + -Real.exp (-x.1 + x.2 - lam) + Real.exp (-x.1 - x.2 + lam)) lam :=
+    ((hT1.add hT2).add hT3).add hT4
+  have hSdiv : HasDerivAt (fun l : ℝ => fS l x / 4)
+      ((Real.exp (x.1 + x.2 + lam) + -Real.exp (x.1 - x.2 - lam)
+        + -Real.exp (-x.1 + x.2 - lam) + Real.exp (-x.1 - x.2 + lam)) / 4) lam :=
+    hS.div_const 4
+  have hne : fS lam x / 4 ≠ 0 := by have := fS_pos lam x; positivity
+  have hlog := hSdiv.log hne
+  have heq : (Real.exp (x.1 + x.2 + lam) + -Real.exp (x.1 - x.2 - lam)
+        + -Real.exp (-x.1 + x.2 - lam) + Real.exp (-x.1 - x.2 + lam)) / 4 / (fS lam x / 4)
+      = fLbaseD lam x := by
+    unfold fLbaseD
+    rw [div_div_div_cancel_right₀]
+    · ring_nf
+    · norm_num
+  rw [heq] at hlog
+  exact hlog
+
+lemma fS_le (lam : ℝ) (x y : ℝ × ℝ) :
+    fS lam x ≤ Real.exp (|x.1 - y.1| + |x.2 - y.2|) * fS lam y := by
+  have a1 := le_abs_self (x.1 - y.1)
+  have a2 := le_abs_self (x.2 - y.2)
+  have b1 := neg_abs_le (x.1 - y.1)
+  have b2 := neg_abs_le (x.2 - y.2)
+  have h1 : Real.exp (x.1 + x.2 + lam)
+      ≤ Real.exp (|x.1 - y.1| + |x.2 - y.2|) * Real.exp (y.1 + y.2 + lam) := by
+    rw [← Real.exp_add]; exact Real.exp_le_exp.2 (by linarith)
+  have h2 : Real.exp (x.1 - x.2 - lam)
+      ≤ Real.exp (|x.1 - y.1| + |x.2 - y.2|) * Real.exp (y.1 - y.2 - lam) := by
+    rw [← Real.exp_add]; exact Real.exp_le_exp.2 (by linarith)
+  have h3 : Real.exp (-x.1 + x.2 - lam)
+      ≤ Real.exp (|x.1 - y.1| + |x.2 - y.2|) * Real.exp (-y.1 + y.2 - lam) := by
+    rw [← Real.exp_add]; exact Real.exp_le_exp.2 (by linarith)
+  have h4 : Real.exp (-x.1 - x.2 + lam)
+      ≤ Real.exp (|x.1 - y.1| + |x.2 - y.2|) * Real.exp (-y.1 - y.2 + lam) := by
+    rw [← Real.exp_add]; exact Real.exp_le_exp.2 (by linarith)
+  unfold fS
+  nlinarith [h1, h2, h3, h4]
+
+lemma fLbase_le (lam : ℝ) (x y : ℝ × ℝ) :
+    fLbase lam x ≤ (|x.1 - y.1| + |x.2 - y.2|) + fLbase lam y := by
+  have hx := fS_pos lam x
+  have hy := fS_pos lam y
+  have hmono : fS lam x / 4 ≤ Real.exp (|x.1 - y.1| + |x.2 - y.2|) * (fS lam y / 4) := by
+    have := fS_le lam x y
+    linarith
+  have := Real.log_le_log (by positivity) hmono
+  rwa [Real.log_mul (Real.exp_ne_zero _) (by positivity : fS lam y / 4 ≠ 0), Real.log_exp] at this
+
+lemma fLbase_lipx (lam : ℝ) (x y : ℝ × ℝ) :
+    |fLbase lam x - fLbase lam y| ≤ |x.1 - y.1| + |x.2 - y.2| := by
+  have h1 := fLbase_le lam x y
+  have h2 := fLbase_le lam y x
+  rw [abs_sub_comm (y.1) (x.1), abs_sub_comm (y.2) (x.2)] at h2
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
+
+lemma fLbaseD_bdd (lam : ℝ) (x : ℝ × ℝ) : |fLbaseD lam x| ≤ 1 := by
+  have hS := fS_pos lam x
+  have p1 := Real.exp_pos (x.1 + x.2 + lam)
+  have p2 := Real.exp_pos (x.1 - x.2 - lam)
+  have p3 := Real.exp_pos (-x.1 + x.2 - lam)
+  have p4 := Real.exp_pos (-x.1 - x.2 + lam)
+  unfold fLbaseD
+  rw [abs_div, abs_of_pos hS, div_le_one hS]
+  unfold fS
+  rw [abs_le]
+  constructor <;> [linarith; linarith]
+
+/-- The terminal function, viewed as a family over an arbitrary parameter space,
+is a good family. -/
+theorem goodFam_fLbase {P : Type*} [TopologicalSpace P] :
+    GoodFam (fun (_ : P) l (x : ℝ × ℝ) => fLbase l x) (fun (_ : P) l x => fLbaseD l x) where
+  contF := continuous_fLbase.comp (by fun_prop)
+  contD := continuous_fLbaseD.comp (by fun_prop)
+  hasDeriv := fun _ l x => hasDerivAt_fLbase l x
+  lipx := fun _ l x y => fLbase_lipx l x y
+  bddD := fun _ l x => fLbaseD_bdd l x
+end GTFrame
+
+/-!
+# The second `lam`-derivative of the terminal function
+
+The terminal function `fLbase lam x` is the logarithm of the average of
+`exp (ε₁ x₁ + ε₂ x₂ + lam ε₁ ε₂)` over the four sign patterns.  Its
+`lam`-derivative `fLbaseD` is the Gibbs mean of `ε₁ ε₂`, and its second
+`lam`-derivative is the corresponding variance, which because `(ε₁ ε₂) ^ 2 = 1`
+equals `1 - fLbaseD ^ 2`.
+
+This file proves that `(fLbaseD, fLbaseDD)` is again a good family, i.e. that
+`fLbaseD` is `1`-Lipschitz in each spatial coordinate and that the second
+derivative takes values in `[0, 1]`.
+-/
+
+open MeasureTheory ProbabilityTheory Set Filter
+open scoped Topology
+
+noncomputable section
+
+namespace GTFrame
+
+/-- The second `lam`-derivative of the terminal function: the variance of
+`ε₁ ε₂` under the two-replica Gibbs measure. -/
+def fLbaseDD (lam : ℝ) (x : ℝ × ℝ) : ℝ := 1 - (fLbaseD lam x) ^ 2
+
+lemma continuous_fLbaseDD : Continuous fun w : ℝ × (ℝ × ℝ) => fLbaseDD w.1 w.2 :=
+  continuous_const.sub (continuous_fLbaseD.pow 2)
+
+lemma fLbaseDD_nonneg (lam : ℝ) (x : ℝ × ℝ) : 0 ≤ fLbaseDD lam x := by
+  have h := fLbaseD_bdd lam x
+  have h2 : (fLbaseD lam x) ^ 2 ≤ 1 := by
+    have := abs_nonneg (fLbaseD lam x)
+    nlinarith [sq_abs (fLbaseD lam x)]
+  simpa [fLbaseDD] using h2
+
+lemma fLbaseDD_le_one (lam : ℝ) (x : ℝ × ℝ) : fLbaseDD lam x ≤ 1 := by
+  have : 0 ≤ (fLbaseD lam x) ^ 2 := sq_nonneg _
+  simp only [fLbaseDD]
+  linarith
+
+lemma fLbaseDD_bdd (lam : ℝ) (x : ℝ × ℝ) : |fLbaseDD lam x| ≤ 1 :=
+  abs_le.2 ⟨by linarith [fLbaseDD_nonneg lam x], fLbaseDD_le_one lam x⟩
+
+/-! ### The `lam`-derivative of `fLbaseD` -/
+
+lemma hasDerivAt_fLbaseD (lam : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l => fLbaseD l x) (fLbaseDD lam x) lam := by
+  have hT1 : HasDerivAt (fun l : ℝ => Real.exp (x.1 + x.2 + l))
+      (Real.exp (x.1 + x.2 + lam)) lam := by
+    simpa using ((hasDerivAt_id lam).const_add (x.1 + x.2)).exp
+  have hT2 : HasDerivAt (fun l : ℝ => Real.exp (x.1 - x.2 - l))
+      (-Real.exp (x.1 - x.2 - lam)) lam := by
+    have h : HasDerivAt (fun l : ℝ => x.1 - x.2 - l) (-1) lam := by
+      simpa using (hasDerivAt_id lam).const_sub (x.1 - x.2)
+    simpa using h.exp
+  have hT3 : HasDerivAt (fun l : ℝ => Real.exp (-x.1 + x.2 - l))
+      (-Real.exp (-x.1 + x.2 - lam)) lam := by
+    have h : HasDerivAt (fun l : ℝ => -x.1 + x.2 - l) (-1) lam := by
+      simpa using (hasDerivAt_id lam).const_sub (-x.1 + x.2)
+    simpa using h.exp
+  have hT4 : HasDerivAt (fun l : ℝ => Real.exp (-x.1 - x.2 + l))
+      (Real.exp (-x.1 - x.2 + lam)) lam := by
+    simpa using ((hasDerivAt_id lam).const_add (-x.1 - x.2)).exp
+  have hN := ((hT1.sub hT2).sub hT3).add hT4
+  have hS := ((hT1.add hT2).add hT3).add hT4
+  have hpos := fS_pos lam x
+  have hdiv := hN.div hS hpos.ne'
+  refine (hdiv.congr_of_eventuallyEq ?_).congr_deriv ?_
+  · filter_upwards with l
+    simp only [fLbaseD, fS, Pi.div_apply, Pi.add_apply, Pi.sub_apply]
+  · simp only [fLbaseDD, fLbaseD, fS, Pi.add_apply, Pi.sub_apply]
+    field_simp
+    ring
+
+/-! ### Lipschitz continuity of `fLbaseD` in the spatial variables -/
+
+/-- A function with a derivative bounded by `C` everywhere is `C`-Lipschitz. -/
+lemma lipschitz_of_hasDerivAt_bound {f : ℝ → ℝ} {C : ℝ}
+    (h : ∀ t, ∃ d, HasDerivAt f d t ∧ |d| ≤ C) (u v : ℝ) :
+    |f u - f v| ≤ C * |u - v| := by
+  have hd : ∀ t : ℝ, HasDerivAt f (deriv f t) t := by
+    intro t
+    obtain ⟨d, hdt, _⟩ := h t
+    rw [hdt.deriv]
+    exact hdt
+  have hb : ∀ t : ℝ, ‖deriv f t‖ ≤ C := by
+    intro t
+    obtain ⟨d, hdt, hdb⟩ := h t
+    rw [hdt.deriv]
+    simpa [Real.norm_eq_abs] using hdb
+  have := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := f) (f' := deriv f) (s := Set.univ) (C := C)
+    (fun t _ => (hd t).hasDerivWithinAt) (fun t _ => hb t) convex_univ
+    (Set.mem_univ v) (Set.mem_univ u)
+  simpa [Real.norm_eq_abs] using this
+
+/-- The partial derivative of `fLbaseD` in the first spatial coordinate exists and is
+bounded by one. -/
+lemma exists_hasDerivAt_fLbaseD_fst (lam x₂ t : ℝ) :
+    ∃ d, HasDerivAt (fun s => fLbaseD lam (s, x₂)) d t ∧ |d| ≤ 1 := by
+  have h1 : HasDerivAt (fun s : ℝ => Real.exp (s + x₂ + lam)) (Real.exp (t + x₂ + lam)) t := by
+    simpa using (((hasDerivAt_id t).add_const x₂).add_const lam).exp
+  have h2 : HasDerivAt (fun s : ℝ => Real.exp (s - x₂ - lam)) (Real.exp (t - x₂ - lam)) t := by
+    simpa using (((hasDerivAt_id t).sub_const x₂).sub_const lam).exp
+  have h3 : HasDerivAt (fun s : ℝ => Real.exp (-s + x₂ - lam))
+      (-Real.exp (-t + x₂ - lam)) t := by
+    have h : HasDerivAt (fun s : ℝ => -s + x₂ - lam) (-1) t := by
+      simpa using ((hasDerivAt_id t).neg.add_const x₂).sub_const lam
+    simpa using h.exp
+  have h4 : HasDerivAt (fun s : ℝ => Real.exp (-s - x₂ + lam))
+      (-Real.exp (-t - x₂ + lam)) t := by
+    have h : HasDerivAt (fun s : ℝ => -s - x₂ + lam) (-1) t := by
+      simpa using ((hasDerivAt_id t).neg.sub_const x₂).add_const lam
+    simpa using h.exp
+  set a := Real.exp (t + x₂ + lam) with ha
+  set b := Real.exp (t - x₂ - lam) with hb
+  set c := Real.exp (-t + x₂ - lam) with hc
+  set e := Real.exp (-t - x₂ + lam) with he
+  have hap : 0 < a := Real.exp_pos _
+  have hbp : 0 < b := Real.exp_pos _
+  have hcp : 0 < c := Real.exp_pos _
+  have hep : 0 < e := Real.exp_pos _
+  have hN := ((h1.sub h2).sub h3).add h4
+  have hS := ((h1.add h2).add h3).add h4
+  have hSpos : 0 < fS lam (t, x₂) := fS_pos lam (t, x₂)
+  have hdiv := hN.div hS hSpos.ne'
+  refine ⟨_, hdiv.congr_of_eventuallyEq ?_, ?_⟩
+  · filter_upwards with s
+    simp only [fLbaseD, fS, Pi.div_apply, Pi.add_apply, Pi.sub_apply]
+  have hfS : fS lam (t, x₂) = a + b + c + e := rfl
+  have hA : Real.exp (t + x₂ + lam) = a := rfl
+  have hB : Real.exp (t - x₂ - lam) = b := rfl
+  have hC : Real.exp (-t + x₂ - lam) = c := rfl
+  have hE : Real.exp (-t - x₂ + lam) = e := rfl
+  simp only [Pi.add_apply, Pi.sub_apply]
+  rw [hA, hB, hC, hE, abs_div,
+    abs_of_pos (by positivity : (0:ℝ) < (a + b + c + e) ^ 2),
+    div_le_one (by positivity : (0:ℝ) < (a + b + c + e) ^ 2), abs_le]
+  constructor
+  · nlinarith [sq_nonneg (a - c), sq_nonneg (b - e), mul_pos hap hcp, mul_pos hbp hep,
+      mul_pos (add_pos hap hcp) (add_pos hbp hep)]
+  · nlinarith [sq_nonneg (a - c), sq_nonneg (b - e), mul_pos hap hcp, mul_pos hbp hep,
+      mul_pos (add_pos hap hcp) (add_pos hbp hep)]
+
+/-- The partial derivative of `fLbaseD` in the second spatial coordinate exists and is
+bounded by one. -/
+lemma exists_hasDerivAt_fLbaseD_snd (lam x₁ t : ℝ) :
+    ∃ d, HasDerivAt (fun s => fLbaseD lam (x₁, s)) d t ∧ |d| ≤ 1 := by
+  have h1 : HasDerivAt (fun s : ℝ => Real.exp (x₁ + s + lam)) (Real.exp (x₁ + t + lam)) t := by
+    have h : HasDerivAt (fun s : ℝ => x₁ + s + lam) 1 t := by
+      simpa using ((hasDerivAt_id t).const_add x₁).add_const lam
+    simpa using h.exp
+  have h2 : HasDerivAt (fun s : ℝ => Real.exp (x₁ - s - lam)) (-Real.exp (x₁ - t - lam)) t := by
+    have h : HasDerivAt (fun s : ℝ => x₁ - s - lam) (-1) t := by
+      simpa using ((hasDerivAt_id t).const_sub x₁).sub_const lam
+    simpa using h.exp
+  have h3 : HasDerivAt (fun s : ℝ => Real.exp (-x₁ + s - lam)) (Real.exp (-x₁ + t - lam)) t := by
+    have h : HasDerivAt (fun s : ℝ => -x₁ + s - lam) 1 t := by
+      simpa using ((hasDerivAt_id t).const_add (-x₁)).sub_const lam
+    simpa using h.exp
+  have h4 : HasDerivAt (fun s : ℝ => Real.exp (-x₁ - s + lam)) (-Real.exp (-x₁ - t + lam)) t := by
+    have h : HasDerivAt (fun s : ℝ => -x₁ - s + lam) (-1) t := by
+      simpa using ((hasDerivAt_id t).const_sub (-x₁)).add_const lam
+    simpa using h.exp
+  set a := Real.exp (x₁ + t + lam) with ha
+  set b := Real.exp (x₁ - t - lam) with hb
+  set c := Real.exp (-x₁ + t - lam) with hc
+  set e := Real.exp (-x₁ - t + lam) with he
+  have hap : 0 < a := Real.exp_pos _
+  have hbp : 0 < b := Real.exp_pos _
+  have hcp : 0 < c := Real.exp_pos _
+  have hep : 0 < e := Real.exp_pos _
+  have hN := ((h1.sub h2).sub h3).add h4
+  have hS := ((h1.add h2).add h3).add h4
+  have hSpos : 0 < fS lam (x₁, t) := fS_pos lam (x₁, t)
+  have hdiv := hN.div hS hSpos.ne'
+  refine ⟨_, hdiv.congr_of_eventuallyEq ?_, ?_⟩
+  · filter_upwards with s
+    simp only [fLbaseD, fS, Pi.div_apply, Pi.add_apply, Pi.sub_apply]
+  have hfS : fS lam (x₁, t) = a + b + c + e := rfl
+  have hA : Real.exp (x₁ + t + lam) = a := rfl
+  have hB : Real.exp (x₁ - t - lam) = b := rfl
+  have hC : Real.exp (-x₁ + t - lam) = c := rfl
+  have hE : Real.exp (-x₁ - t + lam) = e := rfl
+  simp only [Pi.add_apply, Pi.sub_apply]
+  rw [hA, hB, hC, hE, abs_div,
+    abs_of_pos (by positivity : (0:ℝ) < (a + b + c + e) ^ 2),
+    div_le_one (by positivity : (0:ℝ) < (a + b + c + e) ^ 2), abs_le]
+  constructor
+  · nlinarith [sq_nonneg (a - b), sq_nonneg (c - e), mul_pos hap hbp, mul_pos hcp hep,
+      mul_pos (add_pos hap hbp) (add_pos hcp hep)]
+  · nlinarith [sq_nonneg (a - b), sq_nonneg (c - e), mul_pos hap hbp, mul_pos hcp hep,
+      mul_pos (add_pos hap hbp) (add_pos hcp hep)]
+
+lemma fLbaseD_lipx (lam : ℝ) (x y : ℝ × ℝ) :
+    |fLbaseD lam x - fLbaseD lam y| ≤ |x.1 - y.1| + |x.2 - y.2| := by
+  have h1 : |fLbaseD lam (x.1, x.2) - fLbaseD lam (y.1, x.2)| ≤ |x.1 - y.1| := by
+    have := lipschitz_of_hasDerivAt_bound
+      (f := fun s => fLbaseD lam (s, x.2)) (C := 1)
+      (fun t => exists_hasDerivAt_fLbaseD_fst lam x.2 t) x.1 y.1
+    simpa using this
+  have h2 : |fLbaseD lam (y.1, x.2) - fLbaseD lam (y.1, y.2)| ≤ |x.2 - y.2| := by
+    have := lipschitz_of_hasDerivAt_bound
+      (f := fun s => fLbaseD lam (y.1, s)) (C := 1)
+      (fun t => exists_hasDerivAt_fLbaseD_snd lam y.1 t) x.2 y.2
+    simpa using this
+  have hx : x = (x.1, x.2) := rfl
+  have hy : y = (y.1, y.2) := rfl
+  calc |fLbaseD lam x - fLbaseD lam y|
+      = |(fLbaseD lam (x.1, x.2) - fLbaseD lam (y.1, x.2))
+          + (fLbaseD lam (y.1, x.2) - fLbaseD lam (y.1, y.2))| := by
+        rw [← hx, ← hy]; ring_nf
+    _ ≤ |fLbaseD lam (x.1, x.2) - fLbaseD lam (y.1, x.2)|
+          + |fLbaseD lam (y.1, x.2) - fLbaseD lam (y.1, y.2)| := abs_add_le _ _
+    _ ≤ |x.1 - y.1| + |x.2 - y.2| := add_le_add h1 h2
+
+/-- The `lam`-derivative of the terminal function, together with its own
+`lam`-derivative, is a good family. -/
+theorem goodFam_fLbaseD {P : Type*} [TopologicalSpace P] :
+    GoodFam (fun (_ : P) l (x : ℝ × ℝ) => fLbaseD l x) (fun (_ : P) l x => fLbaseDD l x) where
+  contF := continuous_fLbaseD.comp (by fun_prop)
+  contD := continuous_fLbaseDD.comp (by fun_prop)
+  hasDeriv := fun _ l x => hasDerivAt_fLbaseD l x
+  lipx := fun _ l x y => fLbaseD_lipx l x y
+  bddD := fun _ l x => fLbaseDD_bdd l x
+
+end GTFrame
+
+
+/-!
+# Derivatives of the finite GT recursion and uniform bounds
+
+This file continues the development of `Lemmas.GTFrameCore`.  It computes the
+first and second `lam`-derivatives of one finite recursion step and uses them to
+derive uniform bounds on the first two `lam`-derivatives of the finite
+Guerra–Talagrand solution and of the GT functional.
+-/
+
+open MeasureTheory ProbabilityTheory Set Filter
+open scoped Topology
+
+noncomputable section
+
+namespace GTFrame
+
+variable {P : Type*} [TopologicalSpace P] {μ : Measure ℝ}
+variable {F D E : P → ℝ → ℝ × ℝ → ℝ} {m : ℝ} {α β : P → ℝ}
+
+/-! ### First and second derivatives of the finite recursion -/
+
+/-- The variance under the exponential tilt used in a positive-mass recursion step. -/
+def stepMVar (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ)
+    (F D : P → ℝ → ℝ × ℝ → ℝ) : P → ℝ → ℝ × ℝ → ℝ :=
+  fun p l x =>
+    stepMD μ m α β F (fun p' l' x' => (D p' l' x') ^ 2) p l x
+      - (stepMD μ m α β F D p l x) ^ 2
+
+/-- A recursion step that includes both the zero-mass and positive-mass cases. -/
+def finiteStep (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ)
+    (F : P → ℝ → ℝ × ℝ → ℝ) : P → ℝ → ℝ × ℝ → ℝ :=
+  if m = 0 then step0 μ α β F else stepM μ m α β F
+
+/-- The candidate first `l`-derivative of `finiteStep`. -/
+def finiteStepD (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ)
+    (F D : P → ℝ → ℝ × ℝ → ℝ) : P → ℝ → ℝ × ℝ → ℝ :=
+  if m = 0 then step0 μ α β D else stepMD μ m α β F D
+
+/-- The candidate second `l`-derivative of `finiteStep`. -/
+def finiteStepDD (μ : Measure ℝ) (m : ℝ) (α β : P → ℝ)
+    (F D E : P → ℝ → ℝ × ℝ → ℝ) : P → ℝ → ℝ × ℝ → ℝ :=
+  if m = 0 then step0 μ α β E
+  else fun p l x =>
+    stepMD μ m α β F E p l x + m * stepMVar μ m α β F D p l x
+
+/-! ### Auxiliary lemmas for the second derivative of a positive-mass step -/
+
+omit [TopologicalSpace P] in
+/-- The algebraic identity behind the quotient rule for `stepMD`. -/
+lemma tilted_quotient_identity (NE N2 N I mm : ℝ) (hI : I ≠ 0) :
+    NE / I + mm * (N2 / I - (N / I) ^ 2)
+      = ((NE + mm * N2) * I - N * (mm * N)) / I ^ 2 := by
+  field_simp
   ring
 
-/-- At `s = 0`, the multiplier derivative at `lam = 0` is `q - v`
-whenever `q` satisfies the replica-symmetric fixed-point equation. -/
-lemma flatness_deriv_gtFunctional_s_zero_lam_zero
-    (β h q v : ℝ)
-    (hfixed : IsRSFixedPoint β h q) :
-    deriv (fun lam => gtFunctional β h q 0 lam v) 0 =
-      q - v := by
-  rw [deriv_gtFunctional_eq]
-  simp only [sub_zero, one_mul]
+omit [TopologicalSpace P] in
+/-- If `H` is the `l`-derivative of `G` and `|H| ≤ c`, then `G` is `c`-Lipschitz in `l`. -/
+lemma lipl_of_bddDeriv {G H : P → ℝ → ℝ × ℝ → ℝ} {c : ℝ}
+    (hd : ∀ p l x, HasDerivAt (fun l' => G p l' x) (H p l x) l)
+    (hb : ∀ p l x, |H p l x| ≤ c) (p : P) (l l' : ℝ) (x : ℝ × ℝ) :
+    |G p l x - G p l' x| ≤ c * |l - l'| := by
+  have := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun t => G p t x) (f' := fun t => H p t x) (s := Set.univ) (C := c)
+    (fun t _ => (hd p t x).hasDerivWithinAt)
+    (fun t _ => by simpa [Real.norm_eq_abs] using hb p t x) convex_univ (Set.mem_univ l')
+    (Set.mem_univ l)
+  simpa [Real.norm_eq_abs] using this
 
-  have hE :
-      standardGaussianExpectation (fun z =>
-        deriv (fun lam =>
-          gtSemigroupSolution β q 0 lam v 0
-            (h + β * Real.sqrt q * z)
-            (h + β * Real.sqrt q * z)) 0) =
-      q := by
-    calc
-      standardGaussianExpectation (fun z =>
-        deriv (fun lam =>
-          gtSemigroupSolution β q 0 lam v 0
-            (h + β * Real.sqrt q * z)
-            (h + β * Real.sqrt q * z)) 0)
-          =
-        standardGaussianExpectation (fun z =>
-          Real.tanh (h + β * Real.sqrt q * z) ^ 2) := by
-            apply congrArg standardGaussianExpectation
-            funext z
-            let x := h + β * Real.sqrt q * z
-            have hfun :
-                (fun lam =>
-                  gtSemigroupSolution β q 0 lam v 0 x x) =
-                (fun lam => gtTerminal lam x x) := by
-              funext lam
-              exact flatness_gtSemigroupSolution_s_zero
-                β q lam v 0 x x
-            rw [hfun, deriv_gtTerminal_zero]
-            ring
-      _ = q := by
-        exact hfixed.symm
+/-- Integrability of `g * exp (m * F)` along a shifted line, for a bounded continuous `g`. -/
+lemma integrable_gexpShift (hμ : ExpMoments μ) (h : GoodFam F D) (hm : 0 ≤ m)
+    {g : ℝ → ℝ} {c : ℝ} (hg : Continuous g) (hgb : ∀ z, |g z| ≤ c)
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Integrable (fun z => g z * Real.exp (m * F p l (x.1 + a * z, x.2 + b * z))) μ := by
+  refine Integrable.mono' ((hμ.integrable_exp_linear m (|F p l x|) (|a| + |b|)).const_mul c)
+    ((hg.mul (cont_expShift h p l a b x)).aestronglyMeasurable) ?_
+  filter_upwards with z
+  have hle : Real.exp (m * F p l (x.1 + a * z, x.2 + b * z))
+      ≤ Real.exp (m * (|F p l x| + (|a| + |b|) * |z|)) := by
+    refine Real.exp_le_exp.2 ?_
+    have h1 := h.bound_shift p l a b x z
+    have h2 := le_abs_self (F p l (x.1 + a * z, x.2 + b * z))
+    nlinarith
+  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+  have hg0 := abs_nonneg (g z)
+  nlinarith [Real.exp_pos (m * F p l (x.1 + a * z, x.2 + b * z)),
+    Real.exp_pos (m * (|F p l x| + (|a| + |b|) * |z|)), hgb z]
 
-  rw [hE]
+/-- Differentiating `∫ D * exp (m * F)` in the distinguished parameter. -/
+lemma hasDeriv_intDexp (hμ : ExpMoments μ) (hF : GoodFam F D) (hm : 0 < m) {c : ℝ}
+    (hEcont : Continuous fun w : P × ℝ × (ℝ × ℝ) => E w.1 w.2.1 w.2.2)
+    (hEderiv : ∀ p l x, HasDerivAt (fun l' => D p l' x) (E p l x) l)
+    (hEbdd : ∀ p l x, |E p l x| ≤ c)
+    (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => ∫ z, D p l' (x.1 + a * z, x.2 + b * z) *
+          Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z)) ∂μ)
+      (∫ z, (E p l (x.1 + a * z, x.2 + b * z)
+          + m * (D p l (x.1 + a * z, x.2 + b * z)) ^ 2) *
+          Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)) ∂μ) l := by
+  have hc0 : 0 ≤ c := le_trans (abs_nonneg _) (hEbdd p l x)
+  set M := |F p l x| + 1 with hM
+  set A := |a| + |b| with hA
+  have hcontE : ∀ l' : ℝ, Continuous fun z : ℝ => E p l' (x.1 + a * z, x.2 + b * z) := by
+    intro l'
+    exact hEcont.comp (by fun_prop :
+      Continuous fun z : ℝ => ((p, l', (x.1 + a * z, x.2 + b * z)) : P × ℝ × (ℝ × ℝ)))
+  have hlip : ∀ᵐ z ∂μ, LipschitzOnWith
+      (Real.nnabs ((c + m) * Real.exp (m * (M + A * |z|))))
+      (fun l' => D p l' (x.1 + a * z, x.2 + b * z) *
+        Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z))) (Metric.ball l 1) := by
+    filter_upwards with z
+    refine LipschitzOnWith.of_dist_le_mul ?_
+    intro u hu v hv
+    have hu1 : |u - l| ≤ 1 := by
+      have := Metric.mem_ball.1 hu; rw [Real.dist_eq] at this; linarith
+    have hv1 : |v - l| ≤ 1 := by
+      have := Metric.mem_ball.1 hv; rw [Real.dist_eq] at this; linarith
+    have hbu : m * F p u (x.1 + a * z, x.2 + b * z) ≤ m * (M + A * |z|) := by
+      have h1 := hF.bound_shift_unif p l u a b hu1 x z
+      have h2 := le_abs_self (F p u (x.1 + a * z, x.2 + b * z))
+      nlinarith
+    have hbv : m * F p v (x.1 + a * z, x.2 + b * z) ≤ m * (M + A * |z|) := by
+      have h1 := hF.bound_shift_unif p l v a b hv1 x z
+      have h2 := le_abs_self (F p v (x.1 + a * z, x.2 + b * z))
+      nlinarith
+    have hexp := abs_exp_sub_exp_le _ _ (m * (M + A * |z|)) hbu hbv
+    have hdiffF : |m * F p u (x.1 + a * z, x.2 + b * z)
+        - m * F p v (x.1 + a * z, x.2 + b * z)| ≤ m * |u - v| := by
+      have := hF.lipl p u v (x.1 + a * z, x.2 + b * z)
+      rw [← mul_sub, abs_mul, abs_of_pos hm]
+      exact mul_le_mul_of_nonneg_left this hm.le
+    have hdiffD : |D p u (x.1 + a * z, x.2 + b * z) - D p v (x.1 + a * z, x.2 + b * z)|
+        ≤ c * |u - v| := lipl_of_bddDeriv hEderiv hEbdd p u v _
+    have hDv : |D p v (x.1 + a * z, x.2 + b * z)| ≤ 1 := hF.bddD p v _
+    have hexpu : Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+        ≤ Real.exp (m * (M + A * |z|)) := Real.exp_le_exp.2 hbu
+    have hcoe : ((Real.nnabs ((c + m) * Real.exp (m * (M + A * |z|))) : NNReal) : ℝ)
+        = (c + m) * Real.exp (m * (M + A * |z|)) := by
+      rw [Real.coe_nnabs, abs_of_nonneg (by positivity)]
+    rw [Real.dist_eq, Real.dist_eq, hcoe]
+    have hsplit : D p u (x.1 + a * z, x.2 + b * z) *
+          Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+        - D p v (x.1 + a * z, x.2 + b * z) *
+          Real.exp (m * F p v (x.1 + a * z, x.2 + b * z))
+        = (D p u (x.1 + a * z, x.2 + b * z) - D p v (x.1 + a * z, x.2 + b * z)) *
+            Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+          + D p v (x.1 + a * z, x.2 + b * z) *
+            (Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+              - Real.exp (m * F p v (x.1 + a * z, x.2 + b * z))) := by ring
+    rw [hsplit]
+    have hstep1 := abs_add_le (((D p u (x.1 + a * z, x.2 + b * z)
+        - D p v (x.1 + a * z, x.2 + b * z))) *
+          Real.exp (m * F p u (x.1 + a * z, x.2 + b * z)))
+      (D p v (x.1 + a * z, x.2 + b * z) *
+        (Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+          - Real.exp (m * F p v (x.1 + a * z, x.2 + b * z))))
+    rw [abs_mul, abs_mul, abs_of_pos (Real.exp_pos _)] at hstep1
+    have hb1 : |D p u (x.1 + a * z, x.2 + b * z) - D p v (x.1 + a * z, x.2 + b * z)| *
+        Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+        ≤ (c * |u - v|) * Real.exp (m * (M + A * |z|)) :=
+      mul_le_mul hdiffD hexpu (Real.exp_nonneg _) (by positivity)
+    have hb2 : |D p v (x.1 + a * z, x.2 + b * z)| *
+        |Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+          - Real.exp (m * F p v (x.1 + a * z, x.2 + b * z))|
+        ≤ 1 * (Real.exp (m * (M + A * |z|)) * (m * |u - v|)) := by
+      refine mul_le_mul hDv ?_ (abs_nonneg _) zero_le_one
+      calc |Real.exp (m * F p u (x.1 + a * z, x.2 + b * z))
+              - Real.exp (m * F p v (x.1 + a * z, x.2 + b * z))|
+          ≤ Real.exp (m * (M + A * |z|)) *
+              |m * F p u (x.1 + a * z, x.2 + b * z)
+                - m * F p v (x.1 + a * z, x.2 + b * z)| := hexp
+        _ ≤ Real.exp (m * (M + A * |z|)) * (m * |u - v|) :=
+            mul_le_mul_of_nonneg_left hdiffF (Real.exp_nonneg _)
+    nlinarith [hstep1, hb1, hb2]
+  have hptderiv : ∀ z : ℝ, HasDerivAt
+      (fun l' => D p l' (x.1 + a * z, x.2 + b * z) *
+        Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z)))
+      ((E p l (x.1 + a * z, x.2 + b * z)
+          + m * (D p l (x.1 + a * z, x.2 + b * z)) ^ 2) *
+        Real.exp (m * F p l (x.1 + a * z, x.2 + b * z))) l := by
+    intro z
+    have h1 := hEderiv p l (x.1 + a * z, x.2 + b * z)
+    have h2 := (HasDerivAt.const_mul m (hF.hasDeriv p l (x.1 + a * z, x.2 + b * z))).exp
+    have := h1.mul h2
+    convert this using 1 <;> first | rfl | ring
+  have key := hasDerivAt_integral_of_dominated_loc_of_lip
+    (F := fun l' z => D p l' (x.1 + a * z, x.2 + b * z) *
+      Real.exp (m * F p l' (x.1 + a * z, x.2 + b * z)))
+    (F' := fun z => (E p l (x.1 + a * z, x.2 + b * z)
+        + m * (D p l (x.1 + a * z, x.2 + b * z)) ^ 2) *
+      Real.exp (m * F p l (x.1 + a * z, x.2 + b * z)))
+    (x₀ := l) (bound := fun z => (c + m) * Real.exp (m * (M + A * |z|)))
+    (s := Metric.ball l 1) (Metric.ball_mem_nhds l one_pos)
+    (Filter.Eventually.of_forall fun l' =>
+      ((hF.cont_shiftD p l' a b x).mul (cont_expShift hF p l' a b x)).aestronglyMeasurable)
+    (integrable_DexpShift hμ hF hm.le p l a b x)
+    ((((hcontE l).add (continuous_const.mul ((hF.cont_shiftD p l a b x).pow 2))).mul
+      (cont_expShift hF p l a b x)).aestronglyMeasurable)
+    hlip ((hμ.integrable_exp_linear m M A).const_mul (c + m))
+    (Filter.Eventually.of_forall hptderiv)
+  exact key.2
 
-/-- The canonical-overlap specialization of
-`flatness_deriv_gtFunctional_s_zero_lam_zero`. -/
-lemma flatness_deriv_gtFunctional_s_zero_lam_zero_rsQ
-    (β h v : ℝ) :
-    deriv
-      (fun lam =>
-        gtFunctional β h (rsQ β h) 0 lam v) 0 =
-      rsQ β h - v := by
-  exact flatness_deriv_gtFunctional_s_zero_lam_zero
-    β h (rsQ β h) v (rsQ_fixedPoint β h)
+/-- The `l`-derivative of the tilted mean `stepMD`: the tilted mean of the next
+derivative plus `m` times the tilted variance. -/
+lemma hasDeriv_stepMD (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (hF : GoodFam F D)
+    (hm : 0 < m) {c : ℝ}
+    (hEcont : Continuous fun w : P × ℝ × (ℝ × ℝ) => E w.1 w.2.1 w.2.2)
+    (hEderiv : ∀ p l x, HasDerivAt (fun l' => D p l' x) (E p l x) l)
+    (hEbdd : ∀ p l x, |E p l x| ≤ c)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => stepMD μ m α β F D p l' x)
+      (stepMD μ m α β F E p l x + m * stepMVar μ m α β F D p l x) l := by
+  have hpos := integral_expShift_pos hμ hF hm.le p l (α p) (β p) x
+  have hI := hasDeriv_intExp hμ hF hm p l (α p) (β p) x
+  have hN := hasDeriv_intDexp hμ hF hm hEcont hEderiv hEbdd p l (α p) (β p) x
+  have hcontE : Continuous fun z : ℝ => E p l (x.1 + α p * z, x.2 + β p * z) :=
+    hEcont.comp (by fun_prop :
+      Continuous fun z : ℝ => ((p, l, (x.1 + α p * z, x.2 + β p * z)) : P × ℝ × (ℝ × ℝ)))
+  have hIE : Integrable (fun z => E p l (x.1 + α p * z, x.2 + β p * z) *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))) μ :=
+    integrable_gexpShift hμ hF hm.le hcontE (fun z => hEbdd p l _) p l (α p) (β p) x
+  have hI2 : Integrable (fun z => (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))) μ := by
+    refine integrable_gexpShift (c := 1) hμ hF hm.le ((hF.cont_shiftD p l (α p) (β p) x).pow 2)
+      (fun z => ?_) p l (α p) (β p) x
+    have := hF.bddD p l (x.1 + α p * z, x.2 + β p * z)
+    change |D p l (x.1 + α p * z, x.2 + β p * z) ^ 2| ≤ 1
+    rw [abs_pow]
+    nlinarith [abs_nonneg (D p l (x.1 + α p * z, x.2 + β p * z))]
+  have hsplit : (∫ z, (E p l (x.1 + α p * z, x.2 + β p * z)
+        + m * (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2) *
+        Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ)
+      = (∫ z, E p l (x.1 + α p * z, x.2 + β p * z) *
+          Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ)
+        + m * ∫ z, (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+          Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ := by
+    have hfun : (fun z => (E p l (x.1 + α p * z, x.2 + β p * z)
+          + m * (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2) *
+          Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)))
+        = fun z => E p l (x.1 + α p * z, x.2 + β p * z) *
+            Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))
+          + m * ((D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+            Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))) := by
+      funext z; ring
+    rw [hfun, integral_add hIE (hI2.const_mul m), integral_const_mul]
+  rw [hsplit] at hN
+  have hdiv := hN.div hI hpos.ne'
+  refine (hdiv.congr_of_eventuallyEq ?_).congr_deriv ?_
+  · filter_upwards with l'
+    rfl
+  · simp only [stepMD, stepMVar]
+    exact (tilted_quotient_identity _ _ _ _ _ hpos.ne').symm
 
-/-!
-The following helper isolates the routine passage from a pointwise formula
-for the GT semigroup solution to the corresponding multiplier derivative of
-the GT functional.
+/-- At one finite recursion step, the first derivative is the tilted mean of the
+next derivative, while the second derivative is the tilted mean of the next
+second derivative plus `m` times the tilted variance of the first derivative.
+For `m = 0`, both tilted means reduce to ordinary expectations and the variance
+term vanishes. -/
+lemma finiteStep_derivatives (hμ : ExpMoments μ) [IsProbabilityMeasure μ]
+    (hF : GoodFam F D) (hD : GoodFam D E) (hm : 0 ≤ m)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => finiteStep μ m α β F p l' x)
+        (finiteStepD μ m α β F D p l x) l ∧
+      HasDerivAt (fun l' => finiteStepD μ m α β F D p l' x)
+        (finiteStepDD μ m α β F D E p l x) l := by
+  /-
+  Proof plan:
+  * Split into `m = 0` and `0 < m`.
+  * In the zero-mass case, unfold the three finite-step definitions and apply
+    `hasDeriv_step0` first to `hF` and then to `hD`.
+  * In the positive-mass case, the first assertion is `hasDeriv_stepM`.
+  * For the second assertion, differentiate the numerator and denominator in
+    `stepMD` under the integral. The numerator derivative is the integral of
+    `(E + m * D ^ 2) * exp (m * F)`, and the denominator derivative is the
+    integral of `m * D * exp (m * F)`.
+  * Apply the quotient rule, use positivity of the denominator, and rearrange
+    the result as the tilted mean of `E` plus `m * stepMVar`.
+  -/
+  rcases eq_or_lt_of_le hm with h0 | hpos
+  · have hm0 : m = 0 := h0.symm
+    subst hm0
+    simp only [finiteStep, finiteStepD, finiteStepDD]
+    exact ⟨hasDeriv_step0 hμ hF p l x, hasDeriv_step0 hμ hD p l x⟩
+  · have hne : m ≠ 0 := ne_of_gt hpos
+    simp only [finiteStep, finiteStepD, finiteStepDD, if_neg hne]
+    exact ⟨hasDeriv_stepM hμ hF hpos p l x,
+      hasDeriv_stepMD hμ hF hpos hD.contD hD.hasDeriv hD.bddD p l x⟩
+
+/-! ### Propagating bounds on the two derivatives along the recursion -/
+
+section Propagate
+
+variable {c : ℝ}
+
+/-- Integrability of a bounded continuous family along a shifted line. -/
+lemma integrable_shiftG [IsFiniteMeasure μ] {G : P → ℝ → ℝ × ℝ → ℝ}
+    (hG : Continuous fun w : P × ℝ × (ℝ × ℝ) => G w.1 w.2.1 w.2.2)
+    (hGb : ∀ p l x, |G p l x| ≤ c) (p : P) (l a b : ℝ) (x : ℝ × ℝ) :
+    Integrable (fun z => G p l (x.1 + a * z, x.2 + b * z)) μ := by
+  have hcont : Continuous fun z : ℝ => G p l (x.1 + a * z, x.2 + b * z) :=
+    hG.comp (by fun_prop :
+      Continuous fun z : ℝ => ((p, l, (x.1 + a * z, x.2 + b * z)) : P × ℝ × (ℝ × ℝ)))
+  refine Integrable.mono' (integrable_const c) hcont.aestronglyMeasurable ?_
+  filter_upwards with z
+  simpa [Real.norm_eq_abs] using hGb p l _
+
+/-- A version of `hasDeriv_step0` that only needs boundedness of the derivative family. -/
+lemma hasDeriv_step0_gen [IsProbabilityMeasure μ]
+    (hDcont : Continuous fun w : P × ℝ × (ℝ × ℝ) => D w.1 w.2.1 w.2.2)
+    (hDbdd : ∀ p l x, |D p l x| ≤ 1)
+    (hEcont : Continuous fun w : P × ℝ × (ℝ × ℝ) => E w.1 w.2.1 w.2.2)
+    (hEderiv : ∀ p l x, HasDerivAt (fun l' => D p l' x) (E p l x) l)
+    (hEbdd : ∀ p l x, |E p l x| ≤ c)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    HasDerivAt (fun l' => step0 μ α β D p l' x) (step0 μ α β E p l x) l := by
+  have hc0 : 0 ≤ c := le_trans (abs_nonneg _) (hEbdd p l x)
+  have hcontD : ∀ l' : ℝ, Continuous fun z : ℝ => D p l' (x.1 + α p * z, x.2 + β p * z) :=
+    fun l' => hDcont.comp (by fun_prop :
+      Continuous fun z : ℝ => ((p, l', (x.1 + α p * z, x.2 + β p * z)) : P × ℝ × (ℝ × ℝ)))
+  have hcontE : ∀ l' : ℝ, Continuous fun z : ℝ => E p l' (x.1 + α p * z, x.2 + β p * z) :=
+    fun l' => hEcont.comp (by fun_prop :
+      Continuous fun z : ℝ => ((p, l', (x.1 + α p * z, x.2 + β p * z)) : P × ℝ × (ℝ × ℝ)))
+  have hlip : ∀ᵐ z ∂μ, LipschitzOnWith (Real.nnabs c)
+      (fun l' => D p l' (x.1 + α p * z, x.2 + β p * z)) (Metric.ball l 1) := by
+    filter_upwards with z
+    refine LipschitzOnWith.of_dist_le_mul ?_
+    intro u _ v _
+    have hlv := lipl_of_bddDeriv hEderiv hEbdd p u v (x.1 + α p * z, x.2 + β p * z)
+    rw [Real.dist_eq, Real.dist_eq, Real.coe_nnabs, abs_of_nonneg hc0]
+    exact hlv
+  have hint : Integrable (fun z => D p l (x.1 + α p * z, x.2 + β p * z)) μ :=
+    integrable_shiftG hDcont hDbdd p l (α p) (β p) x
+  have key := hasDerivAt_integral_of_dominated_loc_of_lip
+    (F := fun l' z => D p l' (x.1 + α p * z, x.2 + β p * z))
+    (F' := fun z => E p l (x.1 + α p * z, x.2 + β p * z))
+    (x₀ := l) (bound := fun _ : ℝ => c) (s := Metric.ball l 1)
+    (Metric.ball_mem_nhds l one_pos)
+    (Filter.Eventually.of_forall fun l' => (hcontD l').aestronglyMeasurable)
+    hint (hcontE l).aestronglyMeasurable hlip (integrable_const c)
+    (Filter.Eventually.of_forall fun z => hEderiv p l _)
+  exact key.2
+
+/-- Continuity of the tilted integral with a general bounded numerator. -/
+lemma continuous_intGexp (hμ : ExpMoments μ) [FirstCountableTopology P]
+    (h : GoodFam F D) (hm : 0 ≤ m) (hα : Continuous α) (hβ : Continuous β)
+    {G : P → ℝ → ℝ × ℝ → ℝ}
+    (hG : Continuous fun w : P × ℝ × (ℝ × ℝ) => G w.1 w.2.1 w.2.2)
+    (hGb : ∀ p l x, |G p l x| ≤ c) :
+    Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+      ∫ z, G w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z) *
+        Real.exp (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) ∂μ := by
+  refine continuous_integral_of_locdom (fun w => ?_) (fun z => ?_) (fun w₀ => ?_)
+  · exact (hG.comp (by fun_prop : Continuous fun z : ℝ =>
+      ((w.1, w.2.1, (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) : P × ℝ × (ℝ × ℝ)))).mul
+        (cont_expShift h w.1 w.2.1 (α w.1) (β w.1) w.2.2)
+  · have hc : Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+        ((w.1, w.2.1, (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)) : P × ℝ × (ℝ × ℝ)) := by
+      fun_prop
+    exact (hG.comp hc).mul (Real.continuous_exp.comp (continuous_const.mul (h.contF.comp hc)))
+  · have hc0 : 0 ≤ c := le_trans (abs_nonneg _) (hGb w₀.1 w₀.2.1 w₀.2.2)
+    obtain ⟨M, A, hU⟩ := locDom_of_lipx hα hβ h w₀
+    refine ⟨fun z => c * Real.exp (m * (M + A * |z|)),
+      (hμ.integrable_exp_linear m M A).const_mul c, ?_⟩
+    filter_upwards [hU] with w hw z
+    rw [abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+    have hle : Real.exp (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))
+        ≤ Real.exp (m * (M + A * |z|)) := by
+      refine Real.exp_le_exp.2 ?_
+      have h1 := hw z
+      have h2 := le_abs_self (F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))
+      nlinarith
+    have hGz := hGb w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)
+    nlinarith [Real.exp_pos (m * F w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z)),
+      Real.exp_pos (m * (M + A * |z|)),
+      abs_nonneg (G w.1 w.2.1 (w.2.2.1 + α w.1 * z, w.2.2.2 + β w.1 * z))]
+
+/-- Continuity of a tilted mean with a general bounded numerator. -/
+lemma continuous_stepMD_gen (hμ : ExpMoments μ) [IsProbabilityMeasure μ]
+    [FirstCountableTopology P] (h : GoodFam F D) (hm : 0 ≤ m)
+    (hα : Continuous α) (hβ : Continuous β) {G : P → ℝ → ℝ × ℝ → ℝ}
+    (hG : Continuous fun w : P × ℝ × (ℝ × ℝ) => G w.1 w.2.1 w.2.2)
+    (hGb : ∀ p l x, |G p l x| ≤ c) :
+    Continuous fun w : P × ℝ × (ℝ × ℝ) => stepMD μ m α β F G w.1 w.2.1 w.2.2 := by
+  have hI := continuous_intExp hμ h hm hα hβ (m := m)
+  have hN := continuous_intGexp hμ h hm hα hβ hG hGb
+  rw [continuous_iff_continuousAt]
+  intro w₀
+  have hpos := integral_expShift_pos hμ h hm w₀.1 w₀.2.1 (α w₀.1) (β w₀.1) w₀.2.2
+  exact hN.continuousAt.div hI.continuousAt hpos.ne'
+
+/-- A tilted mean of a nonnegative function is nonnegative. -/
+lemma stepMD_nonneg (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    (hm : 0 ≤ m) {G : P → ℝ → ℝ × ℝ → ℝ} (hGnn : ∀ p l x, 0 ≤ G p l x)
+    (p : P) (l : ℝ) (x : ℝ × ℝ) : 0 ≤ stepMD μ m α β F G p l x := by
+  have hpos := integral_expShift_pos hμ h hm p l (α p) (β p) x
+  have hnum : 0 ≤ ∫ z, G p l (x.1 + α p * z, x.2 + β p * z) *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ :=
+    integral_nonneg fun z => mul_nonneg (hGnn _ _ _) (Real.exp_nonneg _)
+  simp only [stepMD]
+  positivity
+
+/-- A tilted mean is bounded by a pointwise bound on the numerator. -/
+lemma stepMD_le (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    (hm : 0 ≤ m) {G : P → ℝ → ℝ × ℝ → ℝ}
+    (hG : Continuous fun w : P × ℝ × (ℝ × ℝ) => G w.1 w.2.1 w.2.2)
+    (hGb : ∀ p l x, |G p l x| ≤ c) (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    stepMD μ m α β F G p l x ≤ c := by
+  have hpos := integral_expShift_pos hμ h hm p l (α p) (β p) x
+  have hcontG : Continuous fun z : ℝ => G p l (x.1 + α p * z, x.2 + β p * z) :=
+    hG.comp (by fun_prop :
+      Continuous fun z : ℝ => ((p, l, (x.1 + α p * z, x.2 + β p * z)) : P × ℝ × (ℝ × ℝ)))
+  have hIG := integrable_gexpShift hμ h hm hcontG (fun z => hGb p l _) p l (α p) (β p) x
+  have hIe := integrable_expShift hμ h hm p l (α p) (β p) x
+  have hmono : (∫ z, G p l (x.1 + α p * z, x.2 + β p * z) *
+        Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ)
+      ≤ c * ∫ z, Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ := by
+    rw [← integral_const_mul]
+    refine integral_mono hIG (hIe.const_mul c) (fun z => ?_)
+    have hGz := (abs_le.1 (hGb p l (x.1 + α p * z, x.2 + β p * z))).2
+    have := Real.exp_pos (m * F p l (x.1 + α p * z, x.2 + β p * z))
+    nlinarith
+  simp only [stepMD]
+  rw [div_le_iff₀ hpos]
+  linarith
+
+/-- The tilted variance is nonnegative. -/
+lemma stepMVar_nonneg (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    (hm : 0 ≤ m) (p : P) (l : ℝ) (x : ℝ × ℝ) : 0 ≤ stepMVar μ m α β F D p l x := by
+  have hpos := integral_expShift_pos hμ h hm p l (α p) (β p) x
+  set I := ∫ z, Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ with hI
+  set N := ∫ z, D p l (x.1 + α p * z, x.2 + β p * z) *
+    Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ with hN
+  set N2 := ∫ z, (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+    Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ with hN2
+  have hIe := integrable_expShift hμ h hm p l (α p) (β p) x
+  have hID := integrable_DexpShift hμ h hm p l (α p) (β p) x
+  have hID2 : Integrable (fun z => (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))) μ := by
+    refine integrable_gexpShift (c := 1) hμ h hm ((h.cont_shiftD p l (α p) (β p) x).pow 2)
+      (fun z => ?_) p l (α p) (β p) x
+    have := h.bddD p l (x.1 + α p * z, x.2 + β p * z)
+    change |D p l (x.1 + α p * z, x.2 + β p * z) ^ 2| ≤ 1
+    rw [abs_pow]
+    nlinarith [abs_nonneg (D p l (x.1 + α p * z, x.2 + β p * z))]
+  set t := N / I with ht
+  have hnn : 0 ≤ ∫ z, (D p l (x.1 + α p * z, x.2 + β p * z) - t) ^ 2 *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ :=
+    integral_nonneg fun z => mul_nonneg (sq_nonneg _) (Real.exp_nonneg _)
+  have hexpand : (∫ z, (D p l (x.1 + α p * z, x.2 + β p * z) - t) ^ 2 *
+      Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) ∂μ)
+      = N2 - 2 * t * N + t ^ 2 * I := by
+    have hfun : (fun z => (D p l (x.1 + α p * z, x.2 + β p * z) - t) ^ 2 *
+        Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)))
+        = fun z => ((D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+            Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))
+          + (-(2 * t)) * (D p l (x.1 + α p * z, x.2 + β p * z) *
+            Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))))
+          + t ^ 2 * Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)) := by
+      funext z; ring
+    have hsum : Integrable (fun z => (D p l (x.1 + α p * z, x.2 + β p * z)) ^ 2 *
+        Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z))
+        + (-(2 * t)) * (D p l (x.1 + α p * z, x.2 + β p * z) *
+          Real.exp (m * F p l (x.1 + α p * z, x.2 + β p * z)))) μ :=
+      hID2.add (hID.const_mul (-(2 * t)))
+    rw [hfun, integral_add hsum (hIe.const_mul (t ^ 2)),
+      integral_add hID2 (hID.const_mul (-(2 * t))), integral_const_mul, integral_const_mul]
+    simp only [← hN, ← hN2, ← hI]
+    ring
+  rw [hexpand] at hnn
+  have hIne : I ≠ 0 := hpos.ne'
+  have ht' : t * I = N := by
+    rw [ht]
+    field_simp
+  have hmul : 0 ≤ (N2 - 2 * t * N + t ^ 2 * I) * I := mul_nonneg hnn hpos.le
+  have hid : (N2 - 2 * t * N + t ^ 2 * I) * I = N2 * I - N ^ 2 := by
+    linear_combination (t * I - N) * ht'
+  have hkey : N ^ 2 ≤ N2 * I := by rw [hid] at hmul; linarith
+  simp only [stepMVar, stepMD, ← hI, ← hN, ← hN2]
+  rw [sub_nonneg, div_pow, div_le_div_iff₀ (by positivity) hpos]
+  nlinarith [hkey, hpos]
+
+/-- The tilted variance of a family bounded by one is at most one. -/
+lemma stepMVar_le_one (hμ : ExpMoments μ) [IsProbabilityMeasure μ] (h : GoodFam F D)
+    (hm : 0 ≤ m) (p : P) (l : ℝ) (x : ℝ × ℝ) : stepMVar μ m α β F D p l x ≤ 1 := by
+  have hpos := integral_expShift_pos hμ h hm p l (α p) (β p) x
+  have hsq : stepMD μ m α β F (fun p' l' x' => (D p' l' x') ^ 2) p l x ≤ 1 := by
+    refine stepMD_le (c := 1) hμ h hm ?_ (fun p' l' x' => ?_) p l x
+    · exact (h.contD.pow 2)
+    · have := h.bddD p' l' x'
+      rw [abs_pow]
+      nlinarith [abs_nonneg (D p' l' x')]
+  have hnn : 0 ≤ (stepMD μ m α β F D p l x) ^ 2 := sq_nonneg _
+  simp only [stepMVar]
+  linarith
+
+/-- A triple `(F, D, E)` in which `(F, D)` is a good family, `E` is the `l`-derivative
+of `D`, and `E` takes values in `[0, c]`. -/
+structure GoodTriple (F D E : P → ℝ → ℝ × ℝ → ℝ) (c : ℝ) : Prop where
+  good : GoodFam F D
+  contE : Continuous fun w : P × ℝ × (ℝ × ℝ) => E w.1 w.2.1 w.2.2
+  derivD : ∀ p l x, HasDerivAt (fun l' => D p l' x) (E p l x) l
+  nonnegE : ∀ p l x, 0 ≤ E p l x
+  bddE : ∀ p l x, E p l x ≤ c
+
+lemma GoodTriple.absE {c : ℝ} (h : GoodTriple F D E c) (p : P) (l : ℝ) (x : ℝ × ℝ) :
+    |E p l x| ≤ c := by
+  have h1 := h.nonnegE p l x
+  have h2 := h.bddE p l x
+  rw [abs_le]
+  constructor <;> linarith
+
+/-- One finite recursion step turns a good triple with bound `c` into a good triple
+with bound `c + m`. -/
+theorem goodTriple_finiteStep (hμ : ExpMoments μ) [IsProbabilityMeasure μ]
+    [FirstCountableTopology P] {c : ℝ} (h : GoodTriple F D E c) (hm : 0 ≤ m)
+    (hα : Continuous α) (hβ : Continuous β) :
+    GoodTriple (finiteStep μ m α β F) (finiteStepD μ m α β F D)
+      (finiteStepDD μ m α β F D E) (c + m) := by
+  rcases eq_or_lt_of_le hm with h0 | hpos
+  · have hm0 : m = 0 := h0.symm
+    subst hm0
+    simp only [finiteStep, finiteStepD, finiteStepDD, add_zero]
+    refine
+      { good := step0_good hμ h.good hα hβ
+        contE := ?_
+        derivD := fun p l x =>
+          hasDeriv_step0_gen h.good.contD h.good.bddD h.contE h.derivD h.absE p l x
+        nonnegE := fun p l x => ?_
+        bddE := fun p l x => ?_ }
+    · refine continuous_step0 hμ h.contE hα hβ ?_
+      intro w₀
+      refine ⟨c, 0, ?_⟩
+      filter_upwards with w z
+      simpa using h.absE w.1 w.2.1 _
+    · show (0:ℝ) ≤ ∫ z, E p l (x.1 + α p * z, x.2 + β p * z) ∂μ
+      exact integral_nonneg fun z => h.nonnegE _ _ _
+    · show (∫ z, E p l (x.1 + α p * z, x.2 + β p * z) ∂μ) ≤ c
+      have hint := integrable_shiftG (μ := μ) h.contE h.absE p l (α p) (β p) x
+      calc (∫ z, E p l (x.1 + α p * z, x.2 + β p * z) ∂μ)
+          ≤ ∫ _z : ℝ, c ∂μ :=
+            integral_mono hint (integrable_const c) (fun z => h.bddE _ _ _)
+        _ = c := by simp
+  · have hne : m ≠ 0 := ne_of_gt hpos
+    simp only [finiteStep, finiteStepD, finiteStepDD, if_neg hne]
+    refine
+      { good := stepM_good hμ h.good hpos hα hβ
+        contE := ?_
+        derivD := fun p l x =>
+          hasDeriv_stepMD hμ h.good hpos h.contE h.derivD h.absE p l x
+        nonnegE := fun p l x => ?_
+        bddE := fun p l x => ?_ }
+    · have h1 : Continuous fun w : P × ℝ × (ℝ × ℝ) => stepMD μ m α β F E w.1 w.2.1 w.2.2 :=
+        continuous_stepMD_gen hμ h.good hpos.le hα hβ h.contE h.absE
+      have h2 : Continuous fun w : P × ℝ × (ℝ × ℝ) =>
+          stepMD μ m α β F (fun p' l' x' => (D p' l' x') ^ 2) w.1 w.2.1 w.2.2 := by
+        refine continuous_stepMD_gen (c := 1) hμ h.good hpos.le hα hβ (h.good.contD.pow 2)
+          (fun p' l' x' => ?_)
+        have := h.good.bddD p' l' x'
+        rw [abs_pow]
+        nlinarith [abs_nonneg (D p' l' x')]
+      have h3 : Continuous fun w : P × ℝ × (ℝ × ℝ) => stepMD μ m α β F D w.1 w.2.1 w.2.2 :=
+        continuous_stepMD_gen (c := 1) hμ h.good hpos.le hα hβ h.good.contD h.good.bddD
+      simp only [stepMVar]
+      exact h1.add (continuous_const.mul (h2.sub (h3.pow 2)))
+    · have hE := stepMD_nonneg (α := α) (β := β) hμ h.good hpos.le h.nonnegE p l x
+      have hV := stepMVar_nonneg (α := α) (β := β) hμ h.good hpos.le p l x
+      have : 0 ≤ m * stepMVar μ m α β F D p l x := mul_nonneg hpos.le hV
+      linarith
+    · have hE := stepMD_le (α := α) (β := β) hμ h.good hpos.le h.contE h.absE p l x
+      have hV := stepMVar_le_one (α := α) (β := β) hμ h.good hpos.le p l x
+      nlinarith
+
+end Propagate
+
+end GTFrame
+
+namespace SpinGlass.AT
+
+/-! ## The terminal function -/
+
+/-- The numerator in the logarithmic derivative of `gtTerminal`. -/
+private def gtTerminalNumerator (lam x₁ x₂ : ℝ) : ℝ :=
+  Real.exp (x₁ + x₂ + lam) - Real.exp (x₁ - x₂ - lam) -
+    Real.exp (-x₁ + x₂ - lam) + Real.exp (-x₁ - x₂ + lam)
+
+/-- The positive partition sum occurring in `gtTerminal`. -/
+private def gtTerminalSum (lam x₁ x₂ : ℝ) : ℝ :=
+  Real.exp (x₁ + x₂ + lam) + Real.exp (x₁ - x₂ - lam) +
+    Real.exp (-x₁ + x₂ - lam) + Real.exp (-x₁ - x₂ + lam)
+
+private lemma gtTerminalSum_pos (lam x₁ x₂ : ℝ) :
+    0 < gtTerminalSum lam x₁ x₂ := by
+  unfold gtTerminalSum
+  positivity
+
+/-- Exact first derivative of the canonical terminal condition in `lam`. -/
+lemma hasDerivAt_gtTerminal (lam x₁ x₂ : ℝ) :
+    HasDerivAt (fun l => gtTerminal l x₁ x₂)
+      (gtTerminalNumerator lam x₁ x₂ / gtTerminalSum lam x₁ x₂) lam := by
+  let A : ℝ → ℝ := fun l => Real.exp (x₁ + x₂ + l)
+  let B : ℝ → ℝ := fun l => Real.exp (x₁ - x₂ - l)
+  let C : ℝ → ℝ := fun l => Real.exp (-x₁ + x₂ - l)
+  let D : ℝ → ℝ := fun l => Real.exp (-x₁ - x₂ + l)
+  have hA : HasDerivAt A (A lam) lam := by
+    dsimp [A]
+    simpa only [id_eq, mul_one] using ((hasDerivAt_id lam).const_add (x₁ + x₂)).exp
+  have hB : HasDerivAt B (-B lam) lam := by
+    dsimp [B]
+    simpa only [id_eq, mul_neg_one] using
+      ((hasDerivAt_id lam).const_sub (x₁ - x₂)).exp
+  have hC : HasDerivAt C (-C lam) lam := by
+    dsimp [C]
+    simpa only [id_eq, mul_neg_one] using
+      ((hasDerivAt_id lam).const_sub (-x₁ + x₂)).exp
+  have hD : HasDerivAt D (D lam) lam := by
+    dsimp [D]
+    simpa only [id_eq, mul_one] using ((hasDerivAt_id lam).const_add (-x₁ - x₂)).exp
+  have hsum := (((hA.add hB).add hC).add hD)
+  have hquot := hsum.div_const 4
+  have hpos : 0 < ((A + B + C + D) lam) / 4 := by
+    dsimp [A, B, C, D]
+    positivity
+  have hlog := hquot.log hpos.ne'
+  convert hlog using 1
+  · funext l
+    simp only [gtTerminal, A, B, C, D, Pi.add_apply]
+  · simp only [gtTerminalNumerator, gtTerminalSum, A, B, C, D, Pi.add_apply]
+    field_simp
+    ring
+
+/-- The first `lam`-derivative of `gtTerminal` has absolute value at most one. -/
+lemma abs_deriv_gtTerminal_le_one (lam x₁ x₂ : ℝ) :
+    |deriv (fun l => gtTerminal l x₁ x₂) lam| ≤ 1 := by
+  rw [(hasDerivAt_gtTerminal lam x₁ x₂).deriv]
+  have hpos := gtTerminalSum_pos lam x₁ x₂
+  rw [abs_le]
+  constructor
+  · rw [le_div_iff₀ hpos]
+    unfold gtTerminalNumerator gtTerminalSum
+    nlinarith [Real.exp_pos (x₁ + x₂ + lam), Real.exp_pos (x₁ - x₂ - lam),
+      Real.exp_pos (-x₁ + x₂ - lam), Real.exp_pos (-x₁ - x₂ + lam)]
+  · rw [div_le_iff₀ hpos]
+    unfold gtTerminalNumerator gtTerminalSum
+    nlinarith [Real.exp_pos (x₁ + x₂ + lam), Real.exp_pos (x₁ - x₂ - lam),
+      Real.exp_pos (-x₁ + x₂ - lam), Real.exp_pos (-x₁ - x₂ + lam)]
+
+/-! ## Canonical finite recursion -/
+
+/--
+Uniform multiplier-derivative bounds for the recursion defined in
+`Lemmas.ATDefs`. The statement refers directly to `gtSemigroupSolution` and
+`gtFunctional`, whose branches are built from `gtDiagonalStep` and
+`gtRankOneStep`.
 -/
+private abbrev gauss : Measure ℝ := gaussianReal 0 1
 
-private lemma flatness_deriv_gtFunctional_of_solution
-    (β h q s lam v : ℝ) (U : ℝ → GTTwoField)
-    (hU : ∀ l x₁ x₂,
-      gtSemigroupSolution β q s l v 0 x₁ x₂ = U l x₁ x₂) :
-    deriv (fun l => gtFunctional β h q s l v) lam =
+private lemma integral_exp_add_mul (a t : ℝ) :
+    (∫ z, Real.exp (a + t * z) ∂gauss) = Real.exp (a + t ^ 2 / 2) := by
+  have hmgf := congrFun (mgf_id_gaussianReal (μ := 0) (v := 1)) t
+  simp only [mgf, id_eq, zero_mul, NNReal.coe_one, one_mul, zero_add] at hmgf
+  rw [show (fun z : ℝ => Real.exp (a + t * z)) =
+      fun z => Real.exp a * Real.exp (t * z) by
+        funext z
+        rw [Real.exp_add]]
+  rw [integral_const_mul, hmgf, ← Real.exp_add]
+
+private lemma integrable_exp_add_mul (a t : ℝ) :
+    Integrable (fun z => Real.exp (a + t * z)) gauss := by
+  rw [show (fun z : ℝ => Real.exp (a + t * z)) =
+      fun z => Real.exp a * Real.exp (t * z) by
+        funext z
+        rw [Real.exp_add]]
+  exact (integrable_exp_mul_gaussianReal t).const_mul _
+
+private lemma rankOne_one_zero_terminal (scale l x₁ x₂ : ℝ) :
+    gtRankOneStep 1 scale 0 (gtTerminal l) x₁ x₂ =
+      gtTerminal l x₁ x₂ + scale ^ 2 / 2 := by
+  simp only [gtRankOneStep, one_ne_zero, if_false, one_div, one_mul,
+    standardGaussianExpectation]
+  have hpoint : (fun z => Real.exp (gtTerminal l (x₁ + scale * z) (x₂ + 0 * scale * z))) =
+      fun z => (Real.exp (x₁ + scale * z + x₂ + l) +
+        Real.exp (x₁ + scale * z - x₂ - l) +
+        Real.exp (-(x₁ + scale * z) + x₂ - l) +
+        Real.exp (-(x₁ + scale * z) - x₂ + l)) / 4 := by
+    funext z
+    simp only [zero_mul, add_zero]
+    rw [gtTerminal, Real.exp_log]
+    positivity
+  rw [hpoint]
+  simp only [div_eq_mul_inv]
+  rw [integral_mul_const]
+  have hi1 : Integrable (fun z => Real.exp (x₁ + scale * z + x₂ + l)) gauss := by
+    convert integrable_exp_add_mul (x₁ + x₂ + l) scale using 1 <;> ring
+  have hi2 : Integrable (fun z => Real.exp (x₁ + scale * z - x₂ - l)) gauss := by
+    convert integrable_exp_add_mul (x₁ - x₂ - l) scale using 1 <;> ring
+  have hi3 : Integrable (fun z => Real.exp (-(x₁ + scale * z) + x₂ - l)) gauss := by
+    convert integrable_exp_add_mul (-x₁ + x₂ - l) (-scale) using 1 <;> ring
+  have hi4 : Integrable (fun z => Real.exp (-(x₁ + scale * z) - x₂ + l)) gauss := by
+    convert integrable_exp_add_mul (-x₁ - x₂ + l) (-scale) using 1 <;> ring
+  have h12 :
+      (∫ z, Real.exp (x₁ + scale * z + x₂ + l) +
+          Real.exp (x₁ + scale * z - x₂ - l) ∂gauss) =
+        (∫ z, Real.exp (x₁ + scale * z + x₂ + l) ∂gauss) +
+        (∫ z, Real.exp (x₁ + scale * z - x₂ - l) ∂gauss) := by
+    simpa only [Pi.add_apply] using integral_add hi1 hi2
+  have h123 :
+      (∫ z, Real.exp (x₁ + scale * z + x₂ + l) +
+          Real.exp (x₁ + scale * z - x₂ - l) +
+          Real.exp (-(x₁ + scale * z) + x₂ - l) ∂gauss) =
+        (∫ z, Real.exp (x₁ + scale * z + x₂ + l) ∂gauss) +
+        (∫ z, Real.exp (x₁ + scale * z - x₂ - l) ∂gauss) +
+        (∫ z, Real.exp (-(x₁ + scale * z) + x₂ - l) ∂gauss) := by
+    calc
+      _ = (∫ z, Real.exp (x₁ + scale * z + x₂ + l) +
+              Real.exp (x₁ + scale * z - x₂ - l) ∂gauss) +
+            (∫ z, Real.exp (-(x₁ + scale * z) + x₂ - l) ∂gauss) := by
+          simpa only [Pi.add_apply] using integral_add (hi1.add hi2) hi3
+      _ = _ := by rw [h12]
+  have hsplit :
+      (∫ z, Real.exp (x₁ + scale * z + x₂ + l) +
+          Real.exp (x₁ + scale * z - x₂ - l) +
+          Real.exp (-(x₁ + scale * z) + x₂ - l) +
+          Real.exp (-(x₁ + scale * z) - x₂ + l) ∂gauss) =
+        (∫ z, Real.exp (x₁ + scale * z + x₂ + l) ∂gauss) +
+        (∫ z, Real.exp (x₁ + scale * z - x₂ - l) ∂gauss) +
+        (∫ z, Real.exp (-(x₁ + scale * z) + x₂ - l) ∂gauss) +
+        (∫ z, Real.exp (-(x₁ + scale * z) - x₂ + l) ∂gauss) := by
+    calc
+      _ = (∫ z, Real.exp (x₁ + scale * z + x₂ + l) +
+              Real.exp (x₁ + scale * z - x₂ - l) +
+              Real.exp (-(x₁ + scale * z) + x₂ - l) ∂gauss) +
+            (∫ z, Real.exp (-(x₁ + scale * z) - x₂ + l) ∂gauss) := by
+          simpa only [Pi.add_apply] using integral_add ((hi1.add hi2).add hi3) hi4
+      _ = _ := by rw [h123]
+  rw [hsplit]
+  have hv1 : (∫ z, Real.exp (x₁ + scale * z + x₂ + l) ∂gauss) =
+      Real.exp (x₁ + x₂ + l + scale ^ 2 / 2) := by
+    convert integral_exp_add_mul (x₁ + x₂ + l) scale using 1 <;> ring
+  have hv2 : (∫ z, Real.exp (x₁ + scale * z - x₂ - l) ∂gauss) =
+      Real.exp (x₁ - x₂ - l + scale ^ 2 / 2) := by
+    convert integral_exp_add_mul (x₁ - x₂ - l) scale using 1 <;> ring
+  have hv3 : (∫ z, Real.exp (-(x₁ + scale * z) + x₂ - l) ∂gauss) =
+      Real.exp (-x₁ + x₂ - l + (-scale) ^ 2 / 2) := by
+    convert integral_exp_add_mul (-x₁ + x₂ - l) (-scale) using 1 <;> ring
+  have hv4 : (∫ z, Real.exp (-(x₁ + scale * z) - x₂ + l) ∂gauss) =
+      Real.exp (-x₁ - x₂ + l + (-scale) ^ 2 / 2) := by
+    convert integral_exp_add_mul (-x₁ - x₂ + l) (-scale) using 1 <;> ring
+  rw [hv1, hv2, hv3, hv4, gtTerminal]
+  have hsum : 0 < (Real.exp (x₁ + x₂ + l) + Real.exp (x₁ - x₂ - l) +
+      Real.exp (-x₁ + x₂ - l) + Real.exp (-x₁ - x₂ + l)) / 4 := by positivity
+  have hfactor :
+      (Real.exp (x₁ + x₂ + l + scale ^ 2 / 2) +
+          Real.exp (x₁ - x₂ - l + scale ^ 2 / 2) +
+          Real.exp (-x₁ + x₂ - l + (-scale) ^ 2 / 2) +
+          Real.exp (-x₁ - x₂ + l + (-scale) ^ 2 / 2)) * 4⁻¹ =
+        Real.exp (scale ^ 2 / 2) *
+          ((Real.exp (x₁ + x₂ + l) + Real.exp (x₁ - x₂ - l) +
+            Real.exp (-x₁ + x₂ - l) + Real.exp (-x₁ - x₂ + l)) / 4) := by
+    rw [show (-scale) ^ 2 = scale ^ 2 by ring]
+    simp_rw [Real.exp_add]
+    ring
+  rw [hfactor, Real.log_mul (Real.exp_ne_zero _) hsum.ne', Real.log_exp]
+  ring
+
+private lemma gtTerminal_swap (l x₁ x₂ : ℝ) :
+    gtTerminal l x₂ x₁ = gtTerminal l x₁ x₂ := by
+  unfold gtTerminal
+  congr 2
+  ring_nf
+
+private lemma rankOne_one_zero_terminal_snd (scale l x₁ x₂ : ℝ) :
+    Real.log (standardGaussianExpectation (fun z =>
+      Real.exp (gtTerminal l x₁ (x₂ + scale * z)))) =
+      gtTerminal l x₁ x₂ + scale ^ 2 / 2 := by
+  have h := rankOne_one_zero_terminal scale l x₂ x₁
+  simp only [gtRankOneStep, one_ne_zero, if_false, one_div, one_mul, zero_mul,
+    add_zero] at h
+  rw [← gtTerminal_swap l x₂ x₁] at h
+  calc
+    _ = Real.log (standardGaussianExpectation (fun z =>
+          Real.exp (gtTerminal l (x₂ + scale * z) x₁))) := by
+        congr 3
+        funext z
+        rw [gtTerminal_swap]
+    _ = _ := by norm_num at h ⊢; exact h
+
+private lemma rankOne_one_zero_terminal_add (scale l k x₁ x₂ : ℝ) :
+    gtRankOneStep 1 scale 0 (fun y₁ y₂ => gtTerminal l y₁ y₂ + k) x₁ x₂ =
+      gtTerminal l x₁ x₂ + scale ^ 2 / 2 + k := by
+  have hbase := rankOne_one_zero_terminal scale l x₁ x₂
+  simp only [gtRankOneStep, one_ne_zero, if_false, one_div, one_mul, zero_mul,
+    add_zero] at hbase ⊢
+  have hpos : 0 < standardGaussianExpectation (fun z =>
+      Real.exp (gtTerminal l (x₁ + scale * z) x₂)) := by
+    unfold standardGaussianExpectation
+    simpa using GTFrame.integral_expShift_pos (GTFrame.expMoments_gaussianReal 0 1)
+      (GTFrame.goodFam_fLbase (P := Unit)) (m := (1 : ℝ)) (by norm_num)
+      () l scale 0 (x₁, x₂)
+  have hfun : (fun z => Real.exp (gtTerminal l (x₁ + scale * z) x₂ + k)) =
+      fun z => Real.exp k * Real.exp (gtTerminal l (x₁ + scale * z) x₂) := by
+    funext z
+    rw [add_comm, Real.exp_add]
+  rw [hfun]
+  unfold standardGaussianExpectation at hbase hpos ⊢
+  rw [integral_const_mul, Real.log_mul (Real.exp_ne_zero k) hpos.ne', Real.log_exp,
+    ]
+  norm_num at hbase ⊢
+  linarith
+
+private lemma diagonal_one_terminal (scale l x₁ x₂ : ℝ) :
+    gtDiagonalStep 1 scale (gtTerminal l) x₁ x₂ =
+      gtTerminal l x₁ x₂ + scale ^ 2 := by
+  simp only [gtDiagonalStep, one_ne_zero, if_false, one_div, one_mul]
+  have hsnd : ∀ y₁ y₂,
+      Real.log (standardGaussianExpectation (fun z =>
+        Real.exp (gtTerminal l y₁ (y₂ + scale * z)))) =
+        gtTerminal l y₁ y₂ + scale ^ 2 / 2 :=
+    rankOne_one_zero_terminal_snd scale l
+  have hpos : ∀ y₁ y₂, 0 < standardGaussianExpectation (fun z =>
+      Real.exp (gtTerminal l y₁ (y₂ + scale * z))) := by
+    intro y₁ y₂
+    unfold standardGaussianExpectation
+    simpa using GTFrame.integral_expShift_pos (GTFrame.expMoments_gaussianReal 0 1)
+      (GTFrame.goodFam_fLbase (P := Unit)) (m := (1 : ℝ)) (by norm_num)
+      () l 0 scale (y₁, y₂)
+  have hinner : ∀ y₁ y₂,
+      standardGaussianExpectation (fun z => Real.exp (gtTerminal l y₁ (y₂ + scale * z))) =
+        Real.exp (gtTerminal l y₁ y₂ + scale ^ 2 / 2) := by
+    intro y₁ y₂
+    rw [← hsnd y₁ y₂, Real.exp_log (hpos y₁ y₂)]
+  simp_rw [hinner]
+  have h := rankOne_one_zero_terminal_add scale l (scale ^ 2 / 2) x₁ x₂
+  simp only [gtRankOneStep, one_ne_zero, if_false, one_div, one_mul, zero_mul,
+    add_zero] at h
+  norm_num at h ⊢
+  nlinarith
+
+/-- A level-one independent Gaussian step adds only its covariance constant
+to the two-replica terminal condition.  This public form is useful when
+computing multiplier derivatives at the endpoint. -/
+lemma gtDiagonalStep_one_terminal (scale l x₁ x₂ : ℝ) :
+    gtDiagonalStep 1 scale (gtTerminal l) x₁ x₂ =
+      gtTerminal l x₁ x₂ + scale ^ 2 :=
+  diagonal_one_terminal scale l x₁ x₂
+
+private def rankStep (m scale sign : ℝ)
+    (F : Unit → ℝ → ℝ × ℝ → ℝ) : Unit → ℝ → ℝ × ℝ → ℝ :=
+  GTFrame.finiteStep gauss m (fun _ => scale) (fun _ => sign * scale) F
+
+private def diagonalStep (m scale : ℝ)
+    (F : Unit → ℝ → ℝ × ℝ → ℝ) : Unit → ℝ → ℝ × ℝ → ℝ :=
+  GTFrame.finiteStep gauss m (fun _ => scale) (fun _ => 0)
+    (GTFrame.finiteStep gauss m (fun _ => 0) (fun _ => scale) F)
+
+private lemma rankStep_apply (m scale sign : ℝ)
+    (F : Unit → ℝ → ℝ × ℝ → ℝ) (l x₁ x₂ : ℝ) :
+    rankStep m scale sign F () l (x₁, x₂) =
+      gtRankOneStep m scale sign (fun y₁ y₂ => F () l (y₁, y₂)) x₁ x₂ := by
+  by_cases hm : m = 0
+  · simp [rankStep, GTFrame.finiteStep, GTFrame.step0, gtRankOneStep,
+      standardGaussianExpectation, gauss, hm]
+  · simp [rankStep, GTFrame.finiteStep, GTFrame.stepM, gtRankOneStep,
+      standardGaussianExpectation, gauss, hm, mul_assoc]
+
+private lemma diagonalStep_zero_apply
+    (scale : ℝ) (F : Unit → ℝ → ℝ × ℝ → ℝ) (l x₁ x₂ : ℝ) :
+    diagonalStep 0 scale F () l (x₁, x₂) =
+      gtDiagonalStep 0 scale (fun y₁ y₂ => F () l (y₁, y₂)) x₁ x₂ := by
+  simp [diagonalStep, GTFrame.finiteStep, GTFrame.step0, gtDiagonalStep,
+    standardGaussianExpectation, gauss]
+
+private def terminalD : Unit → ℝ → ℝ × ℝ → ℝ :=
+  fun _ l x => GTFrame.fLbaseD l x
+
+private def terminalE : Unit → ℝ → ℝ × ℝ → ℝ :=
+  fun _ l x => GTFrame.fLbaseDD l x
+
+private def upperF (scale : ℝ) : Unit → ℝ → ℝ × ℝ → ℝ :=
+  fun _ l x => GTFrame.fLbase l x + scale ^ 2
+
+private lemma upper_goodTriple (scale : ℝ) :
+    GTFrame.GoodTriple (upperF scale) terminalD terminalE 1 := by
+  refine
+    { good := ?_
+      contE := GTFrame.continuous_fLbaseDD.comp (by fun_prop)
+      derivD := fun _ l x => GTFrame.hasDerivAt_fLbaseD l x
+      nonnegE := fun _ l x => GTFrame.fLbaseDD_nonneg l x
+      bddE := fun _ l x => GTFrame.fLbaseDD_le_one l x }
+  exact
+    { contF := (GTFrame.continuous_fLbase.comp (by fun_prop)).add continuous_const
+      contD := GTFrame.continuous_fLbaseD.comp (by fun_prop)
+      hasDeriv := fun _ l x => (GTFrame.hasDerivAt_fLbase l x).add_const _
+      lipx := by
+        intro _ l x y
+        simpa [upperF] using GTFrame.fLbase_lipx l x y
+      bddD := fun _ l x => GTFrame.fLbaseD_bdd l x }
+
+private lemma upperF_apply (scale l x₁ x₂ : ℝ) :
+    upperF scale () l (x₁, x₂) =
+      gtDiagonalStep 1 scale (gtTerminal l) x₁ x₂ := by
+  rw [diagonal_one_terminal]
+  rfl
+
+private lemma rankStep_good {F D E : Unit → ℝ → ℝ × ℝ → ℝ} {c m : ℝ}
+    (h : GTFrame.GoodTriple F D E c) (hm : 0 ≤ m) (scale sign : ℝ) :
+    GTFrame.GoodTriple (rankStep m scale sign F)
+      (GTFrame.finiteStepD gauss m (fun _ => scale) (fun _ => sign * scale) F D)
+      (GTFrame.finiteStepDD gauss m (fun _ => scale) (fun _ => sign * scale) F D E)
+      (c + m) := by
+  exact GTFrame.goodTriple_finiteStep (GTFrame.expMoments_gaussianReal 0 1)
+    h hm continuous_const continuous_const
+
+private lemma diagonalStep_zero_good {F D E : Unit → ℝ → ℝ × ℝ → ℝ} {c : ℝ}
+    (h : GTFrame.GoodTriple F D E c) (scale : ℝ) :
+    ∃ D' E', GTFrame.GoodTriple (diagonalStep 0 scale F) D' E' c := by
+  let D₁ := GTFrame.finiteStepD gauss 0 (fun _ : Unit => 0) (fun _ => scale) F D
+  let E₁ := GTFrame.finiteStepDD gauss 0 (fun _ : Unit => 0) (fun _ => scale) F D E
+  have h₁ : GTFrame.GoodTriple
+      (GTFrame.finiteStep gauss 0 (fun _ : Unit => 0) (fun _ => scale) F) D₁ E₁ c := by
+    simpa [D₁, E₁] using GTFrame.goodTriple_finiteStep
+      (GTFrame.expMoments_gaussianReal 0 1) h (by norm_num : (0 : ℝ) ≤ 0)
+      continuous_const continuous_const
+  let D₂ := GTFrame.finiteStepD gauss 0 (fun _ : Unit => scale) (fun _ => 0)
+    (GTFrame.finiteStep gauss 0 (fun _ : Unit => 0) (fun _ => scale) F) D₁
+  let E₂ := GTFrame.finiteStepDD gauss 0 (fun _ : Unit => scale) (fun _ => 0)
+    (GTFrame.finiteStep gauss 0 (fun _ : Unit => 0) (fun _ => scale) F) D₁ E₁
+  refine ⟨D₂, E₂, ?_⟩
+  simpa [diagonalStep, D₂, E₂] using GTFrame.goodTriple_finiteStep
+    (GTFrame.expMoments_gaussianReal 0 1) h₁ (by norm_num : (0 : ℝ) ≤ 0)
+    continuous_const continuous_const
+
+private lemma bounds_of_goodTriple {F D E : Unit → ℝ → ℝ × ℝ → ℝ} {c : ℝ}
+    (h : GTFrame.GoodTriple F D E c) (hc : c ≤ 5 / 2) (lam x₁ x₂ : ℝ) :
+    |deriv (fun l => F () l (x₁, x₂)) lam| ≤ 1 ∧
+      0 ≤ deriv (deriv (fun l => F () l (x₁, x₂))) lam ∧
+      deriv (deriv (fun l => F () l (x₁, x₂))) lam ≤ 5 / 2 := by
+  have hfirst : ∀ l, deriv (fun t => F () t (x₁, x₂)) l = D () l (x₁, x₂) :=
+    fun l => (h.good.hasDeriv () l (x₁, x₂)).deriv
+  have hderiv : deriv (fun t => F () t (x₁, x₂)) = fun l => D () l (x₁, x₂) :=
+    funext hfirst
+  rw [hfirst lam, hderiv, (h.derivD () lam (x₁, x₂)).deriv]
+  exact ⟨h.good.bddD () lam (x₁, x₂), h.nonnegE () lam (x₁, x₂),
+    (h.bddE () lam (x₁, x₂)).trans hc⟩
+
+private lemma semigroup_package (β q s v u : ℝ) :
+    ∃ F D E c, GTFrame.GoodTriple F D E c ∧ c ≤ 5 / 2 ∧
+      ∀ l x₁ x₂, F () l (x₁, x₂) = gtSemigroupSolution β q s l v u x₁ x₂ := by
+  let r : ℝ := |v|
+  let sign : ℝ := gtPathSign v
+  by_cases hqr : q ≤ r
+  · by_cases hru : r ≤ u
+    · let scaleU := gtIncrementScale β s u 1
+      refine ⟨upperF scaleU, terminalD, terminalE, 1,
+        upper_goodTriple scaleU, by norm_num, ?_⟩
+      intro l x₁ x₂
+      rw [upperF_apply]
+      simp [gtSemigroupSolution, r, sign, hqr, hru, scaleU]
+    · have hur : u < r := lt_of_not_ge hru
+      by_cases hqu : q ≤ u
+      · let scaleR := gtIncrementScale β s r 1
+        let scaleUR := gtIncrementScale β s u r
+        let F := rankStep (1 / 2) scaleUR sign (upperF scaleR)
+        have hF := rankStep_good (upper_goodTriple scaleR)
+          (by norm_num : (0 : ℝ) ≤ 1 / 2) scaleUR sign
+        refine ⟨F, _, _, 1 + 1 / 2, hF, by norm_num, ?_⟩
+        intro l x₁ x₂
+        dsimp [F]
+        rw [rankStep_apply]
+        simp_rw [upperF_apply]
+        simp [gtSemigroupSolution, r, sign, hqr, hru, hqu, scaleR, scaleUR]
+      · have huq : u < q := lt_of_not_ge hqu
+        let scaleR := gtIncrementScale β s r 1
+        let scaleQR := gtIncrementScale β s q r
+        let atQ := rankStep (1 / 2) scaleQR sign (upperF scaleR)
+        have hatQ := rankStep_good (upper_goodTriple scaleR)
+          (by norm_num : (0 : ℝ) ≤ 1 / 2) scaleQR sign
+        let scaleUQ := gtIncrementScale β s u q
+        let F := rankStep 0 scaleUQ sign atQ
+        have hF := rankStep_good hatQ (by norm_num : (0 : ℝ) ≤ 0) scaleUQ sign
+        refine ⟨F, _, _, (1 + 1 / 2) + 0, hF, by norm_num, ?_⟩
+        intro l x₁ x₂
+        dsimp [F, atQ]
+        rw [rankStep_apply]
+        simp_rw [rankStep_apply, upperF_apply]
+        simp [gtSemigroupSolution, r, sign, hqr, hru, hqu, scaleR, scaleQR, scaleUQ]
+  · have hrq : r < q := lt_of_not_ge hqr
+    by_cases hqu : q ≤ u
+    · let scaleU := gtIncrementScale β s u 1
+      refine ⟨upperF scaleU, terminalD, terminalE, 1,
+        upper_goodTriple scaleU, by norm_num, ?_⟩
+      intro l x₁ x₂
+      rw [upperF_apply]
+      simp [gtSemigroupSolution, r, sign, hqr, hqu, scaleU]
+    · have huq : u < q := lt_of_not_ge hqu
+      by_cases hru : r ≤ u
+      · let scaleQ := gtIncrementScale β s q 1
+        let scaleUQ := gtIncrementScale β s u q
+        obtain ⟨D, E, hF⟩ := diagonalStep_zero_good (upper_goodTriple scaleQ) scaleUQ
+        refine ⟨diagonalStep 0 scaleUQ (upperF scaleQ), D, E, 1, hF,
+          by norm_num, ?_⟩
+        intro l x₁ x₂
+        rw [diagonalStep_zero_apply]
+        simp_rw [upperF_apply]
+        simp [gtSemigroupSolution, r, sign, hqr, hqu, hru, scaleQ, scaleUQ]
+      · have hur : u < r := lt_of_not_ge hru
+        let scaleQ := gtIncrementScale β s q 1
+        let scaleRQ := gtIncrementScale β s r q
+        let atR := diagonalStep 0 scaleRQ (upperF scaleQ)
+        obtain ⟨DR, ER, hatR⟩ := diagonalStep_zero_good (upper_goodTriple scaleQ) scaleRQ
+        let scaleUR := gtIncrementScale β s u r
+        let F := rankStep 0 scaleUR sign atR
+        have hF := rankStep_good hatR (by norm_num : (0 : ℝ) ≤ 0) scaleUR sign
+        refine ⟨F, _, _, 1 + 0, hF, by norm_num, ?_⟩
+        intro l x₁ x₂
+        dsimp [F, atR]
+        rw [rankStep_apply]
+        simp_rw [diagonalStep_zero_apply, upperF_apply]
+        simp [gtSemigroupSolution, r, sign, hqr, hqu, hru, scaleQ, scaleRQ, scaleUR]
+
+theorem gt_lambda_derivative_bounds
+    (β h q s lam v u x₁ x₂ : ℝ) :
+    (|deriv (fun l => gtSemigroupSolution β q s l v u x₁ x₂) lam| ≤ 1 ∧
+      0 ≤ deriv (deriv (fun l =>
+        gtSemigroupSolution β q s l v u x₁ x₂)) lam ∧
+      deriv (deriv (fun l =>
+        gtSemigroupSolution β q s l v u x₁ x₂)) lam ≤ 5 / 2) ∧
+    (0 ≤ deriv (deriv (fun l => gtFunctional β h q s l v)) lam ∧
+      deriv (deriv (fun l => gtFunctional β h q s l v)) lam ≤ 5 / 2) := by
+  /-
+  The terminal second derivative is the variance of a sign and lies in
+  `[0, 1]`. A finite-mass GT step adds its mass times a tilted variance.
+  The canonical branches have masses `1` and, when present, `1 / 2`; mass-zero
+  Gaussian steps preserve the bound. Differentiation of the outer Gaussian
+  expectation gives the functional estimate because its remaining `lam` term
+  is affine.
+  -/
+  obtain ⟨F, D, E, c, hF, hc, heq⟩ := semigroup_package β q s v u
+  have hsemigroup := bounds_of_goodTriple hF hc lam x₁ x₂
+  have hfun : (fun l => gtSemigroupSolution β q s l v u x₁ x₂) =
+      fun l => F () l (x₁, x₂) := by
+    funext l
+    exact (heq l x₁ x₂).symm
+  rw [hfun]
+  refine ⟨hsemigroup, ?_⟩
+  obtain ⟨F₀, D₀, E₀, c₀, hF₀, hc₀, heq₀⟩ := semigroup_package β q s v 0
+  let scale := β * Real.sqrt ((1 - s) * q)
+  let Fout := rankStep 0 scale 1 F₀
+  have hout := rankStep_good hF₀ (by norm_num : (0 : ℝ) ≤ 0) scale 1
+  have hcOut : c₀ + 0 ≤ 5 / 2 := by linarith
+  have houtEq : ∀ l,
+      Fout () l (h, h) = standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s l v 0
+          (h + scale * z) (h + scale * z)) := by
+    intro l
+    dsimp [Fout]
+    rw [rankStep_apply]
+    simp only [gtRankOneStep, if_pos rfl, standardGaussianExpectation, zero_mul,
+      one_mul, if_true]
+    congr 1
+    funext z
+    rw [heq₀]
+  have hfunctional : (fun l => gtFunctional β h q s l v) = fun l =>
+      2 * Real.log 2 + Fout () l (h, h) - l * v - gtCorrection β q s := by
+    funext l
+    rw [gtFunctional, houtEq]
+  rw [hfunctional]
+  have hfirstOut : deriv (fun l =>
+      2 * Real.log 2 + Fout () l (h, h) - l * v - gtCorrection β q s) =
+      fun l =>
+        (GTFrame.finiteStepD gauss 0 (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () l (h, h) - v := by
+    funext t
+    have hd := (((hout.good.hasDeriv () t (h, h)).const_add (2 * Real.log 2)).sub
+      ((hasDerivAt_id t).mul_const v)).sub_const (gtCorrection β q s)
+    simpa [Fout] using hd.deriv
+  rw [hfirstOut]
+  have hsecond := (hout.derivD () lam (h, h)).sub_const v
+  rw [hsecond.deriv]
+  exact ⟨hout.nonnegE () lam (h, h), (hout.bddE () lam (h, h)).trans hcOut⟩
+
+/-- The first multiplier derivative of the GT functional is differentiable.
+This is the regularity companion to `gt_lambda_derivative_bounds`. -/
+lemma differentiable_deriv_gtFunctional (β h q s v : ℝ) :
+    Differentiable ℝ (deriv (fun l => gtFunctional β h q s l v)) := by
+  obtain ⟨F₀, D₀, E₀, c₀, hF₀, _hc₀, heq₀⟩ := semigroup_package β q s v 0
+  let scale := β * Real.sqrt ((1 - s) * q)
+  let Fout := rankStep 0 scale 1 F₀
+  have hout := rankStep_good hF₀ (by norm_num : (0 : ℝ) ≤ 0) scale 1
+  have houtEq : ∀ l,
+      Fout () l (h, h) = standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s l v 0
+          (h + scale * z) (h + scale * z)) := by
+    intro l
+    dsimp [Fout]
+    rw [rankStep_apply]
+    simp only [gtRankOneStep, standardGaussianExpectation, zero_mul,
+      one_mul, if_true]
+    congr 1
+    funext z
+    rw [heq₀]
+  have hfunctional : (fun l => gtFunctional β h q s l v) = fun l =>
+      2 * Real.log 2 + Fout () l (h, h) - l * v - gtCorrection β q s := by
+    funext l
+    rw [gtFunctional, houtEq]
+  have hfirst : deriv (fun l =>
+      2 * Real.log 2 + Fout () l (h, h) - l * v - gtCorrection β q s) =
+      fun l =>
+        (GTFrame.finiteStepD gauss 0 (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () l (h, h) - v := by
+    funext l
+    have hd := (((hout.good.hasDeriv () l (h, h)).const_add (2 * Real.log 2)).sub
+      ((hasDerivAt_id l).mul_const v)).sub_const (gtCorrection β q s)
+    simpa [Fout] using hd.deriv
+  rw [hfunctional, hfirst]
+  intro l
+  exact ((hout.derivD () l (h, h)).sub_const v).differentiableAt
+
+/-! ## The deterministic coercivity step -/
+
+/-- Convert a Taylor upper bound and a linear derivative gap into a quadratic loss. -/
+lemma gt_taylor_quadratic_loss (H : ℝ → ℝ) (d M c delta : ℝ)
+    (hM : 0 < M) (hc : 0 < c) (hzero : H 0 ≤ 0)
+    (htaylor : ∀ lam, |lam| ≤ 1 →
+      H lam ≤ H 0 + d * lam + M / 2 * lam ^ 2)
+    (hd_upper : |d| ≤ M) (hd_lower : c * |delta| ≤ |d|) :
+    ∃ lam, |lam| ≤ 1 ∧
+      H lam ≤ -(c ^ 2 / (2 * M)) * delta ^ 2 := by
+  let lam := -d / M
+  have hlam : |lam| ≤ 1 := by
+    dsimp [lam]
+    rw [abs_div, abs_neg, abs_of_pos hM]
+    exact (div_le_iff₀ hM).2 (by simpa using hd_upper)
+  have ht := htaylor lam hlam
+  have hlocal : H lam ≤ -(d ^ 2) / (2 * M) := by
+    calc
+      H lam ≤ H 0 + d * lam + M / 2 * lam ^ 2 := ht
+      _ ≤ 0 + d * lam + M / 2 * lam ^ 2 := by gcongr
+      _ = -(d ^ 2) / (2 * M) := by
+        dsimp [lam]
+        field_simp [ne_of_gt hM]
+        ring
+  have hsq : c ^ 2 * delta ^ 2 ≤ d ^ 2 := by
+    have hmul := mul_self_le_mul_self
+      (mul_nonneg hc.le (abs_nonneg delta)) hd_lower
+    calc
+      c ^ 2 * delta ^ 2 = (c * |delta|) * (c * |delta|) := by
+        nlinarith [sq_abs delta]
+      _ ≤ |d| * |d| := hmul
+      _ = d ^ 2 := by nlinarith [sq_abs d]
+  refine ⟨lam, hlam, hlocal.trans ?_⟩
+  have hden : 0 < 2 * M := mul_pos (by norm_num) hM
+  calc
+    -(d ^ 2) / (2 * M) ≤ -(c ^ 2 * delta ^ 2) / (2 * M) := by
+      exact (div_le_div_iff_of_pos_right hden).2 (by linarith)
+    _ = -(c ^ 2 / (2 * M)) * delta ^ 2 := by ring
+
+
+
+/-! ## Explicit first-derivative formulas -/
+
+/-- Differentiate the outer Gaussian expectation in `gtFunctional`. -/
+lemma hasDerivAt_gtFunctional
+    (β h q s lam v : ℝ) :
+    HasDerivAt (fun l => gtFunctional β h q s l v)
+      (standardGaussianExpectation (fun z =>
+        deriv (fun l =>
+          gtSemigroupSolution β q s l v 0
+            (h + β * Real.sqrt ((1 - s) * q) * z)
+            (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v) lam := by
+  obtain ⟨F₀, D₀, E₀, c₀, hF₀, hc₀, heq₀⟩ :=
+    semigroup_package β q s v 0
+
+  let scale : ℝ := β * Real.sqrt ((1 - s) * q)
+  let Fout := rankStep 0 scale 1 F₀
+
+  have hout :=
+    rankStep_good hF₀ (by norm_num : (0 : ℝ) ≤ 0) scale 1
+
+  have houtEq : ∀ l,
+      Fout () l (h, h) =
+        standardGaussianExpectation (fun z =>
+          gtSemigroupSolution β q s l v 0
+            (h + scale * z) (h + scale * z)) := by
+    intro l
+    dsimp [Fout]
+    rw [rankStep_apply]
+    simp only [gtRankOneStep, if_pos rfl, standardGaussianExpectation,
+      zero_mul, one_mul, if_true]
+    congr 1
+    funext z
+    rw [heq₀]
+
+  have houterD :
+      (GTFrame.finiteStepD gauss 0
+        (fun _ : Unit => scale) (fun _ => 1 * scale)
+        F₀ D₀) () lam (h, h)
+        =
       standardGaussianExpectation (fun z =>
-        deriv (fun l => U l
+        deriv (fun l =>
+          gtSemigroupSolution β q s l v 0
+            (h + scale * z) (h + scale * z)) lam) := by
+    simp only [GTFrame.finiteStepD, if_pos rfl, GTFrame.step0, one_mul]
+    unfold standardGaussianExpectation
+    apply integral_congr_ae
+    filter_upwards with z
+    have hfun :
+        (fun l => F₀ () l
+          (h + scale * z, h + scale * z))
+          =
+        (fun l =>
+          gtSemigroupSolution β q s l v 0
+            (h + scale * z) (h + scale * z)) := by
+      funext l
+      exact heq₀ l _ _
+    have hd :=
+      (hF₀.good.hasDeriv () lam
+        (h + scale * z, h + scale * z)).deriv
+    rw [hfun] at hd
+    exact hd.symm
+
+  have hfunctional :
+      (fun l => gtFunctional β h q s l v)
+        =
+      (fun l =>
+        2 * Real.log 2 + Fout () l (h, h)
+          - l * v - gtCorrection β q s) := by
+    funext l
+    rw [gtFunctional, houtEq]
+
+  have hbase :
+      HasDerivAt
+        (fun l =>
+          2 * Real.log 2 + Fout () l (h, h)
+            - l * v - gtCorrection β q s)
+        ((GTFrame.finiteStepD gauss 0
+          (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () lam (h, h) - v) lam := by
+    have hd :=
+      (((hout.good.hasDeriv () lam (h, h)).const_add
+        (2 * Real.log 2)).sub
+        ((hasDerivAt_id lam).mul_const v)).sub_const
+        (gtCorrection β q s)
+    simpa [Fout] using hd
+
+  rw [houterD] at hbase
+  rw [hfunctional]
+  simpa [scale] using hbase
+
+
+lemma deriv_gtFunctional_eq
+    (β h q s lam v : ℝ) :
+    deriv (fun l => gtFunctional β h q s l v) lam
+      =
+    standardGaussianExpectation (fun z =>
+      deriv (fun l =>
+        gtSemigroupSolution β q s l v 0
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun x : ℝ => x - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-  congr 1
-  funext l
-  exact hU l _ _
+  exact (hasDerivAt_gtFunctional β h q s lam v).deriv
+
 
 /-! ### Case `|v| = 0` -/
 
-lemma flatness_gtFunctional_formula_abs_v_eq_zero
+lemma gtFunctional_formula_abs_v_eq_zero
     (β h q s lam v : ℝ)
     (hq : 0 < q) (hv : |v| = 0) :
     gtFunctional β h q s lam v
@@ -170,7 +2334,7 @@ lemma flatness_gtFunctional_formula_abs_v_eq_zero
   simp [gtFunctional, gtSemigroupSolution, hq0]
 
 
-lemma flatness_deriv_gtFunctional_formula_abs_v_eq_zero
+lemma deriv_gtFunctional_formula_abs_v_eq_zero
     (β h q s lam v : ℝ)
     (hq : 0 < q) (hv : |v| = 0) :
     deriv (fun l => gtFunctional β h q s l v) lam
@@ -184,21 +2348,31 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_eq_zero
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) := by
   have hv0 : v = 0 := abs_eq_zero.mp hv
   subst v
+  rw [deriv_gtFunctional_eq]
+  simp only [sub_zero]
+  apply congrArg standardGaussianExpectation
+  funext z
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
-  simpa using
-    flatness_deriv_gtFunctional_of_solution β h q s lam 0
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l 0 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
       (fun l =>
         gtDiagonalStep 0 (gtIncrementScale β s 0 q)
           (gtDiagonalStep 1 (gtIncrementScale β s q 1)
-            (gtTerminal l)))
-      (by
-        intro l x₁ x₂
-        simp [gtSemigroupSolution, hq0])
+            (gtTerminal l))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hq0]
+  rw [hfun]
 
 
 /-! ### Case `0 < |v| < q` -/
 
-lemma flatness_gtFunctional_formula_abs_v_lt_q
+lemma gtFunctional_formula_abs_v_lt_q
     (β h q s lam v : ℝ)
     (hv0 : 0 < |v|) (hvq : |v| < q) :
     gtFunctional β h q s lam v
@@ -222,7 +2396,7 @@ lemma flatness_gtFunctional_formula_abs_v_lt_q
   simp [gtFunctional, gtSemigroupSolution, hqr, hr0, hq0]
 
 
-lemma flatness_deriv_gtFunctional_formula_abs_v_lt_q
+lemma deriv_gtFunctional_formula_abs_v_lt_q
     (β h q s lam v : ℝ)
     (hv0 : 0 < |v|) (hvq : |v| < q) :
     deriv (fun l => gtFunctional β h q s l v) lam
@@ -238,12 +2412,22 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_lt_q
               (gtTerminal l)))
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+
   have hqr : ¬ q ≤ |v| := not_le.mpr hvq
   have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hv0
   have hqpos : 0 < q := lt_trans hv0 hvq
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hqpos
-  exact
-    flatness_deriv_gtFunctional_of_solution β h q s lam v
+
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
       (fun l =>
         gtRankOneStep 0
           (gtIncrementScale β s 0 |v|) (gtPathSign v)
@@ -251,15 +2435,18 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_lt_q
             (gtIncrementScale β s |v| q)
             (gtDiagonalStep 1
               (gtIncrementScale β s q 1)
-              (gtTerminal l))))
-      (by
-        intro l x₁ x₂
-        simp [gtSemigroupSolution, hqr, hr0, hq0])
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hqr, hr0, hq0]
+
+  rw [hfun]
 
 
 /-! ### Case `q ≤ |v| < 1` -/
 
-lemma flatness_gtFunctional_formula_q_le_abs_v_lt_one
+lemma gtFunctional_formula_q_le_abs_v_lt_one
     (β h q s lam v : ℝ)
     (hq : 0 < q) (hqv : q ≤ |v|) (_hv1 : |v| < 1) :
     gtFunctional β h q s lam v
@@ -282,7 +2469,7 @@ lemma flatness_gtFunctional_formula_q_le_abs_v_lt_one
   simp [gtFunctional, gtSemigroupSolution, hqv, hr0, hq0]
 
 
-lemma flatness_deriv_gtFunctional_formula_q_le_abs_v_lt_one
+lemma deriv_gtFunctional_formula_q_le_abs_v_lt_one
     (β h q s lam v : ℝ)
     (hq : 0 < q) (hqv : q ≤ |v|) (_hv1 : |v| < 1) :
     deriv (fun l => gtFunctional β h q s l v) lam
@@ -298,11 +2485,21 @@ lemma flatness_deriv_gtFunctional_formula_q_le_abs_v_lt_one
               (gtTerminal l)))
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
   have hrpos : 0 < |v| := lt_of_lt_of_le hq hqv
   have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
-  exact
-    flatness_deriv_gtFunctional_of_solution β h q s lam v
+
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
       (fun l =>
         gtRankOneStep 0
           (gtIncrementScale β s 0 q) (gtPathSign v)
@@ -310,15 +2507,18 @@ lemma flatness_deriv_gtFunctional_formula_q_le_abs_v_lt_one
             (gtIncrementScale β s q |v|) (gtPathSign v)
             (gtDiagonalStep 1
               (gtIncrementScale β s |v| 1)
-              (gtTerminal l))))
-      (by
-        intro l x₁ x₂
-        simp [gtSemigroupSolution, hqv, hr0, hq0])
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hqv, hr0, hq0]
+
+  rw [hfun]
 
 
 /-! ### Case `|v| = 1` -/
 
-lemma flatness_gtFunctional_formula_abs_v_eq_one
+lemma gtFunctional_formula_abs_v_eq_one
     (β h q s lam v : ℝ)
     (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
     gtFunctional β h q s lam v
@@ -335,12 +2535,18 @@ lemma flatness_gtFunctional_formula_abs_v_eq_one
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z))
       - lam * v - gtCorrection β q s := by
+  have hqv : q ≤ |v| := by
+    simpa [hv] using hq1
+  have hrpos : 0 < |v| := by
+    rw [hv]
+    norm_num
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
   have h10 : ¬ (1 : ℝ) ≤ 0 := by norm_num
-  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hq0, h10]
+  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hqv, hr0, hq0, h10]
 
 
-lemma flatness_deriv_gtFunctional_formula_abs_v_eq_one
+lemma deriv_gtFunctional_formula_abs_v_eq_one
     (β h q s lam v : ℝ)
     (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
     deriv (fun l => gtFunctional β h q s l v) lam
@@ -356,9 +2562,25 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_eq_one
               (gtTerminal l)))
           (h + β * Real.sqrt ((1 - s) * q) * z)
           (h + β * Real.sqrt ((1 - s) * q) * z)) lam) - v := by
+  rw [deriv_gtFunctional_eq]
+  apply congrArg (fun x : ℝ => x - v)
+  apply congrArg standardGaussianExpectation
+  funext z
+
+  have hqv : q ≤ |v| := by
+    simpa [hv] using hq1
+  have hrpos : 0 < |v| := by
+    rw [hv]
+    norm_num
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
   have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
-  exact
-    flatness_deriv_gtFunctional_of_solution β h q s lam v
+
+  have hfun :
+      (fun l =>
+        gtSemigroupSolution β q s l v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z))
+        =
       (fun l =>
         gtRankOneStep 0
           (gtIncrementScale β s 0 q) (gtPathSign v)
@@ -366,3216 +2588,271 @@ lemma flatness_deriv_gtFunctional_formula_abs_v_eq_one
             (gtIncrementScale β s q 1) (gtPathSign v)
             (gtDiagonalStep 1
               (gtIncrementScale β s 1 1)
-              (gtTerminal l))))
-      (by
-        intro l x₁ x₂
-        simp [gtSemigroupSolution, hv, hq1, hq0])
+              (gtTerminal l)))
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    funext l
+    simp [gtSemigroupSolution, hv, hq1, hqv, hr0, hq0]
+
+  rw [hfun]
 
 
 /-! ### Explicit formulas for ∂_λ U_s^{λ,v}|_{λ=0} -/
 
-private abbrev flatnessGauss : Measure ℝ := gaussianReal 0 1
+/-! Case `|v| = 0`. -/
 
-private lemma flatness_fLbaseD_zero (x₁ x₂ : ℝ) :
-    GTFrame.fLbaseD 0 (x₁, x₂) = Real.tanh x₁ * Real.tanh x₂ := by
-  have h := (GTFrame.hasDerivAt_fLbase 0 (x₁, x₂)).deriv
-  change deriv (fun l => gtTerminal l x₁ x₂) 0 = _ at h
-  rw [deriv_gtTerminal_zero] at h
-  exact h.symm
-
-private lemma flatness_upper_goodFam (b : ℝ) :
-    GTFrame.GoodFam
-      (fun (_ : Unit) l (x : ℝ × ℝ) => GTFrame.fLbase l x + b ^ 2)
-      (fun (_ : Unit) l (x : ℝ × ℝ) => GTFrame.fLbaseD l x) := by
-  refine
-    { contF := (GTFrame.continuous_fLbase.comp (by fun_prop)).add continuous_const
-      contD := GTFrame.continuous_fLbaseD.comp (by fun_prop)
-      hasDeriv := fun _ l x => (GTFrame.hasDerivAt_fLbase l x).add_const _
-      lipx := ?_
-      bddD := fun _ l x => GTFrame.fLbaseD_bdd l x }
-  intro _ l x y
-  simpa using GTFrame.fLbase_lipx l x y
-
-/-- A final level-one diagonal step does not change the multiplier derivative
-of the terminal condition. -/
-lemma deriv_gtDiagonalStep_one_gtTerminal_zero (scale x₁ x₂ : ℝ) :
-    deriv (fun l => gtDiagonalStep 1 scale (gtTerminal l) x₁ x₂) 0 =
-      Real.tanh x₁ * Real.tanh x₂ := by
-  have hfun :
-      (fun l => gtDiagonalStep 1 scale (gtTerminal l) x₁ x₂) =
-      (fun l => gtTerminal l x₁ x₂ + scale ^ 2) := by
-    funext l
-    exact gtDiagonalStep_one_terminal scale l x₁ x₂
-  rw [hfun, ((hasDerivAt_gtTerminal 0 x₁ x₂).add_const (scale ^ 2)).deriv]
-  change GTFrame.fLbaseD 0 (x₁, x₂) = _
-  exact flatness_fLbaseD_zero x₁ x₂
-
-/-- Propagation through a zero-mass independent diagonal step. -/
-lemma deriv_gtDiagonalStep_zero_one_terminal_zero (a b x₁ x₂ : ℝ) :
-    deriv (fun l => gtDiagonalStep 0 a
-      (gtDiagonalStep 1 b (gtTerminal l)) x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₁ =>
-      standardGaussianExpectation (fun z₂ =>
-        Real.tanh (x₁ + a * z₁) * Real.tanh (x₂ + a * z₂))) := by
-  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbase l x + b ^ 2
-  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbaseD l x
-  have hF : GTFrame.GoodFam F D := flatness_upper_goodFam b
-  let F₂ := GTFrame.step0 flatnessGauss (fun _ : Unit => 0) (fun _ => a) F
-  let D₂ := GTFrame.step0 flatnessGauss (fun _ : Unit => 0) (fun _ => a) D
-  have hF₂ : GTFrame.GoodFam F₂ D₂ :=
-    GTFrame.step0_good (GTFrame.expMoments_gaussianReal 0 1) hF
-      continuous_const continuous_const
-  let F₃ := GTFrame.step0 flatnessGauss (fun _ : Unit => a) (fun _ => 0) F₂
-  let D₃ := GTFrame.step0 flatnessGauss (fun _ : Unit => a) (fun _ => 0) D₂
-  have hF₃ : GTFrame.GoodFam F₃ D₃ :=
-    GTFrame.step0_good (GTFrame.expMoments_gaussianReal 0 1) hF₂
-      continuous_const continuous_const
-  have hd := (hF₃.hasDeriv () 0 (x₁, x₂)).deriv
-  change deriv (fun l => F₃ () l (x₁, x₂)) 0 = D₃ () 0 (x₁, x₂) at hd
-  have hfun :
-      (fun l => gtDiagonalStep 0 a
-        (gtDiagonalStep 1 b (gtTerminal l)) x₁ x₂) =
-      (fun l => F₃ () l (x₁, x₂)) := by
-    funext l
-    have hu : gtDiagonalStep 1 b (gtTerminal l) =
-        fun y₁ y₂ => gtTerminal l y₁ y₂ + b ^ 2 := by
-      funext y₁ y₂
-      exact gtDiagonalStep_one_terminal b l y₁ y₂
-    rw [hu]
-    simp [F₃, F₂, F, GTFrame.step0, flatnessGauss,
-      standardGaussianExpectation, gtDiagonalStep]
-  rw [hfun, hd]
-  simp [D₃, D₂, D, GTFrame.step0, flatnessGauss,
-    standardGaussianExpectation, flatness_fLbaseD_zero]
-
-/-- Propagation through a zero-mass rank-one step followed by a zero-mass
-independent diagonal step. -/
-lemma deriv_gtRankOneStep_zero_diagonal_zero_at_zero
-    (r sign a b x₁ x₂ : ℝ) :
-    deriv (fun l => gtRankOneStep 0 r sign
-      (gtDiagonalStep 0 a (gtDiagonalStep 1 b (gtTerminal l))) x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₀ =>
-      standardGaussianExpectation (fun z₁ =>
-        standardGaussianExpectation (fun z₂ =>
-          Real.tanh (x₁ + r * z₀ + a * z₁) *
-            Real.tanh (x₂ + sign * r * z₀ + a * z₂)))) := by
-  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbase l x + b ^ 2
-  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbaseD l x
-  have hF : GTFrame.GoodFam F D := flatness_upper_goodFam b
-  let F₂ := GTFrame.step0 flatnessGauss (fun _ : Unit => 0) (fun _ => a) F
-  let D₂ := GTFrame.step0 flatnessGauss (fun _ : Unit => 0) (fun _ => a) D
-  have hF₂ : GTFrame.GoodFam F₂ D₂ :=
-    GTFrame.step0_good (GTFrame.expMoments_gaussianReal 0 1) hF
-      continuous_const continuous_const
-  let F₃ := GTFrame.step0 flatnessGauss (fun _ : Unit => a) (fun _ => 0) F₂
-  let D₃ := GTFrame.step0 flatnessGauss (fun _ : Unit => a) (fun _ => 0) D₂
-  have hF₃ : GTFrame.GoodFam F₃ D₃ :=
-    GTFrame.step0_good (GTFrame.expMoments_gaussianReal 0 1) hF₂
-      continuous_const continuous_const
-  let F₄ := GTFrame.step0 flatnessGauss (fun _ : Unit => r) (fun _ => sign * r) F₃
-  let D₄ := GTFrame.step0 flatnessGauss (fun _ : Unit => r) (fun _ => sign * r) D₃
-  have hF₄ : GTFrame.GoodFam F₄ D₄ :=
-    GTFrame.step0_good (GTFrame.expMoments_gaussianReal 0 1) hF₃
-      continuous_const continuous_const
-  have hd := (hF₄.hasDeriv () 0 (x₁, x₂)).deriv
-  change deriv (fun l => F₄ () l (x₁, x₂)) 0 = D₄ () 0 (x₁, x₂) at hd
-  have hfun :
-      (fun l => gtRankOneStep 0 r sign
-        (gtDiagonalStep 0 a (gtDiagonalStep 1 b (gtTerminal l))) x₁ x₂) =
-      (fun l => F₄ () l (x₁, x₂)) := by
-    funext l
-    have hu : gtDiagonalStep 1 b (gtTerminal l) =
-        fun y₁ y₂ => gtTerminal l y₁ y₂ + b ^ 2 := by
-      funext y₁ y₂
-      exact gtDiagonalStep_one_terminal b l y₁ y₂
-    rw [hu]
-    simp [F₄, F₃, F₂, F, GTFrame.step0, flatnessGauss,
-      standardGaussianExpectation, gtRankOneStep, gtDiagonalStep]
-  rw [hfun, hd]
-  simp [D₄, D₃, D₂, D, GTFrame.step0, flatnessGauss,
-    standardGaussianExpectation, flatness_fLbaseD_zero]
-
-/-- The explicit tilted quotient produced by a mass-`1/2` rank-one step at
-`lam = 0`.  The `upperScale` term records the harmless constant contributed
-by the final level-one diagonal step. -/
-noncomputable def gtHalfStepEndpoint
-    (scale upperScale sign x₁ x₂ : ℝ) : ℝ :=
-  standardGaussianExpectation (fun z =>
-      (Real.tanh (x₁ + scale * z) *
-        Real.tanh (x₂ + sign * scale * z)) *
-      Real.exp ((1 / 2) *
-        (gtTerminal 0 (x₁ + scale * z) (x₂ + sign * scale * z) +
-          upperScale ^ 2))) /
-    standardGaussianExpectation (fun z =>
-      Real.exp ((1 / 2) *
-        (gtTerminal 0 (x₁ + scale * z) (x₂ + sign * scale * z) +
-          upperScale ^ 2)))
-
-/-- On the diagonal and with positive path sign, the half-step endpoint is the
-usual `tanh² cosh` tilted quotient. -/
-lemma gtHalfStepEndpoint_diagonal (scale upperScale x : ℝ) :
-    gtHalfStepEndpoint scale upperScale 1 x x =
-      standardGaussianExpectation (fun z =>
-        Real.tanh (x + scale * z) ^ 2 * Real.cosh (x + scale * z)) /
-      standardGaussianExpectation (fun z => Real.cosh (x + scale * z)) := by
-  have hw (y : ℝ) :
-      Real.exp ((1 / 2) * (gtTerminal 0 y y + upperScale ^ 2)) =
-        Real.exp (upperScale ^ 2 / 2) * Real.cosh y := by
-    rw [gtTerminal_zero]
-    rw [show (1 / 2 : ℝ) *
-      (Real.log (Real.cosh y) + Real.log (Real.cosh y) + upperScale ^ 2) =
-        upperScale ^ 2 / 2 + Real.log (Real.cosh y) by ring]
-    rw [Real.exp_add, Real.exp_log (Real.cosh_pos y)]
-  unfold gtHalfStepEndpoint
-  simp only [one_mul]
-  simp_rw [hw]
-  have hn : (fun z =>
-      (Real.tanh (x + scale * z) * Real.tanh (x + scale * z)) *
-        (Real.exp (upperScale ^ 2 / 2) * Real.cosh (x + scale * z))) =
-      fun z => Real.exp (upperScale ^ 2 / 2) *
-        (Real.tanh (x + scale * z) ^ 2 * Real.cosh (x + scale * z)) := by
-    funext z
-    ring
-  rw [hn]
-  unfold standardGaussianExpectation
-  rw [integral_const_mul, integral_const_mul]
-  field_simp [Real.exp_ne_zero (upperScale ^ 2 / 2)]
-
-/-- Gaussian expectation of a shifted hyperbolic cosine. -/
-lemma standardGaussianExpectation_cosh_shift (scale x : ℝ) :
-    standardGaussianExpectation (fun z => Real.cosh (x + scale * z)) =
-      Real.exp (scale ^ 2 / 2) * Real.cosh x := by
-  have hmgf (t : ℝ) :
-      standardGaussianExpectation (fun z => Real.exp (t * z)) =
-        Real.exp (t ^ 2 / 2) := by
-    have h := congrFun (mgf_id_gaussianReal (μ := 0) (v := 1)) t
-    simpa [mgf, standardGaussianExpectation] using h
-  have hi₁ : Integrable (fun z : ℝ => Real.exp x * Real.exp (scale * z))
-      (gaussianReal 0 1) :=
-    (integrable_exp_mul_gaussianReal scale).const_mul _
-  have hi₂ : Integrable (fun z : ℝ => Real.exp (-x) * Real.exp ((-scale) * z))
-      (gaussianReal 0 1) :=
-    (integrable_exp_mul_gaussianReal (-scale)).const_mul _
-  have hfun : (fun z : ℝ => Real.cosh (x + scale * z)) =
-      fun z => (Real.exp x * Real.exp (scale * z) +
-        Real.exp (-x) * Real.exp ((-scale) * z)) / 2 := by
-    funext z
-    rw [Real.cosh_eq, Real.exp_add]
-    congr 1
-    rw [show -(x + scale * z) = -x + (-scale) * z by ring, Real.exp_add]
-  rw [hfun]
-  unfold standardGaussianExpectation
-  rw [integral_div, integral_add hi₁ hi₂, integral_const_mul, integral_const_mul]
-  change (Real.exp x * standardGaussianExpectation (fun z => Real.exp (scale * z)) +
-      Real.exp (-x) * standardGaussianExpectation (fun z => Real.exp ((-scale) * z))) / 2 = _
-  rw [hmgf scale, hmgf (-scale), Real.cosh_eq]
-  ring_nf
-
-/-- The diagonal half-step quotient is exactly the tilted heat semigroup.
-This includes the degenerate case `scale = 0`. -/
-lemma gtHalfStepEndpoint_diagonal_eq_tilted
-    (scale upperScale x : ℝ) (hscale : 0 ≤ scale) :
-    gtHalfStepEndpoint scale upperScale 1 x x =
-      tiltedHeatSemigroup (scale ^ 2) (fun y => Real.tanh y ^ 2) x := by
-  rw [gtHalfStepEndpoint_diagonal, standardGaussianExpectation_cosh_shift]
-  unfold tiltedHeatSemigroup heatSemigroup
-  rw [Real.sqrt_sq_eq_abs, abs_of_nonneg hscale]
-  field_simp [Real.exp_ne_zero (scale ^ 2 / 2), ne_of_gt (Real.cosh_pos x)]
-  rw [mul_assoc, ← Real.exp_add]
-  ring_nf
-  simp
-
-/-- Common endpoint derivative formula for a zero-mass rank-one step followed
-by the mass-`1/2` step. -/
-lemma deriv_gtRankOneStep_zero_half_at_zero
-    (r a b sign x₁ x₂ : ℝ) :
-    deriv (fun l => gtRankOneStep 0 r sign
-      (gtRankOneStep (1 / 2) a sign
-        (gtDiagonalStep 1 b (gtTerminal l))) x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₀ =>
-      gtHalfStepEndpoint a b sign
-        (x₁ + r * z₀) (x₂ + sign * r * z₀)) := by
-  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbase l x + b ^ 2
-  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbaseD l x
-  have hF : GTFrame.GoodFam F D := flatness_upper_goodFam b
-  let FH := GTFrame.stepM flatnessGauss (1 / 2)
-    (fun _ : Unit => a) (fun _ => sign * a) F
-  let DH := GTFrame.stepMD flatnessGauss (1 / 2)
-    (fun _ : Unit => a) (fun _ => sign * a) F D
-  have hFH : GTFrame.GoodFam FH DH :=
-    GTFrame.stepM_good (GTFrame.expMoments_gaussianReal 0 1) hF
-      (by norm_num) continuous_const continuous_const
-  let FO := GTFrame.step0 flatnessGauss
-    (fun _ : Unit => r) (fun _ => sign * r) FH
-  let DO := GTFrame.step0 flatnessGauss
-    (fun _ : Unit => r) (fun _ => sign * r) DH
-  have hFO : GTFrame.GoodFam FO DO :=
-    GTFrame.step0_good (GTFrame.expMoments_gaussianReal 0 1) hFH
-      continuous_const continuous_const
-  have hd := (hFO.hasDeriv () 0 (x₁, x₂)).deriv
-  change deriv (fun l => FO () l (x₁, x₂)) 0 = DO () 0 (x₁, x₂) at hd
-  have hfun :
-      (fun l => gtRankOneStep 0 r sign
-        (gtRankOneStep (1 / 2) a sign
-          (gtDiagonalStep 1 b (gtTerminal l))) x₁ x₂) =
-      (fun l => FO () l (x₁, x₂)) := by
-    funext l
-    have hu : gtDiagonalStep 1 b (gtTerminal l) =
-        fun y₁ y₂ => gtTerminal l y₁ y₂ + b ^ 2 := by
-      funext y₁ y₂
-      exact gtDiagonalStep_one_terminal b l y₁ y₂
-    rw [hu]
-    simp [FO, FH, F, GTFrame.step0, GTFrame.stepM, flatnessGauss,
-      standardGaussianExpectation, gtRankOneStep]
-  rw [hfun, hd]
-  simp [DO, DH, F, D, GTFrame.step0, GTFrame.stepMD, flatnessGauss,
-    standardGaussianExpectation, flatness_fLbaseD_zero, gtHalfStepEndpoint]
-
-/-! #### Branchwise endpoint formulas for `U` -/
-
-/-- Endpoint formula in the branch `|v| = 0`; the zero-length rank-one
-increment has disappeared. -/
-lemma flatness_deriv_U_abs_v_eq_zero
-    (β q s v x₁ x₂ : ℝ) (hq : 0 < q) (hv : |v| = 0) :
-    deriv (fun lam => gtSemigroupSolution β q s lam v 0 x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₁ =>
-      standardGaussianExpectation (fun z₂ =>
-        Real.tanh (x₁ + gtIncrementScale β s 0 q * z₁) *
-          Real.tanh (x₂ + gtIncrementScale β s 0 q * z₂))) := by
-  rw [deriv_gtSemigroupSolution_zero_abs_v_eq_zero β q s v x₁ x₂ hq hv]
-  exact deriv_gtDiagonalStep_zero_one_terminal_zero _ _ _ _
-
-/-- Endpoint formula in the branch `0 < |v| < q`. -/
-lemma flatness_deriv_U_abs_v_lt_q
-    (β q s v x₁ x₂ : ℝ) (hv0 : 0 < |v|) (hvq : |v| < q) :
-    deriv (fun lam => gtSemigroupSolution β q s lam v 0 x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₀ =>
-      standardGaussianExpectation (fun z₁ =>
-        standardGaussianExpectation (fun z₂ =>
-          Real.tanh (x₁ + gtIncrementScale β s 0 |v| * z₀ +
-            gtIncrementScale β s |v| q * z₁) *
-          Real.tanh (x₂ + gtPathSign v * gtIncrementScale β s 0 |v| * z₀ +
-            gtIncrementScale β s |v| q * z₂)))) := by
-  rw [deriv_gtSemigroupSolution_zero_abs_v_lt_q β q s v x₁ x₂ hv0 hvq]
-  exact deriv_gtRankOneStep_zero_diagonal_zero_at_zero _ _ _ _ _ _
-
-/-- General endpoint formula in the branch `q ≤ |v| < 1`.  In particular,
-the signed path factor is retained for negative overlaps. -/
-lemma flatness_deriv_U_q_le_abs_v_lt_one
-    (β q s v x₁ x₂ : ℝ) (hq : 0 < q) (hqv : q ≤ |v|) (hv1 : |v| < 1) :
-    deriv (fun lam => gtSemigroupSolution β q s lam v 0 x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₀ =>
-      gtHalfStepEndpoint (gtIncrementScale β s q |v|)
-        (gtIncrementScale β s |v| 1) (gtPathSign v)
-        (x₁ + gtIncrementScale β s 0 q * z₀)
-        (x₂ + gtPathSign v * gtIncrementScale β s 0 q * z₀)) := by
-  rw [deriv_gtSemigroupSolution_zero_q_le_abs_v_lt_one
-    β q s v x₁ x₂ hq hqv hv1]
-  exact deriv_gtRankOneStep_zero_half_at_zero _ _ _ _ _ _
-
-/-- Endpoint formula at `|v| = 1`, obtained from the same half-step lemma as
-the preceding branch. -/
-lemma flatness_deriv_U_abs_v_eq_one
-    (β q s v x₁ x₂ : ℝ) (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
-    deriv (fun lam => gtSemigroupSolution β q s lam v 0 x₁ x₂) 0 =
-    standardGaussianExpectation (fun z₀ =>
-      gtHalfStepEndpoint (gtIncrementScale β s q 1)
-        (gtIncrementScale β s 1 1) (gtPathSign v)
-        (x₁ + gtIncrementScale β s 0 q * z₀)
-        (x₂ + gtPathSign v * gtIncrementScale β s 0 q * z₀)) := by
-  rw [deriv_gtSemigroupSolution_zero_abs_v_eq_one
-    β q s v x₁ x₂ hq hq1 hv]
-  exact deriv_gtRankOneStep_zero_half_at_zero _ _ _ _ _ _
-
-private lemma gtIncrementScale_sq_of_nonneg
-    (β s lower upper : ℝ) (hβ : 0 ≤ β) (hs : 0 ≤ s)
-    (hlu : lower ≤ upper) :
-    gtIncrementScale β s lower upper ^ 2 =
-      s * β ^ 2 * (upper - lower) := by
-  unfold gtIncrementScale
-  rw [mul_pow, mul_pow, Real.sq_sqrt hs, Real.sq_sqrt (sub_nonneg.mpr hlu)]
-  ring
-
-private lemma gtIncrementScale_nonneg
-    (β s lower upper : ℝ) (hβ : 0 ≤ β) :
-    0 ≤ gtIncrementScale β s lower upper := by
-  unfold gtIncrementScale
-  exact mul_nonneg (mul_nonneg hβ (Real.sqrt_nonneg s))
-    (Real.sqrt_nonneg (upper - lower))
-
-/-- Positive-overlap diagonal specialization for `q ≤ v < 1`.  The initial
-zero-mass step is an ordinary Gaussian expectation of the existing tilted heat
-semigroup. -/
-lemma flatness_deriv_U_q_le_v_lt_one_diagonal
-    (β q s v x : ℝ) (hβ : 0 ≤ β) (hs : 0 ≤ s)
-    (hq : 0 < q) (hqv : q ≤ v) (hv1 : v < 1) :
-    deriv (fun lam => gtSemigroupSolution β q s lam v 0 x x) 0 =
-    standardGaussianExpectation (fun z =>
-      tiltedHeatSemigroup (s * β ^ 2 * (v - q))
-        (fun y => Real.tanh y ^ 2)
-        (x + gtIncrementScale β s 0 q * z)) := by
-  have hv0 : 0 ≤ v := le_trans hq.le hqv
-  have hsign : gtPathSign v = 1 := by simp [gtPathSign, hv0]
-  rw [flatness_deriv_U_q_le_abs_v_lt_one β q s v x x hq]
-  · simp only [abs_of_nonneg hv0, hsign, one_mul]
-    apply congrArg standardGaussianExpectation
-    funext z
-    rw [gtHalfStepEndpoint_diagonal_eq_tilted]
-    · rw [gtIncrementScale_sq_of_nonneg β s q v hβ hs hqv]
-    · exact gtIncrementScale_nonneg β s q v hβ
-  · simpa [abs_of_nonneg hv0] using hqv
-  · simpa [abs_of_nonneg hv0] using hv1
-
-/-- Positive endpoint specialization at `v = 1`. -/
-lemma flatness_deriv_U_v_eq_one_diagonal
-    (β q s x : ℝ) (hβ : 0 ≤ β) (hs : 0 ≤ s)
-    (hq : 0 < q) (hq1 : q ≤ 1) :
-    deriv (fun lam => gtSemigroupSolution β q s lam 1 0 x x) 0 =
-    standardGaussianExpectation (fun z =>
-      tiltedHeatSemigroup (s * β ^ 2 * (1 - q))
-        (fun y => Real.tanh y ^ 2)
-        (x + gtIncrementScale β s 0 q * z)) := by
-  rw [flatness_deriv_U_abs_v_eq_one β q s 1 x x hq hq1 (by norm_num)]
-  simp only [gtPathSign, if_pos (by norm_num : (0 : ℝ) ≤ 1), one_mul]
-  apply congrArg standardGaussianExpectation
-  funext z
-  rw [gtHalfStepEndpoint_diagonal_eq_tilted]
-  · rw [gtIncrementScale_sq_of_nonneg β s q 1 hβ hs hq1]
-  · exact gtIncrementScale_nonneg β s q 1 hβ
-
-/-! #### Immediate endpoint formulas for the GT functional -/
-
-lemma flatness_deriv_gtFunctional_zero_abs_v_eq_zero
-    (β h q s v : ℝ) (hq : 0 < q) (hv : |v| = 0) :
-    deriv (fun l => gtFunctional β h q s l v) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₁ =>
-        standardGaussianExpectation (fun z₂ =>
-          Real.tanh (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₁) *
-          Real.tanh (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₂)))) := by
+lemma deriv_gtSemigroupSolution_zero_abs_v_eq_zero
+    (β q s v x₁ x₂ : ℝ)
+    (hq : 0 < q) (hv : |v| = 0) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtDiagonalStep 0
+        (gtIncrementScale β s 0 q)
+        (gtDiagonalStep 1
+          (gtIncrementScale β s q 1)
+          (gtTerminal lam))
+        x₁ x₂) 0 := by
   have hv0 : v = 0 := abs_eq_zero.mp hv
   subst v
-  rw [deriv_gtFunctional_eq]
-  rw [sub_zero]
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_abs_v_eq_zero β q s 0 _ _ hq (abs_zero)
-
-lemma flatness_deriv_gtFunctional_zero_abs_v_lt_q
-    (β h q s v : ℝ) (hv0 : 0 < |v|) (hvq : |v| < q) :
-    deriv (fun l => gtFunctional β h q s l v) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₀ =>
-        standardGaussianExpectation (fun z₁ =>
-          standardGaussianExpectation (fun z₂ =>
-            Real.tanh (h + β * Real.sqrt ((1 - s) * q) * z +
-              gtIncrementScale β s 0 |v| * z₀ +
-              gtIncrementScale β s |v| q * z₁) *
-            Real.tanh (h + β * Real.sqrt ((1 - s) * q) * z +
-              gtPathSign v * gtIncrementScale β s 0 |v| * z₀ +
-              gtIncrementScale β s |v| q * z₂))))) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun y : ℝ => y - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_abs_v_lt_q β q s v _ _ hv0 hvq
-
-lemma flatness_deriv_gtFunctional_zero_q_le_abs_v_lt_one
-    (β h q s v : ℝ) (hq : 0 < q) (hqv : q ≤ |v|) (hv1 : |v| < 1) :
-    deriv (fun l => gtFunctional β h q s l v) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₀ =>
-        gtHalfStepEndpoint (gtIncrementScale β s q |v|)
-          (gtIncrementScale β s |v| 1) (gtPathSign v)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₀)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtPathSign v * gtIncrementScale β s 0 q * z₀))) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun y : ℝ => y - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_q_le_abs_v_lt_one β q s v _ _ hq hqv hv1
-
-/-! #### Identification with `tilde g_s` on negative overlaps -/
-
-/--
-For `|v| ≤ q`, the Gaussian correlation
-`tilde g_s(v) = E[tanh(Y₁(v)) tanh(Y₂(v))]`.
-
-The four independent standard Gaussians below give both coordinates
-variance `β² q`; their covariance is
-`β² ((1-s) q + s v)`.
--/
-noncomputable def flatnessTildeG
-    (β h q s v : ℝ) : ℝ :=
-  standardGaussianExpectation (fun z =>
-    standardGaussianExpectation (fun z₀ =>
-      standardGaussianExpectation (fun z₁ =>
-        standardGaussianExpectation (fun z₂ =>
-          Real.tanh
-              (h + β * Real.sqrt ((1 - s) * q) * z
-                + gtIncrementScale β s 0 |v| * z₀
-                + gtIncrementScale β s |v| q * z₁) *
-            Real.tanh
-              (h + β * Real.sqrt ((1 - s) * q) * z
-                + gtPathSign v *
-                    gtIncrementScale β s 0 |v| * z₀
-                + gtIncrementScale β s |v| q * z₂)))))
-
-/--
-A zero-length mass-`1/2` step does not change the endpoint
-multiplier derivative.
--/
-@[simp] private lemma flatness_gtHalfStepEndpoint_zero_scale
-    (upperScale sign x₁ x₂ : ℝ) :
-    gtHalfStepEndpoint 0 upperScale sign x₁ x₂ =
-      Real.tanh x₁ * Real.tanh x₂ := by
-  unfold gtHalfStepEndpoint
-  simp [standardGaussianExpectation, Real.exp_ne_zero]
-
-/--
-For every negative overlap `-q ≤ v < 0`, the endpoint multiplier derivative
-of the GT functional is `tilde g_s(v) - v`.
--/
-lemma flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg
-    (β h q s v : ℝ)
-    (hq : q ∈ Set.Ioo (0 : ℝ) 1)
-    (hv : v ∈ Set.Ico (-q) 0) :
-    deriv (fun lam => gtFunctional β h q s lam v) 0 =
-      flatnessTildeG β h q s v - v := by
-  by_cases hvleft : v = -q
-  · subst v
-    have habs : |(-q : ℝ)| = q := by
-      rw [abs_neg, abs_of_pos hq.1]
-    have hqabs : q ≤ |(-q : ℝ)| := by
-      rw [habs]
-    have habs1 : |(-q : ℝ)| < 1 := by
-      rw [habs]
-      exact hq.2
-    rw [flatness_deriv_gtFunctional_zero_q_le_abs_v_lt_one
-      β h q s (-q) hq.1 hqabs habs1]
-    apply congrArg (fun y : ℝ => y - (-q))
-    unfold flatnessTildeG
-    rw [habs]
-    have hzero : gtIncrementScale β s q q = 0 := by
-      simp [gtIncrementScale]
-    rw [hzero]
-    simp [standardGaussianExpectation]
-  · have hvneg : v < 0 := hv.2
-    have hvne : v ≠ 0 := ne_of_lt hvneg
-    have hv0 : 0 < |v| := by
-      exact abs_pos.mpr hvne
-    have hminusqv : -q < v := by
-      exact lt_of_le_of_ne hv.1 (Ne.symm hvleft)
-    have hvq : |v| < q := by
-      rw [abs_of_neg hvneg]
-      linarith
-    simpa [flatnessTildeG] using
-      (flatness_deriv_gtFunctional_zero_abs_v_lt_q
-        β h q s v hv0 hvq)
-
-/-- Canonical version with `q = rsQ β h`. -/
-lemma flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg_rsQ
-    (β h s v : ℝ)
-    (hβ : 0 < β) (hh : 0 < h)
-    (hv : v ∈ Set.Ico (-(rsQ β h)) 0) :
-    deriv
-        (fun lam =>
-          gtFunctional β h (rsQ β h) s lam v) 0 =
-      flatnessTildeG β h (rsQ β h) s v - v := by
-  exact
-    flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg
-      β h (rsQ β h) s v
-      ⟨rsQ_pos hβ hh, rsQ_lt_one hβ hh⟩
-      hv
-
-lemma flatness_deriv_gtFunctional_zero_abs_v_eq_one
-    (β h q s v : ℝ) (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
-    deriv (fun l => gtFunctional β h q s l v) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₀ =>
-        gtHalfStepEndpoint (gtIncrementScale β s q 1)
-          (gtIncrementScale β s 1 1) (gtPathSign v)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₀)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtPathSign v * gtIncrementScale β s 0 q * z₀))) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun y : ℝ => y - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_abs_v_eq_one β q s v _ _ hq hq1 hv
-
-/-- Positive-overlap functional endpoint formula in tilted-semigroup form. -/
-lemma flatness_deriv_gtFunctional_zero_q_le_v_lt_one
-    (β h q s v : ℝ) (hβ : 0 ≤ β) (hs : 0 ≤ s)
-    (hq : 0 < q) (hqv : q ≤ v) (hv1 : v < 1) :
-    deriv (fun l => gtFunctional β h q s l v) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₀ =>
-        tiltedHeatSemigroup (s * β ^ 2 * (v - q))
-          (fun y => Real.tanh y ^ 2)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₀))) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun y : ℝ => y - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_q_le_v_lt_one_diagonal β q s v _ hβ hs hq hqv hv1
-
-/-- Functional endpoint formula at the positive endpoint `v = 1`. -/
-lemma flatness_deriv_gtFunctional_zero_v_eq_one
-    (β h q s : ℝ) (hβ : 0 ≤ β) (hs : 0 ≤ s)
-    (hq : 0 < q) (hq1 : q ≤ 1) :
-    deriv (fun l => gtFunctional β h q s l 1) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₀ =>
-        tiltedHeatSemigroup (s * β ^ 2 * (1 - q))
-          (fun y => Real.tanh y ^ 2)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₀))) - 1 := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun y : ℝ => y - 1)
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_v_eq_one_diagonal β q s _ hβ hs hq hq1
-
-private lemma flatness_tiltedHeatSemigroup_zero (f : ℝ → ℝ) (x : ℝ) :
-    tiltedHeatSemigroup 0 f x = f x := by
-  unfold tiltedHeatSemigroup heatSemigroup standardGaussianExpectation
-  simp [ne_of_gt (Real.cosh_pos x)]
-
-private lemma flatness_gaussian_convolution_tanh_sq (h a b c : ℝ)
-    (hc : c ^ 2 = a ^ 2 + b ^ 2) :
-    standardGaussianExpectation (fun x =>
-      standardGaussianExpectation (fun y => Real.tanh (h + a * x + b * y) ^ 2)) =
-    standardGaussianExpectation (fun z => Real.tanh (h + c * z) ^ 2) := by
-  let va : NNReal := ⟨a ^ 2, sq_nonneg a⟩ * 1
-  let vb : NNReal := ⟨b ^ 2, sq_nonneg b⟩ * 1
-  let vc : NNReal := ⟨c ^ 2, sq_nonneg c⟩ * 1
-  have htanh : Continuous (fun x : ℝ => Real.tanh x) := by
-    simp_rw [Real.tanh_eq_sinh_div_cosh]
-    exact Real.continuous_sinh.div₀ Real.continuous_cosh
-      (fun x => (Real.cosh_pos x).ne')
-  have hma : Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) =
-      gaussianReal 0 va := by
-    simpa [va] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal)) a)
-  have hmb : Measure.map (fun x : ℝ => b * x) (gaussianReal 0 1) =
-      gaussianReal 0 vb := by
-    simpa [vb] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal)) b)
-  have hmc : Measure.map (fun x : ℝ => c * x) (gaussianReal 0 1) =
-      gaussianReal 0 vc := by
-    simpa [vc] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal)) c)
-  have hv : va + vb = vc := by
-    apply NNReal.eq
-    simp [va, vb, vc, hc]
-  have hf : Integrable (fun z : ℝ => Real.tanh (h + z) ^ 2)
-      (gaussianReal 0 va ∗ gaussianReal 0 vb) := by
-    rw [gaussianReal_conv_gaussianReal, hv, zero_add]
-    apply Integrable.of_bound (C := 1)
-    · exact ((htanh.comp (by fun_prop)).pow 2).aestronglyMeasurable
-    · filter_upwards [] with z
-      rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-      exact (Real.tanh_sq_lt_one _).le
-  have hprod : Integrable (fun p : ℝ × ℝ => Real.tanh (h + (p.1 + p.2)) ^ 2)
-      ((gaussianReal 0 va).prod (gaussianReal 0 vb)) := by
-    rw [Measure.conv] at hf
-    exact (integrable_map_measure hf.1 (by fun_prop)).mp hf
-  have houter : AEStronglyMeasurable
-      (fun x : ℝ => ∫ y, Real.tanh (h + (x + y)) ^ 2 ∂gaussianReal 0 vb)
-      (gaussianReal 0 va) := hprod.integral_prod_left.1
-  have hinner (x : ℝ) :
-      (∫ y, Real.tanh (h + a * x + b * y) ^ 2 ∂gaussianReal 0 1) =
-        ∫ y, Real.tanh (h + a * x + y) ^ 2 ∂gaussianReal 0 vb := by
-    have hm : AEStronglyMeasurable (fun y : ℝ => Real.tanh (h + a * x + y) ^ 2)
-        (Measure.map (fun y : ℝ => b * y) (gaussianReal 0 1)) :=
-      ((htanh.comp (by fun_prop)).pow 2).aestronglyMeasurable
-    rw [← hmb, integral_map (by fun_prop) hm]
-  have houter_map :
-      (∫ x, ∫ y, Real.tanh (h + a * x + y) ^ 2 ∂gaussianReal 0 vb
-        ∂gaussianReal 0 1) =
-        ∫ x, ∫ y, Real.tanh (h + x + y) ^ 2 ∂gaussianReal 0 vb
-          ∂gaussianReal 0 va := by
-    have hm : AEStronglyMeasurable
-        (fun x : ℝ => ∫ y, Real.tanh (h + (x + y)) ^ 2 ∂gaussianReal 0 vb)
-        (Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1)) := by
-      simpa [hma] using houter
-    rw [← hma]
-    simpa only [add_assoc] using (integral_map (by fun_prop) hm).symm
-  unfold standardGaussianExpectation
-  calc
-    (∫ x, ∫ y, Real.tanh (h + a * x + b * y) ^ 2 ∂gaussianReal 0 1
-        ∂gaussianReal 0 1) =
-        ∫ x, ∫ y, Real.tanh (h + x + y) ^ 2 ∂gaussianReal 0 vb
-          ∂gaussianReal 0 va := by
-            rw [integral_congr_ae (Filter.Eventually.of_forall hinner)]
-            exact houter_map
-    _ = ∫ z, Real.tanh (h + z) ^ 2
-          ∂(gaussianReal 0 va ∗ gaussianReal 0 vb) := by
-            simpa only [add_assoc] using (integral_conv hf).symm
-    _ = ∫ z, Real.tanh (h + z) ^ 2 ∂gaussianReal 0 vc := by
-          rw [gaussianReal_conv_gaussianReal, hv, zero_add]
-    _ = ∫ z, Real.tanh (h + c * z) ^ 2 ∂gaussianReal 0 1 := by
-          rw [← hmc, integral_map (by fun_prop)]
-          exact ((htanh.comp (by fun_prop)).pow 2).aestronglyMeasurable
-
-/-! #### Identification of the endpoint derivative with `g_s(v) - v` -/
-
-/--
-A bounded continuous test function only sees the total variance of two
-independent centered Gaussian increments.
--/
-private lemma flatness_gaussian_convolution_bounded
-    (f : ℝ → ℝ) (hfcont : Continuous f)
-    (hfbound : ∀ x, ‖f x‖ ≤ 1)
-    (h a b c : ℝ)
-    (hc : c ^ 2 = a ^ 2 + b ^ 2) :
-    standardGaussianExpectation (fun x =>
-      standardGaussianExpectation (fun y =>
-        f (h + a * x + b * y))) =
-    standardGaussianExpectation (fun z =>
-      f (h + c * z)) := by
-  let va : NNReal := ⟨a ^ 2, sq_nonneg a⟩ * 1
-  let vb : NNReal := ⟨b ^ 2, sq_nonneg b⟩ * 1
-  let vc : NNReal := ⟨c ^ 2, sq_nonneg c⟩ * 1
-
-  have hma :
-      Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) =
-        gaussianReal 0 va := by
-    simpa [va] using
-      (gaussianReal_map_const_mul
-        (μ := 0) (v := (1 : NNReal)) a)
-
-  have hmb :
-      Measure.map (fun x : ℝ => b * x) (gaussianReal 0 1) =
-        gaussianReal 0 vb := by
-    simpa [vb] using
-      (gaussianReal_map_const_mul
-        (μ := 0) (v := (1 : NNReal)) b)
-
-  have hmc :
-      Measure.map (fun x : ℝ => c * x) (gaussianReal 0 1) =
-        gaussianReal 0 vc := by
-    simpa [vc] using
-      (gaussianReal_map_const_mul
-        (μ := 0) (v := (1 : NNReal)) c)
-
-  have hv : va + vb = vc := by
-    apply NNReal.eq
-    simp [va, vb, vc, hc]
-
-  have hfint :
-      Integrable (fun z : ℝ => f (h + z))
-        (gaussianReal 0 va ∗ gaussianReal 0 vb) := by
-    rw [gaussianReal_conv_gaussianReal, hv, zero_add]
-    apply Integrable.of_bound (C := 1)
-    · exact (hfcont.comp (by fun_prop)).aestronglyMeasurable
-    · filter_upwards [] with z
-      exact hfbound (h + z)
-
-  have hprod :
-      Integrable
-        (fun p : ℝ × ℝ => f (h + (p.1 + p.2)))
-        ((gaussianReal 0 va).prod (gaussianReal 0 vb)) := by
-    rw [Measure.conv] at hfint
-    exact (integrable_map_measure hfint.1 (by fun_prop)).mp hfint
-
-  have houter :
-      AEStronglyMeasurable
-        (fun x : ℝ =>
-          ∫ y, f (h + (x + y)) ∂gaussianReal 0 vb)
-        (gaussianReal 0 va) :=
-    hprod.integral_prod_left.1
-
-  have hinner (x : ℝ) :
-      (∫ y, f (h + a * x + b * y) ∂gaussianReal 0 1) =
-        ∫ y, f (h + a * x + y) ∂gaussianReal 0 vb := by
-    have hm :
-        AEStronglyMeasurable
-          (fun y : ℝ => f (h + a * x + y))
-          (Measure.map (fun y : ℝ => b * y)
-            (gaussianReal 0 1)) :=
-      (hfcont.comp (by fun_prop)).aestronglyMeasurable
-    rw [← hmb, integral_map (by fun_prop) hm]
-
-  have houter_map :
-      (∫ x,
-          ∫ y, f (h + a * x + y) ∂gaussianReal 0 vb
-        ∂gaussianReal 0 1) =
-      ∫ x,
-          ∫ y, f (h + x + y) ∂gaussianReal 0 vb
-        ∂gaussianReal 0 va := by
-    have hm :
-        AEStronglyMeasurable
-          (fun x : ℝ =>
-            ∫ y, f (h + (x + y)) ∂gaussianReal 0 vb)
-          (Measure.map (fun x : ℝ => a * x)
-            (gaussianReal 0 1)) := by
-      simpa [hma] using houter
-    rw [← hma]
-    simpa only [add_assoc] using
-      (integral_map (by fun_prop) hm).symm
-
-  unfold standardGaussianExpectation
-  calc
-    (∫ x,
-        ∫ y, f (h + a * x + b * y) ∂gaussianReal 0 1
-      ∂gaussianReal 0 1)
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam 0 0 x₁ x₂)
         =
-      ∫ x,
-        ∫ y, f (h + x + y) ∂gaussianReal 0 vb
-      ∂gaussianReal 0 va := by
-        rw [integral_congr_ae
-          (Filter.Eventually.of_forall hinner)]
-        exact houter_map
-
-    _ = ∫ z, f (h + z)
-          ∂(gaussianReal 0 va ∗ gaussianReal 0 vb) := by
-        simpa only [add_assoc] using (integral_conv hfint).symm
-
-    _ = ∫ z, f (h + z) ∂gaussianReal 0 vc := by
-        rw [gaussianReal_conv_gaussianReal, hv, zero_add]
-
-    _ = ∫ z, f (h + c * z) ∂gaussianReal 0 1 := by
-        rw [← hmc, integral_map (by fun_prop)]
-        exact (hfcont.comp (by fun_prop)).aestronglyMeasurable
-
-
-/--
-The lower-branch endpoint profile.  This is
-`(H_{a^2} tanh)^2`, written in the same two-Gaussian form
-which occurs naturally in the GT derivative.
--/
-private noncomputable def flatnessLowerProfile
-    (a x : ℝ) : ℝ :=
-  standardGaussianExpectation (fun z₁ =>
-    standardGaussianExpectation (fun z₂ =>
-      Real.tanh (x + a * z₁) *
-        Real.tanh (x + a * z₂)))
-
-
-private lemma flatnessLowerProfile_eq_sq (a x : ℝ) :
-    flatnessLowerProfile a x =
-      (standardGaussianExpectation (fun z =>
-        Real.tanh (x + a * z))) ^ 2 := by
-  unfold flatnessLowerProfile standardGaussianExpectation
-  calc
-    (∫ z₁,
-        ∫ z₂,
-          Real.tanh (x + a * z₁) *
-            Real.tanh (x + a * z₂)
-        ∂gaussianReal 0 1
-      ∂gaussianReal 0 1)
-        =
-      ∫ z₁,
-        Real.tanh (x + a * z₁) *
-          (∫ z₂,
-            Real.tanh (x + a * z₂)
-            ∂gaussianReal 0 1)
-      ∂gaussianReal 0 1 := by
-        apply integral_congr_ae
-        filter_upwards [] with z₁
-        rw [integral_const_mul]
-
-    _ =
-      (∫ z, Real.tanh (x + a * z)
-        ∂gaussianReal 0 1) ^ 2 := by
-        rw [integral_mul_const]
-        ring
-
-
-private lemma flatnessLowerProfile_zero (x : ℝ) :
-    flatnessLowerProfile 0 x = Real.tanh x ^ 2 := by
-  rw [flatnessLowerProfile_eq_sq]
-  simp [standardGaussianExpectation]
-
-
-/--
-Continuity and the bound `|flatnessLowerProfile| ≤ 1` follow directly
-from the `GoodFam` package already used for the endpoint computation.
--/
-private lemma flatnessLowerProfile_good (a : ℝ) :
-    Continuous (flatnessLowerProfile a) ∧
-      ∀ x, ‖flatnessLowerProfile a x‖ ≤ 1 := by
-  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbase l x + 0 ^ 2
-  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbaseD l x
-
-  have hF : GTFrame.GoodFam F D :=
-    flatness_upper_goodFam 0
-
-  let F₂ := GTFrame.step0 flatnessGauss
-    (fun _ : Unit => 0) (fun _ => a) F
-  let D₂ := GTFrame.step0 flatnessGauss
-    (fun _ : Unit => 0) (fun _ => a) D
-
-  have hF₂ : GTFrame.GoodFam F₂ D₂ :=
-    GTFrame.step0_good
-      (GTFrame.expMoments_gaussianReal 0 1)
-      hF continuous_const continuous_const
-
-  let F₃ := GTFrame.step0 flatnessGauss
-    (fun _ : Unit => a) (fun _ => 0) F₂
-  let D₃ := GTFrame.step0 flatnessGauss
-    (fun _ : Unit => a) (fun _ => 0) D₂
-
-  have hF₃ : GTFrame.GoodFam F₃ D₃ :=
-    GTFrame.step0_good
-      (GTFrame.expMoments_gaussianReal 0 1)
-      hF₂ continuous_const continuous_const
-
-  have hdiag : Continuous (fun x : ℝ => (x, x)) := by
-    fun_prop
-
-  have heq (x : ℝ) :
-      D₃ () 0 (x, x) = flatnessLowerProfile a x := by
-    simp [D₃, D₂, D, GTFrame.step0, flatnessGauss,
-      flatnessLowerProfile, standardGaussianExpectation,
-      flatness_fLbaseD_zero]
-
-  constructor
-  · have hc := (hF₃.contD_pt () 0).comp hdiag
-    have hfun :
-        flatnessLowerProfile a =
-          fun x => D₃ () 0 (x, x) := by
-      funext x
-      exact (heq x).symm
-    rw [hfun]
-    exact hc
-
-  · intro x
-    have hb := hF₃.bddD () 0 (x, x)
-    rw [Real.norm_eq_abs, ← heq x]
-    exact hb
-
-
-/--
-The upper-branch tilted profile written as the endpoint derivative
-of the half-mass GT step.
--/
-private noncomputable def flatnessUpperProfile
-    (a b x : ℝ) : ℝ :=
-  gtHalfStepEndpoint a b 1 x x
-
-
-private lemma flatnessUpperProfile_good (a b : ℝ) :
-    Continuous (flatnessUpperProfile a b) ∧
-      ∀ x, ‖flatnessUpperProfile a b x‖ ≤ 1 := by
-  let F : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbase l x + b ^ 2
-  let D : Unit → ℝ → ℝ × ℝ → ℝ :=
-    fun _ l x => GTFrame.fLbaseD l x
-
-  have hF : GTFrame.GoodFam F D :=
-    flatness_upper_goodFam b
-
-  let FH := GTFrame.stepM flatnessGauss (1 / 2)
-    (fun _ : Unit => a) (fun _ => a) F
-  let DH := GTFrame.stepMD flatnessGauss (1 / 2)
-    (fun _ : Unit => a) (fun _ => a) F D
-
-  have hFH : GTFrame.GoodFam FH DH :=
-    GTFrame.stepM_good
-      (GTFrame.expMoments_gaussianReal 0 1)
-      hF (by norm_num) continuous_const continuous_const
-
-  have hdiag : Continuous (fun x : ℝ => (x, x)) := by
-    fun_prop
-
-  have heq (x : ℝ) :
-      DH () 0 (x, x) = flatnessUpperProfile a b x := by
-    simp [DH, F, D, GTFrame.stepMD, flatnessGauss,
-      standardGaussianExpectation, flatness_fLbaseD_zero,
-      flatnessUpperProfile, gtHalfStepEndpoint]
-
-  constructor
-  · have hc := (hFH.contD_pt () 0).comp hdiag
-    have hfun :
-        flatnessUpperProfile a b =
-          fun x => DH () 0 (x, x) := by
-      funext x
-      exact (heq x).symm
-    rw [hfun]
-    exact hc
-
-  · intro x
-    have hb := hFH.bddD () 0 (x, x)
-    rw [Real.norm_eq_abs, ← heq x]
-    exact hb
-
-
-private lemma flatness_incrementScale_eq_sqrt_product
-    (β s lower upper : ℝ) (hs : 0 ≤ s) :
-    gtIncrementScale β s lower upper =
-      β * Real.sqrt (s * (upper - lower)) := by
-  unfold gtIncrementScale
-  rw [Real.sqrt_mul hs]
-  ring
-
-
-/--
-Variance identity for the two outer Gaussian increments occurring
-in the GT formula.
--/
-private lemma flatness_outer_variance_sq
-    (β q s v : ℝ)
-    (hβ : 0 ≤ β) (hs0 : 0 ≤ s) (hs1 : s ≤ 1)
-    (hq : 0 ≤ q) (hv : 0 ≤ v) :
-    (Real.sqrt
-      (β ^ 2 * ((1 - s) * q + s * v))) ^ 2 =
-      (β * Real.sqrt ((1 - s) * q)) ^ 2 +
-        (gtIncrementScale β s 0 v) ^ 2 := by
-  have h1s : 0 ≤ 1 - s := sub_nonneg.mpr hs1
-  have hbase :
-      0 ≤ (1 - s) * q + s * v :=
-    add_nonneg (mul_nonneg h1s hq) (mul_nonneg hs0 hv)
-  have hvar :
-      0 ≤ β ^ 2 * ((1 - s) * q + s * v) :=
-    mul_nonneg (sq_nonneg β) hbase
-
-  rw [Real.sq_sqrt hvar]
-  rw [mul_pow, Real.sq_sqrt (mul_nonneg h1s hq)]
-  rw [gtIncrementScale_sq_of_nonneg
-    β s 0 v hβ hs0 hv]
-  ring
-
-
-/--
-For `0 ≤ v ≤ q`, rewrite the scalar order parameter in exactly the
-Gaussian form produced by the GT endpoint derivative.
--/
-private lemma flatness_scalarOrderParameter_lower_eq
-    (β h q s v : ℝ)
-    (hβ : 0 ≤ β)
-    (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hq : 0 ≤ q)
-    (hv : v ∈ Set.Icc (0 : ℝ) q) :
-    scalarOrderParameter β h q s v =
-      standardGaussianExpectation (fun z =>
-        standardGaussianExpectation (fun z₀ =>
-          flatnessLowerProfile
-            (gtIncrementScale β s v q)
-            (h + β * Real.sqrt ((1 - s) * q) * z +
-              gtIncrementScale β s 0 v * z₀))) := by
-  have hmax :
-      max (q - v) 0 = q - v :=
-    max_eq_left (sub_nonneg.mpr hv.2)
-
-  have hd :
-      gtIncrementScale β s v q =
-        β * Real.sqrt (s * (q - v)) :=
-    flatness_incrementScale_eq_sqrt_product β s v q hs.1
-
-  have hpsi (x : ℝ) :
-      scalarPsiX β q s v x ^ 2 =
-        flatnessLowerProfile
-          (gtIncrementScale β s v q) x := by
-    unfold scalarPsiX
-    rw [hmax, hd]
-    exact (flatnessLowerProfile_eq_sq _ x).symm
-
-  have hsq :=
-    flatness_outer_variance_sq
-      β q s v hβ hs.1 hs.2 hq hv.1
-
-  have hgood :=
-    flatnessLowerProfile_good
-      (gtIncrementScale β s v q)
-
-  have hconv :=
-    flatness_gaussian_convolution_bounded
-      (flatnessLowerProfile
-        (gtIncrementScale β s v q))
-      hgood.1 hgood.2
-      h
-      (β * Real.sqrt ((1 - s) * q))
-      (gtIncrementScale β s 0 v)
-      (Real.sqrt
-        (β ^ 2 * ((1 - s) * q + s * v)))
-      hsq
-
-  unfold scalarOrderParameter localFieldExpectation
-  rw [if_pos hv.2]
-  unfold heatSemigroup
-  simp_rw [hpsi]
-  exact hconv.symm
-
-
-/--
-For `q < v`, rewrite the scalar order parameter in exactly the
-tilted-semigroup form produced by the GT endpoint derivative.
--/
-private lemma flatness_scalarOrderParameter_upper_eq
-    (β h q s v : ℝ)
-    (hβ : 0 ≤ β)
-    (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hq : 0 ≤ q)
-    (hqv : q < v) :
-    scalarOrderParameter β h q s v =
-      standardGaussianExpectation (fun z =>
-        standardGaussianExpectation (fun z₀ =>
-          tiltedHeatSemigroup
-            (s * β ^ 2 * (v - q))
-            (fun y => Real.tanh y ^ 2)
-            (h + β * Real.sqrt ((1 - s) * q) * z +
-              gtIncrementScale β s 0 q * z₀))) := by
-  have hmax :
-      max (q - v) 0 = 0 :=
-    max_eq_right (sub_nonpos.mpr hqv.le)
-
-  have hpsi (x : ℝ) :
-      scalarPsiX β q s v x = Real.tanh x := by
-    unfold scalarPsiX
-    rw [hmax]
-    simp [standardGaussianExpectation]
-
-  let a : ℝ := gtIncrementScale β s q v
-
-  have ha0 : 0 ≤ a := by
-    dsimp [a]
-    exact gtIncrementScale_nonneg β s q v hβ
-
-  have hasq :
-      a ^ 2 = s * β ^ 2 * (v - q) := by
-    dsimp [a]
-    exact gtIncrementScale_sq_of_nonneg
-      β s q v hβ hs.1 hqv.le
-
-  have hprofile (x : ℝ) :
-      tiltedHeatSemigroup
-        (s * β ^ 2 * (v - q))
-        (fun y => Real.tanh y ^ 2) x =
-      flatnessUpperProfile a 0 x := by
-    symm
-    unfold flatnessUpperProfile
-    rw [gtHalfStepEndpoint_diagonal_eq_tilted
-      a 0 x ha0, hasq]
-
-  have hgood := flatnessUpperProfile_good a 0
-
-  have hfcont :
-      Continuous (fun x =>
-        tiltedHeatSemigroup
-          (s * β ^ 2 * (v - q))
-          (fun y => Real.tanh y ^ 2) x) := by
-    have heq :
-        (fun x =>
-          tiltedHeatSemigroup
-            (s * β ^ 2 * (v - q))
-            (fun y => Real.tanh y ^ 2) x) =
-        flatnessUpperProfile a 0 := by
-      funext x
-      exact hprofile x
-    rw [heq]
-    exact hgood.1
-
-  have hfbound :
-      ∀ x,
-        ‖tiltedHeatSemigroup
-          (s * β ^ 2 * (v - q))
-          (fun y => Real.tanh y ^ 2) x‖ ≤ 1 := by
-    intro x
-    rw [hprofile x]
-    exact hgood.2 x
-
-  have hsq0 :=
-    flatness_outer_variance_sq
-      β q s q hβ hs.1 hs.2 hq hq
-
-  have hcollapse :
-      (1 - s) * q + s * q = q := by
-    ring
-
-  have hsq :
-      (Real.sqrt (β ^ 2 * q)) ^ 2 =
-        (β * Real.sqrt ((1 - s) * q)) ^ 2 +
-          (gtIncrementScale β s 0 q) ^ 2 := by
-    simpa [hcollapse] using hsq0
-
-  have hconv :=
-    flatness_gaussian_convolution_bounded
-      (fun x =>
-        tiltedHeatSemigroup
-          (s * β ^ 2 * (v - q))
-          (fun y => Real.tanh y ^ 2) x)
-      hfcont hfbound
-      h
-      (β * Real.sqrt ((1 - s) * q))
-      (gtIncrementScale β s 0 q)
-      (Real.sqrt (β ^ 2 * q))
-      hsq
-
-  unfold scalarOrderParameter localFieldExpectation
-  rw [if_neg (not_le_of_gt hqv)]
-  simp_rw [hpsi]
-  unfold heatSemigroup
-  exact hconv.symm
-
-
-/--
-For every positive overlap `0 ≤ v ≤ 1`, the endpoint multiplier
-derivative of the GT functional is `g_s(v) - v`.
--/
-lemma flatness_deriv_gtFunctional_zero_eq_scalarOrderParameter_sub
-    (β h q s v : ℝ)
-    (hβ : 0 ≤ β)
-    (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hq : q ∈ Set.Ioo (0 : ℝ) 1)
-    (hv : v ∈ Set.Icc (0 : ℝ) 1) :
-    deriv (fun lam => gtFunctional β h q s lam v) 0 =
-      scalarOrderParameter β h q s v - v := by
-
-  by_cases hvq : v < q
-
-  · by_cases hvzero : v = 0
-
-    · subst v
-      rw [flatness_deriv_gtFunctional_zero_abs_v_eq_zero
-        β h q s 0 hq.1 abs_zero]
-      rw [flatness_scalarOrderParameter_lower_eq
-        β h q s 0 hβ hs hq.1.le
-        ⟨le_rfl, hq.1.le⟩]
-      simp [flatnessLowerProfile, gtIncrementScale,
-        standardGaussianExpectation]
-
-    · have hvpos : 0 < v :=
-        lt_of_le_of_ne hv.1 (Ne.symm hvzero)
-
-      rw [flatness_deriv_gtFunctional_zero_abs_v_lt_q
-        β h q s v
-        (by simpa [abs_of_nonneg hv.1] using hvpos)
-        (by simpa [abs_of_nonneg hv.1] using hvq)]
-
-      rw [flatness_scalarOrderParameter_lower_eq
-        β h q s v hβ hs hq.1.le
-        ⟨hv.1, hvq.le⟩]
-
-      simp [flatnessLowerProfile,
-        abs_of_nonneg hv.1, gtPathSign, hv.1]
-
-  · have hqv : q ≤ v := le_of_not_gt hvq
-
-    by_cases hvqeq : v = q
-
-    · subst v
-
-      rw [flatness_deriv_gtFunctional_zero_q_le_v_lt_one
-        β h q s q hβ hs.1 hq.1 le_rfl hq.2]
-
-      rw [flatness_scalarOrderParameter_lower_eq
-        β h q s q hβ hs hq.1.le
-        ⟨hq.1.le, le_rfl⟩]
-
-      simp [flatness_tiltedHeatSemigroup_zero,
-        flatnessLowerProfile_zero, gtIncrementScale]
-
-    · have hqvlt : q < v :=
-        lt_of_le_of_ne hqv (Ne.symm hvqeq)
-
-      by_cases hvone : v = 1
-
-      · subst v
-
-        rw [flatness_deriv_gtFunctional_zero_v_eq_one
-          β h q s hβ hs.1 hq.1 hq.2.le]
-
-        rw [flatness_scalarOrderParameter_upper_eq
-          β h q s 1 hβ hs hq.1.le hq.2]
-
-      · have hvlt1 : v < 1 :=
-          lt_of_le_of_ne hv.2 hvone
-
-        rw [flatness_deriv_gtFunctional_zero_q_le_v_lt_one
-          β h q s v hβ hs.1 hq.1 hqv hvlt1]
-
-        rw [flatness_scalarOrderParameter_upper_eq
-          β h q s v hβ hs hq.1.le hqvlt]
-
-/--
-For the canonical replica-symmetric fixed point and every `0 ≤ v ≤ 1`,
-`∂_lam GT_s(0,v) = g_s(v) - v`.
--/
-lemma flatness_deriv_gtFunctional_zero_eq_g_sub
-    (β h s v : ℝ)
-    (hβ : 0 < β) (hh : 0 < h)
-    (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hv : v ∈ Set.Icc (0 : ℝ) 1) :
-    deriv
-        (fun lam =>
-          gtFunctional β h (rsQ β h) s lam v) 0 =
-      scalarOrderParameterCorrect β h s v - v := by
-  unfold scalarOrderParameterCorrect
-  exact
-    flatness_deriv_gtFunctional_zero_eq_scalarOrderParameter_sub
-      β h (rsQ β h) s v
-      hβ.le hs
-      ⟨rsQ_pos hβ hh, rsQ_lt_one hβ hh⟩
-      hv
-
-/-- At an interior replica-symmetric fixed point, the partial derivative of
-the GT functional in the multiplier vanishes when the overlap is that fixed
-point. -/
-lemma flatness_deriv_gtFunctional_zero_at_fixedPoint
-    (β h q s : ℝ) (hβ : 0 ≤ β) (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hq : 0 < q) (hq1 : q < 1) (hfixed : IsRSFixedPoint β h q) :
-    deriv (fun lam => gtFunctional β h q s lam q) 0 = 0 := by
-  rw [flatness_deriv_gtFunctional_zero_q_le_v_lt_one
-    β h q s q hβ hs.1 hq le_rfl hq1]
-  simp only [sub_self, mul_zero, flatness_tiltedHeatSemigroup_zero]
-  rw [sub_eq_zero]
-  have hsquare :
-      (β * Real.sqrt q) ^ 2 =
-        (β * Real.sqrt ((1 - s) * q)) ^ 2 +
-          (gtIncrementScale β s 0 q) ^ 2 := by
-    have hq0 : 0 ≤ q := hq.le
-    have hs0 : 0 ≤ s := hs.1
-    have h1s0 : 0 ≤ 1 - s := sub_nonneg.mpr hs.2
-    simp only [gtIncrementScale, sub_zero]
-    rw [mul_pow, Real.sq_sqrt hq0, mul_pow,
-      Real.sq_sqrt (mul_nonneg h1s0 hq0)]
-    rw [mul_pow, mul_pow, Real.sq_sqrt hs0, Real.sq_sqrt hq0]
-    ring
-  rw [flatness_gaussian_convolution_tanh_sq h
-    (β * Real.sqrt ((1 - s) * q)) (gtIncrementScale β s 0 q)
-    (β * Real.sqrt q) hsquare]
-  exact hfixed.symm
-
-/-- For the canonical replica-symmetric overlap `q = rsQ β h`, the partial
-derivative of the GT functional in `lam` vanishes at `(lam, v) = (0, q)`. -/
-lemma flatness_deriv_gtFunctional_zero_at_rsQ
-    (β h s : ℝ) (hβ : 0 < β) (hh : 0 < h)
-    (hs : s ∈ Set.Icc (0 : ℝ) 1) :
-    deriv (fun lam => gtFunctional β h (rsQ β h) s lam (rsQ β h)) 0 = 0 := by
-  rw [flatness_deriv_gtFunctional_zero_eq_g_sub
-    β h s (rsQ β h) hβ hh hs (rsQ_mem_Icc β h)]
-  exact sub_eq_zero.mpr (scalarOrderParameterCorrect_at_rsQ hβ s)
-
-/-- The sign of the endpoint multiplier derivative follows from the scalar
-order-parameter crossing theorem. -/
-lemma flatness_deriv_gtFunctional_zero_sign
-    {K : Set (ℝ × ℝ)} (data : UniformATData K) {β h s : ℝ}
-    (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
-    (∀ v ∈ Set.Ico (0 : ℝ) (rsQ β h),
-      0 < deriv (fun lam => gtFunctional β h (rsQ β h) s lam v) 0) ∧
-    deriv (fun lam => gtFunctional β h (rsQ β h) s lam (rsQ β h)) 0 = 0 ∧
-    (∀ v ∈ Set.Ioc (rsQ β h) 1,
-      deriv (fun lam => gtFunctional β h (rsQ β h) s lam v) 0 < 0) := by
-  obtain ⟨hlower, hzero, hupper⟩ :=
-    scalarOrderParameterCorrect_sign data hp hs
-  have hβ : 0 < β := by
-    simpa using data.β_pos (β, h) hp
-  have hh : 0 < h := by
-    simpa using data.h_pos (β, h) hp
-  have hq : rsQ β h ∈ Set.Icc (0 : ℝ) 1 := rsQ_mem_Icc β h
-  refine ⟨?_, ?_, ?_⟩
-  · intro v hv
-    rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s v hβ hh hs
-      ⟨hv.1, hv.2.le.trans hq.2⟩]
-    exact hlower v hv
-  · rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s (rsQ β h) hβ hh hs
-      (rsQ_mem_Icc β h)]
-    exact hzero
-  · intro v hv
-    rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s v hβ hh hs
-      ⟨hq.1.trans hv.1.le, hv.2⟩]
-    exact hupper v hv
-
-/-!
-### The AT estimate after Price's identity
--/
-
-/--
-The Cauchy--Schwarz part of the Price-theorem estimate for `tilde g`.
-
-The hypotheses `hY₁` and `hY₂` say that the two fourth-sech moments
-have the RS marginal law. In the application these follow from the fact
-that both coordinates of the Gaussian pair have law
-`N (h, β^2 q)`.
--/
-lemma flatness_tildeG_deriv_le_pathAT_of_price
-    (β h s : ℝ)
-    (hβ : 0 < β) (hh : 0 < h) (hs : 0 ≤ s)
-    (D E₁ E₂ : ℝ)
-    (hPrice :
-      D =
-        s * β ^ 2 *
-          standardGaussianExpectation (fun z =>
-            (Real.cosh (E₁ + z))⁻¹ ^ 2 *
-            (Real.cosh (E₂ + z))⁻¹ ^ 2))
-    (hCS :
-      standardGaussianExpectation (fun z =>
-          (Real.cosh (E₁ + z))⁻¹ ^ 2 *
-          (Real.cosh (E₂ + z))⁻¹ ^ 2)
-        ≤
-      standardGaussianExpectation (fun z =>
-        (Real.cosh
-          (h + β * Real.sqrt (rsQ β h) * z))⁻¹ ^ 4)) :
-    D ≤ s * atParameter β h := by
-  rw [hPrice]
-  rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
-  simpa only [mul_assoc] using
-    (mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left hCS (sq_nonneg β)) hs)
-
-private lemma flatness_mul_sech_sq_le_average_sech_fourth
-    (x y : ℝ) :
-    (Real.cosh x)⁻¹ ^ 2 * (Real.cosh y)⁻¹ ^ 2
-      ≤
-    ((Real.cosh x)⁻¹ ^ 4 + (Real.cosh y)⁻¹ ^ 4) / 2 := by
-  have hx : 0 ≤ (Real.cosh x)⁻¹ ^ 2 := sq_nonneg _
-  have hy : 0 ≤ (Real.cosh y)⁻¹ ^ 2 := sq_nonneg _
-  nlinarith [sq_nonneg
-    ((Real.cosh x)⁻¹ ^ 2 - (Real.cosh y)⁻¹ ^ 2)]
-
-/--
-The derivative expression appearing in Price's theorem for `tilde g`.
-`Y₁` and `Y₂` are parametrizations of the two coordinates of the
-Gaussian pair by an auxiliary probability space.
--/
-noncomputable def flatnessTildeGPriceTerm
-    (β s : ℝ) (Y₁ Y₂ : ℝ → ℝ) : ℝ :=
-  s * β ^ 2 *
-    standardGaussianExpectation (fun z =>
-      (Real.cosh (Y₁ z))⁻¹ ^ 2 *
-      (Real.cosh (Y₂ z))⁻¹ ^ 2)
-
-lemma flatness_tildeGPriceTerm_le_pathAT
-    (β h s : ℝ) (Y₁ Y₂ : ℝ → ℝ)
-    (hβ : 0 < β) (hh : 0 < h) (hs : 0 ≤ s)
-    (hInt₁ :
-      Integrable
-        (fun z =>
-          (Real.cosh (Y₁ z))⁻¹ ^ 4)
-        (gaussianReal 0 1))
-    (hInt₂ :
-      Integrable
-        (fun z =>
-          (Real.cosh (Y₂ z))⁻¹ ^ 4)
-        (gaussianReal 0 1))
-    (hY₁ :
-      standardGaussianExpectation (fun z =>
-        (Real.cosh (Y₁ z))⁻¹ ^ 4)
-        =
-      standardGaussianExpectation (fun z =>
-        (Real.cosh
-          (h + β * Real.sqrt (rsQ β h) * z))⁻¹ ^ 4))
-    (hY₂ :
-      standardGaussianExpectation (fun z =>
-        (Real.cosh (Y₂ z))⁻¹ ^ 4)
-        =
-      standardGaussianExpectation (fun z =>
-        (Real.cosh
-          (h + β * Real.sqrt (rsQ β h) * z))⁻¹ ^ 4)) :
-    flatnessTildeGPriceTerm β s Y₁ Y₂
-      ≤ s * atParameter β h := by
-
-  let A : ℝ :=
-    standardGaussianExpectation (fun z =>
-      (Real.cosh
-        (h + β * Real.sqrt (rsQ β h) * z))⁻¹ ^ 4)
-
-  have hprod :
-      standardGaussianExpectation (fun z =>
-          (Real.cosh (Y₁ z))⁻¹ ^ 2 *
-          (Real.cosh (Y₂ z))⁻¹ ^ 2)
-        ≤ A := by
-    unfold standardGaussianExpectation
-    have haverageInt : Integrable
-        (fun z =>
-          ((Real.cosh (Y₁ z))⁻¹ ^ 4 +
-            (Real.cosh (Y₂ z))⁻¹ ^ 4) / 2)
-        (gaussianReal 0 1) :=
-      hInt₁.add hInt₂ |>.div_const 2
-    have hsqMeas₁ : AEStronglyMeasurable
-        (fun z => (Real.cosh (Y₁ z))⁻¹ ^ 2)
-        (gaussianReal 0 1) := by
-      convert Real.continuous_sqrt.comp_aestronglyMeasurable
-        hInt₁.aestronglyMeasurable using 1
-      funext z
-      rw [show (Real.cosh (Y₁ z))⁻¹ ^ 4 =
-          ((Real.cosh (Y₁ z))⁻¹ ^ 2) ^ 2 by ring,
-        Real.sqrt_sq_eq_abs, abs_of_nonneg (sq_nonneg _)]
-    have hsqMeas₂ : AEStronglyMeasurable
-        (fun z => (Real.cosh (Y₂ z))⁻¹ ^ 2)
-        (gaussianReal 0 1) := by
-      convert Real.continuous_sqrt.comp_aestronglyMeasurable
-        hInt₂.aestronglyMeasurable using 1
-      funext z
-      rw [show (Real.cosh (Y₂ z))⁻¹ ^ 4 =
-          ((Real.cosh (Y₂ z))⁻¹ ^ 2) ^ 2 by ring,
-        Real.sqrt_sq_eq_abs, abs_of_nonneg (sq_nonneg _)]
-    have hprodInt : Integrable
-        (fun z =>
-          (Real.cosh (Y₁ z))⁻¹ ^ 2 *
-          (Real.cosh (Y₂ z))⁻¹ ^ 2)
-        (gaussianReal 0 1) := by
-      apply haverageInt.mono'
-      · exact hsqMeas₁.mul hsqMeas₂
-      · filter_upwards [] with z
-        rw [Real.norm_eq_abs, abs_of_nonneg
-          (mul_nonneg (sq_nonneg _) (sq_nonneg _))]
-        exact flatness_mul_sech_sq_le_average_sech_fourth
-          (Y₁ z) (Y₂ z)
-    calc
-      (∫ z,
-          (Real.cosh (Y₁ z))⁻¹ ^ 2 *
-          (Real.cosh (Y₂ z))⁻¹ ^ 2
-          ∂gaussianReal 0 1)
-          ≤
-        ∫ z,
-          ((Real.cosh (Y₁ z))⁻¹ ^ 4 +
-            (Real.cosh (Y₂ z))⁻¹ ^ 4) / 2
-          ∂gaussianReal 0 1 := by
-            apply integral_mono
-            · exact hprodInt
-            · exact haverageInt
-            · intro z
-              exact flatness_mul_sech_sq_le_average_sech_fourth
-                (Y₁ z) (Y₂ z)
-
-      _ =
-        ((∫ z, (Real.cosh (Y₁ z))⁻¹ ^ 4
-              ∂gaussianReal 0 1) +
-          (∫ z, (Real.cosh (Y₂ z))⁻¹ ^ 4
-              ∂gaussianReal 0 1)) / 2 := by
-            rw [integral_div]
-            rw [integral_add hInt₁ hInt₂]
-
-      _ = A := by
-        change
-          (standardGaussianExpectation (fun z =>
-              (Real.cosh (Y₁ z))⁻¹ ^ 4) +
-           standardGaussianExpectation (fun z =>
-              (Real.cosh (Y₂ z))⁻¹ ^ 4)) / 2 = A
-        rw [hY₁, hY₂]
-        simp [A]
-
-  unfold flatnessTildeGPriceTerm
-  rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
-
-  simpa only [mul_assoc, A] using
-    (mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left hprod (sq_nonneg β)) hs)
-
-/-- For fixed model parameters and overlap, the GT functional is convex in
-its Lagrange multiplier. -/
-lemma convexOn_gtFunctional_lam (β h q s v : ℝ) :
-    ConvexOn ℝ Set.univ (fun lam => gtFunctional β h q s lam v) := by
-  apply convexOn_univ_of_deriv2_nonneg
-  · intro lam
-    exact (hasDerivAt_gtFunctional β h q s lam v).differentiableAt
-  · exact differentiable_deriv_gtFunctional β h q s v
-  · intro lam
-    simpa only [Function.iterate_succ_apply, Function.iterate_zero_apply] using
-      (gt_lambda_derivative_bounds β h q s lam v 0 0 0).2.1
-
-/-!
-## Continuity of the GT functional
--/
-
-/-- For fixed model parameters and overlap, the GT functional is continuous
-in its Lagrange multiplier. -/
-lemma continuous_gtFunctional_lam (β h q s v : ℝ) :
-    Continuous (fun lam : ℝ => gtFunctional β h q s lam v) := by
-  rw [continuous_iff_continuousAt]
-  intro lam
-  exact (hasDerivAt_gtFunctional β h q s lam v).continuousAt
-
-/-- The compact parameter set carried by `UniformATData` lies in the strict
-AT region. -/
-lemma UniformATData.subset_strictATRegion {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) : K ⊆ strictATRegion := by
-  intro p hp
-  refine ⟨data.β_pos p hp, data.h_pos p hp, ?_⟩
-  have hAT := data.strictAT p hp
-  linarith [data.gap_pos]
-
-/-- Joint continuity of the canonical GT functional on
-`K × [0,1] × [-1,1] × [0,1]`, with the last coordinate representing
-the multiplier restricted to the compact interval used in the flatness
-argument. -/
-lemma continuousOn_gtFunctional_uniformATData {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ContinuousOn (fun w : (ℝ × ℝ) × (ℝ × (ℝ × ℝ)) =>
-      gtFunctional w.1.1 w.1.2 (rsQ w.1.1 w.1.2)
-        w.2.1 w.2.2.2 w.2.2.1)
-      (K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))) := by
-  exact continuousOn_gtFunctional K data.subset_strictATRegion
-
-/-!
-## Elementary facts about the GT envelope
--/
-
-/--
-The infimum defining `gtEnvelope` is bounded above by every value of
-`gtFunctional`, provided the range is bounded below.
--/
-lemma gtEnvelope_le_functional
-    (β h q s v lam : ℝ)
-    (hbdd :
-      BddBelow
-        (Set.range (fun l : ℝ =>
-          gtFunctional β h q s l v))) :
-    gtEnvelope β h q s v ≤
-      gtFunctional β h q s lam v := by
-  rw [gtEnvelope]
-  exact csInf_le hbdd ⟨lam, rfl⟩
-
-
-/--
-If `lam₀` is a global minimizer of the GT functional, then the GT envelope
-equals the value at `lam₀`.
--/
-lemma gtEnvelope_eq_functional_of_global_min
-    (β h q s v lam₀ : ℝ)
-    (hbdd :
-      BddBelow
-        (Set.range (fun l : ℝ =>
-          gtFunctional β h q s l v)))
-    (hmin :
-      ∀ lam : ℝ,
-        gtFunctional β h q s lam₀ v ≤
-          gtFunctional β h q s lam v) :
-    gtEnvelope β h q s v =
-      gtFunctional β h q s lam₀ v := by
-  apply le_antisymm
-
-  · exact
-      gtEnvelope_le_functional
-        β h q s v lam₀ hbdd
-
-  · rw [gtEnvelope]
-    refine le_csInf (Set.range_nonempty _) ?_
-    intro y hy
-    rcases hy with ⟨lam, rfl⟩
-    exact hmin lam
-
-
-/-!
-## Turning a fixed negative-overlap gap into a quadratic gap
--/
-
-/--
-On `-1 ≤ v ≤ -q`, the distance `|v-q|` is at most `2`.
--/
-lemma sub_sq_le_four_of_negative_overlap
-    {q v : ℝ}
-    (hq0 : 0 ≤ q)
-    (hv : v ∈ Icc (-1 : ℝ) (-q)) :
-    (v - q) ^ 2 ≤ 4 := by
-
-  have hv_lower : -1 ≤ v := hv.1
-  have hv_upper : v ≤ -q := hv.2
-
-  have hq1 : q ≤ 1 := by
-    linarith
-
-  have hdiff_lower : -2 ≤ v - q := by
-    linarith
-
-  have hdiff_upper : v - q ≤ 0 := by
-    linarith
-
-  have hprod :
-      0 ≤ ((v - q) + 2) * (2 - (v - q)) := by
-    apply mul_nonneg
-    · linarith
-    · linarith
-
-  nlinarith
-
-
-/-!
-## Pass from the unoptimized functional to the envelope
--/
-
-/--
-Any uniform quadratic estimate for one choice of `lam` gives the same
-estimate for the infimum over `lam`.
--/
-lemma gtEnvelope_quadratic_gap_of_functional_gap
-    {K : Set (ℝ × ℝ)}
-    {c : ℝ}
-    (hgap :
-      ∀ {β h q s v : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        ∃ lam,
-          gtFunctional β h q s lam v ≤
-            2 * rsPathValue β h q s
-              - c * (v - q) ^ 2)
-    (hbdd :
-      ∀ {β h q s v : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        BddBelow
-          (Set.range (fun lam : ℝ =>
-            gtFunctional β h q s lam v))) :
-    ∀ {β h q s v : ℝ},
-      (β, h) ∈ K →
-      q = rsQ β h →
-      s ∈ Icc (0 : ℝ) 1 →
-      v ∈ Icc (-1 : ℝ) 1 →
-      gtEnvelope β h q s v ≤
-        2 * rsPathValue β h q s
-          - c * (v - q) ^ 2 := by
-
-  intro β h q s v hK hq hs hv
-
-  obtain ⟨lam, hlam⟩ :=
-    hgap hK hq hs hv
-
-  have henv :
-      gtEnvelope β h q s v ≤
-        gtFunctional β h q s lam v :=
-    gtEnvelope_le_functional
-      β h q s v lam
-      (hbdd hK hq hs hv)
-
-  exact henv.trans hlam
-
-
-/-!
-## Equality at the replica-symmetric overlap
--/
-
-/--
-If `lam = 0` is a global minimizer at `v = q`, then the envelope at `q`
-is exactly the RS value.
--/
-lemma gtEnvelope_eq_rsPathValue_at_q
-    {K : Set (ℝ × ℝ)}
-    (hzero :
-      ∀ {β h q s : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        gtFunctional β h q s 0 q =
-          2 * rsPathValue β h q s)
-    (hglobal :
-      ∀ {β h q s lam : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        gtFunctional β h q s 0 q ≤
-          gtFunctional β h q s lam q)
-    (hbdd :
-      ∀ {β h q s : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        BddBelow
-          (Set.range (fun lam : ℝ =>
-            gtFunctional β h q s lam q))) :
-    ∀ {β h q s : ℝ},
-      (β, h) ∈ K →
-      q = rsQ β h →
-      s ∈ Icc (0 : ℝ) 1 →
-      gtEnvelope β h q s q =
-        2 * rsPathValue β h q s := by
-
-  intro β h q s hK hq hs
-
-  calc
-    gtEnvelope β h q s q
-        =
-        gtFunctional β h q s 0 q := by
-          apply gtEnvelope_eq_functional_of_global_min
-          · exact hbdd hK hq hs
-          · intro lam
-            exact hglobal hK hq hs
-
-    _ = 2 * rsPathValue β h q s :=
-      hzero hK hq hs
-
-
-/-!
-## Final theorem
--/
-
-/-- Uniform linear separation of the multiplier derivative from zero near the
-replica-symmetric overlap.  Shrinking the neighborhood by `qmin / 2` ensures
-that it lies in the nonnegative-overlap branch. -/
-lemma flatness_local_deriv_linear_separation
-    {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ c ε : ℝ, 0 < c ∧ 0 < ε ∧
-      ∀ {β h s v : ℝ},
-        (β, h) ∈ K →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        |v - rsQ β h| ≤ ε →
-        c * |v - rsQ β h| ≤
-          |deriv
-            (fun lam =>
-              gtFunctional β h (rsQ β h) s lam v) 0| := by
-  obtain ⟨c, ε, hc, hε, hsep⟩ :=
-    scalarOrderParameterCorrect_linear_separation data
-
-  let ε₀ : ℝ := min ε (data.qmin / 2)
-
-  have hε₀ : 0 < ε₀ := by
-    dsimp [ε₀]
-    apply lt_min
-    · exact hε
-    · linarith [data.qmin_pos]
-
-  refine ⟨c, ε₀, hc, hε₀, ?_⟩
-
-  intro β h s v hp hs hv hnear
-
-  have hβ : 0 < β := by
-    simpa using data.β_pos (β, h) hp
-
-  have hh : 0 < h := by
-    simpa using data.h_pos (β, h) hp
-
-  have hqmin : data.qmin ≤ rsQ β h := by
-    simpa using data.q_lower (β, h) hp
-
-  have hnear_qmin :
-      |v - rsQ β h| ≤ data.qmin / 2 := by
-    exact hnear.trans (min_le_right _ _)
-
-  have hlo :
-      -(data.qmin / 2) ≤ v - rsQ β h :=
-    (abs_le.mp hnear_qmin).1
-
-  have hv0 : 0 ≤ v := by
-    nlinarith [data.qmin_pos]
-
-  have hv01 : v ∈ Icc (0 : ℝ) 1 :=
-    ⟨hv0, hv.2⟩
-
-  rw [flatness_deriv_gtFunctional_zero_eq_g_sub
-    β h s v hβ hh hs hv01]
-
-  exact hsep hp hs hv01
-    (hnear.trans (min_le_left _ _))
-
-/-- Global second-order Taylor upper bound in the multiplier. -/
-lemma flatness_gtFunctional_taylor_upper
-    (β h q s v lam : ℝ) :
-    gtFunctional β h q s lam v
-      ≤
-    gtFunctional β h q s 0 v
-      + deriv (fun l => gtFunctional β h q s l v) 0 * lam
-      + (5 / 4 : ℝ) * lam ^ 2 := by
-  let F : ℝ → ℝ :=
-    fun l => gtFunctional β h q s l v
-
-  let G : ℝ → ℝ :=
-    fun l => F l - (5 / 4 : ℝ) * l ^ 2
-
-  have hFdiff : Differentiable ℝ F := by
-    intro x
-    dsimp [F]
-    exact
-      (hasDerivAt_gtFunctional β h q s x v).differentiableAt
-
-  have hGdiff : Differentiable ℝ G := by
-    intro x
-    dsimp [G]
-    exact
-      (hFdiff x).sub
-        (by fun_prop)
-
-  have hGderiv (x : ℝ) :
-      deriv G x =
-        deriv F x - (5 / 2 : ℝ) * x := by
-    have hF :
-        HasDerivAt F (deriv F x) x :=
-      (hFdiff x).hasDerivAt
-
-    have hquad :
-        HasDerivAt
-          (fun y : ℝ => (5 / 4 : ℝ) * y ^ 2)
-          ((5 / 2 : ℝ) * x) x := by
-      have hsq : HasDerivAt (fun y : ℝ => y ^ 2) (2 * x) x := by
-        simpa using hasDerivAt_pow 2 x
-      exact (hsq.const_mul (5 / 4 : ℝ)).congr_deriv (by ring)
-
-    exact (hF.sub hquad).deriv
-
-  have hFderivDiff :
-      Differentiable ℝ (deriv F) := by
-    simpa [F] using
-      differentiable_deriv_gtFunctional β h q s v
-
-  have hGderivDiff :
-      Differentiable ℝ (deriv G) := by
-    have hfun :
-        deriv G =
-          fun x => deriv F x - (5 / 2 : ℝ) * x := by
-      funext x
-      exact hGderiv x
-
-    rw [hfun]
-    exact hFderivDiff.sub (by fun_prop)
-
-  have hGsecond (x : ℝ) :
-      deriv (deriv G) x ≤ 0 := by
-    have hfun :
-        deriv G =
-          fun y => deriv F y - (5 / 2 : ℝ) * y := by
-      funext y
-      exact hGderiv y
-
-    have hD :
-        HasDerivAt
-          (deriv F)
-          (deriv (deriv F) x) x :=
-      (hFderivDiff x).hasDerivAt
-
-    have hlin :
-        HasDerivAt
-          (fun y : ℝ => (5 / 2 : ℝ) * y)
-          (5 / 2 : ℝ) x := by
-      simpa using (hasDerivAt_id x).const_mul (5 / 2 : ℝ)
-
-    have heq :
-        deriv (deriv G) x =
-          deriv (deriv F) x - (5 / 2 : ℝ) := by
-      rw [hfun]
-      exact (hD.sub hlin).deriv
-
-    rw [heq]
-
-    have hbound :=
-      (gt_lambda_derivative_bounds
-        β h q s x v 0 0 0).2.2
-
-    change
-      deriv (deriv F) x ≤ (5 / 2 : ℝ)
-      at hbound
-
-    linarith
-
-  have hconc :
-      ConcaveOn ℝ Set.univ G := by
-    apply concaveOn_univ_of_deriv2_nonpos
-    · exact hGdiff
-    · exact hGderivDiff
-    · intro x
-      simpa only
-        [Function.iterate_succ_apply,
-         Function.iterate_zero_apply]
-        using hGsecond x
-
-  have hGzero :
-      HasDerivAt G (deriv F 0) 0 := by
-    have hz : deriv G 0 = deriv F 0 := by
-      simpa using hGderiv 0
-    rw [← hz]
-    exact (hGdiff 0).hasDerivAt
-
-  by_cases hlam0 : lam = 0
-  · subst lam
-    simp
-
-  by_cases hlam : 0 < lam
-  · have hslope :=
-      hconc.slope_le_of_hasDerivAt
-        (Set.mem_univ 0)
-        (Set.mem_univ lam)
-        hlam
-        hGzero
-
-    rw [slope_def_field] at hslope
-    simp only [sub_zero] at hslope
-
-    have hmul :=
-      (div_le_iff₀ hlam).mp hslope
-
-    dsimp [G, F] at hmul ⊢
-    nlinarith
-
-  · have hlamle : lam ≤ 0 :=
-      le_of_not_gt hlam
-
-    have hlamneg : lam < 0 :=
-      lt_of_le_of_ne hlamle hlam0
-
-    have hslope :=
-      hconc.le_slope_of_hasDerivAt
-        (Set.mem_univ lam)
-        (Set.mem_univ 0)
-        hlamneg
-        hGzero
-
-    rw [slope_def_field] at hslope
-
-    have hden : 0 < 0 - lam := by
-      linarith
-
-    have hmul :=
-      (le_div_iff₀ hden).mp hslope
-
-    dsimp [G, F] at hmul ⊢
-    nlinarith
-
-/-- A linear lower bound on the multiplier derivative yields a quadratic
-improvement after optimizing a single explicit multiplier. -/
-lemma flatness_quadratic_gap_of_deriv_gap
-    (β h q s v c : ℝ)
-    (hc : 0 < c)
-    (hzero :
-      gtFunctional β h q s 0 v
-        ≤ 2 * rsPathValue β h q s)
-    (hgap :
-      c * |v - q| ≤
-        |deriv
-          (fun l => gtFunctional β h q s l v) 0|) :
-    ∃ lam,
-      gtFunctional β h q s lam v
-        ≤
-      2 * rsPathValue β h q s
-        - (c ^ 2 / 5) * (v - q) ^ 2 := by
-  let F : ℝ → ℝ :=
-    fun l => gtFunctional β h q s l v
-
-  let d : ℝ := deriv F 0
-  let lam : ℝ := -(2 / 5 : ℝ) * d
-
-  have ht :=
-    flatness_gtFunctional_taylor_upper
-      β h q s v lam
-
-  change
-    F lam ≤
-      F 0 + d * lam + (5 / 4 : ℝ) * lam ^ 2
-    at ht
-
-  have hopt :
-      d * lam + (5 / 4 : ℝ) * lam ^ 2
-        = -(d ^ 2) / 5 := by
-    dsimp [lam]
-    ring
-
-  have ht' : F lam ≤ F 0 - d ^ 2 / 5 := by
-    nlinarith [ht, hopt]
-
-  have hgap' :
-      c * |v - q| ≤ |d| := by
-    simpa [d, F] using hgap
-
-  have hsq :
-      c ^ 2 * (v - q) ^ 2 ≤ d ^ 2 := by
-    have hmul :=
-      mul_self_le_mul_self
-        (mul_nonneg hc.le (abs_nonneg (v - q)))
-        hgap'
-
-    calc
-      c ^ 2 * (v - q) ^ 2
-          =
-        (c * |v - q|) * (c * |v - q|) := by
-          nlinarith [sq_abs (v - q)]
-      _ ≤ |d| * |d| := hmul
-      _ = d ^ 2 := by
-          nlinarith [sq_abs d]
-
-  have hloss :
-      -(d ^ 2) / 5
-        ≤
-      -(c ^ 2 / 5) * (v - q) ^ 2 := by
-    nlinarith
-
-  refine ⟨lam, ?_⟩
-
-  have hzero' :
-      F 0 ≤ 2 * rsPathValue β h q s := by
-    simpa [F] using hzero
-
-  nlinarith [ht']
-
-/-- The squared distance between any two admissible overlaps is at most four. -/
-lemma sub_sq_le_four_of_overlap
-    {q v : ℝ}
-    (hq : q ∈ Icc (0 : ℝ) 1)
-    (hv : v ∈ Icc (-1 : ℝ) 1) :
-    (v - q) ^ 2 ≤ 4 := by
-  have hleft : -2 ≤ v - q := by
-    linarith [hv.1, hq.2]
-
-  have hright : v - q ≤ 2 := by
-    linarith [hv.2, hq.1]
-
-  have hprod :
-      0 ≤ ((v - q) + 2) * (2 - (v - q)) := by
-    exact mul_nonneg
-      (by linarith)
-      (by linarith)
-
-  nlinarith
-
-/-- Deterministic assembly of a local quadratic estimate and a fixed strict
-gap away from the replica-symmetric overlap. -/
-lemma gtFunctional_uniform_quadratic_gap_of_local_and_away
-    {K : Set (ℝ × ℝ)}
-    (data : UniformATData K)
-    {c₀ ε κ : ℝ}
-    (hc₀ : 0 < c₀)
-    (_hε : 0 < ε)
-    (hκ : 0 < κ)
-    (hlocal :
-      ∀ {β h q s v : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        |v - q| ≤ ε →
-        ∃ lam,
-          gtFunctional β h q s lam v ≤
-            2 * rsPathValue β h q s
-              - c₀ * (v - q) ^ 2)
-    (haway :
-      ∀ {β h q s v : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        ε ≤ |v - q| →
-        ∃ lam,
-          gtFunctional β h q s lam v ≤
-            2 * rsPathValue β h q s - κ) :
-    ∃ c > 0, ∀ {β h q s v : ℝ},
-      (β, h) ∈ K →
-      q = rsQ β h →
-      s ∈ Icc (0 : ℝ) 1 →
-      v ∈ Icc (-1 : ℝ) 1 →
-      ∃ lam,
-        gtFunctional β h q s lam v ≤
-          2 * rsPathValue β h q s
-            - c * (v - q) ^ 2 := by
-  let c : ℝ := min c₀ (κ / 4)
-
-  have hc : 0 < c := by
-    dsimp [c]
-    exact lt_min hc₀ (div_pos hκ (by norm_num))
-
-  refine ⟨c, hc, ?_⟩
-
-  intro β h q s v hp hq hs hv
-
-  have hqIcc : q ∈ Icc (0 : ℝ) 1 := by
-    rw [hq]
-    exact rsQ_mem_Icc β h
-
-  by_cases hnear : |v - q| ≤ ε
-  · obtain ⟨lam, hlam⟩ :=
-      hlocal hp hq hs hv hnear
-
-    refine ⟨lam, hlam.trans ?_⟩
-
-    have hc_le : c ≤ c₀ := by
-      dsimp [c]
-      exact min_le_left _ _
-
-    have hmul :
-        c * (v - q) ^ 2
-          ≤ c₀ * (v - q) ^ 2 :=
-      mul_le_mul_of_nonneg_right
-        hc_le (sq_nonneg (v - q))
-
-    linarith
-
-  · have hfar : ε ≤ |v - q| := by
-      exact (lt_of_not_ge hnear).le
-
-    obtain ⟨lam, hlam⟩ :=
-      haway hp hq hs hv hfar
-
-    refine ⟨lam, hlam.trans ?_⟩
-
-    have hsq :
-        (v - q) ^ 2 ≤ 4 :=
-      sub_sq_le_four_of_overlap hqIcc hv
-
-    have hc_le : c ≤ κ / 4 := by
-      dsimp [c]
-      exact min_le_right _ _
-
-    have hprod :
-        c * (v - q) ^ 2 ≤ c * 4 :=
-      mul_le_mul_of_nonneg_left hsq hc.le
-
-    have hc4 : c * 4 ≤ κ := by
-      nlinarith
-
-    nlinarith
-
-
-/-!
-## The GT functional at zero multiplier
-
-At `lam = 0` the two-replica terminal condition decouples into a sum of
-one-replica terms and every step of the finite GT recursion acts on the two
-fields separately.  For a nonnegative overlap the resulting value is exactly
-twice the replica-symmetric path value.
--/
-
-private lemma flatness_integrable_exp_shift (a c : ℝ) :
-    Integrable (fun z : ℝ => Real.exp (a + c * z)) (gaussianReal 0 1) := by
-  have hfun : (fun z : ℝ => Real.exp (a + c * z))
-      = fun z : ℝ => Real.exp a * Real.exp (c * z) := by
-    funext z
-    rw [Real.exp_add]
+      (fun lam =>
+        gtDiagonalStep 0
+          (gtIncrementScale β s 0 q)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s q 1)
+            (gtTerminal lam))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hq0]
   rw [hfun]
-  exact (integrable_exp_mul_gaussianReal c).const_mul _
 
-private lemma flatness_gaussianExpectation_exp (a c : ℝ) :
-    standardGaussianExpectation (fun z => Real.exp (a + c * z))
-      = Real.exp (a + c ^ 2 / 2) := by
-  have hmgf := congrFun (mgf_id_gaussianReal (μ := 0) (v := 1)) c
-  simp only [mgf, id_eq, zero_mul, NNReal.coe_one, one_mul, zero_add] at hmgf
-  have hfun : (fun z : ℝ => Real.exp (a + c * z))
-      = fun z : ℝ => Real.exp a * Real.exp (c * z) := by
-    funext z
-    rw [Real.exp_add]
-  unfold standardGaussianExpectation
-  rw [hfun, integral_const_mul, hmgf, ← Real.exp_add]
 
-/-- The Gaussian expectation of a shifted hyperbolic cosine. -/
-private lemma flatness_gaussianExpectation_cosh (y c : ℝ) :
-    standardGaussianExpectation (fun z => Real.cosh (y + c * z))
-      = Real.cosh y * Real.exp (c ^ 2 / 2) := by
-  have hfun : (fun z : ℝ => Real.cosh (y + c * z))
-      = fun z : ℝ => (Real.exp (y + c * z) + Real.exp (-y + (-c) * z)) / 2 := by
-    funext z
-    have hneg : -(y + c * z) = -y + (-c) * z := by ring
-    rw [Real.cosh_eq, hneg]
-  have h1 := flatness_gaussianExpectation_exp y c
-  have h2 := flatness_gaussianExpectation_exp (-y) (-c)
-  unfold standardGaussianExpectation at h1 h2 ⊢
-  rw [hfun, integral_div,
-    integral_add (flatness_integrable_exp_shift y c)
-      (flatness_integrable_exp_shift (-y) (-c)), h1, h2, Real.cosh_eq, neg_sq,
-    Real.exp_add, Real.exp_add]
-  ring
+/-! Case `0 < |v| < q`. -/
 
-/-- `log ∘ cosh` is continuous. -/
-private lemma flatness_continuous_logCosh :
-    Continuous (fun x : ℝ => Real.log (Real.cosh x)) := by
-  rw [continuous_iff_continuousAt]
-  intro x
-  exact (Real.continuousAt_log (Real.cosh_pos x).ne').comp
-    Real.continuous_cosh.continuousAt
+lemma deriv_gtSemigroupSolution_zero_abs_v_lt_q
+    (β q s v x₁ x₂ : ℝ)
+    (hv0 : 0 < |v|) (hvq : |v| < q) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtRankOneStep 0
+        (gtIncrementScale β s 0 |v|)
+        (gtPathSign v)
+        (gtDiagonalStep 0
+          (gtIncrementScale β s |v| q)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s q 1)
+            (gtTerminal lam)))
+        x₁ x₂) 0 := by
+  have hqr : ¬ q ≤ |v| := not_le.mpr hvq
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hv0
+  have hqpos : 0 < q := lt_trans hv0 hvq
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hqpos
 
-private lemma flatness_logCosh_nonneg (x : ℝ) : 0 ≤ Real.log (Real.cosh x) :=
-  Real.log_nonneg (Real.one_le_cosh x)
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam v 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 |v|)
+          (gtPathSign v)
+          (gtDiagonalStep 0
+            (gtIncrementScale β s |v| q)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s q 1)
+              (gtTerminal lam)))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hqr, hr0, hq0]
 
-private lemma flatness_logCosh_le_abs (x : ℝ) : Real.log (Real.cosh x) ≤ |x| := by
-  have hle : Real.cosh x ≤ Real.exp |x| := by
-    rw [Real.cosh_eq]
-    have h1 : Real.exp x ≤ Real.exp |x| := Real.exp_le_exp.mpr (le_abs_self x)
-    have h2 : Real.exp (-x) ≤ Real.exp |x| := Real.exp_le_exp.mpr (neg_le_abs x)
-    linarith
-  calc Real.log (Real.cosh x)
-      ≤ Real.log (Real.exp |x|) := Real.log_le_log (Real.cosh_pos x) hle
-    _ = |x| := Real.log_exp _
-
-private lemma flatness_integrable_abs_gaussian (m : ℝ) (v : NNReal) :
-    Integrable (fun z : ℝ => |z|) (gaussianReal m v) := by
-  have hid : Integrable (fun z : ℝ => z) (gaussianReal m v) := by
-    simpa using memLp_one_iff_integrable.mp
-      (memLp_id_gaussianReal (μ := m) (v := v) 1)
-  exact hid.abs
-
-/-- Integrability of an affinely shifted `log ∘ cosh` against a Gaussian. -/
-private lemma flatness_integrable_logCosh (x c m : ℝ) (v : NNReal) :
-    Integrable (fun z : ℝ => Real.log (Real.cosh (x + c * z))) (gaussianReal m v) := by
-  refine Integrable.mono' (g := fun z : ℝ => |x| + |c| * |z|)
-    ((integrable_const |x|).add
-      ((flatness_integrable_abs_gaussian m v).const_mul |c|)) ?_ ?_
-  · exact (flatness_continuous_logCosh.comp (by fun_prop)).aestronglyMeasurable
-  · filter_upwards [] with z
-    have h1 : ‖Real.log (Real.cosh (x + c * z))‖ ≤ |x + c * z| := by
-      rw [Real.norm_eq_abs, abs_of_nonneg (flatness_logCosh_nonneg _)]
-      exact flatness_logCosh_le_abs _
-    have h2 : |x + c * z| ≤ |x| + |c| * |z| := by
-      calc |x + c * z| ≤ |x| + |c * z| := abs_add_le x (c * z)
-        _ = |x| + |c| * |z| := by rw [abs_mul]
-    exact h1.trans h2
-
-/-- Two independent Gaussian shifts only see the total variance. -/
-private lemma flatness_gaussian_convolution_logCosh
-    (h a b c : ℝ) (hc : c ^ 2 = a ^ 2 + b ^ 2) :
-    standardGaussianExpectation (fun x =>
-      standardGaussianExpectation (fun y =>
-        Real.log (Real.cosh (h + a * x + b * y)))) =
-    standardGaussianExpectation (fun z => Real.log (Real.cosh (h + c * z))) := by
-  set f : ℝ → ℝ := fun t => Real.log (Real.cosh t) with hf
-  have hfcont : Continuous f := flatness_continuous_logCosh
-  let va : NNReal := ⟨a ^ 2, sq_nonneg a⟩ * 1
-  let vb : NNReal := ⟨b ^ 2, sq_nonneg b⟩ * 1
-  let vc : NNReal := ⟨c ^ 2, sq_nonneg c⟩ * 1
-  have hma : Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) = gaussianReal 0 va := by
-    simpa [va] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal)) a)
-  have hmb : Measure.map (fun x : ℝ => b * x) (gaussianReal 0 1) = gaussianReal 0 vb := by
-    simpa [vb] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal)) b)
-  have hmc : Measure.map (fun x : ℝ => c * x) (gaussianReal 0 1) = gaussianReal 0 vc := by
-    simpa [vc] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal)) c)
-  have hv : va + vb = vc := by
-    apply NNReal.eq
-    simp [va, vb, vc, hc]
-  have hfint : Integrable (fun z : ℝ => f (h + z))
-      (gaussianReal 0 va ∗ gaussianReal 0 vb) := by
-    rw [gaussianReal_conv_gaussianReal, hv, zero_add]
-    simpa [hf] using flatness_integrable_logCosh h 1 0 vc
-  have hprod : Integrable (fun p : ℝ × ℝ => f (h + (p.1 + p.2)))
-      ((gaussianReal 0 va).prod (gaussianReal 0 vb)) := by
-    rw [Measure.conv] at hfint
-    exact (integrable_map_measure hfint.1 (by fun_prop)).mp hfint
-  have houter : AEStronglyMeasurable
-      (fun x : ℝ => ∫ y, f (h + (x + y)) ∂gaussianReal 0 vb) (gaussianReal 0 va) :=
-    hprod.integral_prod_left.1
-  have hinner (x : ℝ) :
-      (∫ y, f (h + a * x + b * y) ∂gaussianReal 0 1) =
-        ∫ y, f (h + a * x + y) ∂gaussianReal 0 vb := by
-    have hm : AEStronglyMeasurable (fun y : ℝ => f (h + a * x + y))
-        (Measure.map (fun y : ℝ => b * y) (gaussianReal 0 1)) :=
-      (hfcont.comp (by fun_prop)).aestronglyMeasurable
-    rw [← hmb, integral_map (by fun_prop) hm]
-  have houter_map :
-      (∫ x, ∫ y, f (h + a * x + y) ∂gaussianReal 0 vb ∂gaussianReal 0 1) =
-        ∫ x, ∫ y, f (h + x + y) ∂gaussianReal 0 vb ∂gaussianReal 0 va := by
-    have hm : AEStronglyMeasurable
-        (fun x : ℝ => ∫ y, f (h + (x + y)) ∂gaussianReal 0 vb)
-        (Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1)) := by
-      simpa [hma] using houter
-    rw [← hma]
-    simpa only [add_assoc] using (integral_map (by fun_prop) hm).symm
-  unfold standardGaussianExpectation
-  calc
-    (∫ x, ∫ y, f (h + a * x + b * y) ∂gaussianReal 0 1 ∂gaussianReal 0 1)
-        = ∫ x, ∫ y, f (h + x + y) ∂gaussianReal 0 vb ∂gaussianReal 0 va := by
-          rw [integral_congr_ae (Filter.Eventually.of_forall hinner)]
-          exact houter_map
-    _ = ∫ z, f (h + z) ∂(gaussianReal 0 va ∗ gaussianReal 0 vb) := by
-          simpa only [add_assoc] using (integral_conv hfint).symm
-    _ = ∫ z, f (h + z) ∂gaussianReal 0 vc := by
-          rw [gaussianReal_conv_gaussianReal, hv, zero_add]
-    _ = ∫ z, f (h + c * z) ∂gaussianReal 0 1 := by
-          rw [← hmc, integral_map (by fun_prop)]
-          exact (hfcont.comp (by fun_prop)).aestronglyMeasurable
-
-/-- The heat profile of `log ∘ cosh`. -/
-private noncomputable def flatnessPhi (c x : ℝ) : ℝ :=
-  standardGaussianExpectation (fun z => Real.log (Real.cosh (x + c * z)))
-
-private lemma flatnessPhi_nonneg (c x : ℝ) : 0 ≤ flatnessPhi c x := by
-  unfold flatnessPhi standardGaussianExpectation
-  exact integral_nonneg fun z => flatness_logCosh_nonneg _
-
-/-- The first absolute moment of the standard Gaussian. -/
-private noncomputable def flatnessAbsMoment : ℝ :=
-  ∫ z, |z| ∂(gaussianReal 0 1)
-
-private lemma flatnessAbsMoment_nonneg : 0 ≤ flatnessAbsMoment :=
-  integral_nonneg fun z => abs_nonneg z
-
-private lemma flatnessPhi_le (c x : ℝ) :
-    flatnessPhi c x ≤ |x| + |c| * flatnessAbsMoment := by
-  unfold flatnessPhi standardGaussianExpectation
-  have hbound : ∀ z : ℝ, Real.log (Real.cosh (x + c * z)) ≤ |x| + |c| * |z| := by
-    intro z
-    refine (flatness_logCosh_le_abs _).trans ?_
-    calc |x + c * z| ≤ |x| + |c * z| := abs_add_le x (c * z)
-      _ = |x| + |c| * |z| := by rw [abs_mul]
-  have hint : Integrable (fun z : ℝ => |x| + |c| * |z|) (gaussianReal 0 1) :=
-    (integrable_const |x|).add
-      ((flatness_integrable_abs_gaussian 0 1).const_mul |c|)
-  calc (∫ z, Real.log (Real.cosh (x + c * z)) ∂gaussianReal 0 1)
-      ≤ ∫ z, (|x| + |c| * |z|) ∂gaussianReal 0 1 :=
-        integral_mono (flatness_integrable_logCosh x c 0 1) hint hbound
-    _ = |x| + |c| * flatnessAbsMoment := by
-        rw [integral_add (integrable_const |x|)
-          ((flatness_integrable_abs_gaussian 0 1).const_mul |c|),
-          integral_const_mul]
-        simp [flatnessAbsMoment]
-
-private lemma flatnessPhi_abs_le (c x : ℝ) :
-    |flatnessPhi c x| ≤ |x| + |c| * flatnessAbsMoment := by
-  rw [abs_of_nonneg (flatnessPhi_nonneg c x)]
-  exact flatnessPhi_le c x
-
-private lemma flatness_continuous_Phi (c : ℝ) : Continuous (flatnessPhi c) := by
-  rw [continuous_iff_continuousAt]
-  intro x₀
-  unfold flatnessPhi standardGaussianExpectation
-  have hbound : Integrable
-      (fun z : ℝ => (|x₀| + 1) + |c| * |z|) (gaussianReal 0 1) :=
-    (integrable_const _).add
-      ((flatness_integrable_abs_gaussian 0 1).const_mul |c|)
-  refine continuousAt_of_dominated (F := fun x z => Real.log (Real.cosh (x + c * z)))
-    (bound := fun z : ℝ => (|x₀| + 1) + |c| * |z|) ?_ ?_ hbound ?_
-  · filter_upwards [] with x
-    exact (flatness_continuous_logCosh.comp (by fun_prop)).aestronglyMeasurable
-  · filter_upwards [Metric.ball_mem_nhds x₀ zero_lt_one] with x hx
-    filter_upwards [] with z
-    have hxle : |x| ≤ |x₀| + 1 := by
-      have := (Real.dist_eq x x₀) ▸ (Metric.mem_ball.mp hx)
-      calc |x| = |x₀ + (x - x₀)| := by ring_nf
-        _ ≤ |x₀| + |x - x₀| := abs_add_le _ _
-        _ ≤ |x₀| + 1 := by linarith [this.le]
-    have h1 : ‖Real.log (Real.cosh (x + c * z))‖ ≤ |x| + |c| * |z| := by
-      rw [Real.norm_eq_abs, abs_of_nonneg (flatness_logCosh_nonneg _)]
-      refine (flatness_logCosh_le_abs _).trans ?_
-      calc |x + c * z| ≤ |x| + |c * z| := abs_add_le x (c * z)
-        _ = |x| + |c| * |z| := by rw [abs_mul]
-    linarith
-  · filter_upwards [] with z
-    exact (flatness_continuous_logCosh.comp (by fun_prop)).continuousAt
-
-private lemma flatness_integrable_Phi (b x a : ℝ) :
-    Integrable (fun z : ℝ => flatnessPhi b (x + a * z)) (gaussianReal 0 1) := by
-  refine Integrable.mono'
-    (g := fun z : ℝ => (|x| + |b| * flatnessAbsMoment) + |a| * |z|) ?_ ?_ ?_
-  · exact (integrable_const _).add
-      ((flatness_integrable_abs_gaussian 0 1).const_mul |a|)
-  · exact ((flatness_continuous_Phi b).comp (by fun_prop)).aestronglyMeasurable
-  · filter_upwards [] with z
-    refine (flatnessPhi_abs_le b (x + a * z)).trans ?_
-    have h2 : |x + a * z| ≤ |x| + |a| * |z| := by
-      calc |x + a * z| ≤ |x| + |a * z| := abs_add_le x (a * z)
-        _ = |x| + |a| * |z| := by rw [abs_mul]
-    linarith
-
-/-- Composition of two Gaussian shifts for the `log ∘ cosh` profile. -/
-private lemma flatnessPhi_compose (a b c x : ℝ) (hc : c ^ 2 = a ^ 2 + b ^ 2) :
-    standardGaussianExpectation (fun z => flatnessPhi b (x + a * z))
-      = flatnessPhi c x := by
-  unfold flatnessPhi
-  exact flatness_gaussian_convolution_logCosh x a b c hc
-
-/-! ### Decoupled steps of the finite GT recursion -/
-
-private lemma flatness_diagonalStep_one_terminal_zero (c x₁ x₂ : ℝ) :
-    gtDiagonalStep 1 c (gtTerminal 0) x₁ x₂
-      = Real.log (Real.cosh x₁) + Real.log (Real.cosh x₂) + c ^ 2 := by
-  rw [gtDiagonalStep_one_terminal, gtTerminal_zero]
-
-private lemma flatness_integral_add_const {f : ℝ → ℝ} (K : ℝ)
-    (hf : Integrable f (gaussianReal 0 1)) :
-    (∫ z, (f z + K) ∂gaussianReal 0 1) = (∫ z, f z ∂gaussianReal 0 1) + K := by
-  rw [integral_add hf (integrable_const K)]
-  simp
-
-private lemma flatness_step_diag_zero (g : ℝ → ℝ) (b c x₁ x₂ : ℝ)
-    (hg₁ : Integrable (fun z : ℝ => g (x₁ + c * z)) (gaussianReal 0 1))
-    (hg₂ : Integrable (fun z : ℝ => g (x₂ + c * z)) (gaussianReal 0 1)) :
-    gtDiagonalStep 0 c (fun y₁ y₂ => g y₁ + g y₂ + b) x₁ x₂
-      = standardGaussianExpectation (fun z => g (x₁ + c * z))
-        + standardGaussianExpectation (fun z => g (x₂ + c * z)) + b := by
-  unfold gtDiagonalStep standardGaussianExpectation
-  rw [if_pos rfl]
-  show (∫ z₁, (∫ z₂, (g (x₁ + c * z₁) + g (x₂ + c * z₂) + b) ∂gaussianReal 0 1)
-      ∂gaussianReal 0 1) = _
-  have hinner : ∀ y : ℝ,
-      (∫ z₂, (y + g (x₂ + c * z₂) + b) ∂gaussianReal 0 1)
-        = (∫ z₂, g (x₂ + c * z₂) ∂gaussianReal 0 1) + (y + b) := by
-    intro y
-    rw [show (fun z₂ : ℝ => y + g (x₂ + c * z₂) + b)
-        = (fun z₂ : ℝ => g (x₂ + c * z₂) + (y + b)) from funext fun z₂ => by ring]
-    exact flatness_integral_add_const _ hg₂
-  simp_rw [hinner]
-  rw [show (fun z₁ : ℝ =>
-        (∫ z₂, g (x₂ + c * z₂) ∂gaussianReal 0 1) + (g (x₁ + c * z₁) + b))
-      = (fun z₁ : ℝ => g (x₁ + c * z₁) +
-        ((∫ z₂, g (x₂ + c * z₂) ∂gaussianReal 0 1) + b))
-      from funext fun z₁ => by ring]
-  rw [flatness_integral_add_const _ hg₁]
-  ring
-
-private lemma flatness_step_rank_zero (g : ℝ → ℝ) (b c sgn x₁ x₂ : ℝ)
-    (hg₁ : Integrable (fun z : ℝ => g (x₁ + c * z)) (gaussianReal 0 1))
-    (hg₂ : Integrable (fun z : ℝ => g (x₂ + sgn * c * z)) (gaussianReal 0 1)) :
-    gtRankOneStep 0 c sgn (fun y₁ y₂ => g y₁ + g y₂ + b) x₁ x₂
-      = standardGaussianExpectation (fun z => g (x₁ + c * z))
-        + standardGaussianExpectation (fun z => g (x₂ + sgn * c * z)) + b := by
-  unfold gtRankOneStep standardGaussianExpectation
-  rw [if_pos rfl]
-  show (∫ z, (g (x₁ + c * z) + g (x₂ + sgn * c * z) + b) ∂gaussianReal 0 1) = _
-  have hsum : Integrable
-      (fun z : ℝ => g (x₁ + c * z) + g (x₂ + sgn * c * z)) (gaussianReal 0 1) :=
-    hg₁.add hg₂
-  rw [flatness_integral_add_const b hsum, integral_add hg₁ hg₂]
-
-/-- A mass-`1/2` rank-one step with positive sign, on the diagonal. -/
-private lemma flatness_step_rank_half_diag (b c x : ℝ) :
-    gtRankOneStep (1 / 2) c 1
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂) + b) x x
-      = 2 * Real.log (Real.cosh x) + c ^ 2 + b := by
-  unfold gtRankOneStep
-  rw [if_neg (by norm_num : (1 / 2 : ℝ) ≠ 0)]
-  have hfun : (fun z : ℝ => Real.exp ((1 / 2 : ℝ) *
-      (Real.log (Real.cosh (x + c * z)) + Real.log (Real.cosh (x + 1 * c * z)) + b)))
-      = fun z : ℝ => Real.exp (b / 2) * Real.cosh (x + c * z) := by
-    funext z
-    rw [one_mul,
-      show (1 / 2 : ℝ) * (Real.log (Real.cosh (x + c * z))
-          + Real.log (Real.cosh (x + c * z)) + b)
-        = Real.log (Real.cosh (x + c * z)) + b / 2 by ring,
-      Real.exp_add, Real.exp_log (Real.cosh_pos _)]
-    ring
   rw [hfun]
-  have hconst : standardGaussianExpectation
-      (fun z => Real.exp (b / 2) * Real.cosh (x + c * z))
-      = Real.exp (b / 2) * (Real.cosh x * Real.exp (c ^ 2 / 2)) := by
-    unfold standardGaussianExpectation
-    rw [integral_const_mul]
-    rw [show (∫ z, Real.cosh (x + c * z) ∂gaussianReal 0 1)
-        = Real.cosh x * Real.exp (c ^ 2 / 2) from flatness_gaussianExpectation_cosh x c]
-  rw [hconst,
-    Real.log_mul (Real.exp_ne_zero _)
-      (by positivity),
-    Real.log_mul (Real.cosh_pos x).ne' (Real.exp_ne_zero _),
-    Real.log_exp, Real.log_exp]
-  ring
 
-/-! ### Decoupled evaluation of the GT recursion at `lam = 0` -/
 
-private lemma flatness_diagZero_apply (c : ℝ) (G : GTTwoField) (x₁ x₂ : ℝ) :
-    gtDiagonalStep 0 c G x₁ x₂ =
-      standardGaussianExpectation (fun z₁ =>
-        standardGaussianExpectation (fun z₂ => G (x₁ + c * z₁) (x₂ + c * z₂))) := by
-  unfold gtDiagonalStep
-  rw [if_pos rfl]
+/-! Case `q ≤ |v| < 1`. -/
 
-private lemma flatness_rankZero_apply (c sgn : ℝ) (G : GTTwoField) (x₁ x₂ : ℝ) :
-    gtRankOneStep 0 c sgn G x₁ x₂ =
-      standardGaussianExpectation (fun z => G (x₁ + c * z) (x₂ + sgn * c * z)) := by
-  unfold gtRankOneStep
-  rw [if_pos rfl]
+lemma deriv_gtSemigroupSolution_zero_q_le_abs_v_lt_one
+    (β q s v x₁ x₂ : ℝ)
+    (hq : 0 < q) (hqv : q ≤ |v|) (hv1 : |v| < 1) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtRankOneStep 0
+        (gtIncrementScale β s 0 q)
+        (gtPathSign v)
+        (gtRankOneStep (1 / 2)
+          (gtIncrementScale β s q |v|)
+          (gtPathSign v)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s |v| 1)
+            (gtTerminal lam)))
+        x₁ x₂) 0 := by
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have hrpos : 0 < |v| := lt_of_lt_of_le hq hqv
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
 
-private lemma flatness_step_diag_zero_logCosh (b c x₁ x₂ : ℝ) :
-    gtDiagonalStep 0 c
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂) + b) x₁ x₂
-      = flatnessPhi c x₁ + flatnessPhi c x₂ + b :=
-  flatness_step_diag_zero (fun t => Real.log (Real.cosh t)) b c x₁ x₂
-    (flatness_integrable_logCosh x₁ c 0 1) (flatness_integrable_logCosh x₂ c 0 1)
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam v 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q)
+          (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q |v|)
+            (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s |v| 1)
+              (gtTerminal lam)))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hqv, hr0, hq0]
 
-private lemma flatness_expectation_affine_logCosh (x c b : ℝ) :
-    standardGaussianExpectation (fun z => 2 * Real.log (Real.cosh (x + c * z)) + b)
-      = 2 * flatnessPhi c x + b := by
-  unfold flatnessPhi standardGaussianExpectation
-  rw [integral_add ((flatness_integrable_logCosh x c 0 1).const_mul 2)
-    (integrable_const b), integral_const_mul]
-  simp
-
-private lemma flatness_expectation_affine_Phi (x a c b : ℝ) :
-    standardGaussianExpectation (fun z => 2 * flatnessPhi c (x + a * z) + b)
-      = 2 * standardGaussianExpectation (fun z => flatnessPhi c (x + a * z)) + b := by
-  unfold standardGaussianExpectation
-  rw [integral_add ((flatness_integrable_Phi c x a).const_mul 2)
-    (integrable_const b), integral_const_mul]
-  simp
-
-private lemma flatness_diag_one_terminal_fun (c : ℝ) :
-    gtDiagonalStep 1 c (gtTerminal 0) =
-      fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂) + c ^ 2 := by
-  funext y₁ y₂
-  exact flatness_diagonalStep_one_terminal_zero c y₁ y₂
-
-/-- Zero-multiplier integrand in the regime `|v| = 0`. -/
-private lemma flatness_integrand_zero (β s q X : ℝ) :
-    gtDiagonalStep 0 (gtIncrementScale β s 0 q)
-        (gtDiagonalStep 1 (gtIncrementScale β s q 1) (gtTerminal 0)) X X
-      = 2 * flatnessPhi (gtIncrementScale β s 0 q) X
-        + gtIncrementScale β s q 1 ^ 2 := by
-  rw [flatness_diag_one_terminal_fun, flatness_step_diag_zero_logCosh]
-  ring
-
-/-- Zero-multiplier integrand in the regime `0 < |v| < q`. -/
-private lemma flatness_integrand_lower (β s q r X : ℝ)
-    (hβ : 0 ≤ β) (hs : 0 ≤ s) (hr : 0 ≤ r) (hrq : r ≤ q) :
-    gtRankOneStep 0 (gtIncrementScale β s 0 r) 1
-        (gtDiagonalStep 0 (gtIncrementScale β s r q)
-          (gtDiagonalStep 1 (gtIncrementScale β s q 1) (gtTerminal 0))) X X
-      = 2 * flatnessPhi (gtIncrementScale β s 0 q) X
-        + gtIncrementScale β s q 1 ^ 2 := by
-  have hcomp : gtIncrementScale β s 0 q ^ 2 =
-      gtIncrementScale β s 0 r ^ 2 + gtIncrementScale β s r q ^ 2 := by
-    rw [gtIncrementScale_sq_of_nonneg β s 0 q hβ hs (le_trans hr hrq),
-      gtIncrementScale_sq_of_nonneg β s 0 r hβ hs hr,
-      gtIncrementScale_sq_of_nonneg β s r q hβ hs hrq]
-    ring
-  rw [flatness_rankZero_apply, flatness_diag_one_terminal_fun]
-  simp only [one_mul]
-  have hstep : ∀ y : ℝ,
-      gtDiagonalStep 0 (gtIncrementScale β s r q)
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂)
-          + gtIncrementScale β s q 1 ^ 2) y y
-      = 2 * flatnessPhi (gtIncrementScale β s r q) y
-        + gtIncrementScale β s q 1 ^ 2 := by
-    intro y
-    rw [flatness_step_diag_zero_logCosh]
-    ring
-  simp_rw [hstep]
-  rw [flatness_expectation_affine_Phi,
-    flatnessPhi_compose (gtIncrementScale β s 0 r) (gtIncrementScale β s r q)
-      (gtIncrementScale β s 0 q) X hcomp]
-
-/-- Zero-multiplier integrand in the regime `q ≤ |v| ≤ 1`. -/
-private lemma flatness_integrand_upper (β s q r X : ℝ) :
-    gtRankOneStep 0 (gtIncrementScale β s 0 q) 1
-        (gtRankOneStep (1 / 2) (gtIncrementScale β s q r) 1
-          (gtDiagonalStep 1 (gtIncrementScale β s r 1) (gtTerminal 0))) X X
-      = 2 * flatnessPhi (gtIncrementScale β s 0 q) X
-        + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2) := by
-  rw [flatness_rankZero_apply, flatness_diag_one_terminal_fun]
-  simp only [one_mul]
-  have hstep : ∀ y : ℝ,
-      gtRankOneStep (1 / 2) (gtIncrementScale β s q r) 1
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂)
-          + gtIncrementScale β s r 1 ^ 2) y y
-      = 2 * Real.log (Real.cosh y)
-        + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2) := by
-    intro y
-    rw [flatness_step_rank_half_diag]
-    ring
-  simp_rw [hstep]
-  rw [flatness_expectation_affine_logCosh]
-
-/-- Common bookkeeping: the accumulated increments recombine into the
-replica-symmetric path value. -/
-private lemma flatness_zero_multiplier_assemble
-    (β h q s B : ℝ) (hβ : 0 ≤ β) (hs : s ∈ Set.Icc (0 : ℝ) 1) (hq : 0 ≤ q)
-    (hB : B = s * β ^ 2 * (1 - q)) :
-    2 * Real.log 2 +
-        standardGaussianExpectation (fun z =>
-          2 * flatnessPhi (gtIncrementScale β s 0 q)
-            (h + β * Real.sqrt ((1 - s) * q) * z) + B)
-        - gtCorrection β q s
-      = 2 * rsPathValue β h q s := by
-  have h1s : 0 ≤ 1 - s := sub_nonneg.mpr hs.2
-  have hvar : (β * Real.sqrt q) ^ 2 =
-      (β * Real.sqrt ((1 - s) * q)) ^ 2 + gtIncrementScale β s 0 q ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt hq, mul_pow, Real.sq_sqrt (mul_nonneg h1s hq),
-      gtIncrementScale_sq_of_nonneg β s 0 q hβ hs.1 hq]
-    ring
-  rw [flatness_expectation_affine_Phi,
-    flatnessPhi_compose (β * Real.sqrt ((1 - s) * q)) (gtIncrementScale β s 0 q)
-      (β * Real.sqrt q) h hvar, hB]
-  unfold rsPathValue gtCorrection flatnessPhi
-  ring
-
-/-- **At zero multiplier and nonnegative overlap the GT functional is exactly
-twice the replica-symmetric path value.** -/
-lemma flatness_gtFunctional_zero_multiplier
-    (β h q s v : ℝ) (hβ : 0 ≤ β) (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hq : 0 < q) (hq1 : q < 1) (hv : v ∈ Set.Icc (0 : ℝ) 1) :
-    gtFunctional β h q s 0 v = 2 * rsPathValue β h q s := by
-  have hvabs : |v| = v := abs_of_nonneg hv.1
-  have hsign : gtPathSign v = 1 := by
-    unfold gtPathSign
-    rw [if_pos hv.1]
-  rcases eq_or_lt_of_le hv.1 with hv0 | hvpos
-  · have habs : |v| = 0 := by rw [hvabs, ← hv0]
-    rw [flatness_gtFunctional_formula_abs_v_eq_zero β h q s 0 v hq habs]
-    simp_rw [flatness_integrand_zero]
-    exact flatness_zero_multiplier_assemble β h q s _ hβ hs hq.le
-      (gtIncrementScale_sq_of_nonneg β s q 1 hβ hs.1 hq1.le)
-  · by_cases hvq : v < q
-    · rw [flatness_gtFunctional_formula_abs_v_lt_q β h q s 0 v
-        (by rw [hvabs]; exact hvpos) (by rw [hvabs]; exact hvq)]
-      simp only [hsign, hvabs, zero_mul, sub_zero]
-      simp_rw [flatness_integrand_lower β s q v _ hβ hs.1 hv.1 hvq.le]
-      exact flatness_zero_multiplier_assemble β h q s _ hβ hs hq.le
-        (gtIncrementScale_sq_of_nonneg β s q 1 hβ hs.1 hq1.le)
-    · have hqv : q ≤ v := le_of_not_gt hvq
-      rcases eq_or_lt_of_le hv.2 with hv1 | hv1
-      · have habs : |v| = 1 := by rw [hvabs, hv1]
-        rw [flatness_gtFunctional_formula_abs_v_eq_one β h q s 0 v hq hq1.le habs]
-        simp only [hsign, zero_mul, sub_zero]
-        simp_rw [flatness_integrand_upper β s q 1]
-        refine flatness_zero_multiplier_assemble β h q s _ hβ hs hq.le ?_
-        rw [gtIncrementScale_sq_of_nonneg β s q 1 hβ hs.1 hq1.le,
-          gtIncrementScale_sq_of_nonneg β s 1 1 hβ hs.1 le_rfl]
-        ring
-      · rw [flatness_gtFunctional_formula_q_le_abs_v_lt_one β h q s 0 v hq
-          (by rw [hvabs]; exact hqv) (by rw [hvabs]; exact hv1)]
-        simp only [hsign, hvabs, zero_mul, sub_zero]
-        simp_rw [flatness_integrand_upper β s q v]
-        refine flatness_zero_multiplier_assemble β h q s _ hβ hs hq.le ?_
-        rw [gtIncrementScale_sq_of_nonneg β s q v hβ hs.1 hqv,
-          gtIncrementScale_sq_of_nonneg β s v 1 hβ hs.1 hv.2]
-        ring
-
-/-! ### A quantitative multiplier for the quadratic gap -/
-
-/-- The endpoint multiplier derivative is bounded by `2`. -/
-lemma flatness_abs_deriv_gtFunctional_zero_le_two
-    (β h q s v : ℝ) (hv : |v| ≤ 1) :
-    |deriv (fun l => gtFunctional β h q s l v) 0| ≤ 2 := by
-  rw [deriv_gtFunctional_eq]
-  have hb : |standardGaussianExpectation (fun z =>
-      deriv (fun l => gtSemigroupSolution β q s l v 0
-        (h + β * Real.sqrt ((1 - s) * q) * z)
-        (h + β * Real.sqrt ((1 - s) * q) * z)) 0)| ≤ 1 := by
-    unfold standardGaussianExpectation
-    have hbound := norm_integral_le_of_norm_le_const
-      (μ := gaussianReal 0 1) (C := 1)
-      (f := fun z : ℝ => deriv (fun l => gtSemigroupSolution β q s l v 0
-        (h + β * Real.sqrt ((1 - s) * q) * z)
-        (h + β * Real.sqrt ((1 - s) * q) * z)) 0)
-      (Filter.Eventually.of_forall fun z => by
-        simpa using (gt_lambda_derivative_bounds β h q s 0 v 0
-          (h + β * Real.sqrt ((1 - s) * q) * z)
-          (h + β * Real.sqrt ((1 - s) * q) * z)).1.1)
-    simpa using hbound
-  have h1 := abs_le.mp hb
-  have h2 := abs_le.mp hv
-  rw [abs_le]
-  constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
-
-/-- Optimizing the explicit multiplier `-(2/5) ∂_λ` turns a linear lower bound
-on the multiplier derivative into a quadratic gap, with a multiplier in
-`[-1,1]`. -/
-lemma flatness_quadratic_gap_of_deriv_gap_mem
-    (β h q s v c : ℝ) (hc : 0 ≤ c)
-    (hzero : gtFunctional β h q s 0 v ≤ 2 * rsPathValue β h q s)
-    (hd : |deriv (fun l => gtFunctional β h q s l v) 0| ≤ 2)
-    (hgap : c * |v - q| ≤ |deriv (fun l => gtFunctional β h q s l v) 0|) :
-    ∃ lam ∈ Set.Icc (-1 : ℝ) 1,
-      gtFunctional β h q s lam v ≤
-        2 * rsPathValue β h q s - (c ^ 2 / 5) * (v - q) ^ 2 := by
-  set d : ℝ := deriv (fun l => gtFunctional β h q s l v) 0 with hdef
-  refine ⟨-(2 / 5 : ℝ) * d, ?_, ?_⟩
-  · have h2 := abs_le.mp hd
-    rw [Set.mem_Icc]
-    constructor <;> linarith [h2.1, h2.2]
-  · have ht := flatness_gtFunctional_taylor_upper β h q s v (-(2 / 5 : ℝ) * d)
-    rw [← hdef] at ht
-    have hopt : d * (-(2 / 5 : ℝ) * d) + (5 / 4 : ℝ) * (-(2 / 5 : ℝ) * d) ^ 2
-        = -(d ^ 2) / 5 := by ring
-    have ht' : gtFunctional β h q s (-(2 / 5 : ℝ) * d) v
-        ≤ gtFunctional β h q s 0 v - d ^ 2 / 5 := by linarith [ht, hopt.ge, hopt.le]
-    have habs : c * |v - q| ≤ |d| := hgap
-    have hsq : c ^ 2 * (v - q) ^ 2 ≤ d ^ 2 := by
-      have hmul := mul_self_le_mul_self
-        (mul_nonneg hc (abs_nonneg (v - q))) habs
-      nlinarith [sq_abs (v - q), sq_abs d]
-    linarith [ht', hzero]
-
-/-! ### The GT functional at zero multiplier and negative overlap
-
-For a negative overlap the two replicas are coupled with the opposite sign.
-Below the replica-symmetric breakpoint the value is still *exactly* twice the
-replica-symmetric path value (a reflected Gaussian shift has the same
-variance), while above the breakpoint the mass-`1/2` step is estimated by a
-Cauchy--Schwarz inequality, which again produces the separable bound. -/
-
-private lemma flatness_integrable_cosh (y c : ℝ) :
-    Integrable (fun z : ℝ => Real.cosh (y + c * z)) (gaussianReal 0 1) := by
-  have hfun : (fun z : ℝ => Real.cosh (y + c * z))
-      = fun z : ℝ => (Real.exp (y + c * z) + Real.exp (-y + (-c) * z)) / 2 := by
-    funext z
-    have hneg : -(y + c * z) = -y + (-c) * z := by ring
-    rw [Real.cosh_eq, hneg]
   rw [hfun]
-  have hsum : Integrable
-      (fun z : ℝ => Real.exp (y + c * z) + Real.exp (-y + (-c) * z))
-      (gaussianReal 0 1) :=
-    (flatness_integrable_exp_shift y c).add (flatness_integrable_exp_shift (-y) (-c))
-  exact hsum.div_const 2
 
-private lemma flatnessPhi_zero (x : ℝ) :
-    flatnessPhi 0 x = Real.log (Real.cosh x) := by
-  unfold flatnessPhi standardGaussianExpectation
-  simp
 
-private lemma flatness_integrable_Phi_reflect (b x a : ℝ) :
-    Integrable (fun z : ℝ => flatnessPhi b (x + -1 * a * z)) (gaussianReal 0 1) := by
-  simpa only [neg_one_mul] using flatness_integrable_Phi b x (-a)
+/-! Case `|v| = 1`. -/
 
-/-- Composition of two Gaussian shifts, the outer one reflected. -/
-private lemma flatnessPhi_compose_reflect (a b c x : ℝ) (hc : c ^ 2 = a ^ 2 + b ^ 2) :
-    standardGaussianExpectation (fun z => flatnessPhi b (x + -1 * a * z))
-      = flatnessPhi c x := by
-  have h := flatnessPhi_compose (-a) b c x (by rw [hc]; ring)
-  simpa only [neg_one_mul] using h
+lemma deriv_gtSemigroupSolution_zero_abs_v_eq_one
+    (β q s v x₁ x₂ : ℝ)
+    (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
+    deriv (fun lam =>
+      gtSemigroupSolution β q s lam v 0 x₁ x₂) 0
+      =
+    deriv (fun lam =>
+      gtRankOneStep 0
+        (gtIncrementScale β s 0 q)
+        (gtPathSign v)
+        (gtRankOneStep (1 / 2)
+          (gtIncrementScale β s q 1)
+          (gtPathSign v)
+          (gtDiagonalStep 1
+            (gtIncrementScale β s 1 1)
+            (gtTerminal lam)))
+        x₁ x₂) 0 := by
+  have hqv : q ≤ |v| := by
+    simpa [hv] using hq1
+  have hrpos : 0 < |v| := by
+    rw [hv]
+    norm_num
+  have hr0 : ¬ |v| ≤ (0 : ℝ) := not_le.mpr hrpos
+  have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq
+  have h10 : ¬ (1 : ℝ) ≤ 0 := by norm_num
 
-/-- A reflected pair of Gaussian shifts recombines into a single profile. -/
-private lemma flatness_two_Phi_shift (a b c X K : ℝ) (hc : c ^ 2 = a ^ 2 + b ^ 2) :
-    standardGaussianExpectation (fun z =>
-        flatnessPhi b (X + a * z) + flatnessPhi b (X + -1 * a * z) + K)
-      = 2 * flatnessPhi c X + K := by
-  have h₁ : Integrable (fun z : ℝ => flatnessPhi b (X + a * z)) (gaussianReal 0 1) :=
-    flatness_integrable_Phi b X a
-  have h₂ : Integrable (fun z : ℝ => flatnessPhi b (X + -1 * a * z))
-      (gaussianReal 0 1) := flatness_integrable_Phi_reflect b X a
-  have hsum : Integrable (fun z : ℝ =>
-      flatnessPhi b (X + a * z) + flatnessPhi b (X + -1 * a * z))
-      (gaussianReal 0 1) := h₁.add h₂
-  have e₁ : (∫ z, flatnessPhi b (X + a * z) ∂gaussianReal 0 1) = flatnessPhi c X :=
-    flatnessPhi_compose a b c X hc
-  have e₂ : (∫ z, flatnessPhi b (X + -1 * a * z) ∂gaussianReal 0 1) = flatnessPhi c X :=
-    flatnessPhi_compose_reflect a b c X hc
-  show (∫ z, (flatnessPhi b (X + a * z) + flatnessPhi b (X + -1 * a * z) + K)
-      ∂gaussianReal 0 1) = _
-  rw [flatness_integral_add_const K hsum, integral_add h₁ h₂, e₁, e₂]
-  ring
+  have hfun :
+      (fun lam =>
+        gtSemigroupSolution β q s lam v 0 x₁ x₂)
+        =
+      (fun lam =>
+        gtRankOneStep 0
+          (gtIncrementScale β s 0 q)
+          (gtPathSign v)
+          (gtRankOneStep (1 / 2)
+            (gtIncrementScale β s q 1)
+            (gtPathSign v)
+            (gtDiagonalStep 1
+              (gtIncrementScale β s 1 1)
+              (gtTerminal lam)))
+          x₁ x₂) := by
+    funext lam
+    simp [gtSemigroupSolution, hv, hq1, hqv, hr0, hq0, h10]
 
-private lemma flatness_two_logCosh_shift (a X K : ℝ) :
-    standardGaussianExpectation (fun z =>
-        Real.log (Real.cosh (X + a * z))
-          + Real.log (Real.cosh (X + -1 * a * z)) + K)
-      = 2 * flatnessPhi a X + K := by
-  have h := flatness_two_Phi_shift a 0 a X K (by ring)
-  simpa only [flatnessPhi_zero] using h
+  rw [hfun]
 
-/-- Zero-multiplier integrand in the regime `0 < |v| < q` and negative sign. -/
-private lemma flatness_integrand_lower_neg (β s q r X : ℝ)
-    (hβ : 0 ≤ β) (hs : 0 ≤ s) (hr : 0 ≤ r) (hrq : r ≤ q) :
-    gtRankOneStep 0 (gtIncrementScale β s 0 r) (-1)
-        (gtDiagonalStep 0 (gtIncrementScale β s r q)
-          (gtDiagonalStep 1 (gtIncrementScale β s q 1) (gtTerminal 0))) X X
-      = 2 * flatnessPhi (gtIncrementScale β s 0 q) X
-        + gtIncrementScale β s q 1 ^ 2 := by
-  have hcomp : gtIncrementScale β s 0 q ^ 2 =
-      gtIncrementScale β s 0 r ^ 2 + gtIncrementScale β s r q ^ 2 := by
-    rw [gtIncrementScale_sq_of_nonneg β s 0 q hβ hs (le_trans hr hrq),
-      gtIncrementScale_sq_of_nonneg β s 0 r hβ hs hr,
-      gtIncrementScale_sq_of_nonneg β s r q hβ hs hrq]
+
+/-- At `lam = 0`, the two-replica terminal function splits into
+the sum of the two one-replica terminal functions. -/
+lemma gtTerminal_zero (x₁ x₂ : ℝ) :
+    gtTerminal 0 x₁ x₂ =
+      Real.log (Real.cosh x₁) + Real.log (Real.cosh x₂) := by
+  rw [gtTerminal]
+  simp only [add_zero, sub_zero]
+
+  have h :
+      (Real.exp (x₁ + x₂) +
+          Real.exp (x₁ - x₂) +
+          Real.exp (-x₁ + x₂) +
+          Real.exp (-x₁ - x₂)) / 4
+        =
+      Real.cosh x₁ * Real.cosh x₂ := by
+    rw [Real.cosh_eq, Real.cosh_eq]
+    simp [Real.exp_add, sub_eq_add_neg]
     ring
-  rw [flatness_rankZero_apply, flatness_diag_one_terminal_fun]
-  simp_rw [flatness_step_diag_zero_logCosh]
-  exact flatness_two_Phi_shift (gtIncrementScale β s 0 r)
-    (gtIncrementScale β s r q) (gtIncrementScale β s 0 q) X _ hcomp
 
-/-! #### The mass-`1/2` step with negative sign -/
-
-private lemma flatness_integrable_sqrt_cosh_prod (c y₁ y₂ : ℝ) :
-    Integrable (fun z : ℝ =>
-      Real.sqrt (Real.cosh (y₁ + c * z)) * Real.sqrt (Real.cosh (y₂ + -1 * c * z)))
-      (gaussianReal 0 1) := by
-  have hsum : Integrable (fun z : ℝ =>
-      Real.cosh (y₁ + c * z) + Real.cosh (y₂ + -1 * c * z)) (gaussianReal 0 1) :=
-    (flatness_integrable_cosh y₁ c).add (flatness_integrable_cosh y₂ (-1 * c))
-  have hbound : Integrable (fun z : ℝ =>
-      (Real.cosh (y₁ + c * z) + Real.cosh (y₂ + -1 * c * z)) / 2)
-      (gaussianReal 0 1) := hsum.div_const 2
-  refine Integrable.mono' hbound ?_ ?_
-  · exact (((Real.continuous_sqrt.comp (Real.continuous_cosh.comp (by fun_prop))).mul
-      (Real.continuous_sqrt.comp
-        (Real.continuous_cosh.comp (by fun_prop))))).aestronglyMeasurable
-  · filter_upwards [] with z
-    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    nlinarith [Real.sq_sqrt (Real.cosh_pos (y₁ + c * z)).le,
-      Real.sq_sqrt (Real.cosh_pos (y₂ + -1 * c * z)).le,
-      sq_nonneg (Real.sqrt (Real.cosh (y₁ + c * z))
-        - Real.sqrt (Real.cosh (y₂ + -1 * c * z))),
-      Real.sqrt_nonneg (Real.cosh (y₁ + c * z)),
-      Real.sqrt_nonneg (Real.cosh (y₂ + -1 * c * z))]
-
-private lemma flatness_one_le_sqrt_cosh_prod (c y₁ y₂ : ℝ) :
-    1 ≤ standardGaussianExpectation (fun z =>
-      Real.sqrt (Real.cosh (y₁ + c * z)) *
-        Real.sqrt (Real.cosh (y₂ + -1 * c * z))) := by
-  have hpt : ∀ z : ℝ, (1 : ℝ) ≤
-      Real.sqrt (Real.cosh (y₁ + c * z)) *
-        Real.sqrt (Real.cosh (y₂ + -1 * c * z)) := by
-    intro z
-    have h1 : (1 : ℝ) ≤ Real.sqrt (Real.cosh (y₁ + c * z)) := by
-      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
-      exact Real.sqrt_le_sqrt (Real.one_le_cosh _)
-    have h2 : (1 : ℝ) ≤ Real.sqrt (Real.cosh (y₂ + -1 * c * z)) := by
-      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
-      exact Real.sqrt_le_sqrt (Real.one_le_cosh _)
-    nlinarith
-  have h := integral_mono (integrable_const (1 : ℝ))
-    (flatness_integrable_sqrt_cosh_prod c y₁ y₂) hpt
-  unfold standardGaussianExpectation
-  simpa using h
-
-private lemma flatness_amgm_balance (u w E : ℝ) (hu : 0 < u) (hw : 0 < w) :
-    (u / w)⁻¹ / 2 * (u ^ 2 * E) + (u / w) / 2 * (w ^ 2 * E) = E * (u * w) := by
-  field_simp
-  ring
-
-/-- Cauchy--Schwarz for the reflected mass-`1/2` weight. -/
-private lemma flatness_sqrt_cosh_prod_le (c y₁ y₂ : ℝ) :
-    standardGaussianExpectation (fun z =>
-        Real.sqrt (Real.cosh (y₁ + c * z)) *
-          Real.sqrt (Real.cosh (y₂ + -1 * c * z)))
-      ≤ Real.exp (c ^ 2 / 2) *
-        (Real.sqrt (Real.cosh y₁) * Real.sqrt (Real.cosh y₂)) := by
-  have hs₁ : 0 < Real.sqrt (Real.cosh y₁) := Real.sqrt_pos.mpr (Real.cosh_pos y₁)
-  have hs₂ : 0 < Real.sqrt (Real.cosh y₂) := Real.sqrt_pos.mpr (Real.cosh_pos y₂)
-  obtain ⟨t, ht0, hfinal⟩ : ∃ t : ℝ, 0 < t ∧
-      t⁻¹ / 2 * (Real.cosh y₁ * Real.exp (c ^ 2 / 2))
-        + t / 2 * (Real.cosh y₂ * Real.exp (c ^ 2 / 2))
-        = Real.exp (c ^ 2 / 2) *
-          (Real.sqrt (Real.cosh y₁) * Real.sqrt (Real.cosh y₂)) := by
-    refine ⟨Real.sqrt (Real.cosh y₁) / Real.sqrt (Real.cosh y₂), div_pos hs₁ hs₂, ?_⟩
-    have h := flatness_amgm_balance (Real.sqrt (Real.cosh y₁))
-      (Real.sqrt (Real.cosh y₂)) (Real.exp (c ^ 2 / 2)) hs₁ hs₂
-    rwa [Real.sq_sqrt (Real.cosh_pos y₁).le,
-      Real.sq_sqrt (Real.cosh_pos y₂).le] at h
-  have hbound : ∀ z : ℝ,
-      Real.sqrt (Real.cosh (y₁ + c * z)) *
-          Real.sqrt (Real.cosh (y₂ + -1 * c * z))
-        ≤ t⁻¹ / 2 * Real.cosh (y₁ + c * z)
-          + t / 2 * Real.cosh (y₂ + -1 * c * z) := by
-    intro z
-    have hA : (0 : ℝ) ≤ Real.cosh (y₁ + c * z) := (Real.cosh_pos _).le
-    have h1 : Real.sqrt (Real.cosh (y₁ + c * z)) *
-        Real.sqrt (Real.cosh (y₂ + -1 * c * z))
-        = Real.sqrt (Real.cosh (y₁ + c * z) / t) *
-          Real.sqrt (t * Real.cosh (y₂ + -1 * c * z)) := by
-      rw [← Real.sqrt_mul hA,
-        ← Real.sqrt_mul (show (0 : ℝ) ≤ Real.cosh (y₁ + c * z) / t by positivity)]
-      congr 1
-      field_simp
-    have hu := Real.sq_sqrt
-      (show (0 : ℝ) ≤ Real.cosh (y₁ + c * z) / t by positivity)
-    have hw := Real.sq_sqrt
-      (show (0 : ℝ) ≤ t * Real.cosh (y₂ + -1 * c * z) by positivity)
-    have hdiv : Real.cosh (y₁ + c * z) / t = t⁻¹ * Real.cosh (y₁ + c * z) :=
-      div_eq_inv_mul _ _
-    rw [h1]
-    nlinarith [sq_nonneg (Real.sqrt (Real.cosh (y₁ + c * z) / t)
-        - Real.sqrt (t * Real.cosh (y₂ + -1 * c * z))), hu, hw, hdiv]
-  have hint : Integrable (fun z : ℝ =>
-      t⁻¹ / 2 * Real.cosh (y₁ + c * z)
-        + t / 2 * Real.cosh (y₂ + -1 * c * z)) (gaussianReal 0 1) :=
-    ((flatness_integrable_cosh y₁ c).const_mul _).add
-      ((flatness_integrable_cosh y₂ (-1 * c)).const_mul _)
-  have hmono : standardGaussianExpectation (fun z =>
-      Real.sqrt (Real.cosh (y₁ + c * z)) *
-        Real.sqrt (Real.cosh (y₂ + -1 * c * z)))
-      ≤ standardGaussianExpectation (fun z =>
-        t⁻¹ / 2 * Real.cosh (y₁ + c * z)
-          + t / 2 * Real.cosh (y₂ + -1 * c * z)) := by
-    unfold standardGaussianExpectation
-    exact integral_mono (flatness_integrable_sqrt_cosh_prod c y₁ y₂) hint hbound
-  have heval : standardGaussianExpectation (fun z =>
-      t⁻¹ / 2 * Real.cosh (y₁ + c * z)
-        + t / 2 * Real.cosh (y₂ + -1 * c * z))
-      = t⁻¹ / 2 * (Real.cosh y₁ * Real.exp (c ^ 2 / 2))
-        + t / 2 * (Real.cosh y₂ * Real.exp (c ^ 2 / 2)) := by
-    have e₁ := flatness_gaussianExpectation_cosh y₁ c
-    have e₂ := flatness_gaussianExpectation_cosh y₂ (-1 * c)
-    unfold standardGaussianExpectation at e₁ e₂ ⊢
-    rw [integral_add ((flatness_integrable_cosh y₁ c).const_mul _)
-      ((flatness_integrable_cosh y₂ (-1 * c)).const_mul _),
-      integral_const_mul, integral_const_mul, e₁, e₂]
-    ring_nf
-  linarith [hmono, heval.ge, heval.le, hfinal.ge, hfinal.le]
-
-private lemma flatness_step_rank_half_neg_eq (b c y₁ y₂ : ℝ) :
-    gtRankOneStep (1 / 2) c (-1)
-        (fun t₁ t₂ => Real.log (Real.cosh t₁) + Real.log (Real.cosh t₂) + b ^ 2)
-        y₁ y₂
-      = b ^ 2 + 2 * Real.log (standardGaussianExpectation (fun z =>
-          Real.sqrt (Real.cosh (y₁ + c * z)) *
-            Real.sqrt (Real.cosh (y₂ + -1 * c * z)))) := by
-  have hfun : (fun z : ℝ => Real.exp ((1 / 2 : ℝ) *
-      (Real.log (Real.cosh (y₁ + c * z))
-        + Real.log (Real.cosh (y₂ + -1 * c * z)) + b ^ 2)))
-      = fun z : ℝ => Real.exp (b ^ 2 / 2) *
-        (Real.sqrt (Real.cosh (y₁ + c * z)) *
-          Real.sqrt (Real.cosh (y₂ + -1 * c * z))) := by
-    funext z
-    rw [show (1 / 2 : ℝ) * (Real.log (Real.cosh (y₁ + c * z))
-          + Real.log (Real.cosh (y₂ + -1 * c * z)) + b ^ 2)
-        = b ^ 2 / 2 + (Real.log (Real.sqrt (Real.cosh (y₁ + c * z)))
-          + Real.log (Real.sqrt (Real.cosh (y₂ + -1 * c * z)))) from by
-      rw [Real.log_sqrt (Real.cosh_pos _).le, Real.log_sqrt (Real.cosh_pos _).le]
-      ring]
-    rw [Real.exp_add, Real.exp_add,
-      Real.exp_log (Real.sqrt_pos.mpr (Real.cosh_pos _)),
-      Real.exp_log (Real.sqrt_pos.mpr (Real.cosh_pos _))]
-  have hpos := flatness_one_le_sqrt_cosh_prod c y₁ y₂
-  have hconst : standardGaussianExpectation (fun z => Real.exp (b ^ 2 / 2) *
-      (Real.sqrt (Real.cosh (y₁ + c * z)) *
-        Real.sqrt (Real.cosh (y₂ + -1 * c * z))))
-      = Real.exp (b ^ 2 / 2) * standardGaussianExpectation (fun z =>
-        Real.sqrt (Real.cosh (y₁ + c * z)) *
-          Real.sqrt (Real.cosh (y₂ + -1 * c * z))) := by
-    unfold standardGaussianExpectation
-    exact integral_const_mul _ _
-  unfold gtRankOneStep
-  rw [if_neg (by norm_num : (1 / 2 : ℝ) ≠ 0)]
-  show (1 / (1 / 2 : ℝ)) * Real.log (standardGaussianExpectation
-      (fun z => Real.exp ((1 / 2 : ℝ) *
-        (Real.log (Real.cosh (y₁ + c * z))
-          + Real.log (Real.cosh (y₂ + -1 * c * z)) + b ^ 2)))) = _
-  rw [hfun, hconst, Real.log_mul (Real.exp_ne_zero _) (by linarith), Real.log_exp]
-  ring
-
-private lemma flatness_step_rank_half_neg_nonneg (b c y₁ y₂ : ℝ) :
-    0 ≤ gtRankOneStep (1 / 2) c (-1)
-      (fun t₁ t₂ => Real.log (Real.cosh t₁) + Real.log (Real.cosh t₂) + b ^ 2)
-      y₁ y₂ := by
-  rw [flatness_step_rank_half_neg_eq]
-  have h := Real.log_nonneg (flatness_one_le_sqrt_cosh_prod c y₁ y₂)
-  nlinarith [sq_nonneg b]
-
-private lemma flatness_step_rank_half_neg_le (b c y₁ y₂ : ℝ) :
-    gtRankOneStep (1 / 2) c (-1)
-        (fun t₁ t₂ => Real.log (Real.cosh t₁) + Real.log (Real.cosh t₂) + b ^ 2)
-        y₁ y₂
-      ≤ Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂) + (c ^ 2 + b ^ 2) := by
-  rw [flatness_step_rank_half_neg_eq]
-  have hone := flatness_one_le_sqrt_cosh_prod c y₁ y₂
-  have hle := flatness_sqrt_cosh_prod_le c y₁ y₂
-  have hs₁ : 0 < Real.sqrt (Real.cosh y₁) := Real.sqrt_pos.mpr (Real.cosh_pos y₁)
-  have hs₂ : 0 < Real.sqrt (Real.cosh y₂) := Real.sqrt_pos.mpr (Real.cosh_pos y₂)
-  have hlog := Real.log_le_log (by linarith) hle
-  rw [Real.log_mul (Real.exp_ne_zero _) (by positivity), Real.log_exp,
-    Real.log_mul (ne_of_gt hs₁) (ne_of_gt hs₂),
-    Real.log_sqrt (Real.cosh_pos y₁).le,
-    Real.log_sqrt (Real.cosh_pos y₂).le] at hlog
-  linarith
-
-/-- Zero-multiplier integrand in the regime `q ≤ |v| ≤ 1` and negative sign;
-here the mass-`1/2` step only gives an inequality. -/
-private lemma flatness_integrand_upper_neg_le (β s q r X : ℝ) :
-    gtRankOneStep 0 (gtIncrementScale β s 0 q) (-1)
-        (gtRankOneStep (1 / 2) (gtIncrementScale β s q r) (-1)
-          (gtDiagonalStep 1 (gtIncrementScale β s r 1) (gtTerminal 0))) X X
-      ≤ 2 * flatnessPhi (gtIncrementScale β s 0 q) X
-        + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2) := by
-  rw [flatness_rankZero_apply, flatness_diag_one_terminal_fun]
-  have hnn : ∀ z : ℝ, 0 ≤
-      gtRankOneStep (1 / 2) (gtIncrementScale β s q r) (-1)
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂)
-          + gtIncrementScale β s r 1 ^ 2)
-        (X + gtIncrementScale β s 0 q * z)
-        (X + -1 * gtIncrementScale β s 0 q * z) :=
-    fun z => flatness_step_rank_half_neg_nonneg _ _ _ _
-  have hpt : ∀ z : ℝ,
-      gtRankOneStep (1 / 2) (gtIncrementScale β s q r) (-1)
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂)
-          + gtIncrementScale β s r 1 ^ 2)
-        (X + gtIncrementScale β s 0 q * z)
-        (X + -1 * gtIncrementScale β s 0 q * z)
-      ≤ Real.log (Real.cosh (X + gtIncrementScale β s 0 q * z))
-        + Real.log (Real.cosh (X + -1 * gtIncrementScale β s 0 q * z))
-        + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2) :=
-    fun z => flatness_step_rank_half_neg_le _ _ _ _
-  have hi₁ : Integrable
-      (fun z : ℝ => Real.log (Real.cosh (X + gtIncrementScale β s 0 q * z)))
-      (gaussianReal 0 1) := flatness_integrable_logCosh X _ 0 1
-  have hi₂ : Integrable
-      (fun z : ℝ => Real.log (Real.cosh (X + -1 * gtIncrementScale β s 0 q * z)))
-      (gaussianReal 0 1) := by
-    simpa only [neg_one_mul] using
-      flatness_integrable_logCosh X (-gtIncrementScale β s 0 q) 0 1
-  have hi₃ : Integrable (fun z : ℝ =>
-      Real.log (Real.cosh (X + gtIncrementScale β s 0 q * z))
-        + Real.log (Real.cosh (X + -1 * gtIncrementScale β s 0 q * z)))
-      (gaussianReal 0 1) := hi₁.add hi₂
-  have hint : Integrable (fun z : ℝ =>
-      Real.log (Real.cosh (X + gtIncrementScale β s 0 q * z))
-        + Real.log (Real.cosh (X + -1 * gtIncrementScale β s 0 q * z))
-        + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2))
-      (gaussianReal 0 1) := hi₃.add (integrable_const _)
-  have hmono : standardGaussianExpectation (fun z =>
-      gtRankOneStep (1 / 2) (gtIncrementScale β s q r) (-1)
-        (fun y₁ y₂ => Real.log (Real.cosh y₁) + Real.log (Real.cosh y₂)
-          + gtIncrementScale β s r 1 ^ 2)
-        (X + gtIncrementScale β s 0 q * z)
-        (X + -1 * gtIncrementScale β s 0 q * z))
-      ≤ standardGaussianExpectation (fun z =>
-        Real.log (Real.cosh (X + gtIncrementScale β s 0 q * z))
-          + Real.log (Real.cosh (X + -1 * gtIncrementScale β s 0 q * z))
-          + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2)) := by
-    unfold standardGaussianExpectation
-    exact integral_mono_of_nonneg (Filter.Eventually.of_forall hnn) hint
-      (Filter.Eventually.of_forall hpt)
-  exact hmono.trans_eq (flatness_two_logCosh_shift (gtIncrementScale β s 0 q) X _)
-
-/-- **At zero multiplier and negative overlap the GT functional is at most
-twice the replica-symmetric path value.** -/
-lemma flatness_gtFunctional_zero_multiplier_neg_le
-    (β h q s v : ℝ) (hβ : 0 ≤ β) (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hq : 0 < q) (hq1 : q < 1) (hv : v ∈ Set.Ico (-1 : ℝ) 0) :
-    gtFunctional β h q s 0 v ≤ 2 * rsPathValue β h q s := by
-  have hvneg : v < 0 := hv.2
-  have hsign : gtPathSign v = -1 := by
-    unfold gtPathSign
-    rw [if_neg (not_le.mpr hvneg)]
-  have hvabs : |v| = -v := abs_of_neg hvneg
-  have hv0 : 0 < |v| := abs_pos.mpr (ne_of_lt hvneg)
-  have hv1 : |v| ≤ 1 := by rw [hvabs]; linarith [hv.1]
-  by_cases hvq : |v| < q
-  · rw [flatness_gtFunctional_formula_abs_v_lt_q β h q s 0 v hv0 hvq]
-    simp only [hsign, zero_mul, sub_zero]
-    simp_rw [flatness_integrand_lower_neg β s q |v| _ hβ hs.1 hv0.le hvq.le]
-    exact le_of_eq (flatness_zero_multiplier_assemble β h q s _ hβ hs hq.le
-      (gtIncrementScale_sq_of_nonneg β s q 1 hβ hs.1 hq1.le))
-  · have hqv : q ≤ |v| := le_of_not_gt hvq
-    have hassemble : ∀ r : ℝ, q ≤ r → r ≤ 1 →
-        2 * Real.log 2
-          + standardGaussianExpectation (fun z =>
-            2 * flatnessPhi (gtIncrementScale β s 0 q)
-              (h + β * Real.sqrt ((1 - s) * q) * z)
-              + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2))
-          - gtCorrection β q s = 2 * rsPathValue β h q s := by
-      intro r hqr hr1
-      refine flatness_zero_multiplier_assemble β h q s _ hβ hs hq.le ?_
-      rw [gtIncrementScale_sq_of_nonneg β s q r hβ hs.1 hqr,
-        gtIncrementScale_sq_of_nonneg β s r 1 hβ hs.1 hr1]
-      ring
-    have houter : ∀ r : ℝ,
-        standardGaussianExpectation (fun z =>
-          gtRankOneStep 0 (gtIncrementScale β s 0 q) (-1)
-            (gtRankOneStep (1 / 2) (gtIncrementScale β s q r) (-1)
-              (gtDiagonalStep 1 (gtIncrementScale β s r 1) (gtTerminal 0)))
-            (h + β * Real.sqrt ((1 - s) * q) * z)
-            (h + β * Real.sqrt ((1 - s) * q) * z))
-        ≤ standardGaussianExpectation (fun z =>
-          2 * flatnessPhi (gtIncrementScale β s 0 q)
-            (h + β * Real.sqrt ((1 - s) * q) * z)
-            + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2)) := by
-      intro r
-      have hnn : ∀ z : ℝ, 0 ≤
-          gtRankOneStep 0 (gtIncrementScale β s 0 q) (-1)
-            (gtRankOneStep (1 / 2) (gtIncrementScale β s q r) (-1)
-              (gtDiagonalStep 1 (gtIncrementScale β s r 1) (gtTerminal 0)))
-            (h + β * Real.sqrt ((1 - s) * q) * z)
-            (h + β * Real.sqrt ((1 - s) * q) * z) := by
-        intro z
-        rw [flatness_rankZero_apply, flatness_diag_one_terminal_fun]
-        unfold standardGaussianExpectation
-        exact integral_nonneg fun z₀ => flatness_step_rank_half_neg_nonneg _ _ _ _
-      have hint : Integrable (fun z : ℝ =>
-          2 * flatnessPhi (gtIncrementScale β s 0 q)
-            (h + β * Real.sqrt ((1 - s) * q) * z)
-            + (gtIncrementScale β s q r ^ 2 + gtIncrementScale β s r 1 ^ 2))
-          (gaussianReal 0 1) :=
-        ((flatness_integrable_Phi (gtIncrementScale β s 0 q) h
-          (β * Real.sqrt ((1 - s) * q))).const_mul 2).add (integrable_const _)
-      unfold standardGaussianExpectation
-      exact integral_mono_of_nonneg (Filter.Eventually.of_forall hnn) hint
-        (Filter.Eventually.of_forall fun z =>
-          flatness_integrand_upper_neg_le β s q r _)
-    rcases eq_or_lt_of_le hv1 with hone | hlt
-    · rw [flatness_gtFunctional_formula_abs_v_eq_one β h q s 0 v hq hq1.le hone]
-      simp only [hsign, zero_mul, sub_zero]
-      have h1 := houter 1
-      have h2 := hassemble 1 hq1.le le_rfl
-      linarith
-    · rw [flatness_gtFunctional_formula_q_le_abs_v_lt_one β h q s 0 v hq hqv hlt]
-      simp only [hsign, zero_mul, sub_zero]
-      have h1 := houter |v|
-      have h2 := hassemble |v| hqv hv1
-      linarith
-
-/-! ### Negative overlaps -/
-
-/--
-Uniform separation of the endpoint multiplier derivative from zero on the
-negative-overlap branch.
-
-This is the negative-overlap counterpart of
-`scalarOrderParameterCorrect_global_separation`.  Because the two replicas are
-coupled with the opposite sign, the endpoint derivative is
-`tilde g_s(v) - v`, where `tilde g_s` is the Gaussian two-point function of the
-signed path; the AT condition makes `v ↦ tilde g_s(v) - v` strictly decreasing,
-so on `[-1,0)` it stays above its value at `v = 0`, which is bounded below by
-`c₂ * rsQ β h > 0`.  Formalizing the monotonicity step needs Price's identity
-for the signed two-point function, which is not available here, so this
-statement is left as the single remaining input.
--/
-lemma flatness_deriv_gtFunctional_zero_neg_separation {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ κ > 0, ∀ {β h s v : ℝ},
-      (β, h) ∈ K → s ∈ Set.Icc (0 : ℝ) 1 → v ∈ Set.Ico (-1 : ℝ) 0 →
-      κ ≤ |deriv (fun lam => gtFunctional β h (rsQ β h) s lam v) 0| := by
-  sorry
-
-/--
-Uniform quadratic gap on the negative-overlap branch.
-
-At `lam = 0` the value never exceeds twice the replica-symmetric path value
-(`flatness_gtFunctional_zero_multiplier_neg_le`); combined with the uniform
-separation of the multiplier derivative this yields a quadratic gap.
--/
-lemma flatness_gtFunctional_gap_neg_overlap {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ c > 0, ∀ {β h s v : ℝ},
-      (β, h) ∈ K → s ∈ Set.Icc (0 : ℝ) 1 → v ∈ Set.Ico (-1 : ℝ) 0 →
-      ∃ lam ∈ Set.Icc (-1 : ℝ) 1,
-        gtFunctional β h (rsQ β h) s lam v ≤
-          2 * rsPathValue β h (rsQ β h) s - c * (v - rsQ β h) ^ 2 := by
-  obtain ⟨κ, hκ, hsep⟩ := flatness_deriv_gtFunctional_zero_neg_separation data
-  refine ⟨(κ / 2) ^ 2 / 5, by positivity, ?_⟩
-  intro β h s v hp hs hv
-  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
-  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
-  have hq0 : 0 < rsQ β h := rsQ_pos hβ hh
-  have hq1 : rsQ β h < 1 := rsQ_lt_one hβ hh
-  have hzero := flatness_gtFunctional_zero_multiplier_neg_le β h (rsQ β h) s v
-    hβ.le hs hq0 hq1 hv
-  have habs : |v| ≤ 1 := by
-    rw [abs_of_neg hv.2]
-    linarith [hv.1]
-  have hdist : |v - rsQ β h| ≤ 2 := by
-    rw [abs_of_nonpos (by linarith [hv.2, hq0] : v - rsQ β h ≤ 0)]
-    linarith [hv.1, hq1]
-  have hgap : κ / 2 * |v - rsQ β h| ≤
-      |deriv (fun lam => gtFunctional β h (rsQ β h) s lam v) 0| := by
-    have h1 : κ / 2 * |v - rsQ β h| ≤ κ / 2 * 2 :=
-      mul_le_mul_of_nonneg_left hdist (by positivity)
-    have h2 := hsep hp hs hv
-    linarith
-  exact flatness_quadratic_gap_of_deriv_gap_mem β h (rsQ β h) s v (κ / 2)
-    (by positivity) hzero
-    (flatness_abs_deriv_gtFunctional_zero_le_two β h (rsQ β h) s v habs) hgap
+  rw [h]
+  rw [Real.log_mul
+    (ne_of_gt (Real.cosh_pos x₁))
+    (ne_of_gt (Real.cosh_pos x₂))]
 
 
-theorem gtFunctional_uniform_quadratic_gap {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ c > 0, ∀ {β h q s v : ℝ},
-      (β, h) ∈ K → q = rsQ β h → s ∈ Icc (0 : ℝ) 1 →
-      v ∈ Icc (-1 : ℝ) 1 →
-      ∃ lam ∈ Icc (-1 : ℝ) 1, gtFunctional β h q s lam v ≤
-        2 * rsPathValue β h q s - c * (v - q) ^ 2 := by
-  obtain ⟨c₂, hc₂, hsep⟩ := scalarOrderParameterCorrect_global_separation data
-  obtain ⟨cneg, hcneg, hneg⟩ := flatness_gtFunctional_gap_neg_overlap data
-  refine ⟨min (c₂ ^ 2 / 5) cneg, lt_min (by positivity) hcneg, ?_⟩
-  intro β h q s v hp hq hs hv
-  subst hq
-  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
-  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
-  have hsqnn : (0 : ℝ) ≤ (v - rsQ β h) ^ 2 := sq_nonneg _
-  rcases lt_or_ge v 0 with hvneg | hv0
-  · obtain ⟨lam, hlam, hle⟩ := hneg hp hs ⟨hv.1, hvneg⟩
-    refine ⟨lam, hlam, hle.trans ?_⟩
-    have hmin : min (c₂ ^ 2 / 5) cneg ≤ cneg := min_le_right _ _
-    nlinarith
-  · have hv01 : v ∈ Icc (0 : ℝ) 1 := ⟨hv0, hv.2⟩
-    have hzero := flatness_gtFunctional_zero_multiplier β h (rsQ β h) s v hβ.le hs
-      (rsQ_pos hβ hh) (rsQ_lt_one hβ hh) hv01
-    have hgap : c₂ * |v - rsQ β h| ≤
-        |deriv (fun l => gtFunctional β h (rsQ β h) s l v) 0| := by
-      rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s v hβ hh hs hv01]
-      exact hsep hp hs hv01
-    have habs : |v| ≤ 1 := abs_le.mpr ⟨hv.1, hv.2⟩
-    obtain ⟨lam, hlam, hle⟩ :=
-      flatness_quadratic_gap_of_deriv_gap_mem β h (rsQ β h) s v c₂ hc₂.le hzero.le
-        (flatness_abs_deriv_gtFunctional_zero_le_two β h (rsQ β h) s v habs) hgap
-    refine ⟨lam, hlam, hle.trans ?_⟩
-    have hmin : min (c₂ ^ 2 / 5) cneg ≤ c₂ ^ 2 / 5 := min_le_left _ _
-    nlinarith
+/-- Explicit first derivative of the terminal function in `lam`. -/
+lemma deriv_gtTerminal_explicit (lam x₁ x₂ : ℝ) :
+    deriv (fun l => gtTerminal l x₁ x₂) lam
+      =
+    (Real.exp (x₁ + x₂ + lam)
+        - Real.exp (x₁ - x₂ - lam)
+        - Real.exp (-x₁ + x₂ - lam)
+        + Real.exp (-x₁ - x₂ + lam))
+      /
+    (Real.exp (x₁ + x₂ + lam)
+        + Real.exp (x₁ - x₂ - lam)
+        + Real.exp (-x₁ + x₂ - lam)
+        + Real.exp (-x₁ - x₂ + lam)) := by
+  simpa [gtTerminalNumerator, gtTerminalSum] using
+    (hasDerivAt_gtTerminal lam x₁ x₂).deriv
+
+
+/-- At `lam = 0`, the `lam`-derivative factorizes as
+`tanh x₁ * tanh x₂`. -/
+lemma deriv_gtTerminal_zero (x₁ x₂ : ℝ) :
+    deriv (fun lam => gtTerminal lam x₁ x₂) 0
+      =
+    Real.tanh x₁ * Real.tanh x₂ := by
+  rw [deriv_gtTerminal_explicit]
+  simp only [add_zero, sub_zero]
+
+  rw [Real.tanh_eq_sinh_div_cosh, Real.tanh_eq_sinh_div_cosh]
+
+  have h₁ : Real.cosh x₁ ≠ 0 :=
+    ne_of_gt (Real.cosh_pos x₁)
+  have h₂ : Real.cosh x₂ ≠ 0 :=
+    ne_of_gt (Real.cosh_pos x₂)
+
+  have hnum :
+      Real.exp (x₁ + x₂) - Real.exp (x₁ - x₂)
+          - Real.exp (-x₁ + x₂) + Real.exp (-x₁ - x₂)
+        = 4 * Real.sinh x₁ * Real.sinh x₂ := by
+    rw [Real.sinh_eq, Real.sinh_eq]
+    simp [Real.exp_add, sub_eq_add_neg]
+    ring
+
+  have hden :
+      Real.exp (x₁ + x₂) + Real.exp (x₁ - x₂)
+          + Real.exp (-x₁ + x₂) + Real.exp (-x₁ - x₂)
+        = 4 * Real.cosh x₁ * Real.cosh x₂ := by
+    rw [Real.cosh_eq, Real.cosh_eq]
+    simp [Real.exp_add, sub_eq_add_neg]
+    ring
+
+  rw [hnum, hden]
+
+  field_simp [h₁, h₂]
+
+
+
+
+
+
+
+
 
 end SpinGlass.AT

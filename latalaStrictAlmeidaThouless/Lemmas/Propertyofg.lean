@@ -651,6 +651,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import Mathlib.Analysis.Complex.ExponentialBounds
 import SpinGlass.Mathlib.Probability.Distributions.GaussianIntegrationByParts
 
 open MeasureTheory ProbabilityTheory Real Filter
@@ -2921,9 +2922,9 @@ private lemma property_gaussian_convolution_sech4 (h a b c : ℝ)
     (∫ x, ∫ y, propertySech (h + a * x + b * y) ^ 4 ∂gaussianReal 0 1
       ∂gaussianReal 0 1) =
       ∫ z, propertySech (h + c * z) ^ 4 ∂gaussianReal 0 1 := by
-  let va : ℝ≥0 := ⟨a ^ 2, sq_nonneg a⟩ * 1
-  let vb : ℝ≥0 := ⟨b ^ 2, sq_nonneg b⟩ * 1
-  let vc : ℝ≥0 := ⟨c ^ 2, sq_nonneg c⟩ * 1
+  let va : ℝ≥0 := NNReal.mk (a ^ 2) (sq_nonneg a) * 1
+  let vb : ℝ≥0 := NNReal.mk (b ^ 2) (sq_nonneg b) * 1
+  let vc : ℝ≥0 := NNReal.mk (c ^ 2) (sq_nonneg c) * 1
   have hma : Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) =
       gaussianReal 0 va := by
     simpa [va] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : ℝ≥0)) a)
@@ -4073,8 +4074,7 @@ private lemma propertyUpperG_global_gap_small {β h s u : ℝ}
     calc Real.exp (s * β ^ 2 * (u - rsQ β h)) ≤ Real.exp 1 :=
           Real.exp_le_exp.mpr hx
       _ ≤ 3 := by
-          have := Real.exp_one_lt_d9
-          linarith
+          exact Real.exp_one_lt_three.le
   have hEpos : 0 < Real.exp (s * β ^ 2 * (u - rsQ β h)) := Real.exp_pos _
   have hEone : 1 ≤ Real.exp (s * β ^ 2 * (u - rsQ β h)) :=
     Real.one_le_exp (mul_nonneg ha.le (by linarith))

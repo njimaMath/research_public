@@ -2520,6 +2520,673 @@ lemma gtFunctional_uniform_quadratic_gap_of_local_and_away
     nlinarith
 
 
+lemma flatnessTildeG_hasDerivAt_neg
+    (β h q s v : ℝ)
+    (hβ : 0 ≤ β)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : 0 < q)
+    (hv : v ∈ Set.Ioo (-q) 0) :
+    ∃ D : ℝ,
+      HasDerivAt (fun u => flatnessTildeG β h q s u) D v := by
+  by_cases hβ0 : β = 0
+  · refine ⟨0, ?_⟩
+    have heq : (fun u => flatnessTildeG β h q s u) = fun _ => flatnessTildeG β h q s v := by
+      funext u
+      simp [flatnessTildeG, gtIncrementScale, hβ0]
+    rw [heq]
+    exact hasDerivAt_const v _
+  by_cases hs0 : s = 0
+  · refine ⟨0, ?_⟩
+    have heq : (fun u => flatnessTildeG β h q s u) = fun _ => flatnessTildeG β h q s v := by
+      funext u
+      simp [flatnessTildeG, gtIncrementScale, hs0]
+    rw [heq]
+    exact hasDerivAt_const v _
+
+  have hβpos : 0 < β := lt_of_le_of_ne hβ (Ne.symm hβ0)
+  have hspos : 0 < s := lt_of_le_of_ne hs.1 (Ne.symm hs0)
+
+  let γ : Measure ℝ := gaussianReal 0 1
+  let μ : Measure (ℝ × (ℝ × (ℝ × ℝ))) :=
+    γ.prod (γ.prod (γ.prod γ))
+  let J : Set ℝ := Set.Ioo ((-q + v) / 2) (v / 2)
+  let a : ℝ → ℝ := fun t => β * Real.sqrt s * Real.sqrt (-t)
+  let b : ℝ → ℝ := fun t => β * Real.sqrt s * Real.sqrt (q + t)
+  let y₁ : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun t p =>
+    h + β * Real.sqrt ((1 - s) * q) * p.1
+      + a t * p.2.1 + b t * p.2.2.1
+  let y₂ : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun t p =>
+    h + β * Real.sqrt ((1 - s) * q) * p.1
+      - a t * p.2.1 + b t * p.2.2.2
+  let H : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun t p =>
+    Real.tanh (y₁ t p) * Real.tanh (y₂ t p)
+
+  have htanhcont : Continuous (fun x : ℝ => Real.tanh x) := by
+    simp_rw [Real.tanh_eq_sinh_div_cosh]
+    have hc : ContDiff ℝ ⊤ (fun x : ℝ => Real.sinh x / Real.cosh x) :=
+      Real.contDiff_sinh.div Real.contDiff_cosh
+        (fun x => (Real.cosh_pos x).ne')
+    exact hc.continuous
+
+  have hHbound (t : ℝ) (p : ℝ × (ℝ × (ℝ × ℝ))) : |H t p| ≤ 1 := by
+    dsimp [H]
+    rw [abs_mul]
+    have h₁ := (Real.abs_tanh_lt_one (y₁ t p)).le
+    have h₂ := (Real.abs_tanh_lt_one (y₂ t p)).le
+    nlinarith [abs_nonneg (Real.tanh (y₁ t p)), abs_nonneg (Real.tanh (y₂ t p))]
+
+  have hHInt (t : ℝ) : Integrable (H t) μ := by
+    apply Integrable.of_bound (C := 1)
+    · exact (by
+        dsimp [H, y₁, y₂, a, b]
+        exact (htanhcont.comp (by fun_prop)).mul
+          (htanhcont.comp (by fun_prop)) : Continuous (H t)).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound t p
+
+  have hHInt₃ (t z : ℝ) :
+      Integrable (fun p : ℝ × (ℝ × ℝ) => H t (z, p))
+        (γ.prod (γ.prod γ)) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (by
+        dsimp [H, y₁, y₂, a, b]
+        exact (htanhcont.comp (by fun_prop)).mul
+          (htanhcont.comp (by fun_prop)) :
+        Continuous (fun p : ℝ × (ℝ × ℝ) => H t (z, p))).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound t (z, p)
+
+  have hHInt₂ (t z z₀ : ℝ) :
+      Integrable (fun p : ℝ × ℝ => H t (z, z₀, p))
+        (γ.prod γ) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (by
+        dsimp [H, y₁, y₂, a, b]
+        exact (htanhcont.comp (by fun_prop)).mul
+          (htanhcont.comp (by fun_prop)) :
+        Continuous (fun p : ℝ × ℝ => H t (z, z₀, p))).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound t (z, z₀, p)
+
+  have hHInt₁ (t z z₀ z₁ : ℝ) :
+      Integrable (fun z₂ : ℝ => H t (z, z₀, z₁, z₂)) γ := by
+    apply Integrable.of_bound (C := 1)
+    · exact (by
+        dsimp [H, y₁, y₂, a, b]
+        exact (htanhcont.comp (by fun_prop)).mul
+          (htanhcont.comp (by fun_prop)) :
+        Continuous (fun z₂ : ℝ => H t (z, z₀, z₁, z₂))).aestronglyMeasurable
+    · filter_upwards [] with z₂
+      simpa [Real.norm_eq_abs] using hHbound t (z, z₀, z₁, z₂)
+
+  have hrepr (t : ℝ) (ht : t ∈ J) :
+      flatnessTildeG β h q s t = ∫ p, H t p ∂μ := by
+    have htneg : t < 0 := by dsimp [J] at ht; linarith [ht.2, hv.2]
+    symm
+    calc
+      (∫ p, H t p ∂μ) =
+          ∫ z, ∫ p, H t (z, p) ∂(γ.prod (γ.prod γ)) ∂γ := by
+            exact integral_prod _ (hHInt t)
+      _ = ∫ z, ∫ z₀, ∫ p, H t (z, z₀, p) ∂(γ.prod γ) ∂γ ∂γ := by
+            apply integral_congr_ae
+            filter_upwards [] with z
+            exact integral_prod _ (hHInt₃ t z)
+      _ = ∫ z, ∫ z₀, ∫ z₁, ∫ z₂, H t (z, z₀, z₁, z₂) ∂γ ∂γ ∂γ ∂γ := by
+            apply integral_congr_ae
+            filter_upwards [] with z
+            apply integral_congr_ae
+            filter_upwards [] with z₀
+            exact integral_prod _ (hHInt₂ t z z₀)
+      _ = flatnessTildeG β h q s t := by
+            simp only [flatnessTildeG, standardGaussianExpectation]
+            dsimp [H, y₁, y₂, a, b, γ, μ]
+            simp [gtIncrementScale, gtPathSign, abs_of_neg htneg, not_le.mpr htneg,
+              sub_eq_add_neg]
+
+  let da : ℝ → ℝ := fun t => -(β * Real.sqrt s) / (2 * Real.sqrt (-t))
+  let db : ℝ → ℝ := fun t => (β * Real.sqrt s) / (2 * Real.sqrt (q + t))
+  let dy₁ : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun t p =>
+    da t * p.2.1 + db t * p.2.2.1
+  let dy₂ : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun t p =>
+    -da t * p.2.1 + db t * p.2.2.2
+  let H' : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun t p =>
+    ProbabilityTheory.PriceTanh.sechSq (y₁ t p) * dy₁ t p * Real.tanh (y₂ t p)
+      + Real.tanh (y₁ t p) * ProbabilityTheory.PriceTanh.sechSq (y₂ t p) * dy₂ t p
+
+  have haDeriv (t : ℝ) (ht : t ∈ J) : HasDerivAt a (da t) t := by
+    have htneg : t < 0 := by dsimp [J] at ht; linarith [ht.2, hv.2]
+    have hsqrtne : Real.sqrt (-t) ≠ 0 := (Real.sqrt_pos.2 (by linarith)).ne'
+    have harg : HasDerivAt (fun x : ℝ => -x) (-1) t := (hasDerivAt_id t).neg
+    have hd := ((Real.hasDerivAt_sqrt (by linarith : -t ≠ 0)).comp t harg).const_mul
+      (β * Real.sqrt s)
+    have hdeq : β * Real.sqrt s * (1 / (2 * Real.sqrt (-t)) * -1) = da t := by
+      dsimp [da]
+      field_simp [hsqrtne]
+    simpa only [a, Function.comp_apply, hdeq] using hd
+
+  have hbDeriv (t : ℝ) (ht : t ∈ J) : HasDerivAt b (db t) t := by
+    have htq : 0 < q + t := by dsimp [J] at ht; linarith [ht.1, hv.1]
+    have hsqrtne : Real.sqrt (q + t) ≠ 0 := (Real.sqrt_pos.2 htq).ne'
+    have harg : HasDerivAt (fun x : ℝ => q + x) 1 t :=
+      (hasDerivAt_id t).const_add q
+    have hd := ((Real.hasDerivAt_sqrt htq.ne').comp t harg).const_mul
+      (β * Real.sqrt s)
+    have hdeq : β * Real.sqrt s * (1 / (2 * Real.sqrt (q + t)) * 1) = db t := by
+      dsimp [db]
+      field_simp [hsqrtne]
+    simpa only [b, Function.comp_apply, hdeq] using hd
+
+  have hy₁Deriv (t : ℝ) (p : ℝ × (ℝ × (ℝ × ℝ))) (ht : t ∈ J) :
+      HasDerivAt (fun x => y₁ x p) (dy₁ t p) t := by
+    dsimp [y₁, dy₁]
+    simpa [add_assoc] using
+      (((haDeriv t ht).mul_const p.2.1).add
+        ((hbDeriv t ht).mul_const p.2.2.1)).const_add
+          (h + β * Real.sqrt ((1 - s) * q) * p.1)
+
+  have hy₂Deriv (t : ℝ) (p : ℝ × (ℝ × (ℝ × ℝ))) (ht : t ∈ J) :
+      HasDerivAt (fun x => y₂ x p) (dy₂ t p) t := by
+    dsimp [y₂, dy₂]
+    simpa [add_assoc, sub_eq_add_neg] using
+      ((((haDeriv t ht).mul_const p.2.1).neg.add
+        ((hbDeriv t ht).mul_const p.2.2.2)).const_add
+          (h + β * Real.sqrt ((1 - s) * q) * p.1))
+
+  have hHDiff (p : ℝ × (ℝ × (ℝ × ℝ))) (t : ℝ) (ht : t ∈ J) :
+      HasDerivAt (fun x => H x p) (H' t p) t := by
+    have hd₁ :=
+      (ProbabilityTheory.PriceTanh.tanh_hasDerivAt (y₁ t p)).comp t (hy₁Deriv t p ht)
+    have hd₂ :=
+      (ProbabilityTheory.PriceTanh.tanh_hasDerivAt (y₂ t p)).comp t (hy₂Deriv t p ht)
+    have hdiff : DifferentiableAt ℝ (fun x => H x p) t := by
+      dsimp [H]
+      exact hd₁.differentiableAt.mul hd₂.differentiableAt
+    apply hdiff.hasDerivAt.congr_deriv
+    have hraw := (hd₁.mul hd₂).deriv
+    have hfun :
+        (fun x => H x p) =
+          (Real.tanh ∘ fun x => y₁ x p) * (Real.tanh ∘ fun x => y₂ x p) := by
+      funext x
+      rfl
+    dsimp [H']
+    rw [hfun]
+    simpa only [Function.comp_apply, mul_assoc] using hraw
+
+  let c₀ : ℝ := β * Real.sqrt s
+  let rₐ : ℝ := Real.sqrt (-v / 2)
+  let rᵦ : ℝ := Real.sqrt ((q + v) / 2)
+  let C : ℝ := c₀ * (rₐ⁻¹ + rᵦ⁻¹)
+
+  have hc₀ : 0 ≤ c₀ := by dsimp [c₀]; positivity
+  have hrₐ : 0 < rₐ := by
+    dsimp [rₐ]
+    exact Real.sqrt_pos.2 (by linarith [hv.2])
+  have hrᵦ : 0 < rᵦ := by
+    dsimp [rᵦ]
+    exact Real.sqrt_pos.2 (by linarith [hv.1])
+  have hC : 0 ≤ C := by dsimp [C]; positivity
+
+  have hda_bound (t : ℝ) (ht : t ∈ J) : |da t| ≤ C := by
+    have htneg : t < 0 := by dsimp [J] at ht; linarith [ht.2, hv.2]
+    have hsqrtpos : 0 < Real.sqrt (-t) := Real.sqrt_pos.2 (by linarith)
+    have hra_le : rₐ ≤ Real.sqrt (-t) := by
+      apply Real.sqrt_le_sqrt
+      dsimp [rₐ, J] at ht ⊢
+      linarith [ht.2]
+    have hinv : (2 * Real.sqrt (-t))⁻¹ ≤ rₐ⁻¹ := by
+      apply (inv_le_inv₀ (by positivity : 0 < 2 * Real.sqrt (-t)) hrₐ).2
+      linarith
+    have heq : |da t| = c₀ * (2 * Real.sqrt (-t))⁻¹ := by
+      dsimp [da, c₀]
+      rw [abs_div, abs_neg, abs_mul, abs_of_pos hβpos,
+        abs_of_nonneg (Real.sqrt_nonneg s), abs_of_pos (by positivity : 0 < 2 * Real.sqrt (-t))]
+      rw [div_eq_mul_inv]
+    rw [heq]
+    calc
+      c₀ * (2 * Real.sqrt (-t))⁻¹ ≤ c₀ * rₐ⁻¹ :=
+        mul_le_mul_of_nonneg_left hinv hc₀
+      _ ≤ C := by
+        dsimp [C]
+        have : 0 ≤ c₀ * rᵦ⁻¹ := mul_nonneg hc₀ (inv_nonneg.mpr hrᵦ.le)
+        linarith
+
+  have hdb_bound (t : ℝ) (ht : t ∈ J) : |db t| ≤ C := by
+    have htq : 0 < q + t := by dsimp [J] at ht; linarith [ht.1, hv.1]
+    have hsqrtpos : 0 < Real.sqrt (q + t) := Real.sqrt_pos.2 htq
+    have hrb_le : rᵦ ≤ Real.sqrt (q + t) := by
+      apply Real.sqrt_le_sqrt
+      dsimp [rᵦ, J] at ht ⊢
+      linarith [ht.1]
+    have hinv : (2 * Real.sqrt (q + t))⁻¹ ≤ rᵦ⁻¹ := by
+      apply (inv_le_inv₀ (by positivity : 0 < 2 * Real.sqrt (q + t)) hrᵦ).2
+      linarith
+    have heq : |db t| = c₀ * (2 * Real.sqrt (q + t))⁻¹ := by
+      dsimp [db, c₀]
+      rw [abs_div, abs_mul, abs_of_pos hβpos,
+        abs_of_nonneg (Real.sqrt_nonneg s), abs_of_pos (by positivity : 0 < 2 * Real.sqrt (q + t))]
+      rw [div_eq_mul_inv]
+    rw [heq]
+    calc
+      c₀ * (2 * Real.sqrt (q + t))⁻¹ ≤ c₀ * rᵦ⁻¹ :=
+        mul_le_mul_of_nonneg_left hinv hc₀
+      _ ≤ C := by
+        dsimp [C]
+        have : 0 ≤ c₀ * rₐ⁻¹ := mul_nonneg hc₀ (inv_nonneg.mpr hrₐ.le)
+        linarith
+
+  have hsechSq (x : ℝ) : |ProbabilityTheory.PriceTanh.sechSq x| ≤ 1 := by
+    have hnonneg : 0 ≤ ProbabilityTheory.PriceTanh.sechSq x := by
+      dsimp [ProbabilityTheory.PriceTanh.sechSq]
+      exact sub_nonneg.mpr (Real.tanh_sq_lt_one x).le
+    rw [abs_of_nonneg hnonneg]
+    dsimp [ProbabilityTheory.PriceTanh.sechSq]
+    nlinarith [sq_nonneg (Real.tanh x)]
+
+  let bound : (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun p =>
+    C * (2 * |p.2.1| + |p.2.2.1| + |p.2.2.2|)
+
+  have hH'bound (p : ℝ × (ℝ × (ℝ × ℝ))) (t : ℝ) (ht : t ∈ J) :
+      |H' t p| ≤ bound p := by
+    have hdy₁ : |dy₁ t p| ≤ C * (|p.2.1| + |p.2.2.1|) := by
+      dsimp [dy₁]
+      calc
+        |da t * p.2.1 + db t * p.2.2.1| ≤
+            |da t * p.2.1| + |db t * p.2.2.1| := abs_add_le _ _
+        _ = |da t| * |p.2.1| + |db t| * |p.2.2.1| := by rw [abs_mul, abs_mul]
+        _ ≤ C * |p.2.1| + C * |p.2.2.1| := by
+          exact add_le_add
+            (mul_le_mul_of_nonneg_right (hda_bound t ht) (abs_nonneg _))
+            (mul_le_mul_of_nonneg_right (hdb_bound t ht) (abs_nonneg _))
+        _ = C * (|p.2.1| + |p.2.2.1|) := by ring
+    have hdy₂ : |dy₂ t p| ≤ C * (|p.2.1| + |p.2.2.2|) := by
+      dsimp [dy₂]
+      calc
+        |-da t * p.2.1 + db t * p.2.2.2| ≤
+            |-da t * p.2.1| + |db t * p.2.2.2| := abs_add_le _ _
+        _ = |da t| * |p.2.1| + |db t| * |p.2.2.2| := by
+          rw [abs_mul, abs_mul, abs_neg]
+        _ ≤ C * |p.2.1| + C * |p.2.2.2| := by
+          exact add_le_add
+            (mul_le_mul_of_nonneg_right (hda_bound t ht) (abs_nonneg _))
+            (mul_le_mul_of_nonneg_right (hdb_bound t ht) (abs_nonneg _))
+        _ = C * (|p.2.1| + |p.2.2.2|) := by ring
+    have hterm₁ :
+        |ProbabilityTheory.PriceTanh.sechSq (y₁ t p) * dy₁ t p * Real.tanh (y₂ t p)|
+          ≤ |dy₁ t p| := by
+      rw [abs_mul, abs_mul]
+      calc
+        |ProbabilityTheory.PriceTanh.sechSq (y₁ t p)| * |dy₁ t p| *
+            |Real.tanh (y₂ t p)| ≤ 1 * |dy₁ t p| * 1 := by
+              gcongr
+              · exact hsechSq _
+              · exact (Real.abs_tanh_lt_one _).le
+        _ = |dy₁ t p| := by ring
+    have hterm₂ :
+        |Real.tanh (y₁ t p) * ProbabilityTheory.PriceTanh.sechSq (y₂ t p) * dy₂ t p|
+          ≤ |dy₂ t p| := by
+      rw [abs_mul, abs_mul]
+      calc
+        |Real.tanh (y₁ t p)| * |ProbabilityTheory.PriceTanh.sechSq (y₂ t p)| *
+            |dy₂ t p| ≤ 1 * 1 * |dy₂ t p| := by
+              gcongr
+              · exact (Real.abs_tanh_lt_one _).le
+              · exact hsechSq _
+        _ = |dy₂ t p| := by ring
+    dsimp [H']
+    calc
+      |ProbabilityTheory.PriceTanh.sechSq (y₁ t p) * dy₁ t p * Real.tanh (y₂ t p) +
+          Real.tanh (y₁ t p) * ProbabilityTheory.PriceTanh.sechSq (y₂ t p) * dy₂ t p| ≤
+          |ProbabilityTheory.PriceTanh.sechSq (y₁ t p) * dy₁ t p * Real.tanh (y₂ t p)| +
+            |Real.tanh (y₁ t p) * ProbabilityTheory.PriceTanh.sechSq (y₂ t p) * dy₂ t p| :=
+        abs_add_le _ _
+      _ ≤ |dy₁ t p| + |dy₂ t p| := add_le_add hterm₁ hterm₂
+      _ ≤ C * (|p.2.1| + |p.2.2.1|) + C * (|p.2.1| + |p.2.2.2|) :=
+        add_le_add hdy₁ hdy₂
+      _ = bound p := by dsimp [bound]; ring
+
+  have hzabs : Integrable (fun z : ℝ => |z|) γ := by
+    dsimp [γ]
+    simpa using integrable_abs_pow_gaussianReal_centered (1 : NNReal) 1
+  have hz₀ : Integrable (fun p : ℝ × (ℝ × (ℝ × ℝ)) => |p.2.1|) μ :=
+    (hzabs.comp_fst (γ.prod γ)).comp_snd γ
+  have hz₁ : Integrable (fun p : ℝ × (ℝ × (ℝ × ℝ)) => |p.2.2.1|) μ :=
+    ((hzabs.comp_fst γ).comp_snd γ).comp_snd γ
+  have hz₂ : Integrable (fun p : ℝ × (ℝ × (ℝ × ℝ)) => |p.2.2.2|) μ :=
+    ((hzabs.comp_snd γ).comp_snd γ).comp_snd γ
+  have hboundInt : Integrable bound μ := by
+    dsimp [bound]
+    exact (((hz₀.const_mul 2).add hz₁).add hz₂).const_mul C
+
+  have hH'meas : AEStronglyMeasurable (H' v) μ := by
+    have hy₁cont : Continuous (y₁ v) := by dsimp [y₁, a, b]; fun_prop
+    have hy₂cont : Continuous (y₂ v) := by dsimp [y₂, a, b]; fun_prop
+    have hdy₁cont : Continuous (dy₁ v) := by dsimp [dy₁, da, db]; fun_prop
+    have hdy₂cont : Continuous (dy₂ v) := by dsimp [dy₂, da, db]; fun_prop
+    have ht₁ : Continuous (fun p => Real.tanh (y₁ v p)) := htanhcont.comp hy₁cont
+    have ht₂ : Continuous (fun p => Real.tanh (y₂ v p)) := htanhcont.comp hy₂cont
+    have hs₁ : Continuous (fun p => ProbabilityTheory.PriceTanh.sechSq (y₁ v p)) := by
+      dsimp [ProbabilityTheory.PriceTanh.sechSq]
+      exact continuous_const.sub (ht₁.pow 2)
+    have hs₂ : Continuous (fun p => ProbabilityTheory.PriceTanh.sechSq (y₂ v p)) := by
+      dsimp [ProbabilityTheory.PriceTanh.sechSq]
+      exact continuous_const.sub (ht₂.pow 2)
+    exact ((hs₁.mul hdy₁cont).mul ht₂).add ((ht₁.mul hs₂).mul hdy₂cont)
+      |>.aestronglyMeasurable
+
+  have hvJ : v ∈ J := by
+    dsimp [J]
+    constructor <;> linarith [hv.1, hv.2]
+  have hJnhds : J ∈ nhds v := Ioo_mem_nhds hvJ.1 hvJ.2
+
+  have hd := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := μ) (F := H) (F' := H') (x₀ := v) (s := J) (bound := bound)
+    hJnhds
+    (Filter.Eventually.of_forall fun t => (hHInt t).aestronglyMeasurable)
+    (hHInt v)
+    hH'meas
+    (Filter.Eventually.of_forall fun p t ht => by
+      simpa [Real.norm_eq_abs] using hH'bound p t ht)
+    hboundInt
+    (Filter.Eventually.of_forall fun p t ht => hHDiff p t ht)
+
+  refine ⟨∫ p, H' v p ∂μ, ?_⟩
+  apply hd.2.congr_of_eventuallyEq
+  filter_upwards [hJnhds] with t ht
+  exact hrepr t ht
+
+
+lemma flatnessTildeGDeriv_eq_deriv
+    (β h s v D : ℝ)
+    (hD :
+      HasDerivAt
+        (fun u => flatnessTildeG β h (rsQ β h) s u)
+        D v) :
+    deriv
+        (fun u => flatnessTildeG β h (rsQ β h) s u) v = D := by
+  exact hD.deriv
+
+lemma flatnessTildeG_continuousOn_neg
+    (β h q s : ℝ) :
+    ContinuousOn
+      (fun v => flatnessTildeG β h q s v)
+      (Set.Icc (-q) 0) := by
+  let γ : Measure ℝ := gaussianReal 0 1
+  let μ : Measure (ℝ × (ℝ × (ℝ × ℝ))) :=
+    γ.prod (γ.prod (γ.prod γ))
+  let a : ℝ → ℝ := fun v => β * Real.sqrt s * Real.sqrt (-v)
+  let b : ℝ → ℝ := fun v => β * Real.sqrt s * Real.sqrt (q + v)
+  let y₁ : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun v p =>
+    h + β * Real.sqrt ((1 - s) * q) * p.1
+      + a v * p.2.1 + b v * p.2.2.1
+  let y₂ : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun v p =>
+    h + β * Real.sqrt ((1 - s) * q) * p.1
+      - a v * p.2.1 + b v * p.2.2.2
+  let H : ℝ → (ℝ × (ℝ × (ℝ × ℝ))) → ℝ := fun v p =>
+    Real.tanh (y₁ v p) * Real.tanh (y₂ v p)
+
+  have htanhcont : Continuous (fun x : ℝ => Real.tanh x) := by
+    simp_rw [Real.tanh_eq_sinh_div_cosh]
+    exact Real.continuous_sinh.div₀ Real.continuous_cosh
+      (fun x => (Real.cosh_pos x).ne')
+
+  have hHbound (v : ℝ) (p : ℝ × (ℝ × (ℝ × ℝ))) : |H v p| ≤ 1 := by
+    dsimp [H]
+    rw [abs_mul]
+    have h₁ := (Real.abs_tanh_lt_one (y₁ v p)).le
+    have h₂ := (Real.abs_tanh_lt_one (y₂ v p)).le
+    nlinarith [abs_nonneg (Real.tanh (y₁ v p)), abs_nonneg (Real.tanh (y₂ v p))]
+
+  have hHcontLeft (v : ℝ) : Continuous (H v) := by
+    dsimp [H, y₁, y₂, a, b]
+    exact (htanhcont.comp (by fun_prop)).mul (htanhcont.comp (by fun_prop))
+
+  have hHcontRight (p : ℝ × (ℝ × (ℝ × ℝ))) :
+      Continuous (fun v => H v p) := by
+    dsimp [H, y₁, y₂, a, b]
+    exact (htanhcont.comp (by fun_prop)).mul (htanhcont.comp (by fun_prop))
+
+  have hGcont : Continuous (fun v => ∫ p, H v p ∂μ) := by
+    rw [continuous_iff_continuousAt]
+    intro v
+    refine continuousAt_of_dominated
+      (Filter.Eventually.of_forall fun u => (hHcontLeft u).aestronglyMeasurable)
+      ?_ (integrable_const 1) ?_
+    · filter_upwards [] with u
+      filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound u p
+    · filter_upwards [] with p
+      exact (hHcontRight p).continuousAt
+
+  have hHInt (v : ℝ) : Integrable (H v) μ := by
+    apply Integrable.of_bound (C := 1)
+    · exact (hHcontLeft v).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound v p
+
+  have hHInt₃ (v z : ℝ) :
+      Integrable (fun p : ℝ × (ℝ × ℝ) => H v (z, p))
+        (γ.prod (γ.prod γ)) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (by
+        dsimp [H, y₁, y₂, a, b]
+        exact (htanhcont.comp (by fun_prop)).mul
+          (htanhcont.comp (by fun_prop)) :
+        Continuous (fun p : ℝ × (ℝ × ℝ) => H v (z, p))).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound v (z, p)
+
+  have hHInt₂ (v z z₀ : ℝ) :
+      Integrable (fun p : ℝ × ℝ => H v (z, z₀, p)) (γ.prod γ) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (by
+        dsimp [H, y₁, y₂, a, b]
+        exact (htanhcont.comp (by fun_prop)).mul
+          (htanhcont.comp (by fun_prop)) :
+        Continuous (fun p : ℝ × ℝ => H v (z, z₀, p))).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hHbound v (z, z₀, p)
+
+  have hrepr (v : ℝ) (hv : v ∈ Set.Icc (-q) 0) :
+      flatnessTildeG β h q s v = ∫ p, H v p ∂μ := by
+    have hprod :
+        (∫ p, H v p ∂μ) =
+          ∫ z, ∫ z₀, ∫ z₁, ∫ z₂, H v (z, z₀, z₁, z₂) ∂γ ∂γ ∂γ ∂γ := by
+      calc
+        (∫ p, H v p ∂μ) =
+            ∫ z, ∫ p, H v (z, p) ∂(γ.prod (γ.prod γ)) ∂γ := by
+              exact integral_prod _ (hHInt v)
+        _ = ∫ z, ∫ z₀, ∫ p, H v (z, z₀, p) ∂(γ.prod γ) ∂γ ∂γ := by
+              apply integral_congr_ae
+              filter_upwards [] with z
+              exact integral_prod _ (hHInt₃ v z)
+        _ = ∫ z, ∫ z₀, ∫ z₁, ∫ z₂, H v (z, z₀, z₁, z₂) ∂γ ∂γ ∂γ ∂γ := by
+              apply integral_congr_ae
+              filter_upwards [] with z
+              apply integral_congr_ae
+              filter_upwards [] with z₀
+              exact integral_prod _ (hHInt₂ v z z₀)
+    rw [hprod]
+    by_cases hv0 : v = 0
+    · subst v
+      simp [flatnessTildeG, standardGaussianExpectation, H, y₁, y₂, a, b, γ,
+        gtIncrementScale]
+    · have hvneg : v < 0 := lt_of_le_of_ne hv.2 hv0
+      simp [flatnessTildeG, standardGaussianExpectation, H, y₁, y₂, a, b, γ,
+        gtIncrementScale, gtPathSign, abs_of_neg hvneg, not_le.mpr hvneg,
+        sub_eq_add_neg]
+
+  refine hGcont.continuousOn.congr ?_
+  intro v hv
+  exact hrepr v hv
+
+lemma flatnessTildeG_zero_eq_deriv_gtFunctional_zero
+    (β h q s : ℝ)
+    (hq : 0 < q) :
+    flatnessTildeG β h q s 0 =
+      deriv
+        (fun lam => gtFunctional β h q s lam 0) 0 := by
+  rw [flatness_deriv_gtFunctional_zero_abs_v_eq_zero
+    β h q s 0 hq abs_zero]
+  simp [flatnessTildeG, gtIncrementScale, standardGaussianExpectation]
+
+lemma flatness_deriv_gtFunctional_zero_pos_of_mem_Ico_zero_q
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    {β h q s v : ℝ}
+    (hp : (β, h) ∈ K)
+    (hq : q = rsQ β h)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hv : v ∈ Set.Ico 0 q) :
+    0 <
+      deriv
+        (fun lam => gtFunctional β h q s lam v) 0 := by
+  subst q
+  exact
+    (flatness_deriv_gtFunctional_zero_sign
+      data hp hs).1 v hv
+
+/- The former negative-overlap branch depended on the unavailable sharp
+Price estimate and is intentionally not part of the weakened claim. -/
+/-
+  subst q
+
+  have hβ : 0 < β := by
+    simpa using data.β_pos (β, h) hp
+
+  have hh : 0 < h := by
+    simpa using data.h_pos (β, h) hp
+
+  have hqpos : 0 < rsQ β h :=
+    rsQ_pos hβ hh
+
+  by_cases hvnonneg : 0 ≤ v
+
+  · exact
+      (flatness_deriv_gtFunctional_zero_sign
+        data hp hs).1 v
+        ⟨hvnonneg, hv.2⟩
+
+  · have hvneg : v < 0 :=
+      lt_of_not_ge hvnonneg
+
+    rw [
+      flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg_rsQ
+        β h s v hβ hh ⟨hv.1, hvneg⟩
+    ]
+
+    let F : ℝ → ℝ :=
+      fun u =>
+        flatnessTildeG
+            β h (rsQ β h) s u
+          - u
+
+    have hAT :
+        atParameter β h < 1 := by
+      exact
+        (data.subset_strictATRegion hp).2.2
+
+    have hsAT :
+        s * atParameter β h < 1 := by
+      by_cases hA : 0 ≤ atParameter β h
+      · have haux :
+            0 ≤
+              (1 - s) * atParameter β h :=
+          mul_nonneg
+            (sub_nonneg.mpr hs.2) hA
+        nlinarith
+      · have hAneg :
+            atParameter β h ≤ 0 :=
+          le_of_not_ge hA
+        have haux :
+            s * atParameter β h ≤ 0 :=
+          mul_nonpos_of_nonneg_of_nonpos
+            hs.1 hAneg
+        linarith
+
+    have hFcont :
+        ContinuousOn F
+          (Set.Icc (-(rsQ β h)) 0) := by
+      dsimp [F]
+      exact
+        (flatnessTildeG_continuousOn_neg
+          β h (rsQ β h) s).sub
+          continuous_id.continuousOn
+
+    have hFderiv :
+        ∀ u ∈
+            interior
+              (Set.Icc (-(rsQ β h)) 0),
+          deriv F u < 0 := by
+      intro u hu
+
+      have hu' :
+          u ∈ Set.Ioo (-(rsQ β h)) 0 := by
+        simpa only [interior_Icc] using hu
+
+      obtain ⟨D, hD, hDle⟩ :=
+        flatnessTildeG_hasDerivAt_le_pathAT_neg
+          β h s u hβ hh hs hu'
+
+      have hDF :
+          HasDerivAt F (D - 1) u := by
+        dsimp [F]
+        exact
+          hD.sub (hasDerivAt_id u)
+
+      rw [hDF.deriv]
+      linarith
+
+    have hanti :
+        StrictAntiOn F
+          (Set.Icc (-(rsQ β h)) 0) := by
+      exact
+        strictAntiOn_of_deriv_neg
+          (convex_Icc _ _)
+          hFcont
+          hFderiv
+
+    have hGTzero :
+        0 <
+          deriv
+            (fun lam =>
+              gtFunctional
+                β h (rsQ β h) s lam 0) 0 := by
+      exact
+        (flatness_deriv_gtFunctional_zero_sign
+          data hp hs).1 0
+          ⟨le_rfl, hqpos⟩
+
+    have hFzero :
+        0 < F 0 := by
+      dsimp [F]
+      rw [
+        flatnessTildeG_zero_eq_deriv_gtFunctional_zero
+          β h (rsQ β h) s hqpos
+      ]
+      simpa using hGTzero
+
+    have hvIcc :
+        v ∈
+          Set.Icc (-(rsQ β h)) 0 :=
+      ⟨hv.1, hvneg.le⟩
+
+    have hzeroIcc :
+        (0 : ℝ) ∈
+          Set.Icc (-(rsQ β h)) 0 :=
+      ⟨by linarith, le_rfl⟩
+
+    have hFzero_lt :
+        F 0 < F v :=
+      hanti hvIcc hzeroIcc hvneg
+
+    have hFv : 0 < F v :=
+      hFzero.trans hFzero_lt
+
+    simpa [F] using hFv
+-/
+
+
+
 theorem gtFunctional_uniform_quadratic_gap {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ c > 0, ∀ {β h q s v : ℝ},
