@@ -899,23 +899,6 @@ lemma flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg_rsQ
       ⟨rsQ_pos hβ hh, rsQ_lt_one hβ hh⟩
       hv
 
-lemma flatness_deriv_gtFunctional_zero_abs_v_eq_one
-    (β h q s v : ℝ) (hq : 0 < q) (hq1 : q ≤ 1) (hv : |v| = 1) :
-    deriv (fun l => gtFunctional β h q s l v) 0 =
-    standardGaussianExpectation (fun z =>
-      standardGaussianExpectation (fun z₀ =>
-        gtHalfStepEndpoint (gtIncrementScale β s q 1)
-          (gtIncrementScale β s 1 1) (gtPathSign v)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtIncrementScale β s 0 q * z₀)
-          (h + β * Real.sqrt ((1 - s) * q) * z +
-            gtPathSign v * gtIncrementScale β s 0 q * z₀))) - v := by
-  rw [deriv_gtFunctional_eq]
-  apply congrArg (fun y : ℝ => y - v)
-  apply congrArg standardGaussianExpectation
-  funext z
-  exact flatness_deriv_U_abs_v_eq_one β q s v _ _ hq hq1 hv
-
 /-- Positive-overlap functional endpoint formula in tilted-semigroup form. -/
 lemma flatness_deriv_gtFunctional_zero_q_le_v_lt_one
     (β h q s v : ℝ) (hβ : 0 ≤ β) (hs : 0 ≤ s)
@@ -1991,36 +1974,6 @@ lemma gtEnvelope_eq_functional_of_global_min
 /-!
 ## Turning a fixed negative-overlap gap into a quadratic gap
 -/
-
-/--
-On `-1 ≤ v ≤ -q`, the distance `|v-q|` is at most `2`.
--/
-lemma sub_sq_le_four_of_negative_overlap
-    {q v : ℝ}
-    (hq0 : 0 ≤ q)
-    (hv : v ∈ Icc (-1 : ℝ) (-q)) :
-    (v - q) ^ 2 ≤ 4 := by
-
-  have hv_lower : -1 ≤ v := hv.1
-  have hv_upper : v ≤ -q := hv.2
-
-  have hq1 : q ≤ 1 := by
-    linarith
-
-  have hdiff_lower : -2 ≤ v - q := by
-    linarith
-
-  have hdiff_upper : v - q ≤ 0 := by
-    linarith
-
-  have hprod :
-      0 ≤ ((v - q) + 2) * (2 - (v - q)) := by
-    apply mul_nonneg
-    · linarith
-    · linarith
-
-  nlinarith
-
 
 /-!
 ## Pass from the unoptimized functional to the envelope
@@ -3247,7 +3200,8 @@ lemma flatnessTildeG_deriv_lt_one_neg
       rw [flatness_price_sechSq_eq_cosh,
         flatness_price_sechSq_eq_cosh]
       convert flatness_mul_sech_sq_le_average_sech_fourth
-        (h + x 0) (h + x 1) using 1 <;> ring
+        (h + x 0) (h + x 1) using 1
+      all_goals ring
     have hgint (i : FlatnessPair) :
         Integrable (fun x : EuclideanSpace ℝ FlatnessPair => g (x i)) μ := by
       apply Integrable.of_bound (C := 1)
@@ -3671,16 +3625,6 @@ lemma flatnessTildeG_hasDerivAt_neg
   exact hrepr t ht
 
 
-lemma flatnessTildeGDeriv_eq_deriv
-    (β h s v D : ℝ)
-    (hD :
-      HasDerivAt
-        (fun u => flatnessTildeG β h (rsQ β h) s u)
-        D v) :
-    deriv
-        (fun u => flatnessTildeG β h (rsQ β h) s u) v = D := by
-  exact hD.deriv
-
 lemma flatnessTildeG_continuousOn_neg
     (β h q s : ℝ) :
     ContinuousOn
@@ -3805,22 +3749,10 @@ lemma flatnessTildeG_zero_eq_deriv_gtFunctional_zero
     β h q s 0 hq abs_zero]
   simp [flatnessTildeG, gtIncrementScale, standardGaussianExpectation]
 
-lemma flatness_deriv_gtFunctional_zero_pos_of_mem_Ico_zero_q
-    {K : Set (ℝ × ℝ)}
-    (data : UniformATData K)
-    {β h q s v : ℝ}
-    (hp : (β, h) ∈ K)
-    (hq : q = rsQ β h)
-    (hs : s ∈ Set.Icc (0 : ℝ) 1)
-    (hv : v ∈ Set.Ico 0 q) :
-    0 <
-      deriv
-        (fun lam => gtFunctional β h q s lam v) 0 := by
-  subst q
-  exact
-    (flatness_deriv_gtFunctional_zero_sign
-      data hp hs).1 v hv
-
-
+/-!
+Case-specific consequences live in `Lemmas.GTFlatness_cases` modules.
+They import this shared file, keeping the common GT recursion, derivative
+formulas, and envelope lemmas free of import cycles.
+-/
 
 end SpinGlass.AT
