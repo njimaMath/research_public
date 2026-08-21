@@ -1,41 +1,70 @@
 import Lemmas.Price.Cosh
 
 /-!
-# Gaussian covariance differentiation
+# Price's formula for a product of hyperbolic tangents
 
-Compatibility entry point for the modular Price development.
+For fixed `A q s h`, let
+
+  ρ(B) = (1 - s) q + s B
+
+and let `(Y₁(B), Y₂(B))` be Gaussian with common mean `h`,
+common variance `A`, and covariance `A * ρ(B)`.
+
+Then
+
+  d/dB E[tanh(Y₁(B)) tanh(Y₂(B))]
+    = A * s * E[sech²(Y₁(B)) sech²(Y₂(B))].
 -/
+
+open Matrix MeasureTheory Set
+open scoped RealInnerProductSpace
 
 namespace ProbabilityTheory.PriceTanh
 
-/-- The derivative of `tanh`, in the form that occurs in Price's theorem. -/
-noncomputable def sechSq (x : ℝ) : ℝ := 1 - Real.tanh x ^ 2
+abbrev Pair := Fin 2
 
-lemma tanh_hasDerivAt (x : ℝ) : HasDerivAt Real.tanh (sechSq x) x := by
+/-- `sech² x = 1 - tanh² x`. -/
+noncomputable def sechSq (x : ℝ) : ℝ :=
+  1 - Real.tanh x ^ 2
+
+lemma tanh_hasDerivAt (x : ℝ) :
+    HasDerivAt Real.tanh (sechSq x) x := by
   have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
   rw [show Real.tanh = fun y => Real.sinh y / Real.cosh y by
     funext y
     exact Real.tanh_eq_sinh_div_cosh y]
-  apply ((Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x) hc).congr_deriv
+  apply ((Real.hasDerivAt_sinh x).div
+    (Real.hasDerivAt_cosh x) hc).congr_deriv
   rw [sechSq, Real.tanh_eq_sinh_div_cosh]
   field_simp [hc]
 
-/-- The partial derivative in the first variable of
-`(x,y) ↦ tanh x * tanh y`. -/
-lemma hasDerivAt_tanh_mul_tanh_left (x y : ℝ) :
-    HasDerivAt (fun u => Real.tanh u * Real.tanh y)
-      (sechSq x * Real.tanh y) x := by
-  simpa using (tanh_hasDerivAt x).mul_const (Real.tanh y)
+/-- The correlation parameter along the interpolation. -/
+noncomputable def rho (q s B : ℝ) : ℝ :=
+  (1 - s) * q + s * B
 
-/-- The mixed derivative needed to apply Price's theorem to
-`E[tanh(Y₁(t)) tanh(Y₂(t))]`:
-`∂₂ ∂₁ (tanh x * tanh y) = (1 - tanh² x) (1 - tanh² y)`. -/
-lemma hasDerivAt_tanh_mul_tanh_mixed (x y : ℝ) :
-    HasDerivAt (fun v => sechSq x * Real.tanh v)
-      (sechSq x * sechSq y) y := by
-  simpa using (tanh_hasDerivAt y).const_mul (sechSq x)
+/-- Covariance matrix of the centered pair `(Y₁-h, Y₂-h)`. -/
+noncomputable def tanhCov
+    (A q s B : ℝ) : Matrix Pair Pair ℝ :=
+  fun i j =>
+    if i = j then A else A * rho q s B
 
-/-- The mixed derivative appearing under the Gaussian expectation in Price's identity. -/
-noncomputable def tanhPriceIntegrand (x y : ℝ) : ℝ := sechSq x * sechSq y
+/-- Derivative of the covariance matrix with respect to `B`. -/
+noncomputable def tanhCovDot
+    (A s : ℝ) : Matrix Pair Pair ℝ :=
+  fun i j =>
+    if i = j then 0 else A * s
 
-end ProbabilityTheory.PriceTanh
+/-- Observable after centering the Gaussian pair. -/
+noncomputable def tanhPair
+    (h : ℝ) (z : EuclideanSpace ℝ Pair) : ℝ :=
+  Real.tanh (h + z 0) * Real.tanh (h + z 1)
+
+/-- Price integrand after centering the Gaussian pair. -/
+noncomputable def tanhPriceIntegrand
+    (h : ℝ) (z : EuclideanSpace ℝ Pair) : ℝ :=
+  sechSq (h + z 0) * sechSq (h + z 1)
+
+/-- Gaussian expectation defining `g̃_s(B)`. -/
+noncomputable def tildeG
+    (A q s h B : ℝ) : ℝ :=
+  Gint (tanhPair h) (tanhCov A q s B)

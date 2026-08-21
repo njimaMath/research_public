@@ -2451,6 +2451,621 @@ lemma sub_sq_le_four_of_overlap
 
 
 
+private abbrev FlatnessPair := Fin 2
+
+private def flatnessTanhPair (h : ℝ) : EuclideanSpace ℝ FlatnessPair → ℝ :=
+  fun x => Real.tanh (h + x 0) * Real.tanh (h + x 1)
+
+private lemma flatness_tanhPair_contDiff (h : ℝ) : ContDiff ℝ 2 (flatnessTanhPair h) := by
+  unfold flatnessTanhPair
+  simp_rw [Real.tanh_eq_sinh_div_cosh]
+  apply ((Real.contDiff_sinh.comp (by fun_prop)).div
+    (Real.contDiff_cosh.comp (by fun_prop)) (fun x => (Real.cosh_pos _).ne')).mul
+  exact (Real.contDiff_sinh.comp (by fun_prop)).div
+    (Real.contDiff_cosh.comp (by fun_prop)) (fun x => (Real.cosh_pos _).ne')
+
+private lemma flatness_tanhPair_fderiv (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    fderiv ℝ (flatnessTanhPair h) x =
+      Real.tanh (h + x 1) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 0) •
+            EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) +
+        Real.tanh (h + x 0) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 1) •
+            EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) := by
+  have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 0)
+      (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) x := by
+    simpa using (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)).hasFDerivAt.const_add h
+  have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)
+      (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) x := by
+    simpa using (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)).hasFDerivAt.const_add h
+  have ht0 := (ProbabilityTheory.PriceTanh.tanh_hasDerivAt (h + x 0)).hasFDerivAt.comp x h0
+  have ht1 := (ProbabilityTheory.PriceTanh.tanh_hasDerivAt (h + x 1)).hasFDerivAt.comp x h1
+  have hp := ht0.mul ht1
+  change fderiv ℝ ((Real.tanh ∘ fun y : EuclideanSpace ℝ FlatnessPair => h + y 0) *
+    (Real.tanh ∘ fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)) x = _
+  rw [hp.fderiv]
+  ext y
+  simp
+  ring
+
+private lemma flatness_abs_sechSq_le_one (x : ℝ) :
+    |ProbabilityTheory.PriceTanh.sechSq x| ≤ 1 := by
+  rw [ProbabilityTheory.PriceTanh.sechSq,
+    abs_of_nonneg (sub_nonneg.mpr (Real.tanh_sq_lt_one x).le)]
+  nlinarith [sq_nonneg (Real.tanh x)]
+
+private lemma flatness_proj_norm_le_one (i : FlatnessPair) :
+    ‖EuclideanSpace.proj (𝕜 := ℝ) i‖ ≤ 1 := by
+  exact ContinuousLinearMap.opNorm_le_bound _ (by norm_num) fun y => by
+    change |y i| ≤ 1 * ‖y‖
+    rw [← ProbabilityTheory.inner_euclidBasis]
+    simpa [ProbabilityTheory.norm_euclidBasis] using
+      (abs_real_inner_le_norm (ProbabilityTheory.euclidBasis (n := FlatnessPair) i) y)
+
+private lemma flatness_sechSq_hasDerivAt (x : ℝ) :
+    HasDerivAt ProbabilityTheory.PriceTanh.sechSq
+      (-2 * Real.tanh x * ProbabilityTheory.PriceTanh.sechSq x) x := by
+  change HasDerivAt (fun y => 1 - Real.tanh y ^ 2)
+    (-2 * Real.tanh x * (1 - Real.tanh x ^ 2)) x
+  have hd0 := (hasDerivAt_const x (1 : ℝ)).sub
+    ((ProbabilityTheory.PriceTanh.tanh_hasDerivAt x).pow 2)
+  have hfun : (fun y : ℝ => 1 - Real.tanh y ^ 2) =
+      (fun _ : ℝ => 1) - Real.tanh ^ 2 := by
+    funext y
+    rfl
+  rw [hfun]
+  exact hd0.congr_deriv (by
+    simp [ProbabilityTheory.PriceTanh.sechSq])
+
+private noncomputable def flatnessCoeff0 (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) : ℝ :=
+  Real.tanh (h + x 1) * ProbabilityTheory.PriceTanh.sechSq (h + x 0)
+
+private noncomputable def flatnessCoeff1 (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) : ℝ :=
+  Real.tanh (h + x 0) * ProbabilityTheory.PriceTanh.sechSq (h + x 1)
+
+private lemma flatness_coeff0_fderiv_bound (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    ‖fderiv ℝ (flatnessCoeff0 h) x‖ ≤ 3 := by
+  have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 0)
+      (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) x := by
+    simpa using (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)).hasFDerivAt.const_add h
+  have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)
+      (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) x := by
+    simpa using (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)).hasFDerivAt.const_add h
+  have ht := (ProbabilityTheory.PriceTanh.tanh_hasDerivAt (h + x 1)).hasFDerivAt.comp x h1
+  have hs := (flatness_sechSq_hasDerivAt (h + x 0)).hasFDerivAt.comp x h0
+  have hp := ht.mul hs
+  change ‖fderiv ℝ ((Real.tanh ∘ fun y : EuclideanSpace ℝ FlatnessPair => h + y 1) *
+    (ProbabilityTheory.PriceTanh.sechSq ∘ fun y : EuclideanSpace ℝ FlatnessPair => h + y 0)) x‖ ≤ 3
+  rw [hp.fderiv]
+  have heq :
+      (Real.tanh (h + x 1) •
+          (ContinuousLinearMap.toSpanSingleton ℝ
+            (-2 * Real.tanh (h + x 0) * ProbabilityTheory.PriceTanh.sechSq (h + x 0))).comp
+              (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) +
+        ProbabilityTheory.PriceTanh.sechSq (h + x 0) •
+          (ContinuousLinearMap.toSpanSingleton ℝ
+            (ProbabilityTheory.PriceTanh.sechSq (h + x 1))).comp
+              (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair))) =
+      (Real.tanh (h + x 1) • ((-2 * Real.tanh (h + x 0) *
+          ProbabilityTheory.PriceTanh.sechSq (h + x 0)) • EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) +
+        ProbabilityTheory.PriceTanh.sechSq (h + x 0) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 1) • EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair))) := by
+    ext y
+    simp
+    ring
+  simp only [Function.comp_apply]
+  rw [heq]
+  calc
+    _ ≤ ‖Real.tanh (h + x 1) • ((-2 * Real.tanh (h + x 0) *
+          ProbabilityTheory.PriceTanh.sechSq (h + x 0)) • EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair))‖ +
+        ‖ProbabilityTheory.PriceTanh.sechSq (h + x 0) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 1) • EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair))‖ := norm_add_le _ _
+    _ ≤ 2 + 1 := by
+      apply add_le_add
+      · simp only [norm_smul, Real.norm_eq_abs, abs_mul]
+        have ht1 := (Real.abs_tanh_lt_one (h + x 1)).le
+        have ht0 := (Real.abs_tanh_lt_one (h + x 0)).le
+        have hs0 := flatness_abs_sechSq_le_one (h + x 0)
+        have hp0 := flatness_proj_norm_le_one (0 : FlatnessPair)
+        have hBCD : |Real.tanh (h + x 0)| *
+            |ProbabilityTheory.PriceTanh.sechSq (h + x 0)| *
+              ‖EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)‖ ≤ 1 :=
+          mul_le_one₀ (mul_le_one₀ ht0 (abs_nonneg _) hs0) (norm_nonneg _) hp0
+        have hABCD : |Real.tanh (h + x 1)| *
+            (|Real.tanh (h + x 0)| *
+              |ProbabilityTheory.PriceTanh.sechSq (h + x 0)| *
+                ‖EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)‖) ≤ 1 :=
+          mul_le_one₀ ht1 (mul_nonneg (mul_nonneg (abs_nonneg _) (abs_nonneg _)) (norm_nonneg _)) hBCD
+        rw [show |(-2 : ℝ)| = 2 by norm_num]
+        calc
+          _ = 2 * (|Real.tanh (h + x 1)| *
+            (|Real.tanh (h + x 0)| * |ProbabilityTheory.PriceTanh.sechSq (h + x 0)| *
+              ‖EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)‖)) := by ring
+          _ ≤ 2 * 1 := mul_le_mul_of_nonneg_left hABCD (by norm_num)
+          _ = 2 := by norm_num
+      · simp only [norm_smul, Real.norm_eq_abs]
+        have hs0 := flatness_abs_sechSq_le_one (h + x 0)
+        have hs1 := flatness_abs_sechSq_le_one (h + x 1)
+        have hp1 := flatness_proj_norm_le_one (1 : FlatnessPair)
+        have hBC := mul_le_one₀ hs1 (norm_nonneg _) hp1
+        exact mul_le_one₀ hs0 (mul_nonneg (abs_nonneg _) (norm_nonneg _)) hBC
+    _ = 3 := by norm_num
+
+private lemma flatness_coeff1_fderiv_bound (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    ‖fderiv ℝ (flatnessCoeff1 h) x‖ ≤ 3 := by
+  -- The proof is the coordinate-swapped copy of `flatness_coeff0_fderiv_bound`.
+  unfold flatnessCoeff1
+  have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 0)
+      (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) x := by
+    simpa using (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)).hasFDerivAt.const_add h
+  have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)
+      (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) x := by
+    simpa using (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)).hasFDerivAt.const_add h
+  have ht := (ProbabilityTheory.PriceTanh.tanh_hasDerivAt (h + x 0)).hasFDerivAt.comp x h0
+  have hs := (flatness_sechSq_hasDerivAt (h + x 1)).hasFDerivAt.comp x h1
+  have hp := ht.mul hs
+  change ‖fderiv ℝ ((Real.tanh ∘ fun y : EuclideanSpace ℝ FlatnessPair => h + y 0) *
+    (ProbabilityTheory.PriceTanh.sechSq ∘ fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)) x‖ ≤ 3
+  rw [hp.fderiv]
+  have heq :
+      (Real.tanh (h + x 0) •
+          (ContinuousLinearMap.toSpanSingleton ℝ
+            (-2 * Real.tanh (h + x 1) * ProbabilityTheory.PriceTanh.sechSq (h + x 1))).comp
+              (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) +
+        ProbabilityTheory.PriceTanh.sechSq (h + x 1) •
+          (ContinuousLinearMap.toSpanSingleton ℝ
+            (ProbabilityTheory.PriceTanh.sechSq (h + x 0))).comp
+              (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair))) =
+      (Real.tanh (h + x 0) • ((-2 * Real.tanh (h + x 1) *
+          ProbabilityTheory.PriceTanh.sechSq (h + x 1)) • EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) +
+        ProbabilityTheory.PriceTanh.sechSq (h + x 1) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 0) • EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair))) := by
+    ext y
+    simp
+    ring
+  simp only [Function.comp_apply]
+  rw [heq]
+  calc
+    _ ≤ ‖Real.tanh (h + x 0) • ((-2 * Real.tanh (h + x 1) *
+          ProbabilityTheory.PriceTanh.sechSq (h + x 1)) • EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair))‖ +
+        ‖ProbabilityTheory.PriceTanh.sechSq (h + x 1) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 0) • EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair))‖ := norm_add_le _ _
+    _ ≤ 2 + 1 := by
+      apply add_le_add
+      · simp only [norm_smul, Real.norm_eq_abs, abs_mul]
+        have ht0 := (Real.abs_tanh_lt_one (h + x 0)).le
+        have ht1 := (Real.abs_tanh_lt_one (h + x 1)).le
+        have hs1 := flatness_abs_sechSq_le_one (h + x 1)
+        have hp1 := flatness_proj_norm_le_one (1 : FlatnessPair)
+        have hBCD : |Real.tanh (h + x 1)| *
+            |ProbabilityTheory.PriceTanh.sechSq (h + x 1)| *
+              ‖EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)‖ ≤ 1 :=
+          mul_le_one₀ (mul_le_one₀ ht1 (abs_nonneg _) hs1) (norm_nonneg _) hp1
+        have hABCD : |Real.tanh (h + x 0)| *
+            (|Real.tanh (h + x 1)| *
+              |ProbabilityTheory.PriceTanh.sechSq (h + x 1)| *
+                ‖EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)‖) ≤ 1 :=
+          mul_le_one₀ ht0 (mul_nonneg (mul_nonneg (abs_nonneg _) (abs_nonneg _)) (norm_nonneg _)) hBCD
+        rw [show |(-2 : ℝ)| = 2 by norm_num]
+        calc
+          _ = 2 * (|Real.tanh (h + x 0)| *
+            (|Real.tanh (h + x 1)| * |ProbabilityTheory.PriceTanh.sechSq (h + x 1)| *
+              ‖EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)‖)) := by ring
+          _ ≤ 2 * 1 := mul_le_mul_of_nonneg_left hABCD (by norm_num)
+          _ = 2 := by norm_num
+      · simp only [norm_smul, Real.norm_eq_abs]
+        have hs1 := flatness_abs_sechSq_le_one (h + x 1)
+        have hs0 := flatness_abs_sechSq_le_one (h + x 0)
+        have hp0 := flatness_proj_norm_le_one (0 : FlatnessPair)
+        have hBC := mul_le_one₀ hs0 (norm_nonneg _) hp0
+        exact mul_le_one₀ hs1 (mul_nonneg (abs_nonneg _) (norm_nonneg _)) hBC
+    _ = 3 := by norm_num
+
+private lemma flatness_tanhPair_fderiv_coeff (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    fderiv ℝ (flatnessTanhPair h) x =
+      flatnessCoeff0 h x • EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair) +
+        flatnessCoeff1 h x • EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair) := by
+  rw [flatness_tanhPair_fderiv]
+  ext y
+  simp [flatnessCoeff0, flatnessCoeff1]
+  ring
+
+private lemma flatness_tanhPair_hess_bound (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    ‖PriceFourier.hess (flatnessTanhPair h) x‖ ≤ 6 := by
+  have hc0diff : DifferentiableAt ℝ (flatnessCoeff0 h) x := by
+    unfold flatnessCoeff0
+    have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 0)
+        (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) x := by
+      simpa using (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)).hasFDerivAt.const_add h
+    have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)
+        (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) x := by
+      simpa using (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)).hasFDerivAt.const_add h
+    exact ((ProbabilityTheory.PriceTanh.tanh_hasDerivAt _).hasFDerivAt.comp x h1).differentiableAt.mul
+      ((flatness_sechSq_hasDerivAt _).hasFDerivAt.comp x h0).differentiableAt
+  have hc1diff : DifferentiableAt ℝ (flatnessCoeff1 h) x := by
+    unfold flatnessCoeff1
+    have h0 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 0)
+        (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)) x := by
+      simpa using (EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)).hasFDerivAt.const_add h
+    have h1 : HasFDerivAt (fun y : EuclideanSpace ℝ FlatnessPair => h + y 1)
+        (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)) x := by
+      simpa using (EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)).hasFDerivAt.const_add h
+    exact ((ProbabilityTheory.PriceTanh.tanh_hasDerivAt _).hasFDerivAt.comp x h0).differentiableAt.mul
+      ((flatness_sechSq_hasDerivAt _).hasFDerivAt.comp x h1).differentiableAt
+  let L0 := EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)
+  let L1 := EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)
+  have hd0 := hc0diff.hasFDerivAt.smul_const L0
+  have hd1 := hc1diff.hasFDerivAt.smul_const L1
+  have hd := hd0.add hd1
+  have hfun : fderiv ℝ (flatnessTanhPair h) = fun y => flatnessCoeff0 h y • L0 + flatnessCoeff1 h y • L1 := by
+    funext y
+    exact flatness_tanhPair_fderiv_coeff h y
+  rw [PriceFourier.hess, hfun]
+  change ‖fderiv ℝ ((fun y => flatnessCoeff0 h y • L0) +
+    (fun y => flatnessCoeff1 h y • L1)) x‖ ≤ 6
+  rw [hd.fderiv]
+  apply ContinuousLinearMap.opNorm_le_bound _ (by norm_num)
+  intro y
+  simp only [add_apply]
+  calc
+    ‖(fderiv ℝ (flatnessCoeff0 h) x y) • L0 + (fderiv ℝ (flatnessCoeff1 h) x y) • L1‖ ≤
+        ‖(fderiv ℝ (flatnessCoeff0 h) x y) • L0‖ + ‖(fderiv ℝ (flatnessCoeff1 h) x y) • L1‖ := norm_add_le _ _
+    _ ≤ (3 * ‖y‖) * 1 + (3 * ‖y‖) * 1 := by
+      apply add_le_add
+      · rw [norm_smul, Real.norm_eq_abs]
+        apply mul_le_mul
+        · exact (ContinuousLinearMap.le_opNorm _ y).trans
+            (mul_le_mul_of_nonneg_right (flatness_coeff0_fderiv_bound h x) (norm_nonneg y))
+        · exact flatness_proj_norm_le_one _
+        · exact norm_nonneg _
+        · positivity
+      · rw [norm_smul, Real.norm_eq_abs]
+        apply mul_le_mul
+        · exact (ContinuousLinearMap.le_opNorm _ y).trans
+            (mul_le_mul_of_nonneg_right (flatness_coeff1_fderiv_bound h x) (norm_nonneg y))
+        · exact flatness_proj_norm_le_one _
+        · exact norm_nonneg _
+        · positivity
+    _ = 6 * ‖y‖ := by ring
+
+private lemma flatness_tanhPair_hess_mixed_zero_one (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    (PriceFourier.hess (flatnessTanhPair h) x)
+      (ProbabilityTheory.euclidBasis (n := FlatnessPair) 0)
+      (ProbabilityTheory.euclidBasis (n := FlatnessPair) 1) =
+        ProbabilityTheory.PriceTanh.sechSq (h + x 0) *
+          ProbabilityTheory.PriceTanh.sechSq (h + x 1) := by
+  let e0 := ProbabilityTheory.euclidBasis (n := FlatnessPair) (0 : FlatnessPair)
+  let e1 := ProbabilityTheory.euclidBasis (n := FlatnessPair) (1 : FlatnessPair)
+  have hline : HasDerivAt (fun t : ℝ => x + t • e0) e0 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e0).const_add x
+  have hh0 := PriceFourier.hasFDerivAt_fderiv_apply (flatness_tanhPair_contDiff h) e1 (x + (0 : ℝ) • e0)
+  have hh := hh0.comp_hasDerivAt 0 hline
+  have hfun : (fun t : ℝ => fderiv ℝ (flatnessTanhPair h) (x + t • e0) e1) =
+      fun t => Real.tanh (h + x 0 + t) *
+        ProbabilityTheory.PriceTanh.sechSq (h + x 1) := by
+    funext t
+    rw [flatness_tanhPair_fderiv_coeff]
+    simp [flatnessCoeff0, flatnessCoeff1, e0, e1, ProbabilityTheory.euclidBasis]
+    left
+    congr 1
+    ring
+  change HasDerivAt (fun t : ℝ => fderiv ℝ (flatnessTanhPair h) (x + t • e0) e1) _ 0 at hh
+  simp only [zero_smul, add_zero, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.apply_apply] at hh
+  rw [hfun] at hh
+  have hd := ((ProbabilityTheory.PriceTanh.tanh_hasDerivAt (h + x 0 + 0)).comp 0
+    ((hasDerivAt_id (0 : ℝ)).const_add (h + x 0))).mul_const
+      (ProbabilityTheory.PriceTanh.sechSq (h + x 1))
+  have heq := hh.unique hd
+  simpa [e0, e1, PriceFourier.hess] using heq
+
+private lemma flatness_tanhPair_hess_mixed_one_zero (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    (PriceFourier.hess (flatnessTanhPair h) x)
+      (ProbabilityTheory.euclidBasis (n := FlatnessPair) 1)
+      (ProbabilityTheory.euclidBasis (n := FlatnessPair) 0) =
+        ProbabilityTheory.PriceTanh.sechSq (h + x 0) *
+          ProbabilityTheory.PriceTanh.sechSq (h + x 1) := by
+  let e0 := ProbabilityTheory.euclidBasis (n := FlatnessPair) (0 : FlatnessPair)
+  let e1 := ProbabilityTheory.euclidBasis (n := FlatnessPair) (1 : FlatnessPair)
+  have hline : HasDerivAt (fun t : ℝ => x + t • e1) e1 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e1).const_add x
+  have hh0 := PriceFourier.hasFDerivAt_fderiv_apply (flatness_tanhPair_contDiff h) e0 (x + (0 : ℝ) • e1)
+  have hh := hh0.comp_hasDerivAt 0 hline
+  have hfun : (fun t : ℝ => fderiv ℝ (flatnessTanhPair h) (x + t • e1) e0) =
+      fun t => ProbabilityTheory.PriceTanh.sechSq (h + x 0) *
+        Real.tanh (h + x 1 + t) := by
+    funext t
+    rw [flatness_tanhPair_fderiv_coeff]
+    simp [flatnessCoeff0, flatnessCoeff1, e0, e1, ProbabilityTheory.euclidBasis]
+    rw [show h + (x 1 + t) = h + x 1 + t by ring]
+    ring
+  change HasDerivAt (fun t : ℝ => fderiv ℝ (flatnessTanhPair h) (x + t • e1) e0) _ 0 at hh
+  simp only [zero_smul, add_zero, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.apply_apply] at hh
+  rw [hfun] at hh
+  have hd := ((ProbabilityTheory.PriceTanh.tanh_hasDerivAt (h + x 1 + 0)).comp 0
+    ((hasDerivAt_id (0 : ℝ)).const_add (h + x 1))).const_mul
+      (ProbabilityTheory.PriceTanh.sechSq (h + x 0))
+  have heq := hh.unique hd
+  simpa [e0, e1, PriceFourier.hess] using heq
+
+private lemma flatness_tanhPair_fderiv_bound (h : ℝ) (x : EuclideanSpace ℝ FlatnessPair) :
+    ‖fderiv ℝ (flatnessTanhPair h) x‖ ≤ 2 := by
+  rw [flatness_tanhPair_fderiv]
+  calc
+    _ ≤ ‖Real.tanh (h + x 1) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 0) •
+            EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair))‖ +
+        ‖Real.tanh (h + x 0) •
+          (ProbabilityTheory.PriceTanh.sechSq (h + x 1) •
+            EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair))‖ := norm_add_le _ _
+    _ ≤ 1 + 1 := by
+      apply add_le_add
+      · rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+        have hp : ‖EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)‖ ≤ 1 := by
+          exact ContinuousLinearMap.opNorm_le_bound _ (by norm_num) fun y => by
+            change |y 0| ≤ 1 * ‖y‖
+            rw [← ProbabilityTheory.inner_euclidBasis]
+            simpa [ProbabilityTheory.norm_euclidBasis] using
+              (abs_real_inner_le_norm (ProbabilityTheory.euclidBasis (n := FlatnessPair) 0) y)
+        calc
+          _ ≤ 1 * (|ProbabilityTheory.PriceTanh.sechSq (h + x 0)| *
+              ‖EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)‖) :=
+            mul_le_mul_of_nonneg_right (Real.abs_tanh_lt_one _).le (mul_nonneg (abs_nonneg _) (norm_nonneg _))
+          _ ≤ 1 * (1 * ‖EuclideanSpace.proj (𝕜 := ℝ) (0 : FlatnessPair)‖) := by gcongr; exact flatness_abs_sechSq_le_one _
+          _ ≤ 1 * (1 * 1) := by gcongr
+          _ = 1 := by norm_num
+      · rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+        have hp : ‖EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)‖ ≤ 1 := by
+          exact ContinuousLinearMap.opNorm_le_bound _ (by norm_num) fun y => by
+            change |y 1| ≤ 1 * ‖y‖
+            rw [← ProbabilityTheory.inner_euclidBasis]
+            simpa [ProbabilityTheory.norm_euclidBasis] using
+              (abs_real_inner_le_norm (ProbabilityTheory.euclidBasis (n := FlatnessPair) 1) y)
+        calc
+          _ ≤ 1 * (|ProbabilityTheory.PriceTanh.sechSq (h + x 1)| *
+              ‖EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)‖) :=
+            mul_le_mul_of_nonneg_right (Real.abs_tanh_lt_one _).le (mul_nonneg (abs_nonneg _) (norm_nonneg _))
+          _ ≤ 1 * (1 * ‖EuclideanSpace.proj (𝕜 := ℝ) (1 : FlatnessPair)‖) := by gcongr; exact flatness_abs_sechSq_le_one _
+          _ ≤ 1 * (1 * 1) := by gcongr
+          _ = 1 := by norm_num
+    _ = 2 := by norm_num
+
+private lemma flatness_stdGaussian_fin_two_eq_map_prod :
+    ProbabilityTheory.PriceGaussian.stdGaussian FlatnessPair =
+      (gaussianReal 0 1 |>.prod <| gaussianReal 0 1).map
+        (fun p : ℝ × ℝ => WithLp.toLp 2 ![p.1, p.2]) := by
+  let γ : Measure ℝ := gaussianReal 0 1
+  let e : (FlatnessPair → ℝ) ≃ᵐ (ℝ × ℝ) := MeasurableEquiv.finTwoArrow
+  have he : MeasurePreserving e (Measure.pi fun _ : FlatnessPair => γ) (γ.prod γ) :=
+    measurePreserving_finTwoArrow γ
+  have hinv : Measure.map e.symm (γ.prod γ) = Measure.pi fun _ : FlatnessPair => γ := by
+    rw [← he.map_eq, Measure.map_map e.symm.measurable e.measurable]
+    simp
+  rw [ProbabilityTheory.PriceGaussian.stdGaussian, ← hinv,
+    Measure.map_map (by fun_prop) e.symm.measurable]
+  congr 1
+
+private noncomputable def flatnessTildeGCov (β q s v : ℝ) : Matrix FlatnessPair FlatnessPair ℝ :=
+  fun i j => if i = j then β ^ 2 * q else β ^ 2 * ((1 - s) * q + s * v)
+
+private noncomputable def flatnessPriceMatM (β q s v : ℝ) : Matrix FlatnessPair FlatnessPair ℝ :=
+  let c := β * Real.sqrt ((1 - s) * q)
+  let a := β * Real.sqrt s * Real.sqrt (-v)
+  fun i j => if i = 0 then (if j = 0 then c else a)
+    else (if j = 0 then c else -a)
+
+private noncomputable def flatnessPriceMatN (β q s v : ℝ) : Matrix FlatnessPair FlatnessPair ℝ :=
+  let b := β * Real.sqrt s * Real.sqrt (q + v)
+  fun i j => if i = j then b else 0
+
+private lemma flatness_price_matrices_cov (β q s v : ℝ)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hv : v ∈ Set.Ioo (-q) 0) :
+    flatnessPriceMatM β q s v * Matrix.transpose (flatnessPriceMatM β q s v) +
+      flatnessPriceMatN β q s v * Matrix.transpose (flatnessPriceMatN β q s v) =
+        flatnessTildeGCov β q s v := by
+  have hq : 0 < q := by linarith [hv.1, hv.2]
+  have hc : Real.sqrt (-(s * q) + q) ^ 2 = -(s * q) + q := by
+    apply Real.sq_sqrt
+    nlinarith [mul_nonneg (sub_nonneg.mpr hs.2) hq.le]
+  have hs' : Real.sqrt s ^ 2 = s := Real.sq_sqrt hs.1
+  have ha : Real.sqrt (-v) ^ 2 = -v := Real.sq_sqrt (by linarith [hv.2])
+  have hb : Real.sqrt (q + v) ^ 2 = q + v := Real.sq_sqrt (by linarith [hv.1])
+  ext i j
+  fin_cases i <;> fin_cases j
+  all_goals
+    simp [flatnessPriceMatM, flatnessPriceMatN, flatnessTildeGCov, Matrix.mul_apply, Fin.sum_univ_two]
+    ring_nf
+    simp only [hc, hs', ha, hb]
+    ring
+
+private lemma flatness_raw_eq_Gint (β h q s v : ℝ)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hv : v ∈ Set.Ioo (-q) 0) :
+    (let c := β * Real.sqrt ((1 - s) * q)
+     let a := β * Real.sqrt s * Real.sqrt (-v)
+     let b := β * Real.sqrt s * Real.sqrt (q + v)
+     standardGaussianExpectation (fun z =>
+       standardGaussianExpectation (fun z₀ =>
+         standardGaussianExpectation (fun z₁ =>
+           standardGaussianExpectation (fun z₂ =>
+             Real.tanh (h + c*z + a*z₀ + b*z₁) *
+             Real.tanh (h + c*z - a*z₀ + b*z₂))))) =
+      ProbabilityTheory.Gint (flatnessTanhPair h) (flatnessTildeGCov β q s v)) := by
+  let γ : Measure ℝ := gaussianReal 0 1
+  let M := flatnessPriceMatM β q s v
+  let N := flatnessPriceMatN β q s v
+  have hobscont : Continuous (flatnessTanhPair h) := (flatness_tanhPair_contDiff h).continuous
+  have hbound (x : EuclideanSpace ℝ FlatnessPair) : |flatnessTanhPair h x| ≤ 1 := by
+    rw [flatnessTanhPair, abs_mul]
+    nlinarith [abs_nonneg (Real.tanh (h + x 0)), abs_nonneg (Real.tanh (h + x 1)),
+      (Real.abs_tanh_lt_one (h + x 0)).le, (Real.abs_tanh_lt_one (h + x 1)).le]
+  have hint (p : EuclideanSpace ℝ FlatnessPair) : Integrable
+      (fun w : EuclideanSpace ℝ FlatnessPair => flatnessTanhPair h
+        (ProbabilityTheory.PriceGaussian.matCLM M p +
+          ProbabilityTheory.PriceGaussian.matCLM N w))
+      (ProbabilityTheory.PriceGaussian.stdGaussian FlatnessPair) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (hobscont.comp (by fun_prop)).aestronglyMeasurable
+    · filter_upwards [] with w
+      simpa [Real.norm_eq_abs] using hbound _
+  have hprodint : Integrable
+      (fun p : EuclideanSpace ℝ FlatnessPair × EuclideanSpace ℝ FlatnessPair => flatnessTanhPair h
+        (ProbabilityTheory.PriceGaussian.matCLM M p.1 +
+          ProbabilityTheory.PriceGaussian.matCLM N p.2))
+      ((ProbabilityTheory.PriceGaussian.stdGaussian FlatnessPair).prod
+        (ProbabilityTheory.PriceGaussian.stdGaussian FlatnessPair)) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (hobscont.comp (by fun_prop)).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [Real.norm_eq_abs] using hbound _
+  rw [← flatness_price_matrices_cov β q s v hs hv]
+  unfold ProbabilityTheory.Gint
+  rw [← ProbabilityTheory.PriceGaussian.map_add_prod_stdGaussian M N,
+    integral_map (by fun_prop) hobscont.aestronglyMeasurable]
+  have hprodint' := hprodint
+  rw [flatness_stdGaussian_fin_two_eq_map_prod,
+    Measure.map_prod_map _ _ (by fun_prop) (by fun_prop)] at hprodint'
+  rw [flatness_stdGaussian_fin_two_eq_map_prod,
+    Measure.map_prod_map _ _ (by fun_prop) (by fun_prop)]
+  rw [integral_map (by fun_prop) hprodint'.aestronglyMeasurable]
+  let F : (ℝ × ℝ) × (ℝ × ℝ) → ℝ := fun p =>
+    flatnessTanhPair h (ProbabilityTheory.PriceGaussian.matCLM M (WithLp.toLp 2 ![p.1.1, p.1.2]) +
+      ProbabilityTheory.PriceGaussian.matCLM N (WithLp.toLp 2 ![p.2.1, p.2.2]))
+  have hF : Integrable F ((γ.prod γ).prod (γ.prod γ)) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (hobscont.comp (by fun_prop)).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [F, Real.norm_eq_abs] using hbound _
+  have hFsec (z z₀ : ℝ) : Integrable (fun p : ℝ × ℝ => F ((z, z₀), p))
+      (γ.prod γ) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (hobscont.comp (by fun_prop)).aestronglyMeasurable
+    · filter_upwards [] with p
+      simpa [F, Real.norm_eq_abs] using hbound _
+  have hgroup :
+      (∫ p, F p ∂((γ.prod γ).prod (γ.prod γ))) =
+        ∫ z, ∫ z₀, ∫ z₁, ∫ z₂, F ((z, z₀), (z₁, z₂)) ∂γ ∂γ ∂γ ∂γ := by
+    calc
+      (∫ p, F p ∂((γ.prod γ).prod (γ.prod γ))) =
+          ∫ p, ∫ r, F (p, r) ∂(γ.prod γ) ∂(γ.prod γ) := integral_prod _ hF
+      _ = ∫ z, ∫ z₀, ∫ r, F ((z, z₀), r) ∂(γ.prod γ) ∂γ ∂γ :=
+        integral_prod _ hF.integral_prod_left
+      _ = ∫ z, ∫ z₀, ∫ z₁, ∫ z₂, F ((z, z₀), (z₁, z₂)) ∂γ ∂γ ∂γ ∂γ := by
+        apply integral_congr_ae
+        filter_upwards [] with z
+        apply integral_congr_ae
+        filter_upwards [] with z₀
+        exact integral_prod _ (hFsec z z₀)
+  change _ = ∫ p, F p ∂((γ.prod γ).prod (γ.prod γ))
+  rw [hgroup]
+  simp only [standardGaussianExpectation]
+  apply integral_congr_ae
+  filter_upwards [] with z
+  apply integral_congr_ae
+  filter_upwards [] with z₀
+  apply integral_congr_ae
+  filter_upwards [] with z₁
+  apply integral_congr_ae
+  filter_upwards [] with z₂
+  dsimp [F, flatnessTanhPair]
+  simp_rw [ProbabilityTheory.PriceGaussian.matCLM_apply, Fin.sum_univ_two]
+  dsimp [M, N, flatnessPriceMatM, flatnessPriceMatN, γ]
+  simp
+  ring_nf
+
+noncomputable def flatnessTildeGPriceExpectation (β h q s v : ℝ) : ℝ :=
+  ProbabilityTheory.Gint
+    (fun x : EuclideanSpace ℝ FlatnessPair =>
+      ProbabilityTheory.PriceTanh.sechSq (h + x 0) *
+        ProbabilityTheory.PriceTanh.sechSq (h + x 1))
+    (flatnessTildeGCov β q s v)
+
+private lemma flatness_Gint_hasDerivAt (β h q s v : ℝ)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (_hq : 0 < q)
+    (hv : v ∈ Set.Ioo (-q) 0) :
+    HasDerivAt (fun u => ProbabilityTheory.Gint (flatnessTanhPair h) (flatnessTildeGCov β q s u))
+      (s * β ^ 2 * flatnessTildeGPriceExpectation β h q s v) v := by
+  let U : Set ℝ := Set.Ioo (-q) 0
+  let S : ℝ → Matrix FlatnessPair FlatnessPair ℝ := fun u => flatnessTildeGCov β q s u
+  let Sdot : Matrix FlatnessPair FlatnessPair ℝ := fun i j => if i = j then 0 else s * β ^ 2
+  have hPSD (u : ℝ) (hu : u ∈ U) : (S u).PosSemidef := by
+    rw [show S u = flatnessPriceMatM β q s u * Matrix.transpose (flatnessPriceMatM β q s u) +
+        flatnessPriceMatN β q s u * Matrix.transpose (flatnessPriceMatN β q s u) by
+      symm
+      exact flatness_price_matrices_cov β q s u hs hu]
+    exact (Matrix.posSemidef_self_mul_conjTranspose (A := flatnessPriceMatM β q s u)).add
+      (Matrix.posSemidef_self_mul_conjTranspose (A := flatnessPriceMatN β q s u))
+  have htrace (u : ℝ) (hu : u ∈ U) : (S u).trace = (S v).trace := by
+    simp [S, flatnessTildeGCov, Matrix.trace]
+  have hSd (i j : FlatnessPair) :
+      HasDerivWithinAt (fun u => S u i j) (Sdot i j) U v := by
+    apply HasDerivAt.hasDerivWithinAt
+    by_cases hij : i = j
+    · subst j
+      simpa [S, Sdot, flatnessTildeGCov] using hasDerivAt_const v (β ^ 2 * q)
+    · have hd := (((hasDerivAt_const v ((1 - s) * q)).add
+          ((hasDerivAt_id v).const_mul s)).const_mul (β ^ 2))
+      simpa [S, Sdot, flatnessTildeGCov, hij, mul_add, mul_comm, mul_left_comm, mul_assoc] using hd
+  have hd := ProbabilityTheory.hasDerivWithinAt_Gint
+    (M0 := 1) (M1 := 2) (M2 := 6)
+    (flatness_tanhPair_contDiff h) (fun x => by
+      rw [flatnessTanhPair, abs_mul]
+      nlinarith [abs_nonneg (Real.tanh (h + x 0)), abs_nonneg (Real.tanh (h + x 1)),
+        (Real.abs_tanh_lt_one (h + x 0)).le, (Real.abs_tanh_lt_one (h + x 1)).le])
+    (flatness_tanhPair_fderiv_bound h) (flatness_tanhPair_hess_bound h) hv S Sdot hPSD htrace hSd
+  have hd' := hd.hasDerivAt (Ioo_mem_nhds hv.1 hv.2)
+  apply hd'.congr_deriv
+  simp only [Fin.sum_univ_two]
+  simp [Sdot, flatnessTildeGPriceExpectation, S, flatness_tanhPair_hess_mixed_zero_one,
+    flatness_tanhPair_hess_mixed_one_zero]
+  ring
+
+
+
+/-- On the interior negative branch, the four-Gaussian definition of
+`flatnessTildeG` is the Gaussian integral with its two-by-two covariance
+matrix. -/
+lemma flatnessTildeG_eq_Gint_neg
+    (β h q s v : ℝ)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (_hq : 0 < q)
+    (hv : v ∈ Set.Ioo (-q) 0) :
+    flatnessTildeG β h q s v =
+      ProbabilityTheory.Gint
+        (flatnessTanhPair h)
+        (flatnessTildeGCov β q s v) := by
+  simpa [flatnessTildeG, gtIncrementScale, gtPathSign,
+    abs_of_neg hv.2, not_le.mpr hv.2, Real.sqrt_mul hs.1,
+    sub_eq_add_neg] using flatness_raw_eq_Gint β h q s v hs hv
+
+/-- Price's identity for `flatnessTildeG` on the interior negative branch. -/
+lemma flatnessTildeG_hasDerivAt_neg_price
+    (β h q s v : ℝ)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : 0 < q)
+    (hv : v ∈ Set.Ioo (-q) 0) :
+    HasDerivAt
+      (fun u => flatnessTildeG β h q s u)
+      (s * β ^ 2 *
+        flatnessTildeGPriceExpectation β h q s v)
+      v := by
+  have hd := flatness_Gint_hasDerivAt β h q s v hs hq hv
+  apply hd.congr_of_eventuallyEq
+  filter_upwards [Ioo_mem_nhds hv.1 hv.2] with u hu
+  exact flatnessTildeG_eq_Gint_neg β h q s u hs hq hu
+
+/-- The explicit derivative supplied by Price's identity on negative overlaps. -/
+lemma flatnessTildeG_deriv_eq_price_neg
+    (β h q s v : ℝ)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : 0 < q)
+    (hv : v ∈ Set.Ioo (-q) 0) :
+    deriv (fun u => flatnessTildeG β h q s u) v =
+      s * β ^ 2 *
+        flatnessTildeGPriceExpectation β h q s v := by
+  exact (flatnessTildeG_hasDerivAt_neg_price β h q s v hs hq hv).deriv
+
+
 lemma flatnessTildeG_hasDerivAt_neg
     (β h q s v : ℝ)
     (hβ : 0 ≤ β)
