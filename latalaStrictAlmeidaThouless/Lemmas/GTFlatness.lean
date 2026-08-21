@@ -1690,6 +1690,56 @@ lemma flatness_deriv_gtFunctional_zero_sign
       ⟨hq.1.trans hv.1.le, hv.2⟩]
     exact hupper v hv
 
+/-- Uniform derivative gap on the lower positive-away region
+`0 ≤ v < q - ε`. -/
+lemma flatness_deriv_gtFunctional_zero_lower_away
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ c : ℝ, 0 < c ∧
+      ∀ {β h q s v ε : ℝ},
+        (β, h) ∈ K →
+        q = rsQ β h →
+        s ∈ Set.Icc (0 : ℝ) 1 →
+        0 < ε →
+        0 ≤ v →
+        v < q - ε →
+        c * ε ≤
+          deriv (fun lam => gtFunctional β h q s lam v) 0 := by
+  obtain ⟨c, hc, hsep⟩ :=
+    scalarOrderParameterCorrect_global_separation data
+  refine ⟨c, hc, ?_⟩
+  intro β h q s v ε hp hq hs hε hv0 hvqε
+  subst q
+  have hβ : 0 < β := by
+    simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by
+    simpa using data.h_pos (β, h) hp
+  have hq1 : rsQ β h ≤ 1 :=
+    (rsQ_mem_Icc β h).2
+  have hv1 : v ≤ 1 := by
+    linarith
+  have hvIcc : v ∈ Set.Icc (0 : ℝ) 1 :=
+    ⟨hv0, hv1⟩
+  have hvq : v < rsQ β h := by
+    linarith
+  have hmain := hsep hp hs hvIcc
+  rw [flatness_deriv_gtFunctional_zero_eq_g_sub
+    β h s v hβ hh hs hvIcc]
+  have hsign :
+      0 ≤ scalarOrderParameterCorrect β h s v - v := by
+    have h :=
+      (scalarOrderParameterCorrect_sign data hp hs).1 v ⟨hv0, hvq⟩
+    exact h.le
+  rw [abs_of_nonpos (by linarith : v - rsQ β h ≤ 0),
+    abs_of_nonneg hsign] at hmain
+  have hmain' :
+      c * (rsQ β h - v) ≤ scalarOrderParameterCorrect β h s v - v := by
+    nlinarith [hmain]
+  have hdist : ε ≤ rsQ β h - v := by
+    linarith
+  exact
+    (mul_le_mul_of_nonneg_left hdist hc.le).trans hmain'
+
 /-!
 ### The AT estimate after Price's identity
 -/
@@ -1702,30 +1752,6 @@ have the RS marginal law. In the application these follow from the fact
 that both coordinates of the Gaussian pair have law
 `N (h, β^2 q)`.
 -/
-lemma flatness_tildeG_deriv_le_pathAT_of_price
-    (β h s : ℝ)
-    (hβ : 0 < β) (hh : 0 < h) (hs : 0 ≤ s)
-    (D E₁ E₂ : ℝ)
-    (hPrice :
-      D =
-        s * β ^ 2 *
-          standardGaussianExpectation (fun z =>
-            (Real.cosh (E₁ + z))⁻¹ ^ 2 *
-            (Real.cosh (E₂ + z))⁻¹ ^ 2))
-    (hCS :
-      standardGaussianExpectation (fun z =>
-          (Real.cosh (E₁ + z))⁻¹ ^ 2 *
-          (Real.cosh (E₂ + z))⁻¹ ^ 2)
-        ≤
-      standardGaussianExpectation (fun z =>
-        (Real.cosh
-          (h + β * Real.sqrt (rsQ β h) * z))⁻¹ ^ 4)) :
-    D ≤ s * atParameter β h := by
-  rw [hPrice]
-  rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
-  simpa only [mul_assoc] using
-    (mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left hCS (sq_nonneg β)) hs)
 
 private lemma flatness_mul_sech_sq_le_average_sech_fourth
     (x y : ℝ) :
@@ -2420,104 +2446,9 @@ lemma sub_sq_le_four_of_overlap
     exact mul_nonneg
       (by linarith)
       (by linarith)
-
   nlinarith
 
-/-- Deterministic assembly of a local quadratic estimate and a fixed strict
-gap away from the replica-symmetric overlap. -/
-lemma gtFunctional_uniform_quadratic_gap_of_local_and_away
-    {K : Set (ℝ × ℝ)}
-    (data : UniformATData K)
-    {c₀ ε κ : ℝ}
-    (hc₀ : 0 < c₀)
-    (_hε : 0 < ε)
-    (hκ : 0 < κ)
-    (hlocal :
-      ∀ {β h q s v : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        |v - q| ≤ ε →
-        ∃ lam,
-          gtFunctional β h q s lam v ≤
-            2 * rsPathValue β h q s
-              - c₀ * (v - q) ^ 2)
-    (haway :
-      ∀ {β h q s v : ℝ},
-        (β, h) ∈ K →
-        q = rsQ β h →
-        s ∈ Icc (0 : ℝ) 1 →
-        v ∈ Icc (-1 : ℝ) 1 →
-        ε ≤ |v - q| →
-        ∃ lam,
-          gtFunctional β h q s lam v ≤
-            2 * rsPathValue β h q s - κ) :
-    ∃ c > 0, ∀ {β h q s v : ℝ},
-      (β, h) ∈ K →
-      q = rsQ β h →
-      s ∈ Icc (0 : ℝ) 1 →
-      v ∈ Icc (-1 : ℝ) 1 →
-      ∃ lam,
-        gtFunctional β h q s lam v ≤
-          2 * rsPathValue β h q s
-            - c * (v - q) ^ 2 := by
-  let c : ℝ := min c₀ (κ / 4)
 
-  have hc : 0 < c := by
-    dsimp [c]
-    exact lt_min hc₀ (div_pos hκ (by norm_num))
-
-  refine ⟨c, hc, ?_⟩
-
-  intro β h q s v hp hq hs hv
-
-  have hqIcc : q ∈ Icc (0 : ℝ) 1 := by
-    rw [hq]
-    exact rsQ_mem_Icc β h
-
-  by_cases hnear : |v - q| ≤ ε
-  · obtain ⟨lam, hlam⟩ :=
-      hlocal hp hq hs hv hnear
-
-    refine ⟨lam, hlam.trans ?_⟩
-
-    have hc_le : c ≤ c₀ := by
-      dsimp [c]
-      exact min_le_left _ _
-
-    have hmul :
-        c * (v - q) ^ 2
-          ≤ c₀ * (v - q) ^ 2 :=
-      mul_le_mul_of_nonneg_right
-        hc_le (sq_nonneg (v - q))
-
-    linarith
-
-  · have hfar : ε ≤ |v - q| := by
-      exact (lt_of_not_ge hnear).le
-
-    obtain ⟨lam, hlam⟩ :=
-      haway hp hq hs hv hfar
-
-    refine ⟨lam, hlam.trans ?_⟩
-
-    have hsq :
-        (v - q) ^ 2 ≤ 4 :=
-      sub_sq_le_four_of_overlap hqIcc hv
-
-    have hc_le : c ≤ κ / 4 := by
-      dsimp [c]
-      exact min_le_right _ _
-
-    have hprod :
-        c * (v - q) ^ 2 ≤ c * 4 :=
-      mul_le_mul_of_nonneg_left hsq hc.le
-
-    have hc4 : c * 4 ≤ κ := by
-      nlinarith
-
-    nlinarith
 
 
 lemma flatnessTildeG_hasDerivAt_neg
@@ -3045,155 +2976,6 @@ lemma flatness_deriv_gtFunctional_zero_pos_of_mem_Ico_zero_q
     (flatness_deriv_gtFunctional_zero_sign
       data hp hs).1 v hv
 
-/- The former negative-overlap branch depended on the unavailable sharp
-Price estimate and is intentionally not part of the weakened claim. -/
-/-
-  subst q
 
-  have hβ : 0 < β := by
-    simpa using data.β_pos (β, h) hp
-
-  have hh : 0 < h := by
-    simpa using data.h_pos (β, h) hp
-
-  have hqpos : 0 < rsQ β h :=
-    rsQ_pos hβ hh
-
-  by_cases hvnonneg : 0 ≤ v
-
-  · exact
-      (flatness_deriv_gtFunctional_zero_sign
-        data hp hs).1 v
-        ⟨hvnonneg, hv.2⟩
-
-  · have hvneg : v < 0 :=
-      lt_of_not_ge hvnonneg
-
-    rw [
-      flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg_rsQ
-        β h s v hβ hh ⟨hv.1, hvneg⟩
-    ]
-
-    let F : ℝ → ℝ :=
-      fun u =>
-        flatnessTildeG
-            β h (rsQ β h) s u
-          - u
-
-    have hAT :
-        atParameter β h < 1 := by
-      exact
-        (data.subset_strictATRegion hp).2.2
-
-    have hsAT :
-        s * atParameter β h < 1 := by
-      by_cases hA : 0 ≤ atParameter β h
-      · have haux :
-            0 ≤
-              (1 - s) * atParameter β h :=
-          mul_nonneg
-            (sub_nonneg.mpr hs.2) hA
-        nlinarith
-      · have hAneg :
-            atParameter β h ≤ 0 :=
-          le_of_not_ge hA
-        have haux :
-            s * atParameter β h ≤ 0 :=
-          mul_nonpos_of_nonneg_of_nonpos
-            hs.1 hAneg
-        linarith
-
-    have hFcont :
-        ContinuousOn F
-          (Set.Icc (-(rsQ β h)) 0) := by
-      dsimp [F]
-      exact
-        (flatnessTildeG_continuousOn_neg
-          β h (rsQ β h) s).sub
-          continuous_id.continuousOn
-
-    have hFderiv :
-        ∀ u ∈
-            interior
-              (Set.Icc (-(rsQ β h)) 0),
-          deriv F u < 0 := by
-      intro u hu
-
-      have hu' :
-          u ∈ Set.Ioo (-(rsQ β h)) 0 := by
-        simpa only [interior_Icc] using hu
-
-      obtain ⟨D, hD, hDle⟩ :=
-        flatnessTildeG_hasDerivAt_le_pathAT_neg
-          β h s u hβ hh hs hu'
-
-      have hDF :
-          HasDerivAt F (D - 1) u := by
-        dsimp [F]
-        exact
-          hD.sub (hasDerivAt_id u)
-
-      rw [hDF.deriv]
-      linarith
-
-    have hanti :
-        StrictAntiOn F
-          (Set.Icc (-(rsQ β h)) 0) := by
-      exact
-        strictAntiOn_of_deriv_neg
-          (convex_Icc _ _)
-          hFcont
-          hFderiv
-
-    have hGTzero :
-        0 <
-          deriv
-            (fun lam =>
-              gtFunctional
-                β h (rsQ β h) s lam 0) 0 := by
-      exact
-        (flatness_deriv_gtFunctional_zero_sign
-          data hp hs).1 0
-          ⟨le_rfl, hqpos⟩
-
-    have hFzero :
-        0 < F 0 := by
-      dsimp [F]
-      rw [
-        flatnessTildeG_zero_eq_deriv_gtFunctional_zero
-          β h (rsQ β h) s hqpos
-      ]
-      simpa using hGTzero
-
-    have hvIcc :
-        v ∈
-          Set.Icc (-(rsQ β h)) 0 :=
-      ⟨hv.1, hvneg.le⟩
-
-    have hzeroIcc :
-        (0 : ℝ) ∈
-          Set.Icc (-(rsQ β h)) 0 :=
-      ⟨by linarith, le_rfl⟩
-
-    have hFzero_lt :
-        F 0 < F v :=
-      hanti hvIcc hzeroIcc hvneg
-
-    have hFv : 0 < F v :=
-      hFzero.trans hFzero_lt
-
-    simpa [F] using hFv
--/
-
-
-
-theorem gtFunctional_uniform_quadratic_gap {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) :
-    ∃ c > 0, ∀ {β h q s v : ℝ},
-      (β, h) ∈ K → q = rsQ β h → s ∈ Icc (0 : ℝ) 1 →
-      v ∈ Icc (-1 : ℝ) 1 →
-      ∃ lam ∈ Icc (-1 : ℝ) 1, gtFunctional β h q s lam v ≤
-        2 * rsPathValue β h q s - c * (v - q) ^ 2 := by
-  sorry
 
 end SpinGlass.AT
