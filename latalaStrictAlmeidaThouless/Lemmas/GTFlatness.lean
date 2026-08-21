@@ -1656,8 +1656,39 @@ lemma flatness_deriv_gtFunctional_zero_at_rsQ
     (β h s : ℝ) (hβ : 0 < β) (hh : 0 < h)
     (hs : s ∈ Set.Icc (0 : ℝ) 1) :
     deriv (fun lam => gtFunctional β h (rsQ β h) s lam (rsQ β h)) 0 = 0 := by
-  exact flatness_deriv_gtFunctional_zero_at_fixedPoint β h (rsQ β h) s
-    hβ.le hs (rsQ_pos hβ hh) (rsQ_lt_one hβ hh) (rsQ_fixedPoint β h)
+  rw [flatness_deriv_gtFunctional_zero_eq_g_sub
+    β h s (rsQ β h) hβ hh hs (rsQ_mem_Icc β h)]
+  exact sub_eq_zero.mpr (scalarOrderParameterCorrect_at_rsQ hβ s)
+
+/-- The sign of the endpoint multiplier derivative follows from the scalar
+order-parameter crossing theorem. -/
+lemma flatness_deriv_gtFunctional_zero_sign
+    {K : Set (ℝ × ℝ)} (data : UniformATData K) {β h s : ℝ}
+    (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) :
+    (∀ v ∈ Set.Ico (0 : ℝ) (rsQ β h),
+      0 < deriv (fun lam => gtFunctional β h (rsQ β h) s lam v) 0) ∧
+    deriv (fun lam => gtFunctional β h (rsQ β h) s lam (rsQ β h)) 0 = 0 ∧
+    (∀ v ∈ Set.Ioc (rsQ β h) 1,
+      deriv (fun lam => gtFunctional β h (rsQ β h) s lam v) 0 < 0) := by
+  obtain ⟨hlower, hzero, hupper⟩ :=
+    scalarOrderParameterCorrect_sign data hp hs
+  have hβ : 0 < β := by
+    simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by
+    simpa using data.h_pos (β, h) hp
+  have hq : rsQ β h ∈ Set.Icc (0 : ℝ) 1 := rsQ_mem_Icc β h
+  refine ⟨?_, ?_, ?_⟩
+  · intro v hv
+    rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s v hβ hh hs
+      ⟨hv.1, hv.2.le.trans hq.2⟩]
+    exact hlower v hv
+  · rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s (rsQ β h) hβ hh hs
+      (rsQ_mem_Icc β h)]
+    exact hzero
+  · intro v hv
+    rw [flatness_deriv_gtFunctional_zero_eq_g_sub β h s v hβ hh hs
+      ⟨hq.1.trans hv.1.le, hv.2⟩]
+    exact hupper v hv
 
 /-!
 ### The AT estimate after Price's identity

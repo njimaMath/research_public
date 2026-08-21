@@ -2463,7 +2463,7 @@ private lemma propertyLowerInner_hasDerivAt
   let cτ : ℝ := Real.sqrt (β ^ 2 * (s * (u / 2)))
   let cr : ℝ := Real.sqrt (a * ((q - u) / 2))
   have hcτarg : 0 < β ^ 2 * (s * (u / 2)) := by positivity
-  have hcrarg : 0 < a * ((q - u) / 2) := by positivity
+  have hcrarg : 0 < a * ((q - u) / 2) := mul_pos ha (by linarith)
   have hcτ : 0 < cτ := Real.sqrt_pos.2 hcτarg
   have hcr : 0 < cr := Real.sqrt_pos.2 hcrarg
   let bound : ℝ → ℝ := fun z =>
@@ -2921,9 +2921,9 @@ private lemma property_gaussian_convolution_sech4 (h a b c : ℝ)
     (∫ x, ∫ y, propertySech (h + a * x + b * y) ^ 4 ∂gaussianReal 0 1
       ∂gaussianReal 0 1) =
       ∫ z, propertySech (h + c * z) ^ 4 ∂gaussianReal 0 1 := by
-  let va : ℝ≥0 := NNReal.mk (a ^ 2) (sq_nonneg a) * 1
-  let vb : ℝ≥0 := NNReal.mk (b ^ 2) (sq_nonneg b) * 1
-  let vc : ℝ≥0 := NNReal.mk (c ^ 2) (sq_nonneg c) * 1
+  let va : ℝ≥0 := ⟨a ^ 2, sq_nonneg a⟩ * 1
+  let vb : ℝ≥0 := ⟨b ^ 2, sq_nonneg b⟩ * 1
+  let vc : ℝ≥0 := ⟨c ^ 2, sq_nonneg c⟩ * 1
   have hma : Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) =
       gaussianReal 0 va := by
     simpa [va] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : ℝ≥0)) a)
@@ -3052,7 +3052,7 @@ private lemma propertyLowerDerivativeCore_le_baseSech4
         (mul_nonneg hs0.le hu0.le))
   have hr0 : 0 ≤ r := by
     unfold r propertyLowerRemainder
-    positivity
+    exact mul_nonneg (mul_nonneg hs0.le (sq_nonneg β)) (by linarith)
   have hsquares : (β * Real.sqrt q) ^ 2 =
       (Real.sqrt τ) ^ 2 + (Real.sqrt r) ^ 2 := by
     rw [Real.sq_sqrt hτ0, Real.sq_sqrt hr0]
@@ -3905,5 +3905,287 @@ theorem scalarOrderParameterCorrect_linear_separation {K : Set (ℝ × ℝ)}
       le_antisymm (le_of_not_gt hqu) (le_of_not_gt huq)
     subst u
     simp [scalarOrderParameterCorrect_at_rsQ hβ]
+
+
+/-!
+## Global separation of the scalar order parameter from the diagonal
+
+`scalarOrderParameterCorrect_linear_separation` is a purely local statement.
+The results below upgrade it to a *global* linear separation on the whole
+overlap range `[0,1]`, with a constant depending only on `UniformATData K`.
+-/
+
+private lemma property_gap_le_one {K : Set (ℝ × ℝ)} (data : UniformATData K)
+    {β h : ℝ} (hp : (β, h) ∈ K) : data.gap ≤ 1 := by
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have hAT : atParameter β h ≤ 1 - data.gap := by
+    simpa using data.strictAT (β, h) hp
+  have h0 := property_atParameter_nonneg hβ hh
+  linarith
+
+/-- On the whole lower branch `0 ≤ u < q` the scalar order parameter is
+separated from the diagonal linearly, with the uniform constant `gap`. -/
+private lemma scalarOrderParameterCorrect_lower_global_gap {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) {β h s u : ℝ}
+    (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1) (hu0 : 0 ≤ u)
+    (huq : u < rsQ β h) :
+    data.gap * (rsQ β h - u) ≤ scalarOrderParameterCorrect β h s u - u := by
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have hAT : atParameter β h ≤ 1 - data.gap := by
+    simpa using data.strictAT (β, h) hp
+  have hAT0 := property_atParameter_nonneg hβ hh
+  have hgap1 : data.gap ≤ 1 := property_gap_le_one data hp
+  by_cases hsZero : s = 0
+  · rw [hsZero, scalarOrderParameterCorrect_zero_path hβ hh]
+    nlinarith [sub_pos.mpr huq]
+  · have hs0 : 0 < s := lt_of_le_of_ne hs.1 (Ne.symm hsZero)
+    have hinc := propertyLowerG_increment_le_pathAT hβ hh hs0 hs.2 hu0 huq
+    have hq := propertyLowerG_at_breakpoint hβ hh hs.1 rfl
+    have hsAT : s * atParameter β h ≤ 1 - data.gap := by
+      have hsle := mul_le_mul_of_nonneg_right hs.2 hAT0
+      rw [one_mul] at hsle
+      exact hsle.trans hAT
+    have hmul := mul_le_mul_of_nonneg_right hsAT (sub_nonneg.mpr huq.le)
+    rw [hq] at hinc
+    rw [scalarOrderParameterCorrect_eq_propertyLowerG (h := h) hβ hs.1 huq.le]
+    nlinarith
+
+/-- The exponentially reweighted defect used on the upper branch. -/
+private noncomputable def propertyUpperExpo (β h s v : ℝ) : ℝ :=
+  Real.exp (s * β ^ 2 * (v - rsQ β h)) *
+    (propertyUpperG β h (rsQ β h) s v - v)
+
+private lemma property_continuous_upperExpo (β h s : ℝ) :
+    Continuous (propertyUpperExpo β h s) := by
+  unfold propertyUpperExpo
+  exact (Real.continuous_exp.comp (by fun_prop)).mul
+    ((property_continuous_upperG β h (rsQ β h) s).sub continuous_id)
+
+private lemma propertyUpperExpo_hasDerivAt {β h s v : ℝ}
+    (hβ : 0 < β) (hs0 : 0 < s) (hv : rsQ β h < v) :
+    HasDerivAt (propertyUpperExpo β h s)
+      (Real.exp (s * β ^ 2 * (v - rsQ β h)) *
+        (s * β ^ 2 * (propertyUpperG β h (rsQ β h) s v - v) +
+          (s * β ^ 2 * propertyUpperSech4Expectation β h (rsQ β h) s v - 1))) v := by
+  have hlin : HasDerivAt (fun y : ℝ => s * β ^ 2 * (y - rsQ β h)) (s * β ^ 2) v := by
+    simpa using ((hasDerivAt_id v).sub_const (rsQ β h)).const_mul (s * β ^ 2)
+  have hexp := hlin.exp
+  have hg := propertyUpperG_hasDerivAt (h := h) hβ hs0 hv
+  have hdiff : HasDerivAt (fun y : ℝ => propertyUpperG β h (rsQ β h) s y - y)
+      (s * β ^ 2 * propertyUpperSech4Expectation β h (rsQ β h) s v - 1) v :=
+    hg.sub (hasDerivAt_id v)
+  unfold propertyUpperExpo
+  exact (hexp.mul hdiff).congr_deriv (by ring)
+
+private lemma propertyUpperExpo_deriv_le {β h s v : ℝ}
+    (hβ : 0 < β) (hs0 : 0 < s) (hv : rsQ β h < v) :
+    deriv (propertyUpperExpo β h s) v ≤
+      Real.exp (s * β ^ 2 * (v - rsQ β h)) * (s * β ^ 2 * (1 - v) - 1) := by
+  rw [(propertyUpperExpo_hasDerivAt hβ hs0 hv).deriv]
+  have hE4 := propertyUpperSech4Expectation_le_one_sub_upperG (β := β) (h := h)
+    (q := rsQ β h) (s := s) hs0.le hv.le
+  have ha : 0 < s * β ^ 2 := mul_pos hs0 (pow_pos hβ 2)
+  have hbr : s * β ^ 2 * (propertyUpperG β h (rsQ β h) s v - v) +
+      (s * β ^ 2 * propertyUpperSech4Expectation β h (rsQ β h) s v - 1) ≤
+      s * β ^ 2 * (1 - v) - 1 := by nlinarith
+  exact mul_le_mul_of_nonneg_left hbr (Real.exp_pos _).le
+
+/-- In the subcritical regime `s β² (1-q) ≤ 1` the reweighted defect has a
+derivative bounded by the linear expression `s β² (1-v) - 1 ≤ 0`. -/
+private lemma propertyUpperExpo_deriv_le_linear {β h s v : ℝ}
+    (hβ : 0 < β) (hs0 : 0 < s) (hv : rsQ β h < v)
+    (hsmall : s * β ^ 2 * (1 - rsQ β h) ≤ 1) :
+    deriv (propertyUpperExpo β h s) v ≤ s * β ^ 2 * (1 - v) - 1 := by
+  have ha : 0 < s * β ^ 2 := mul_pos hs0 (pow_pos hβ 2)
+  have hx : 0 ≤ s * β ^ 2 * (v - rsQ β h) :=
+    mul_nonneg ha.le (by linarith)
+  have hexp1 : 1 ≤ Real.exp (s * β ^ 2 * (v - rsQ β h)) := Real.one_le_exp hx
+  have hneg : s * β ^ 2 * (1 - v) - 1 ≤ 0 := by nlinarith
+  have hmain := propertyUpperExpo_deriv_le hβ hs0 hv
+  nlinarith
+
+/-- Subcritical upper branch: a quadratic separation from the diagonal,
+valid on the whole range `q < u ≤ 1`. -/
+private lemma propertyUpperG_global_gap_small {β h s u : ℝ}
+    (hβ : 0 < β) (hh : 0 < h) (hs0 : 0 < s)
+    (huq : rsQ β h < u) (hu1 : u ≤ 1)
+    (hsmall : s * β ^ 2 * (1 - rsQ β h) ≤ 1) :
+    (u - rsQ β h) ^ 2 / 24 ≤ u - propertyUpperG β h (rsQ β h) s u := by
+  have hq0 : 0 < rsQ β h := rsQ_pos hβ hh
+  have hq1 : rsQ β h < 1 := rsQ_lt_one hβ hh
+  have ha : 0 < s * β ^ 2 := mul_pos hs0 (pow_pos hβ 2)
+  have hFq : propertyUpperExpo β h s (rsQ β h) = 0 := by
+    unfold propertyUpperExpo
+    rw [propertyUpperG_at_breakpoint hβ rfl]
+    simp
+  have hcont : ∀ a b : ℝ, ContinuousOn (propertyUpperExpo β h s) (Set.Icc a b) :=
+    fun a b => (property_continuous_upperExpo β h s).continuousOn
+  have hdiffon : ∀ a b : ℝ, rsQ β h ≤ a →
+      DifferentiableOn ℝ (propertyUpperExpo β h s) (Set.Ioo a b) := by
+    intro a b hab v hv
+    exact (propertyUpperExpo_hasDerivAt hβ hs0
+      (lt_of_le_of_lt hab hv.1)).differentiableAt.differentiableWithinAt
+  have hkey : propertyUpperExpo β h s u ≤ -((u - rsQ β h) ^ 2 / 8) := by
+    by_cases hcase : s * β ^ 2 ≤ 1 / 2
+    · obtain ⟨ξ, hξ, hslope⟩ := exists_deriv_eq_slope (propertyUpperExpo β h s)
+        huq (hcont _ _) (hdiffon _ _ le_rfl)
+      have hbound := propertyUpperExpo_deriv_le_linear hβ hs0 hξ.1 hsmall
+      rw [hslope, hFq] at hbound
+      have hden : 0 < u - rsQ β h := sub_pos.mpr huq
+      have hmul := (div_le_iff₀ hden).mp
+        (by simpa using hbound.trans (by nlinarith [hξ.1, hξ.2] :
+          s * β ^ 2 * (1 - ξ) - 1 ≤ -(1 / 2 : ℝ)))
+      nlinarith
+    · have hcase' : (1 : ℝ) / 2 < s * β ^ 2 := lt_of_not_ge hcase
+      set m : ℝ := (rsQ β h + u) / 2 with hm
+      have hqm : rsQ β h < m := by rw [hm]; linarith
+      have hmu : m < u := by rw [hm]; linarith
+      have hFm : propertyUpperExpo β h s m ≤ 0 := by
+        obtain ⟨ξ, hξ, hslope⟩ := exists_deriv_eq_slope (propertyUpperExpo β h s)
+          hqm (hcont _ _) (hdiffon _ _ le_rfl)
+        have hbound := propertyUpperExpo_deriv_le_linear hβ hs0 hξ.1 hsmall
+        rw [hslope, hFq] at hbound
+        have hden : 0 < m - rsQ β h := sub_pos.mpr hqm
+        have hneg : s * β ^ 2 * (1 - ξ) - 1 ≤ 0 := by
+          nlinarith [hξ.1, hξ.2, hmu, hu1]
+        have := (div_le_iff₀ hden).mp (hbound.trans hneg)
+        nlinarith
+      obtain ⟨ξ, hξ, hslope⟩ := exists_deriv_eq_slope (propertyUpperExpo β h s)
+        hmu (hcont _ _) (hdiffon _ _ hqm.le)
+      have hbound := propertyUpperExpo_deriv_le_linear hβ hs0
+        (lt_trans hqm hξ.1) hsmall
+      rw [hslope] at hbound
+      have hden : 0 < u - m := sub_pos.mpr hmu
+      have hstep : s * β ^ 2 * (1 - ξ) - 1 ≤ -(u - rsQ β h) / 4 := by
+        have h1 : s * β ^ 2 * (ξ - rsQ β h) ≥ s * β ^ 2 * (m - rsQ β h) := by
+          apply mul_le_mul_of_nonneg_left _ ha.le
+          linarith [hξ.1]
+        have h2 : s * β ^ 2 * (m - rsQ β h) = s * β ^ 2 * ((u - rsQ β h) / 2) := by
+          rw [hm]; ring
+        nlinarith
+      have := (div_le_iff₀ hden).mp (hbound.trans hstep)
+      have hmq : u - m = (u - rsQ β h) / 2 := by rw [hm]; ring
+      nlinarith
+  have hEle : Real.exp (s * β ^ 2 * (u - rsQ β h)) ≤ 3 := by
+    have hx : s * β ^ 2 * (u - rsQ β h) ≤ 1 := by nlinarith
+    calc Real.exp (s * β ^ 2 * (u - rsQ β h)) ≤ Real.exp 1 :=
+          Real.exp_le_exp.mpr hx
+      _ ≤ 3 := by
+          have := Real.exp_one_lt_d9
+          linarith
+  have hEpos : 0 < Real.exp (s * β ^ 2 * (u - rsQ β h)) := Real.exp_pos _
+  have hEone : 1 ≤ Real.exp (s * β ^ 2 * (u - rsQ β h)) :=
+    Real.one_le_exp (mul_nonneg ha.le (by linarith))
+  unfold propertyUpperExpo at hkey
+  nlinarith [sq_nonneg (u - rsQ β h)]
+
+/-- Supercritical upper branch: a linear separation with constant `gap`. -/
+private lemma propertyUpperG_global_gap_large {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) {β h s u : ℝ}
+    (hp : (β, h) ∈ K) (hs0 : 0 < s) (hs1 : s ≤ 1)
+    (huq : rsQ β h < u) (hu1 : u ≤ 1)
+    (hlarge : 1 < s * β ^ 2 * (1 - rsQ β h)) :
+    data.gap * (u - rsQ β h) ≤ u - propertyUpperG β h (rsQ β h) s u := by
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have hAT : atParameter β h ≤ 1 - data.gap := by
+    simpa using data.strictAT (β, h) hp
+  have hAT0 := property_atParameter_nonneg hβ hh
+  have hcont : ContinuousOn (propertyUpperG β h (rsQ β h) s)
+      (Set.Icc (rsQ β h) u) :=
+    (property_continuous_upperG β h (rsQ β h) s).continuousOn
+  have hdiff : DifferentiableOn ℝ (propertyUpperG β h (rsQ β h) s)
+      (Set.Ioo (rsQ β h) u) := by
+    intro v hv
+    exact (propertyUpperG_hasDerivAt hβ hs0 hv.1).differentiableAt.differentiableWithinAt
+  obtain ⟨ξ, hξ, hslope⟩ := exists_deriv_eq_slope (propertyUpperG β h (rsQ β h) s)
+    huq hcont hdiff
+  have hvDeriv := (propertyUpperG_hasDerivAt (h := h) hβ hs0 hξ.1).deriv
+  have hvBound := propertyUpperG_derivative_le_pathAT_large hβ hh hs0 hs1 hξ.1
+    (le_trans hξ.2.le hu1) hlarge
+  have hsAT : s * atParameter β h ≤ 1 - data.gap := by
+    have hsle := mul_le_mul_of_nonneg_right hs1 hAT0
+    rw [one_mul] at hsle
+    exact hsle.trans hAT
+  have hratio : (propertyUpperG β h (rsQ β h) s u -
+      propertyUpperG β h (rsQ β h) s (rsQ β h)) / (u - rsQ β h) ≤ 1 - data.gap := by
+    rw [← hslope, hvDeriv]
+    exact hvBound.trans hsAT
+  have hden : 0 < u - rsQ β h := sub_pos.mpr huq
+  have hmul := (div_le_iff₀ hden).mp hratio
+  rw [propertyUpperG_at_breakpoint hβ rfl] at hmul
+  linarith
+
+/-- Upper branch, uniform quadratic separation on `q < u ≤ 1`. -/
+private lemma scalarOrderParameterCorrect_upper_global_gap {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) {β h s u : ℝ}
+    (hp : (β, h) ∈ K) (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (huq : rsQ β h < u) (hu1 : u ≤ 1) :
+    min data.gap (1 / 24) * (u - rsQ β h) ^ 2 ≤
+      u - scalarOrderParameterCorrect β h s u := by
+  have hβ : 0 < β := by simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by simpa using data.h_pos (β, h) hp
+  have hq0 : 0 < rsQ β h := rsQ_pos hβ hh
+  have hgap1 : data.gap ≤ 1 := property_gap_le_one data hp
+  have hmin1 : min data.gap (1 / 24) ≤ 1 := le_trans (min_le_right _ _) (by norm_num)
+  have hmin0 : 0 < min data.gap (1 / 24) := lt_min data.gap_pos (by norm_num)
+  have hsq : (u - rsQ β h) ^ 2 ≤ u - rsQ β h := by nlinarith
+  by_cases hsZero : s = 0
+  · rw [hsZero, scalarOrderParameterCorrect_zero_path hβ hh]
+    nlinarith
+  · have hs0 : 0 < s := lt_of_le_of_ne hs.1 (Ne.symm hsZero)
+    rw [scalarOrderParameterCorrect_eq_propertyUpperG (h := h) hs.1 huq]
+    by_cases hlarge : 1 < s * β ^ 2 * (1 - rsQ β h)
+    · have := propertyUpperG_global_gap_large data hp hs0 hs.2 huq hu1 hlarge
+      nlinarith [min_le_left data.gap (1 / 24 : ℝ)]
+    · have := propertyUpperG_global_gap_small hβ hh hs0 huq hu1
+        (le_of_not_gt hlarge)
+      nlinarith [min_le_right data.gap (1 / 24 : ℝ), sq_nonneg (u - rsQ β h)]
+
+/-- Global linear separation of the scalar order parameter from the diagonal
+on the whole overlap range `[0,1]`, with a constant depending only on
+`UniformATData K`. -/
+theorem scalarOrderParameterCorrect_global_separation {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ c : ℝ, 0 < c ∧
+      ∀ {β h s u : ℝ}, (β, h) ∈ K → s ∈ Set.Icc (0 : ℝ) 1 →
+        u ∈ Set.Icc (0 : ℝ) 1 →
+        c * |u - rsQ β h| ≤ |scalarOrderParameterCorrect β h s u - u| := by
+  obtain ⟨c₁, ε, hc₁, hε, hloc⟩ := scalarOrderParameterCorrect_linear_separation data
+  refine ⟨min c₁ (min (min data.gap (1 / 24) * ε) data.gap), ?_, ?_⟩
+  · exact lt_min hc₁ (lt_min (mul_pos (lt_min data.gap_pos (by norm_num)) hε)
+      data.gap_pos)
+  · intro β h s u hp hs hu
+    by_cases hnear : |u - rsQ β h| ≤ ε
+    · refine le_trans ?_ (hloc hp hs hu hnear)
+      exact mul_le_mul_of_nonneg_right (min_le_left _ _) (abs_nonneg _)
+    · have hfar : ε < |u - rsQ β h| := lt_of_not_ge hnear
+      rcases lt_trichotomy u (rsQ β h) with hlt | heq | hgt
+      · have hlow := scalarOrderParameterCorrect_lower_global_gap data hp hs hu.1 hlt
+        have hpos : 0 < rsQ β h - u := sub_pos.mpr hlt
+        rw [abs_of_nonpos (by linarith : u - rsQ β h ≤ 0),
+          abs_of_nonneg (by nlinarith [data.gap_pos] :
+            0 ≤ scalarOrderParameterCorrect β h s u - u)]
+        have hle : min c₁ (min (min data.gap (1 / 24) * ε) data.gap) ≤ data.gap :=
+          le_trans (min_le_right _ _) (min_le_right _ _)
+        nlinarith
+      · rw [heq]
+        simp
+      · have hup := scalarOrderParameterCorrect_upper_global_gap data hp hs hgt hu.2
+        have hpos : 0 < u - rsQ β h := sub_pos.mpr hgt
+        have hεlt : ε < u - rsQ β h := by
+          rwa [abs_of_pos hpos] at hfar
+        have hmin0 : 0 < min data.gap (1 / 24) :=
+          lt_min data.gap_pos (by norm_num)
+        have hnonpos : scalarOrderParameterCorrect β h s u - u ≤ 0 := by
+          nlinarith
+        rw [abs_of_nonneg hpos.le, abs_of_nonpos hnonpos]
+        have hle : min c₁ (min (min data.gap (1 / 24) * ε) data.gap) ≤
+            min data.gap (1 / 24) * ε :=
+          le_trans (min_le_right _ _) (min_le_left _ _)
+        nlinarith
+
 
 end SpinGlass.AT
