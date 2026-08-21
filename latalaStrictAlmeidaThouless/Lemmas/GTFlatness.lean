@@ -7,6 +7,7 @@ import Lemmas.Price
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 
 open MeasureTheory ProbabilityTheory Set
+open scoped RealInnerProductSpace
 
 noncomputable section
 
@@ -3064,6 +3065,235 @@ lemma flatnessTildeG_deriv_eq_price_neg
       s * β ^ 2 *
         flatnessTildeGPriceExpectation β h q s v := by
   exact (flatnessTildeG_hasDerivAt_neg_price β h q s v hs hq hv).deriv
+
+open Matrix in
+private lemma flatness_priceGaussian_eq_multivariateGaussian
+    {n : Type*} [Fintype n] [DecidableEq n]
+    {S : Matrix n n ℝ} (hS : S.PosSemidef) :
+    ProbabilityTheory.PriceGaussian.multivariateGaussian 0 S =
+      ProbabilityTheory.multivariateGaussian 0 S := by
+  apply Measure.ext_of_charFun
+  ext t
+  rw [ProbabilityTheory.PriceGaussian.charFun_multivariateGaussian hS,
+    ProbabilityTheory.charFun_multivariateGaussian hS]
+  have hreal :
+      ⟪t, ProbabilityTheory.PriceGaussian.matCLM S t⟫ =
+        t.ofLp ⬝ᵥ S *ᵥ t.ofLp := by
+    simp [PiLp.inner_apply, RCLike.inner_apply,
+      ProbabilityTheory.PriceGaussian.matCLM_apply, dotProduct, mulVec, mul_comm]
+  rw [hreal]
+  congr 1
+  simp
+  ring
+
+private lemma flatness_Gint_coord_eq_gaussianReal
+    {n : Type*} [Fintype n] [DecidableEq n]
+    {S : Matrix n n ℝ} (hS : S.PosSemidef) (i : n)
+    (f : ℝ → ℝ) (hf : Continuous f) :
+    ProbabilityTheory.Gint (fun x : EuclideanSpace ℝ n => f (x i)) S =
+      ∫ y, f y ∂gaussianReal 0 (S i i).toNNReal := by
+  unfold ProbabilityTheory.Gint
+  rw [flatness_priceGaussian_eq_multivariateGaussian hS]
+  have hmp := ProbabilityTheory.measurePreserving_eval_multivariateGaussian
+    (S := S) (i := i) (hS := hS) (μ := (0 : EuclideanSpace ℝ n))
+  have hmap : Measure.map (fun x : EuclideanSpace ℝ n => x i)
+      (ProbabilityTheory.multivariateGaussian 0 S) =
+        gaussianReal 0 (S i i).toNNReal := by
+    simpa using hmp.map_eq
+  rw [← hmap, integral_map hmp.measurable.aemeasurable
+    hf.aestronglyMeasurable]
+
+private lemma flatness_gaussianReal_beta_sqrt_integral
+    {β q : ℝ} (hq : 0 ≤ q) (f : ℝ → ℝ) (hf : Continuous f) :
+    (∫ y, f y ∂gaussianReal 0 (β ^ 2 * q).toNNReal) =
+      ∫ z, f (β * Real.sqrt q * z) ∂gaussianReal 0 1 := by
+  have hvar : NNReal.mk ((β * Real.sqrt q) ^ 2) (sq_nonneg _) =
+      (β ^ 2 * q).toNNReal := by
+    apply NNReal.eq
+    simp only [NNReal.coe_mk, Real.coe_toNNReal _
+      (mul_nonneg (sq_nonneg β) hq)]
+    rw [mul_pow, Real.sq_sqrt hq]
+  have hmap : Measure.map (fun z : ℝ => β * Real.sqrt q * z)
+      (gaussianReal 0 1) = gaussianReal 0 (β ^ 2 * q).toNNReal := by
+    simpa [hvar] using
+      (gaussianReal_map_const_mul (μ := 0) (v := (1 : NNReal))
+        (β * Real.sqrt q))
+  rw [← hmap, integral_map (by fun_prop) hf.aestronglyMeasurable]
+
+private lemma flatness_price_sechSq_eq_cosh (x : ℝ) :
+    ProbabilityTheory.PriceTanh.sechSq x = (Real.cosh x)⁻¹ ^ 2 := by
+  rw [ProbabilityTheory.PriceTanh.sechSq, Real.tanh_eq_sinh_div_cosh]
+  have hc : Real.cosh x ≠ 0 := (Real.cosh_pos x).ne'
+  rw [inv_pow]
+  field_simp
+  nlinarith [Real.cosh_sq x]
+
+private lemma flatness_price_sechSq_nonneg (x : ℝ) :
+    0 ≤ ProbabilityTheory.PriceTanh.sechSq x := by
+  rw [flatness_price_sechSq_eq_cosh]
+  positivity
+
+/-- On the negative branch, the Price derivative is uniformly below one
+by the strict AT gap. -/
+lemma flatnessTildeG_deriv_lt_one_neg
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    {β h q s v : ℝ}
+    (hp : (β, h) ∈ K)
+    (hq : q = rsQ β h)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hv : v ∈ Set.Ioo (-q) 0) :
+    deriv (fun u => flatnessTildeG β h q s u) v
+      ≤ 1 - data.gap := by
+  have hβ : 0 < β := data.β_pos (β, h) hp
+  have hh : 0 < h := data.h_pos (β, h) hp
+  have hqpos : 0 < q := by
+    rw [hq]
+    exact rsQ_pos hβ hh
+  let S := flatnessTildeGCov β q s v
+  have hS : S.PosSemidef := by
+    rw [show S =
+        flatnessPriceMatM β q s v * Matrix.transpose (flatnessPriceMatM β q s v) +
+          flatnessPriceMatN β q s v * Matrix.transpose (flatnessPriceMatN β q s v) by
+      dsimp [S]
+      symm
+      exact flatness_price_matrices_cov β q s v hs hv]
+    exact (Matrix.posSemidef_self_mul_conjTranspose
+      (A := flatnessPriceMatM β q s v)).add
+      (Matrix.posSemidef_self_mul_conjTranspose
+        (A := flatnessPriceMatN β q s v))
+  let g : ℝ → ℝ := fun y => ProbabilityTheory.PriceTanh.sechSq (h + y) ^ 2
+  have htanhcont : Continuous (fun x : ℝ => Real.tanh x) := by
+    simp_rw [Real.tanh_eq_sinh_div_cosh]
+    exact Real.continuous_sinh.div₀ Real.continuous_cosh
+      (fun x => (Real.cosh_pos x).ne')
+  have hgcont : Continuous g := by
+    dsimp [g, ProbabilityTheory.PriceTanh.sechSq]
+    exact (continuous_const.sub
+      ((htanhcont.comp (by fun_prop)).pow 2)).pow 2
+  have hcoord (i : FlatnessPair) :
+      ProbabilityTheory.Gint
+          (fun x : EuclideanSpace ℝ FlatnessPair => g (x i)) S =
+        standardGaussianExpectation (fun z =>
+          (Real.cosh (h + β * Real.sqrt q * z))⁻¹ ^ 4) := by
+    calc
+      ProbabilityTheory.Gint
+          (fun x : EuclideanSpace ℝ FlatnessPair => g (x i)) S =
+          ∫ y, g y ∂gaussianReal 0 (β ^ 2 * q).toNNReal := by
+            simpa [S, flatnessTildeGCov] using
+              flatness_Gint_coord_eq_gaussianReal hS i g hgcont
+      _ = ∫ z, g (β * Real.sqrt q * z) ∂gaussianReal 0 1 :=
+        flatness_gaussianReal_beta_sqrt_integral hqpos.le g hgcont
+      _ = standardGaussianExpectation (fun z =>
+          (Real.cosh (h + β * Real.sqrt q * z))⁻¹ ^ 4) := by
+        unfold standardGaussianExpectation
+        apply integral_congr_ae
+        filter_upwards [] with z
+        dsimp [g]
+        rw [flatness_price_sechSq_eq_cosh]
+        ring
+  have hprice :
+      flatnessTildeGPriceExpectation β h q s v ≤
+        standardGaussianExpectation (fun z =>
+          (Real.cosh (h + β * Real.sqrt q * z))⁻¹ ^ 4) := by
+    let μ : Measure (EuclideanSpace ℝ FlatnessPair) :=
+      ProbabilityTheory.PriceGaussian.multivariateGaussian 0 S
+    let F : EuclideanSpace ℝ FlatnessPair → ℝ := fun x =>
+      ProbabilityTheory.PriceTanh.sechSq (h + x 0) *
+        ProbabilityTheory.PriceTanh.sechSq (h + x 1)
+    let A : EuclideanSpace ℝ FlatnessPair → ℝ := fun x =>
+      (g (x 0) + g (x 1)) / 2
+    have hFcont : Continuous F := by
+      dsimp [F, ProbabilityTheory.PriceTanh.sechSq]
+      exact (continuous_const.sub
+        ((htanhcont.comp (by fun_prop)).pow 2)).mul
+        (continuous_const.sub
+          ((htanhcont.comp (by fun_prop)).pow 2))
+    have hAcont : Continuous A := by
+      dsimp [A]
+      exact ((hgcont.comp (by fun_prop)).add
+        (hgcont.comp (by fun_prop))).div_const 2
+    have hFint : Integrable F μ := by
+      apply Integrable.of_bound (C := 1)
+      · exact hFcont.aestronglyMeasurable
+      · filter_upwards [] with x
+        dsimp [F]
+        rw [abs_mul]
+        nlinarith [abs_nonneg (ProbabilityTheory.PriceTanh.sechSq (h + x 0)),
+          abs_nonneg (ProbabilityTheory.PriceTanh.sechSq (h + x 1)),
+          flatness_abs_sechSq_le_one (h + x 0),
+          flatness_abs_sechSq_le_one (h + x 1)]
+    have hAint : Integrable A μ := by
+      apply Integrable.of_bound (C := 1)
+      · exact hAcont.aestronglyMeasurable
+      · filter_upwards [] with x
+        dsimp [A, g]
+        have h0 := flatness_abs_sechSq_le_one (h + x 0)
+        have h1 := flatness_abs_sechSq_le_one (h + x 1)
+        have h0sq : ProbabilityTheory.PriceTanh.sechSq (h + x 0) ^ 2 ≤ 1 := by
+          have h0n := flatness_price_sechSq_nonneg (h + x 0)
+          rw [abs_of_nonneg h0n] at h0
+          nlinarith [mul_nonneg h0n (sub_nonneg.mpr h0)]
+        have h1sq : ProbabilityTheory.PriceTanh.sechSq (h + x 1) ^ 2 ≤ 1 := by
+          have h1n := flatness_price_sechSq_nonneg (h + x 1)
+          rw [abs_of_nonneg h1n] at h1
+          nlinarith [mul_nonneg h1n (sub_nonneg.mpr h1)]
+        rw [abs_of_nonneg (div_nonneg
+          (add_nonneg (sq_nonneg _) (sq_nonneg _)) (by norm_num))]
+        linarith
+    have hFA : ∀ x, F x ≤ A x := by
+      intro x
+      dsimp [F, A, g]
+      rw [flatness_price_sechSq_eq_cosh,
+        flatness_price_sechSq_eq_cosh]
+      convert flatness_mul_sech_sq_le_average_sech_fourth
+        (h + x 0) (h + x 1) using 1 <;> ring
+    have hgint (i : FlatnessPair) :
+        Integrable (fun x : EuclideanSpace ℝ FlatnessPair => g (x i)) μ := by
+      apply Integrable.of_bound (C := 1)
+      · exact (hgcont.comp (by fun_prop)).aestronglyMeasurable
+      · filter_upwards [] with x
+        dsimp [g]
+        have hi := flatness_abs_sechSq_le_one (h + x i)
+        have hin := flatness_price_sechSq_nonneg (h + x i)
+        rw [abs_of_nonneg hin] at hi
+        rw [abs_of_nonneg (sq_nonneg _)]
+        nlinarith [mul_nonneg hin (sub_nonneg.mpr hi)]
+    calc
+      flatnessTildeGPriceExpectation β h q s v = ∫ x, F x ∂μ := by
+        rfl
+      _ ≤ ∫ x, A x ∂μ := integral_mono hFint hAint hFA
+      _ = (ProbabilityTheory.Gint
+              (fun x : EuclideanSpace ℝ FlatnessPair => g (x 0)) S +
+            ProbabilityTheory.Gint
+              (fun x : EuclideanSpace ℝ FlatnessPair => g (x 1)) S) / 2 := by
+        dsimp [A, μ]
+        rw [integral_div, integral_add]
+        · rfl
+        · exact hgint 0
+        · exact hgint 1
+      _ = standardGaussianExpectation (fun z =>
+          (Real.cosh (h + β * Real.sqrt q * z))⁻¹ ^ 4) := by
+        rw [hcoord 0, hcoord 1]
+        ring
+  rw [flatnessTildeG_deriv_eq_price_neg β h q s v hs hqpos hv]
+  have hstrict := data.strictAT (β, h) hp
+  have hatnonneg : 0 ≤ atParameter β h := by
+    rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
+    exact mul_nonneg (sq_nonneg β) (integral_nonneg fun z => by positivity)
+  have hpath : data.gap ≤ 1 - s * atParameter β h := by
+    have hsat : s * atParameter β h ≤ atParameter β h := by
+      nlinarith [mul_nonneg (sub_nonneg.mpr hs.2) hatnonneg]
+    linarith
+  have hat :
+      s * β ^ 2 * flatnessTildeGPriceExpectation β h q s v ≤
+        s * atParameter β h := by
+    rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
+    have hprice' := hprice
+    rw [hq] at hprice'
+    simpa only [hq, mul_assoc] using mul_le_mul_of_nonneg_left
+      (mul_le_mul_of_nonneg_left hprice' (sq_nonneg β)) hs.1
+  linarith
 
 
 lemma flatnessTildeG_hasDerivAt_neg
