@@ -155,7 +155,8 @@ lemma flatness_deriv_gtFunctional_zero_negative_global_separation
   have hf0 : f 0 = scalarOrderParameterCorrect β h s 0 := by
     dsimp [f]
     rw [flatnessTildeG_zero_eq_deriv_gtFunctional_zero β h (rsQ β h) s hqpos,
-      flatness_deriv_gtFunctional_zero_eq_g_sub β h s 0 hβ hh hs]
+      flatness_deriv_gtFunctional_zero_eq_g_sub β h s 0 hβ hh hs
+        ⟨le_rfl, zero_le_one⟩]
     ring
   have hzero : 0 < f 0 := by
     rw [hf0]

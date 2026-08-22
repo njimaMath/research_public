@@ -1,4 +1,4 @@
-import Lemmas.GTFlatnessCore
+import Lemmas.GTFlatness_cases.GTFlatnessCore
 
 open MeasureTheory ProbabilityTheory Set
 
