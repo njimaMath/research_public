@@ -1,12 +1,104 @@
 import Lemmas.GTFlatness_cases.GTFlat_small_positive
 
 open MeasureTheory ProbabilityTheory Set
+open scoped MeasureTheory NNReal
 
 noncomputable section
 
 namespace SpinGlass.AT
 
 /-! ### Large positive overlaps `q < v ≤ 1` -/
+
+private lemma flatness_largepos_log_cosh_nonneg
+    (x : ℝ) :
+    0 ≤ Real.log (Real.cosh x) := by
+  exact Real.log_nonneg (Real.one_le_cosh x)
+
+private lemma flatness_largepos_log_cosh_le_abs
+    (x : ℝ) :
+    Real.log (Real.cosh x) ≤ |x| := by
+  have hcosh :
+      Real.cosh x ≤ Real.exp |x| := by
+    rw [Real.cosh_eq]
+    have h₁ :
+        Real.exp x ≤ Real.exp |x| :=
+      Real.exp_le_exp.mpr (le_abs_self x)
+    have h₂ :
+        Real.exp (-x) ≤ Real.exp |x| :=
+      Real.exp_le_exp.mpr (neg_le_abs x)
+    linarith
+  exact
+    (Real.log_le_iff_le_exp (Real.cosh_pos x)).2 hcosh
+
+private lemma flatness_largepos_integrable_log_cosh_affine
+    (h a m : ℝ) (v : ℝ≥0) :
+    Integrable
+      (fun z : ℝ => Real.log (Real.cosh (h + a * z)))
+      (gaussianReal m v) := by
+  have hz :
+      Integrable
+        (fun z : ℝ => |z|)
+        (gaussianReal m v) :=
+    (GTFrame.expMoments_gaussianReal m v).integrable_abs
+  have hdom :
+      Integrable
+        (fun z : ℝ => |h| + |a| * |z|)
+        (gaussianReal m v) :=
+    (integrable_const |h|).add (hz.const_mul |a|)
+  have hc :
+      Continuous
+        (fun z : ℝ => Real.log (Real.cosh (h + a * z))) := by
+    have hcosh :
+        Continuous
+          (fun z : ℝ => Real.cosh (h + a * z)) := by
+      fun_prop
+    exact hcosh.log fun z => (Real.cosh_pos (h + a * z)).ne'
+  refine hdom.mono' hc.aestronglyMeasurable ?_
+  filter_upwards [] with z
+  have hbound :
+      Real.log (Real.cosh (h + a * z)) ≤ |h| + |a| * |z| := by
+    calc
+      Real.log (Real.cosh (h + a * z)) ≤ |h + a * z| :=
+        flatness_largepos_log_cosh_le_abs _
+      _ ≤ |h| + |a * z| := abs_add_le _ _
+      _ = |h| + |a| * |z| := by rw [abs_mul]
+  have hright : 0 ≤ |h| + |a| * |z| := by positivity
+  simpa [Real.norm_eq_abs,
+    abs_of_nonneg (flatness_largepos_log_cosh_nonneg (h + a * z)),
+    abs_of_nonneg hright] using hbound
+
+private lemma flatness_largepos_rank_one_half_terminal_zero
+    (a b x : ℝ) :
+    gtRankOneStep (1 / 2) a 1
+        (gtDiagonalStep 1 b (gtTerminal 0)) x x =
+      a ^ 2 + b ^ 2 + 2 * Real.log (Real.cosh x) := by
+  have hterminal (z : ℝ) :
+      gtDiagonalStep 1 b (gtTerminal 0)
+          (x + a * z) (x + a * z) =
+        b ^ 2 + 2 * Real.log (Real.cosh (x + a * z)) := by
+    rw [gtDiagonalStep_one_terminal, gtTerminal_zero]
+    ring
+  rw [gtRankOneStep, if_neg (by norm_num : (1 / 2 : ℝ) ≠ 0)]
+  norm_num
+  simp_rw [hterminal]
+  have hexp (z : ℝ) :
+      Real.exp ((b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2) =
+        Real.exp (b ^ 2 / 2) * Real.cosh (x + a * z) := by
+    rw [show
+      (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 =
+        b ^ 2 / 2 + Real.log (Real.cosh (x + a * z)) by ring,
+      Real.exp_add, Real.exp_log (Real.cosh_pos _)]
+  simp_rw [hexp]
+  unfold standardGaussianExpectation
+  rw [integral_const_mul]
+  change
+    2 * Real.log
+      (Real.exp (b ^ 2 / 2) *
+        standardGaussianExpectation (fun z => Real.cosh (x + a * z))) = _
+  rw [standardGaussianExpectation_cosh_shift]
+  rw [Real.log_mul (Real.exp_pos _) (mul_pos (Real.exp_pos _) (Real.cosh_pos _))]
+  rw [Real.log_exp]
+  ring
 
 /-- Uniform quadratic gap on the upper positive-away region `q + ε < v ≤ 1`. -/
 lemma gtFunctional_upper_positive_away_quadratic_gap
