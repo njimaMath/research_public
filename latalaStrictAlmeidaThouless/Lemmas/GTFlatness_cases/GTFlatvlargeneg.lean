@@ -1,4 +1,4 @@
-import Lemmas.GTFlatness
+import Lemmas.GTFlatnessCore
 
 open MeasureTheory ProbabilityTheory Set
 
