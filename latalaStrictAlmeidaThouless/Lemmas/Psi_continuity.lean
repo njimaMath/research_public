@@ -396,16 +396,16 @@ lemma continuousOn_gtFunctional_params :
   exact (gtFunctional_eq_piecewise w.2).symm
 
 /-- `gtFunctional` (with `q = rsQ β h`) is continuous on
-`K × [0,1] × [-1,1] × [0,1]`
+`K × [0,1] × [-1,1] × [-1,1]`
 when `K` lies in the strict AT region. -/
 lemma continuousOn_gtFunctional (K : Set (ℝ × ℝ))
     (hK : K ⊆ strictATRegion) :
     ContinuousOn (fun w : (ℝ × ℝ) × (ℝ × (ℝ × ℝ)) =>
       gtFunctional w.1.1 w.1.2 (rsQ w.1.1 w.1.2)
         w.2.1 w.2.2.2 w.2.2.1)
-      (K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))) := by
+      (K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1))) := by
   let S : Set ((ℝ × ℝ) × (ℝ × (ℝ × ℝ))) :=
-    K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))
+    K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1))
   let Φ : ((ℝ × ℝ) × (ℝ × (ℝ × ℝ))) → P × ℝ := fun w =>
     (((w.1.1, w.1.2), (rsQ w.1.1 w.1.2, (w.2.1, w.2.2.1))), w.2.2.2)
   have hqK : ContinuousOn (fun p : ℝ × ℝ => rsQ p.1 p.2) K :=

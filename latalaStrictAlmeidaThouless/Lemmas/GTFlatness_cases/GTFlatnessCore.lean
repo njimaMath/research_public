@@ -1817,7 +1817,7 @@ lemma UniformATData.subset_strictATRegion {K : Set (ℝ × ℝ)}
   linarith [data.gap_pos]
 
 /-- Joint continuity of the canonical GT functional on
-`K × [0,1] × [-1,1] × [0,1]`, with the last coordinate representing
+`K × [0,1] × [-1,1] × [-1,1]`, with the last coordinate representing
 the multiplier restricted to the compact interval used in the flatness
 argument. -/
 lemma continuousOn_gtFunctional_uniformATData {K : Set (ℝ × ℝ)}
@@ -1825,7 +1825,7 @@ lemma continuousOn_gtFunctional_uniformATData {K : Set (ℝ × ℝ)}
     ContinuousOn (fun w : (ℝ × ℝ) × (ℝ × (ℝ × ℝ)) =>
       gtFunctional w.1.1 w.1.2 (rsQ w.1.1 w.1.2)
         w.2.1 w.2.2.2 w.2.2.1)
-      (K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))) := by
+      (K ×ˢ (Icc (0 : ℝ) 1 ×ˢ (Icc (-1 : ℝ) 1 ×ˢ Icc (-1 : ℝ) 1))) := by
   exact continuousOn_gtFunctional K data.subset_strictATRegion
 
 /-!
