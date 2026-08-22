@@ -1,4 +1,4 @@
-import ATDefs
+import Lemmas.ATDefs
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ProbabilityTheory NNReal

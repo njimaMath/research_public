@@ -1,5 +1,12 @@
 # Lemmas Agent Instructions
 
+## Available assumptions and current goal
+
+- Treat `Lemmas/Cavity/Talagrand_Cavity.lean` and
+  `Lemmas/GTbound/GTBound.lean` as available established results.
+- The current goal is to complete
+  `gtFunctional_uniform_quadratic_gap` in `Lemmas/GTFlatness.lean`.
+
 ## Uniform theorem statements
 
 When stating claims in this directory, formulate them uniformly over the

@@ -1,4 +1,4 @@
-import Lemmas.GTFlatnessCore
+import Lemmas.GTFlatness_cases.GTFlatnessCore
 import Lemmas.GTFlatness_cases.GTFlat_endpoints
 import Lemmas.GTFlatness_cases.GTFlat_small_positive
 import Lemmas.GTFlatness_cases.GTFlat_small_negative
