@@ -1,4 +1,4 @@
-import Lemmas.GTFlatness_cases.GTFlat_small_positive
+import Lemmas.GTFlatness_cases.GTFlatnessCore
 
 open MeasureTheory ProbabilityTheory Set
 open scoped MeasureTheory NNReal
@@ -980,6 +980,81 @@ private lemma flatness_smallneg_zero_steps_value
                   rw [hconvA, hconvB]
                   ring
 
+private lemma flatness_smallpos_zero_steps_value
+    (r a b c y : ℝ)
+    (hc : c ^ 2 = r ^ 2 + a ^ 2) :
+    gtRankOneStep 0 r 1
+        (gtDiagonalStep 0 a
+          (gtDiagonalStep 1 b
+            (gtTerminal 0)))
+        y y
+      =
+    2 * standardGaussianExpectation
+        (fun z =>
+          Real.log
+            (Real.cosh (y + c * z)))
+      + b ^ 2 := by
+  let A : ℝ → ℝ := fun z =>
+    standardGaussianExpectation (fun w =>
+      Real.log
+        (Real.cosh
+          (y + r * z + a * w)))
+
+  have hAprod :=
+    flatness_smallneg_integrable_log_cosh_two_affine
+      y r a
+
+  have hAint :
+      Integrable A (gaussianReal 0 1) := by
+    have h := hAprod.integral_prod_left
+    simpa [A, standardGaussianExpectation] using h
+
+  have hconvA :
+      standardGaussianExpectation A =
+        standardGaussianExpectation
+          (fun z =>
+            Real.log
+              (Real.cosh (y + c * z))) := by
+    simpa [A] using
+      flatness_smallneg_gaussian_convolution_log_cosh_add_const
+        y 0 r a c hc
+
+  calc
+    gtRankOneStep 0 r 1
+        (gtDiagonalStep 0 a
+          (gtDiagonalStep 1 b
+            (gtTerminal 0)))
+        y y
+      =
+      standardGaussianExpectation
+        (fun z => 2 * A z + b ^ 2) := by
+          simp only [gtRankOneStep, if_pos rfl]
+          apply congrArg standardGaussianExpectation
+          funext z
+          have h :=
+            flatness_smallneg_diagonal_zero_split
+              a b
+              (y + r * z)
+              (y + r * z)
+          simpa [A, two_mul] using h
+    _ =
+      2 * standardGaussianExpectation
+          (fun z =>
+            Real.log
+              (Real.cosh (y + c * z)))
+        + b ^ 2 := by
+          unfold standardGaussianExpectation at hconvA ⊢
+          change
+            (∫ z, 2 * A z + b ^ 2
+              ∂gaussianReal 0 1) =
+              2 * ∫ z,
+                Real.log (Real.cosh (y + c * z))
+                ∂gaussianReal 0 1 + b ^ 2
+          rw [integral_add (hAint.const_mul 2) (integrable_const _)]
+          rw [integral_const_mul]
+          simp only [integral_const, probReal_univ, one_smul]
+          rw [hconvA]
+
 private lemma flatness_smallneg_scalarTrialValue_eq_rsPathValue
     (β h q s : ℝ)
     (hq : 0 < q)
@@ -1234,6 +1309,177 @@ lemma flatness_gtFunctional_zero_eq_two_rsPathValue_small_negative
       gtSemigroupSolution β q s 0 v 0 y y =
         2 * scalarPsi β q s 0 y :=
     flatness_smallneg_semigroup_zero_eq_two_scalarPsi β q s v y hq hs hv
+  have hE :
+      standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s 0 v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) =
+        2 * standardGaussianExpectation (fun z =>
+          scalarPsi β q s 0
+            (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+    calc
+      standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s 0 v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) =
+        standardGaussianExpectation (fun z =>
+          2 * scalarPsi β q s 0
+            (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+              apply congrArg standardGaussianExpectation
+              funext z
+              exact hU _
+      _ = 2 * standardGaussianExpectation (fun z =>
+        scalarPsi β q s 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)) := by
+            unfold standardGaussianExpectation
+            rw [integral_const_mul]
+  have htrial := flatness_smallneg_scalarTrialValue_eq_rsPathValue β h q s hq.1 hs
+  calc
+    gtFunctional β h q s 0 v = 2 * scalarTrialValue β h q s := by
+      rw [gtFunctional]
+      simp only [zero_mul, sub_zero]
+      rw [hE]
+      unfold scalarTrialValue gtCorrection
+      ring
+    _ = 2 * rsPathValue β h q s := by rw [htrial]
+
+private lemma flatness_smallpos_semigroup_zero_eq_two_scalarPsi
+    (β q s v y : ℝ)
+    (hq : q ∈ Ioo (0 : ℝ) 1)
+    (hs : s ∈ Icc (0 : ℝ) 1)
+  (hv : v ∈ Icc 0 q) :
+    gtSemigroupSolution β q s 0 v 0 y y =
+      2 * scalarPsi β q s 0 y := by
+  have hsign : gtPathSign v = 1 := by
+    simp [gtPathSign, hv.1]
+  let c : ℝ := β * Real.sqrt (s * q)
+  let b : ℝ := gtIncrementScale β s q 1
+  have hb2 : b ^ 2 = s * β ^ 2 * (1 - q) := by
+    dsimp [b]
+    exact flatness_smallneg_incrementScale_sq hs.1 hq.2.le
+  have hscalar :
+      2 * scalarPsi β q s 0 y =
+        2 * standardGaussianExpectation
+          (fun z => Real.log (Real.cosh (y + c * z))) + b ^ 2 := by
+    unfold scalarPsi
+    have hmax₁ : max (q - 0) 0 = q := by simp [hq.1.le]
+    have hmax₂ : max (0 : ℝ) q = q := max_eq_right hq.1.le
+    rw [hmax₁, hmax₂]
+    dsimp [c]
+    rw [hb2]
+    ring
+  by_cases hvzero : v = 0
+  · subst v
+    let a : ℝ := gtIncrementScale β s 0 q
+    have ha2 : a ^ 2 = s * β ^ 2 * q := by
+      dsimp [a]
+      simpa using flatness_smallneg_incrementScale_sq
+        (β := β) (s := s) (lower := 0) (upper := q) hs.1 hq.1.le
+    have hc2 : c ^ 2 = s * β ^ 2 * q := by
+      dsimp [c]
+      rw [mul_pow, Real.sq_sqrt (mul_nonneg hs.1 hq.1.le)]
+      ring
+    have hca : c ^ 2 = 0 ^ 2 + a ^ 2 := by rw [hc2, ha2]; ring
+    have hzero := flatness_smallpos_zero_steps_value 0 a b c y hca
+    have hzero' :
+        gtDiagonalStep 0 a (gtDiagonalStep 1 b (gtTerminal 0)) y y =
+          2 * standardGaussianExpectation
+              (fun z => Real.log (Real.cosh (y + c * z))) + b ^ 2 := by
+      simpa [gtRankOneStep, standardGaussianExpectation] using hzero
+    have hsem :
+        gtSemigroupSolution β q s 0 0 0 y y =
+          gtDiagonalStep 0 a (gtDiagonalStep 1 b (gtTerminal 0)) y y := by
+      have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq.1
+      simp [gtSemigroupSolution, hq0, a, b]
+    rw [hsem, hzero', ← hscalar]
+  · by_cases hvright : v = q
+    · subst v
+      let r : ℝ := gtIncrementScale β s 0 q
+      have hr2 : r ^ 2 = s * β ^ 2 * q := by
+        dsimp [r]
+        simpa using flatness_smallneg_incrementScale_sq
+          (β := β) (s := s) (lower := 0) (upper := q) hs.1 hq.1.le
+      have hc2 : c ^ 2 = s * β ^ 2 * q := by
+        dsimp [c]
+        rw [mul_pow, Real.sq_sqrt (mul_nonneg hs.1 hq.1.le)]
+        ring
+      have hcr : c ^ 2 = r ^ 2 + 0 ^ 2 := by rw [hc2, hr2]; ring
+      have hzero := flatness_smallpos_zero_steps_value r 0 b c y hcr
+      have hzero' :
+          gtRankOneStep 0 r 1
+              (gtDiagonalStep 1 b (gtTerminal 0)) y y =
+            2 * standardGaussianExpectation
+                (fun z => Real.log (Real.cosh (y + c * z))) + b ^ 2 := by
+        have hdiag :
+            gtDiagonalStep 0 0 (gtDiagonalStep 1 b (gtTerminal 0)) =
+              gtDiagonalStep 1 b (gtTerminal 0) := by
+          funext x₁ x₂
+          exact flatness_smallneg_diagonal_zero_zero _ _ _
+        rw [hdiag] at hzero
+        exact hzero
+      have hsem :
+          gtSemigroupSolution β q s 0 q 0 y y =
+            gtRankOneStep 0 r 1
+              (gtDiagonalStep 1 b (gtTerminal 0)) y y := by
+        have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq.1
+        have hsignq : gtPathSign q = 1 := by
+          simp [gtPathSign, hq.1.le]
+        simp [gtSemigroupSolution, abs_of_pos hq.1, hsignq, hq0,
+          r, b, gtIncrementScale]
+        have hhalf : (2 : ℝ)⁻¹ = 1 / 2 := by norm_num
+        rw [hhalf]
+        have hzero_rank (scale : ℝ) :
+            gtRankOneStep (1 / 2) 0 1
+                (gtDiagonalStep 1 scale (gtTerminal 0)) =
+              gtDiagonalStep 1 scale (gtTerminal 0) := by
+          funext x₁ x₂
+          exact flatness_smallneg_rankOne_half_zero _ _ _ _
+        rw [hzero_rank]
+      rw [hsem, hzero', ← hscalar]
+    · let r : ℝ := v
+      have hrpos : 0 < r := by
+        dsimp [r]
+        exact lt_of_le_of_ne hv.1 (Ne.symm hvzero)
+      have hrv : r < q := by
+        dsimp [r]
+        exact lt_of_le_of_ne hv.2 hvright
+      let r₀ : ℝ := gtIncrementScale β s 0 r
+      let a : ℝ := gtIncrementScale β s r q
+      have hr₀2 : r₀ ^ 2 = s * β ^ 2 * r := by
+        dsimp [r₀]
+        simpa using flatness_smallneg_incrementScale_sq
+          (β := β) (s := s) (lower := 0) (upper := r) hs.1 hrpos.le
+      have ha2 : a ^ 2 = s * β ^ 2 * (q - r) := by
+        dsimp [a]
+        exact flatness_smallneg_incrementScale_sq hs.1 hrv.le
+      have hc2 : c ^ 2 = s * β ^ 2 * q := by
+        dsimp [c]
+        rw [mul_pow, Real.sq_sqrt (mul_nonneg hs.1 hq.1.le)]
+        ring
+      have hcra : c ^ 2 = r₀ ^ 2 + a ^ 2 := by rw [hc2, hr₀2, ha2]; ring
+      have hzero := flatness_smallpos_zero_steps_value r₀ a b c y hcra
+      have hsem :
+          gtSemigroupSolution β q s 0 v 0 y y =
+            gtRankOneStep 0 r₀ 1
+              (gtDiagonalStep 0 a (gtDiagonalStep 1 b (gtTerminal 0))) y y := by
+        have hqr : ¬ q ≤ r := not_le.mpr hrv
+        have hr0 : ¬ r ≤ (0 : ℝ) := not_le.mpr hrpos
+        have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq.1
+        simp [gtSemigroupSolution, r, abs_of_nonneg hv.1, hqr, hr0, hq0,
+          hsign, r₀, a, b]
+      rw [hsem, hzero, ← hscalar]
+
+lemma flatness_gtFunctional_zero_eq_two_rsPathValue_small_positive
+    (β h q s v : ℝ)
+    (hq : q ∈ Ioo (0 : ℝ) 1)
+    (hs : s ∈ Icc (0 : ℝ) 1)
+    (hv : v ∈ Icc 0 q) :
+    gtFunctional β h q s 0 v =
+      2 * rsPathValue β h q s := by
+  have hU (y : ℝ) :
+      gtSemigroupSolution β q s 0 v 0 y y =
+        2 * scalarPsi β q s 0 y :=
+    flatness_smallpos_semigroup_zero_eq_two_scalarPsi β q s v y hq hs hv
   have hE :
       standardGaussianExpectation (fun z =>
         gtSemigroupSolution β q s 0 v 0

@@ -82,11 +82,10 @@ private lemma flatness_largepos_rank_one_half_terminal_zero
   norm_num
   simp_rw [hterminal]
   have hexp (z : ℝ) :
-      Real.exp ((1 / 2 : ℝ) *
-        (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z)))) =
+      Real.exp ((b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2) =
         Real.exp (b ^ 2 / 2) * Real.cosh (x + a * z) := by
     rw [show
-      (1 / 2 : ℝ) * (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) =
+      (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 =
         b ^ 2 / 2 + Real.log (Real.cosh (x + a * z)) by ring,
       Real.exp_add, Real.exp_log (Real.cosh_pos _)]
   simp_rw [hexp]
@@ -98,7 +97,7 @@ private lemma flatness_largepos_rank_one_half_terminal_zero
         standardGaussianExpectation (fun z => Real.cosh (x + a * z))) = _
   rw [standardGaussianExpectation_cosh_shift]
   rw [Real.log_mul (Real.exp_pos _) (mul_pos (Real.exp_pos _) (Real.cosh_pos _))]
-  rw [Real.log_exp]
+  rw [Real.log_exp, Real.log_exp]
   ring
 
 /-- Uniform quadratic gap on the upper positive-away region `q + ε < v ≤ 1`. -/
