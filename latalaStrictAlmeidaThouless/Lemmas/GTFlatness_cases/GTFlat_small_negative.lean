@@ -128,4 +128,78 @@ lemma flatnessTildeG_zero_eq_deriv_gtFunctional_zero
     β h q s 0 hq abs_zero]
   simp [flatnessTildeG, gtIncrementScale, standardGaussianExpectation]
 
+/-- Uniform linear separation of the endpoint multiplier derivative from zero
+on the negative-overlap branch. -/
+lemma flatness_deriv_gtFunctional_zero_negative_global_separation
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ c : ℝ, 0 < c ∧
+      ∀ {β h q s v : ℝ},
+        (β, h) ∈ K →
+        q = rsQ β h →
+        s ∈ Icc (0 : ℝ) 1 →
+        v ∈ Icc (-q) 0 →
+        c * |v - q| ≤
+          |deriv (fun lam =>
+            gtFunctional β h q s lam v) 0| := by
+  obtain ⟨c₀, hc₀, hsep⟩ := scalarOrderParameterCorrect_global_separation data
+  refine ⟨min c₀ data.gap, lt_min hc₀ data.gap_pos, ?_⟩
+  intro β h q s v hp hq hs hv
+  subst q
+  have hβ : 0 < β := by
+    simpa using data.β_pos (β, h) hp
+  have hh : 0 < h := by
+    simpa using data.h_pos (β, h) hp
+  have hqpos : 0 < rsQ β h := rsQ_pos hβ hh
+  let f : ℝ → ℝ := fun u => flatnessTildeG β h (rsQ β h) s u
+  have hf0 : f 0 = scalarOrderParameterCorrect β h s 0 := by
+    dsimp [f]
+    rw [flatnessTildeG_zero_eq_deriv_gtFunctional_zero β h (rsQ β h) s hqpos,
+      flatness_deriv_gtFunctional_zero_eq_g_sub β h s 0 hβ hh hs]
+    ring
+  have hzero : 0 < f 0 := by
+    rw [hf0]
+    simpa using
+      (scalarOrderParameterCorrect_sign data hp hs).1 0 ⟨le_rfl, hqpos⟩
+  have hbase : c₀ * rsQ β h ≤ f 0 := by
+    have h := hsep hp hs (show (0 : ℝ) ∈ Icc (0 : ℝ) 1 by norm_num)
+    rw [hf0, abs_of_nonpos (by linarith : 0 - rsQ β h ≤ 0),
+      abs_of_pos hzero] at h
+    simpa using h
+  by_cases hv0 : v = 0
+  · subst v
+    rw [flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg β h (rsQ β h) s 0
+      ⟨hqpos, rsQ_lt_one hβ hh⟩ hs ⟨by linarith, le_rfl⟩]
+    rw [show flatnessTildeG β h (rsQ β h) s 0 = f 0 by rfl,
+      abs_of_pos hzero, abs_of_neg (by linarith : 0 - rsQ β h < 0)]
+    have hmin : min c₀ data.gap ≤ c₀ := min_le_left _ _
+    nlinarith
+  · have hvneg : v < 0 := lt_of_le_of_ne hv.2 hv0
+    have hcont : ContinuousOn f (Icc v 0) := by
+      apply (flatnessTildeG_continuousOn_neg β h (rsQ β h) s).mono
+      intro u hu
+      exact ⟨le_trans hv.1 hu.1, hu.2⟩
+    have hdiff : DifferentiableOn ℝ f (Ioo v 0) := by
+      intro u hu
+      obtain ⟨D, hD⟩ := flatnessTildeG_hasDerivAt_neg β h (rsQ β h) s u
+        hβ.le hs hqpos ⟨lt_of_le_of_lt hv.1 hu.1, hu.2⟩
+      exact hD.differentiableAt.differentiableWithinAt
+    obtain ⟨u, hu, hslope⟩ := exists_deriv_eq_slope f hvneg hcont hdiff
+    have hderiv := flatnessTildeG_deriv_lt_one_neg data hp rfl hs
+      ⟨lt_of_le_of_lt hv.1 hu.1, hu.2⟩
+    have hratio : (f 0 - f v) / (0 - v) ≤ 1 - data.gap := by
+      rwa [← hslope]
+    have hden : 0 < 0 - v := by linarith
+    have hstep := (div_le_iff₀ hden).mp hratio
+    have hmain : min c₀ data.gap * (rsQ β h - v) ≤ f v - v := by
+      have hmin₀ : min c₀ data.gap ≤ c₀ := min_le_left _ _
+      have hminGap : min c₀ data.gap ≤ data.gap := min_le_right _ _
+      have hqnonneg : 0 ≤ rsQ β h := hqpos.le
+      nlinarith
+    rw [flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg β h (rsQ β h) s v
+      ⟨hqpos, rsQ_lt_one hβ hh⟩ hs hv]
+    rw [abs_of_nonneg (by linarith : 0 ≤ f v - v),
+      abs_of_nonpos (by linarith : v - rsQ β h ≤ 0)]
+    exact hmain
+
 end SpinGlass.AT
