@@ -2,6 +2,8 @@ import Lemmas.Concentration_Coupled
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 
+/-! Law transport from abstract smart-path disorder to Gaussian coordinates. -/
+
 open MeasureTheory ProbabilityTheory Real BigOperators
 open PhysLean.Probability.GaussianIBP
 
@@ -158,7 +160,7 @@ private noncomputable def flippedSmartRandomPairCLM
       SpinGlass.EnergySpace N :=
   (flipEnergyCLM N).comp (smartRandomPairCLM N s)
 
-private lemma gaussianHilbert_hasGaussianLaw
+lemma gaussianHilbert_hasGaussianLaw
     {Omega H : Type*} [MeasureSpace Omega]
     [IsProbabilityMeasure (volume : Measure Omega)]
     [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
@@ -369,7 +371,9 @@ private lemma flippedSmart_cov
   simp only [mul_zero, zero_mul, add_zero, zero_add]
   rw [← mul_assoc, hs_sq, ← mul_assoc, h1s_sq]
   unfold smartPathCovKernel
-  rw [overlap_flip, overlap_flip]
+  dsimp [sigma', tau']
+  unfold SpinGlass.sk_cov_kernel SpinGlass.simple_cov_kernel
+  rw [overlap_flip]
 
 private lemma bilin_eq_sum_std
     (N : ℕ)
@@ -432,19 +436,43 @@ private theorem smartPath_coordinate_random_law
     have hVint := gaussianHilbert_energy_integral_eq_zero path.simple.hV
     have hpint : ∫ omega, pair omega ∂volume = (0, 0) := by
       apply Prod.ext
-      · rw [(ContinuousLinearMap.fst ℝ _ _).integral_comp_comm hpair.integrable]
-        simpa [pair] using hUint
-      · rw [(ContinuousLinearMap.snd ℝ _ _).integral_comp_comm hpair.integrable]
-        simpa [pair] using hVint
+      · change (ContinuousLinearMap.fst ℝ _ _)
+          (∫ omega, pair omega ∂volume) = 0
+        calc
+          _ = ∫ omega, (ContinuousLinearMap.fst ℝ _ _) (pair omega)
+                ∂volume :=
+            ((ContinuousLinearMap.fst ℝ _ _).integral_comp_comm
+              hpair.integrable).symm
+          _ = 0 := by simpa [pair] using hUint
+      · change (ContinuousLinearMap.snd ℝ _ _)
+          (∫ omega, pair omega ∂volume) = 0
+        calc
+          _ = ∫ omega, (ContinuousLinearMap.snd ℝ _ _) (pair omega)
+                ∂volume :=
+            ((ContinuousLinearMap.snd ℝ _ _).integral_comp_comm
+              hpair.integrable).symm
+          _ = 0 := by simpa [pair] using hVint
     rw [integral_map hleft.aemeasurable aestronglyMeasurable_id,
       integral_map hright.aemeasurable aestronglyMeasurable_id]
     simp only [id_eq]
-    rw [← (flippedSmartRandomPairCLM N s.1).integral_comp_comm hpair.integrable,
-      hpint]
-    rw [← (coordinateRandomCLM N beta q s.1).integral_comp_comm
-      IsGaussian.integrable_id,
-      SYK.standardGaussianMeasureOnEuclidean_integral_id]
-    simp
+    calc
+      (∫ omega, flippedSmartRandomPairCLM N s.1 (pair omega) ∂volume) =
+          flippedSmartRandomPairCLM N s.1 (∫ omega, pair omega ∂volume) :=
+        (flippedSmartRandomPairCLM N s.1).integral_comp_comm hpair.integrable
+      _ = 0 := by rw [hpint]; exact map_zero _
+      _ = coordinateRandomCLM N beta q s.1
+          (∫ x, x ∂SYK.standardGaussianMeasureOnEuclidean
+            (CoupledGaussianIndex N)) := by
+        have hzero := SYK.standardGaussianMeasureOnEuclidean_integral_id
+          (ι := CoupledGaussianIndex N)
+        have hzero' : ∫ x, x ∂SYK.standardGaussianMeasureOnEuclidean
+            (CoupledGaussianIndex N) = 0 := by simpa only [id_eq] using hzero
+        rw [hzero']
+        exact (map_zero _).symm
+      _ = ∫ x, coordinateRandomCLM N beta q s.1 x
+            ∂SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N) :=
+        ((coordinateRandomCLM N beta q s.1).integral_comp_comm
+          IsGaussian.integrable_id).symm
   · apply ContinuousLinearMap.ext
     intro x
     apply ContinuousLinearMap.ext
@@ -465,8 +493,29 @@ private theorem smartPath_coordinate_random_law
         rw [covarianceBilin_apply_eq_cov IsGaussian.memLp_two_id,
           covarianceBilin_apply_eq_cov IsGaussian.memLp_two_id,
           covariance_map, covariance_map]
-        · simp only [Function.comp_apply, SpinGlass.inner_std_basis_apply]
-          dsimp only [pair, coordinateRandomCLM]
+        · rw [show ((fun u => inner ℝ (SpinGlass.std_basis N sigma) u) ∘
+                fun omega => flippedSmartRandomPairCLM N s.1 (pair omega)) =
+              fun omega => flippedSmartRandomPairCLM N s.1
+                (path.sk.U omega, path.simple.V omega) sigma by
+            funext omega
+            simp [pair, SpinGlass.inner_std_basis_apply],
+            show ((fun u => inner ℝ (SpinGlass.std_basis N tau) u) ∘
+                fun omega => flippedSmartRandomPairCLM N s.1 (pair omega)) =
+              fun omega => flippedSmartRandomPairCLM N s.1
+                (path.sk.U omega, path.simple.V omega) tau by
+            funext omega
+            simp [pair, SpinGlass.inner_std_basis_apply],
+            show ((fun u => inner ℝ (SpinGlass.std_basis N sigma) u) ∘
+                coordinateRandomCLM N beta q s.1) =
+              fun z => coordinateRandomCLM N beta q s.1 z sigma by
+            funext z
+            simp [SpinGlass.inner_std_basis_apply],
+            show ((fun u => inner ℝ (SpinGlass.std_basis N tau) u) ∘
+                coordinateRandomCLM N beta q s.1) =
+              fun z => coordinateRandomCLM N beta q s.1 z tau by
+            funext z
+            simp [SpinGlass.inner_std_basis_apply]]
+          dsimp only [coordinateRandomCLM]
           rw [flippedSmart_cov path s sigma tau]
           let gamma := SYK.standardGaussianMeasureOnEuclidean
             (CoupledGaussianIndex N)
@@ -478,12 +527,304 @@ private theorem smartPath_coordinate_random_law
                 (coupledDisorderCoefficient N beta q s.1 sigma) z,
               fun z => -inner ℝ
                 (coupledDisorderCoefficient N beta q s.1 tau) z; gamma]
+          rw [show (fun z => -inner ℝ
+                (coupledDisorderCoefficient N beta q s.1 sigma) z) =
+              -(fun z => inner ℝ
+                (coupledDisorderCoefficient N beta q s.1 sigma) z) by rfl,
+            show (fun z => -inner ℝ
+                (coupledDisorderCoefficient N beta q s.1 tau) z) =
+              -(fun z => inner ℝ
+                (coupledDisorderCoefficient N beta q s.1 tau) z) by rfl]
           rw [covariance_neg_left, covariance_neg_right, neg_neg, hgamma,
             ← covarianceBilin_apply_eq_cov IsGaussian.memLp_two_id,
             ProbabilityTheory.covarianceBilin_stdGaussian]
-          simpa [innerSL_apply_apply, real_inner_comm] using
-            (coefficient_inner N beta q s.1 s.2 hq sigma tau).symm
+          change smartPathCovKernel N beta q s.1 sigma tau =
+            inner ℝ (coupledDisorderCoefficient N beta q s.1 sigma)
+              (coupledDisorderCoefficient N beta q s.1 tau)
+          exact (coefficient_inner N beta q s.1 s.2 hq sigma tau).symm
         all_goals fun_prop
       _ = covarianceBilin nu x y := (bilin_eq_sum_std N _ x y).symm
+
+private lemma flipEnergy_fullPathHamiltonian
+    {Omega : Type*} [MeasureSpace Omega]
+    [IsProbabilityMeasure (volume : Measure Omega)]
+    {N : ℕ} {beta h q : ℝ}
+    (path : RSSmartPathDisorder Omega N beta h q) (s : ℝ) (omega : Omega) :
+    flipEnergyCLM N (fullPathHamiltonian path s omega) =
+      flippedSmartRandomPairCLM N s (path.sk.U omega, path.simple.V omega) -
+        SpinGlass.magnetic_field_vector N h := by
+  ext sigma
+  simp [flipEnergyCLM, fullPathHamiltonian, flippedSmartRandomPairCLM,
+    smartRandomPairCLM, SpinGlass.magnetic_field_vector,
+    SpinGlass.magnetization, spin_flip]
+  ring
+
+private lemma coordinateHamiltonian_eq_random_sub_field
+    (N : ℕ) (beta h q s : ℝ)
+    (x : EuclideanSpace ℝ (CoupledGaussianIndex N)) :
+    coupledCoordinateHamiltonian N beta h q s x =
+      coordinateRandomCLM N beta q s x -
+        SpinGlass.magnetic_field_vector N h := by
+  ext sigma
+  simp [coupledCoordinateHamiltonian, coordinateRandomCLM,
+    SpinGlass.magnetic_field_vector, SpinGlass.magnetization]
+  ring
+
+private lemma fullPath_flipped_energy_law
+    {Omega : Type*} [MeasureSpace Omega]
+    [IsProbabilityMeasure (volume : Measure Omega)]
+    {N : ℕ} {beta h q : ℝ}
+    (path : RSSmartPathDisorder Omega N beta h q)
+    (s : Set.Icc (0 : ℝ) 1) (hq : 0 ≤ q) :
+    Measure.map (fun omega => flipEnergyCLM N
+        (fullPathHamiltonian path s.1 omega)) volume =
+      Measure.map (coupledCoordinateHamiltonian N beta h q s.1)
+        (SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) := by
+  have hlaw := smartPath_coordinate_random_law path s hq
+  let addField : SpinGlass.EnergySpace N → SpinGlass.EnergySpace N :=
+    fun H => H - SpinGlass.magnetic_field_vector N h
+  have hadd : Measurable addField := by fun_prop
+  have hmap := congrArg (Measure.map addField) hlaw
+  have hleftAE : AEMeasurable (fun omega => flippedSmartRandomPairCLM N s.1
+      (path.sk.U omega, path.simple.V omega)) volume := by
+    have hUlaw := gaussianHilbert_hasGaussianLaw path.sk.hU
+    have hVlaw := gaussianHilbert_hasGaussianLaw path.simple.hV
+    exact (path.independent.hasGaussianLaw hUlaw hVlaw).map_fun
+      (flippedSmartRandomPairCLM N s.1) |>.aemeasurable
+  have hrightMeas : Measurable (coordinateRandomCLM N beta q s.1) :=
+    (coordinateRandomCLM N beta q s.1).measurable
+  rw [AEMeasurable.map_map_of_aemeasurable hadd.aemeasurable hleftAE,
+    AEMeasurable.map_map_of_aemeasurable hadd.aemeasurable
+      hrightMeas.aemeasurable] at hmap
+  rw [show (fun omega => flipEnergyCLM N
+          (fullPathHamiltonian path s.1 omega)) =
+        addField ∘ (fun omega => flippedSmartRandomPairCLM N s.1
+          (path.sk.U omega, path.simple.V omega)) by
+      funext omega
+      exact flipEnergy_fullPathHamiltonian path s.1 omega,
+    show coupledCoordinateHamiltonian N beta h q s.1 =
+        addField ∘ coordinateRandomCLM N beta q s.1 by
+      funext x
+      exact coordinateHamiltonian_eq_random_sub_field N beta h q s.1 x]
+  exact hmap
+
+private lemma constrainedPartition_flipEnergy
+    {N : ℕ} (H : SpinGlass.EnergySpace N) (v : ℝ) :
+    constrainedPartition (flipEnergyCLM N H) v = constrainedPartition H v := by
+  classical
+  let e : SpinGlass.Config N × SpinGlass.Config N ≃
+      SpinGlass.Config N × SpinGlass.Config N :=
+    (flipConfig N).prodCongr (flipConfig N)
+  unfold constrainedPartition
+  apply Fintype.sum_equiv e
+  intro p
+  simp [e, flipEnergyCLM, overlap_flip]
+
+/-- The joint vector of constrained log-partition functions for an arbitrary
+smart-path realization has the same law as the canonical coordinate vector. -/
+theorem coupled_constrained_log_partition_vector_law
+    {Omega : Type*} [MeasureSpace Omega]
+    [IsProbabilityMeasure (volume : Measure Omega)]
+    {N : ℕ} {beta h q : ℝ}
+    (path : RSSmartPathDisorder Omega N beta h q)
+    (s : Set.Icc (0 : ℝ) 1) (hq : 0 ≤ q) :
+    Measure.map (fun omega =>
+        fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+          Real.log (constrainedPartition
+            (fullPathHamiltonian path s.1 omega) v.1)) volume =
+      Measure.map (fun x =>
+        fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+          coupledConstrainedLogPartition N beta h q s.1 v.1 x)
+        (SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) := by
+  let Phi : SpinGlass.EnergySpace N →
+      ({v : ℝ // v ∈ attainableOverlaps N} → ℝ) :=
+    fun H v => Real.log (constrainedPartition H v.1)
+  have hPhi : Measurable Phi := by
+    apply measurable_pi_lambda
+    intro v
+    unfold Phi constrainedPartition
+    apply Measurable.log
+    apply Finset.measurable_sum
+    intro p _
+    by_cases hpv : SpinGlass.overlap N p.1 p.2 = v.1
+    · simp only [if_pos hpv]
+      fun_prop
+    · simp only [if_neg hpv]
+      fun_prop
+  have hlaw := fullPath_flipped_energy_law path s hq
+  have hmap := congrArg (Measure.map Phi) hlaw
+  have hleftAE : AEMeasurable (fun omega => flipEnergyCLM N
+      (fullPathHamiltonian path s.1 omega)) volume := by
+    rw [show (fun omega => flipEnergyCLM N
+        (fullPathHamiltonian path s.1 omega)) =
+      fun omega => flippedSmartRandomPairCLM N s.1
+        (path.sk.U omega, path.simple.V omega) -
+          SpinGlass.magnetic_field_vector N h by
+      funext omega
+      exact flipEnergy_fullPathHamiltonian path s.1 omega]
+    have hUlaw := gaussianHilbert_hasGaussianLaw path.sk.hU
+    have hVlaw := gaussianHilbert_hasGaussianLaw path.simple.hV
+    exact ((path.independent.hasGaussianLaw hUlaw hVlaw).map_fun
+      (flippedSmartRandomPairCLM N s.1)).aemeasurable.sub aemeasurable_const
+  have hrightMeas : Measurable (coupledCoordinateHamiltonian N beta h q s.1) := by
+    rw [show coupledCoordinateHamiltonian N beta h q s.1 =
+        fun x => coordinateRandomCLM N beta q s.1 x -
+          SpinGlass.magnetic_field_vector N h by
+      funext x
+      exact coordinateHamiltonian_eq_random_sub_field N beta h q s.1 x]
+    fun_prop
+  rw [AEMeasurable.map_map_of_aemeasurable hPhi.aemeasurable hleftAE,
+    AEMeasurable.map_map_of_aemeasurable hPhi.aemeasurable
+      hrightMeas.aemeasurable] at hmap
+  rw [show (fun omega =>
+        fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+          Real.log (constrainedPartition
+            (fullPathHamiltonian path s.1 omega) v.1)) =
+      Phi ∘ (fun omega => flipEnergyCLM N
+        (fullPathHamiltonian path s.1 omega)) by
+      funext omega v
+      simp [Phi, constrainedPartition_flipEnergy],
+    show (fun x =>
+        fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+          coupledConstrainedLogPartition N beta h q s.1 v.1 x) =
+      Phi ∘ coupledCoordinateHamiltonian N beta h q s.1 by rfl]
+  exact hmap
+
+/-- Arbitrary-realization form of the coupled Gaussian maximum estimate. -/
+theorem coupled_log_partition_gaussian_max_path
+    {Omega : Type*} [MeasureSpace Omega]
+    [IsProbabilityMeasure (volume : Measure Omega)]
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    (N : ℕ) (beta h : ℝ) (s : Set.Icc (0 : ℝ) 1)
+    (hp : (beta, h) ∈ K)
+    (path : RSSmartPathDisorder Omega N beta h (rsQ beta h)) :
+    (∫ omega, Finset.univ.sup' Finset.univ_nonempty
+        (fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+          Real.log (constrainedPartition
+              (fullPathHamiltonian path s.1 omega) v.1) -
+            ∫ eta, Real.log (constrainedPartition
+              (fullPathHamiltonian path s.1 eta) v.1) ∂volume)
+        ∂volume) ≤
+      2 * data.βmax * Real.sqrt N *
+        Real.sqrt (2 * Real.log ((N : ℝ) + 1)) := by
+  let I := {v : ℝ // v ∈ attainableOverlaps N}
+  let X : Omega → I → ℝ := fun omega v =>
+    Real.log (constrainedPartition (fullPathHamiltonian path s.1 omega) v.1)
+  let Y : EuclideanSpace ℝ (CoupledGaussianIndex N) → I → ℝ :=
+    fun x v => coupledConstrainedLogPartition N beta h (rsQ beta h) s.1 v.1 x
+  have hlaw : Measure.map X volume = Measure.map Y
+      (SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) := by
+    simpa [X, Y] using coupled_constrained_log_partition_vector_law
+      path s (rsQ_mem_Icc beta h).1
+  let Phi : SpinGlass.EnergySpace N → I → ℝ :=
+    fun H v => Real.log (constrainedPartition H v.1)
+  have hPhi : Measurable Phi := by
+    apply measurable_pi_lambda
+    intro v
+    unfold Phi constrainedPartition
+    apply Measurable.log
+    apply Finset.measurable_sum
+    intro p _
+    by_cases hpv : SpinGlass.overlap N p.1 p.2 = v.1
+    · simp only [if_pos hpv]
+      fun_prop
+    · simp only [if_neg hpv]
+      fun_prop
+  have hUlaw := gaussianHilbert_hasGaussianLaw path.sk.hU
+  have hVlaw := gaussianHilbert_hasGaussianLaw path.simple.hV
+  have hpairAE : AEMeasurable
+      (fun omega => (path.sk.U omega, path.simple.V omega)) volume :=
+    hUlaw.aemeasurable.prodMk hVlaw.aemeasurable
+  have hfullAE : AEMeasurable (fullPathHamiltonian path s.1) volume := by
+    rw [show fullPathHamiltonian path s.1 = fun omega =>
+        smartRandomPairCLM N s.1 (path.sk.U omega, path.simple.V omega) +
+          SpinGlass.magnetic_field_vector N h by
+      funext omega
+      simp [fullPathHamiltonian, smartRandomPairCLM]]
+    exact ((smartRandomPairCLM N s.1).measurable.comp_aemeasurable hpairAE).add
+      aemeasurable_const
+  have hXaemeas : AEMeasurable X volume := by
+    change AEMeasurable (Phi ∘ fullPathHamiltonian path s.1) volume
+    exact hPhi.aemeasurable.comp_aemeasurable hfullAE
+  have hcoordMeas : Measurable
+      (coupledCoordinateHamiltonian N beta h (rsQ beta h) s.1) := by
+    rw [show coupledCoordinateHamiltonian N beta h (rsQ beta h) s.1 =
+        fun x => coordinateRandomCLM N beta (rsQ beta h) s.1 x -
+          SpinGlass.magnetic_field_vector N h by
+      funext x
+      exact coordinateHamiltonian_eq_random_sub_field N beta h
+        (rsQ beta h) s.1 x]
+    fun_prop
+  have hYmeas : Measurable Y := by
+    change Measurable (Phi ∘
+      coupledCoordinateHamiltonian N beta h (rsQ beta h) s.1)
+    exact hPhi.comp hcoordMeas
+  have hmean (v : I) :
+      (∫ omega, X omega v ∂volume) =
+        ∫ x, Y x v ∂SYK.standardGaussianMeasureOnEuclidean
+          (CoupledGaussianIndex N) := by
+    calc
+      (∫ omega, X omega v ∂volume) =
+          ∫ z, z v ∂Measure.map X volume :=
+        (integral_map hXaemeas
+          (measurable_pi_apply v).aestronglyMeasurable).symm
+      _ = ∫ z, z v ∂Measure.map Y
+          (SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) := by
+        rw [hlaw]
+      _ = ∫ x, Y x v ∂SYK.standardGaussianMeasureOnEuclidean
+          (CoupledGaussianIndex N) := integral_map hYmeas.aemeasurable
+            (measurable_pi_apply v).aestronglyMeasurable
+  let center : (I → ℝ) → ℝ := fun z =>
+    Finset.univ.sup' Finset.univ_nonempty fun v =>
+      z v - ∫ x, Y x v ∂SYK.standardGaussianMeasureOnEuclidean
+        (CoupledGaussianIndex N)
+  have hcenter : Measurable center := by
+    unfold center
+    let f : I → (I → ℝ) → ℝ := fun v z =>
+      z v - ∫ x, Y x v ∂SYK.standardGaussianMeasureOnEuclidean
+        (CoupledGaussianIndex N)
+    have hf : ∀ v ∈ (Finset.univ : Finset I), Measurable (f v) := by
+      intro v _
+      exact (measurable_pi_apply v).sub measurable_const
+    have hsup : Measurable (Finset.univ.sup' Finset.univ_nonempty f) :=
+      Finset.measurable_sup' Finset.univ_nonempty hf
+    rw [show (fun z => Finset.univ.sup' Finset.univ_nonempty fun v =>
+          z v - ∫ x, Y x v ∂SYK.standardGaussianMeasureOnEuclidean
+            (CoupledGaussianIndex N)) =
+        Finset.univ.sup' Finset.univ_nonempty f by
+      funext z
+      exact (Finset.sup'_apply Finset.univ_nonempty f z).symm]
+    exact hsup
+  have hintegral :
+      (∫ omega, center (X omega) ∂volume) =
+        ∫ x, center (Y x) ∂SYK.standardGaussianMeasureOnEuclidean
+          (CoupledGaussianIndex N) := by
+    calc
+      (∫ omega, center (X omega) ∂volume) =
+          ∫ z, center z ∂Measure.map X volume :=
+        (integral_map hXaemeas hcenter.aestronglyMeasurable).symm
+      _ = ∫ z, center z ∂Measure.map Y
+          (SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) := by
+        rw [hlaw]
+      _ = ∫ x, center (Y x)
+          ∂SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N) :=
+        integral_map hYmeas.aemeasurable hcenter.aestronglyMeasurable
+  have hbound := coupled_log_partition_gaussian_max data N beta h s hp
+  rw [show (∫ omega, Finset.univ.sup' Finset.univ_nonempty
+        (fun v : I => X omega v - ∫ eta, X eta v ∂volume) ∂volume) =
+      ∫ omega, center (X omega) ∂volume by
+    congr 1
+    funext omega
+    apply Finset.sup'_congr
+    · rfl
+    · intro v _
+      rw [hmean v]]
+  rw [hintegral]
+  change (∫ x, centeredGaussianMax Finset.univ_nonempty
+      (fun v : {v : ℝ // v ∈ attainableOverlaps N} =>
+        coupledConstrainedLogPartition N beta h (rsQ beta h) s.1 v.1) x
+      ∂SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) ≤ _
+  exact hbound
 
 end SpinGlass.AT

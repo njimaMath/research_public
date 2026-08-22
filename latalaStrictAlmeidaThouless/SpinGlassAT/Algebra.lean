@@ -1,4 +1,4 @@
-import SpinGlass.Defs
+import SpinGlassAT.Defs
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 

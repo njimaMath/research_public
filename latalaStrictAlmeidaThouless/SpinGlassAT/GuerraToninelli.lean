@@ -1,5 +1,5 @@
-import SpinGlass.SKModel
-import SpinGlass.Calculus
+import SpinGlassAT.SKModel
+import SpinGlassAT.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Subadditive
 import Mathlib.Data.Fin.Tuple.Basic

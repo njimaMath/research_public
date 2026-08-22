@@ -1,4 +1,4 @@
-import SpinGlassAT.Proof_of_generalized_latala.proof
+import Lemmas.smart_path.proof
 
 open MeasureTheory ProbabilityTheory BigOperators
 open PhysLean.Probability.GaussianIBP

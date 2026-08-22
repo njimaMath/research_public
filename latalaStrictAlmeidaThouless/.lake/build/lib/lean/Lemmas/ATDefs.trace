@@ -1,9 +1,9 @@
 {"synthetic": false,
  "schemaVersion": "2025-09-10",
  "outputs":
- {"o": ["b1ef16f8fa031f6f.olean"],
+ {"o": ["19ab4bfc3730973a.olean"],
   "m": false,
-  "i": "5cb890b92f6d2357.ilean",
+  "i": "cead692f88b602ff.ilean",
   "c": "1443f10daa46d63c.c"},
  "log":
  [{"message":
@@ -23,8 +23,8 @@
       ["imports",
        [["Lemmas.fixed_point transitive imports (legacy)", "345f631d7a857355"],
         ["Lemmas.fixed_point:importAllArts", "4b5b7bcbee853fb9"],
-        ["SpinGlassAT.SKModel transitive imports (legacy)", "5cce209d28ad33a3"],
-        ["SpinGlassAT.SKModel:importAllArts", "65deef2e0d0a97b6"]]]]],
+        ["SpinGlassAT.SKModel transitive imports (legacy)", "9ff3a789b805b731"],
+        ["SpinGlassAT.SKModel:importAllArts", "8fa322c293014875"]]]]],
     ["libs",
      [["import dynlibs", "00000000000006bb"],
       ["package external libraries", "00000000000006bb"],
@@ -39,4 +39,4 @@
   ["Module.name: Lemmas.ATDefs", "ad91e8b71bbf92ba"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "806ea184583b1362"}
+ "depHash": "e168bed883f80022"}

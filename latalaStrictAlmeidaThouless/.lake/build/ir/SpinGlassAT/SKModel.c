@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: SpinGlassAT.SKModel
-// Imports: public import Init public meta import Init public import SpinGlass.Defs public import SpinGlass.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
+// Imports: public import Init public meta import Init public import SpinGlassAT.Defs public import SpinGlassAT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -15,8 +15,8 @@ extern "C" {
 #endif
 lean_object* initialize_Init(uint8_t builtin);
 lean_object* initialize_Init(uint8_t builtin);
-lean_object* initialize_LatalaMeetsAT_SpinGlass_Defs(uint8_t builtin);
-lean_object* initialize_LatalaMeetsAT_SpinGlass_Mathlib_Probability_Distributions_Gaussian__IBP__Hilbert(uint8_t builtin);
+lean_object* initialize_LatalaMeetsAT_SpinGlassAT_Defs(uint8_t builtin);
+lean_object* initialize_LatalaMeetsAT_SpinGlassAT_Mathlib_Probability_Distributions_Gaussian__IBP__Hilbert(uint8_t builtin);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_LatalaMeetsAT_SpinGlassAT_SKModel(uint8_t builtin) {
 lean_object * res;
@@ -28,10 +28,10 @@ lean_dec_ref(res);
 res = initialize_Init(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_LatalaMeetsAT_SpinGlass_Defs(builtin);
+res = initialize_LatalaMeetsAT_SpinGlassAT_Defs(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_LatalaMeetsAT_SpinGlass_Mathlib_Probability_Distributions_Gaussian__IBP__Hilbert(builtin);
+res = initialize_LatalaMeetsAT_SpinGlassAT_Mathlib_Probability_Distributions_Gaussian__IBP__Hilbert(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));

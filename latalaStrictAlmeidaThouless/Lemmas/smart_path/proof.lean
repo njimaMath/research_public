@@ -1,6 +1,7 @@
-import SpinGlass.Replicas
-import SpinGlass.GuerraBound
-import SpinGlass.KS_inequality
+import SpinGlassAT.SKModel
+import SpinGlassAT.Calculus
+import SpinGlassAT.GuerraBound
+import Lemmas.smart_path.KS_inequality
 import Lemmas.smart_path.IndependentEndpoint
 import Lemmas.smart_path.IndependentGaussianAffineIBP
 import Mathlib.Analysis.SpecialFunctions.Artanh

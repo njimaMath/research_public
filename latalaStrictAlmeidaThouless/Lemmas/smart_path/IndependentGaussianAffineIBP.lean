@@ -1,4 +1,5 @@
-import SpinGlass.Replicas
+import SpinGlassAT.SKModel
+import SpinGlassAT.Calculus
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ENNReal NNReal
