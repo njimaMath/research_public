@@ -1,5 +1,4 @@
 import SpinGlass.Replicas
-import SpinGlass.GuerraBound
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ENNReal NNReal

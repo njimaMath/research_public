@@ -391,6 +391,50 @@ noncomputable def quadraticCoupledPartition {N : ℕ}
     Real.exp (-(H p.1 + H p.2) +
       rho * (N : ℝ) / 2 * (SpinGlass.overlap N p.1 p.2 - q) ^ 2)
 
+/-- The coupled partition function is the finite log-sum-exp envelope of
+the constrained two-replica partition functions. -/
+theorem quadraticCoupledPartition_eq_sum_constrained {N : ℕ}
+    (H : SpinGlass.EnergySpace N) (q rho : ℝ) :
+    quadraticCoupledPartition H q rho =
+      ∑ v ∈ attainableOverlaps N,
+        Real.exp (rho * (N : ℝ) / 2 * (v - q) ^ 2) *
+          constrainedPartition H v := by
+  classical
+  unfold quadraticCoupledPartition constrainedPartition
+  symm
+  calc
+    (∑ v ∈ attainableOverlaps N,
+        Real.exp (rho * (N : ℝ) / 2 * (v - q) ^ 2) *
+          ∑ p : SpinGlass.Config N × SpinGlass.Config N,
+            if SpinGlass.overlap N p.1 p.2 = v then
+              Real.exp (-(H p.1 + H p.2)) else 0) =
+        ∑ v ∈ attainableOverlaps N,
+          ∑ p : SpinGlass.Config N × SpinGlass.Config N,
+            Real.exp (rho * (N : ℝ) / 2 * (v - q) ^ 2) *
+              (if SpinGlass.overlap N p.1 p.2 = v then
+                Real.exp (-(H p.1 + H p.2)) else 0) := by
+          simp_rw [Finset.mul_sum]
+    _ = ∑ p : SpinGlass.Config N × SpinGlass.Config N,
+          ∑ v ∈ attainableOverlaps N,
+            Real.exp (rho * (N : ℝ) / 2 * (v - q) ^ 2) *
+              (if SpinGlass.overlap N p.1 p.2 = v then
+                Real.exp (-(H p.1 + H p.2)) else 0) := by
+          rw [Finset.sum_comm]
+    _ = ∑ p : SpinGlass.Config N × SpinGlass.Config N,
+          Real.exp (-(H p.1 + H p.2) +
+            rho * (N : ℝ) / 2 *
+              (SpinGlass.overlap N p.1 p.2 - q) ^ 2) := by
+      apply Finset.sum_congr rfl
+      intro p _
+      rw [Finset.sum_eq_single (SpinGlass.overlap N p.1 p.2)]
+      · simp [attainableOverlaps, ← Real.exp_add, add_comm]
+      · intro v _ hne
+        simp [hne.symm]
+      · intro hnot
+        exact (hnot (by
+          unfold attainableOverlaps
+          exact Finset.mem_image.mpr ⟨p, Finset.mem_univ p, rfl⟩)).elim
+
 /-- The coupled pressure `p^{(2)}_{N,s}(rho)`. -/
 noncomputable def quadraticCoupledPressure
     {Ω : Type u} [MeasureSpace Ω]
