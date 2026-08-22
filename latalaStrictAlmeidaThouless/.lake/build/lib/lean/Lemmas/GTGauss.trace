@@ -1,9 +1,9 @@
 {"synthetic": false,
  "schemaVersion": "2025-09-10",
  "outputs":
- {"o": ["23e930b775ad8c55.olean"],
+ {"o": ["3246c277c7824cac.olean"],
   "m": false,
-  "i": "9ff8162a5c41408c.ilean",
+  "i": "ba1fa23947556f4d.ilean",
   "c": "d27545684d3339aa.c"},
  "log":
  [{"message":
@@ -70,34 +70,37 @@
    "Lemmas/GTGauss.lean:2111:30: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [gtRankOneStep, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵standardGaussianExpectation, zero_mul, one_mul, if_true]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2241:30: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [gtRankOneStep, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵standardGaussianExpectation, zero_mul, one_mul, if_true]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2154:30: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [gtRankOneStep, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵standardGaussianExpectation, zero_mul, one_mul, if_true]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2256:36: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [GTFrame.finiteStepD, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵GTFrame.step0, one_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2294:30: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [gtRankOneStep, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵standardGaussianExpectation, zero_mul, one_mul, if_true]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2256:48: This simp argument is unused:\n  GTFrame.step0\n\nHint: Omit it from the simp argument list.\n  simp only [GTFrame.finiteStepD, if_pos rfl, G̵T̵F̵r̵a̵m̵e̵.̵s̵t̵e̵p̵0̵,̵ ̵one_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2309:36: This simp argument is unused:\n  if_pos rfl\n\nHint: Omit it from the simp argument list.\n  simp only [GTFrame.finiteStepD, i̵f̵_̵p̵o̵s̵ ̵r̵f̵l̵,̵ ̵GTFrame.step0, one_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2546:52: This simp argument is unused:\n  hqv\n\nHint: Omit it from the simp argument list.\n  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hq̵v̵,̵ ̵h̵r0, hq0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2309:48: This simp argument is unused:\n  GTFrame.step0\n\nHint: Omit it from the simp argument list.\n  simp only [GTFrame.finiteStepD, if_pos rfl, G̵T̵F̵r̵a̵m̵e̵.̵s̵t̵e̵p̵0̵,̵ ̵one_mul]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2546:57: This simp argument is unused:\n  hr0\n\nHint: Omit it from the simp argument list.\n  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hqv, hr̵0̵,̵ ̵h̵q0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2599:52: This simp argument is unused:\n  hqv\n\nHint: Omit it from the simp argument list.\n  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hq̵v̵,̵ ̵h̵r0, hq0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2595:40: This simp argument is unused:\n  hqv\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hq̵v̵,̵ ̵h̵r0, hq0]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2599:57: This simp argument is unused:\n  hr0\n\nHint: Omit it from the simp argument list.\n  simp [gtFunctional, gtSemigroupSolution, hv, hq1, hqv, hr̵0̵,̵ ̵h̵q0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2595:45: This simp argument is unused:\n  hr0\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hqv, hr̵0̵,̵ ̵h̵q0]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2648:40: This simp argument is unused:\n  hqv\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hq̵v̵,̵ ̵h̵r0, hq0]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2683:34: Variable name `hv1` is not explicitly referenced.\n\nThe binding can be removed (if unused) or named `_` (if used implicitly).\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`",
+   "Lemmas/GTGauss.lean:2648:45: This simp argument is unused:\n  hr0\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hqv, hr̵0̵,̵ ̵h̵q0]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2767:40: This simp argument is unused:\n  hqv\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hq̵v̵,̵ ̵h̵r0, hq0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2736:34: Variable name `hv1` is not explicitly referenced.\n\nThe binding can be removed (if unused) or named `_` (if used implicitly).\n\nNote: This linter can be disabled with `set_option linter.unusedVariables false`",
    "level": "warning"},
   {"message":
-   "Lemmas/GTGauss.lean:2767:45: This simp argument is unused:\n  hr0\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hqv, hr̵0̵,̵ ̵h̵q0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "Lemmas/GTGauss.lean:2820:40: This simp argument is unused:\n  hqv\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hq̵v̵,̵ ̵h̵r0, hq0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
+   "level": "warning"},
+  {"message":
+   "Lemmas/GTGauss.lean:2820:45: This simp argument is unused:\n  hr0\n\nHint: Omit it from the simp argument list.\n  simp [gtSemigroupSolution, hv, hq1, hqv, hr̵0̵,̵ ̵h̵q0, h10]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
    "level": "warning"}],
  "inputs":
  [["Lemmas.GTGauss:deps",
@@ -119,10 +122,10 @@
   ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
    "4ce1780d8d26fd00"],
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\GTGauss.lean",
-   "63b5268f4dbdd340"],
+   "6a08c9a9bdbde483"],
   ["options", "00000000000006bb"],
   ["isModule: false", "feefd2a0d3a1847e"],
   ["Module.name: Lemmas.GTGauss", "d54f178306bd021f"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "6fba7b0e1c8b4893"}
+ "depHash": "605f005fee849ec6"}

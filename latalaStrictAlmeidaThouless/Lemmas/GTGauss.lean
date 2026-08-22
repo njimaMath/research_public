@@ -2132,6 +2132,59 @@ theorem gt_lambda_derivative_bounds
   rw [hsecond.deriv]
   exact ⟨hout.nonnegE () lam (h, h), (hout.bddE () lam (h, h)).trans hcOut⟩
 
+/-- The first multiplier derivative of the GT functional has absolute value
+at most two when the prescribed overlap lies in `[-1, 1]`. -/
+theorem abs_deriv_gtFunctional_le_two
+    (β h q s lam v : ℝ)
+    (hv : |v| ≤ 1) :
+    |deriv (fun l => gtFunctional β h q s l v) lam| ≤ 2 := by
+  obtain ⟨F₀, D₀, E₀, c₀, hF₀, _hc₀, heq₀⟩ :=
+    semigroup_package β q s v 0
+  let scale := β * Real.sqrt ((1 - s) * q)
+  let Fout := rankStep 0 scale 1 F₀
+  have hout :=
+    rankStep_good hF₀ (by norm_num : (0 : ℝ) ≤ 0) scale 1
+  have houtEq : ∀ l,
+      Fout () l (h, h) = standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s l v 0
+          (h + scale * z) (h + scale * z)) := by
+    intro l
+    dsimp [Fout]
+    rw [rankStep_apply]
+    simp only [gtRankOneStep, if_pos rfl, standardGaussianExpectation,
+      zero_mul, one_mul, if_true]
+    congr 1
+    funext z
+    rw [heq₀]
+  have hfunctional :
+      (fun l => gtFunctional β h q s l v) = fun l =>
+        2 * Real.log 2 + Fout () l (h, h) - l * v -
+          gtCorrection β q s := by
+    funext l
+    rw [gtFunctional, houtEq]
+  have hderiv :
+      deriv (fun l => gtFunctional β h q s l v) lam =
+        (GTFrame.finiteStepD gauss 0
+          (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () lam (h, h) - v := by
+    rw [hfunctional]
+    have hd :=
+      (((hout.good.hasDeriv () lam (h, h)).const_add
+        (2 * Real.log 2)).sub
+        ((hasDerivAt_id lam).mul_const v)).sub_const
+        (gtCorrection β q s)
+    simpa [Fout] using hd.deriv
+  rw [hderiv]
+  calc
+    |(GTFrame.finiteStepD gauss 0
+          (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () lam (h, h) - v| ≤
+        |(GTFrame.finiteStepD gauss 0
+          (fun _ : Unit => scale) (fun _ => 1 * scale)
+          F₀ D₀) () lam (h, h)| + |v| := abs_sub _ _
+    _ ≤ 1 + 1 := add_le_add (hout.good.bddD () lam (h, h)) hv
+    _ = 2 := by norm_num
+
 /-- The first multiplier derivative of the GT functional is differentiable.
 This is the regularity companion to `gt_lambda_derivative_bounds`. -/
 lemma differentiable_deriv_gtFunctional (β h q s v : ℝ) :

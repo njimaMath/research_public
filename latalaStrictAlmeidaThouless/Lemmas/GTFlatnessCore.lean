@@ -2277,6 +2277,61 @@ lemma flatness_quadratic_gap_of_deriv_gap
 
   nlinarith [ht']
 
+/-- A bounded-overlap version of `flatness_quadratic_gap_of_deriv_gap` whose
+explicit optimizing multiplier lies in `[-1, 1]`. -/
+lemma flatness_quadratic_gap_of_deriv_gap_bounded
+    (β h q s v c : ℝ)
+    (hc : 0 < c)
+    (hv : v ∈ Icc (-1 : ℝ) 1)
+    (hzero :
+      gtFunctional β h q s 0 v
+        ≤ 2 * rsPathValue β h q s)
+    (hgap :
+      c * |v - q| ≤
+        |deriv (fun l => gtFunctional β h q s l v) 0|) :
+    ∃ lam ∈ Icc (-1 : ℝ) 1,
+      gtFunctional β h q s lam v
+        ≤ 2 * rsPathValue β h q s
+          - (c ^ 2 / 5) * (v - q) ^ 2 := by
+  let F : ℝ → ℝ := fun l => gtFunctional β h q s l v
+  let d : ℝ := deriv F 0
+  let lam : ℝ := -(2 / 5 : ℝ) * d
+
+  have hd : |d| ≤ 2 := by
+    dsimp [d, F]
+    exact abs_deriv_gtFunctional_le_two β h q s 0 v
+      (by simpa [abs_le] using hv)
+  have hd_bounds : -2 ≤ d ∧ d ≤ 2 := abs_le.mp hd
+  have hlam : lam ∈ Icc (-1 : ℝ) 1 := by
+    dsimp [lam]
+    constructor <;> nlinarith [hd_bounds.1, hd_bounds.2]
+
+  have ht := flatness_gtFunctional_taylor_upper β h q s v lam
+  change F lam ≤ F 0 + d * lam + (5 / 4 : ℝ) * lam ^ 2 at ht
+  have hopt :
+      d * lam + (5 / 4 : ℝ) * lam ^ 2 = -(d ^ 2) / 5 := by
+    dsimp [lam]
+    ring
+  have ht' : F lam ≤ F 0 - d ^ 2 / 5 := by
+    nlinarith [ht, hopt]
+
+  have hgap' : c * |v - q| ≤ |d| := by
+    simpa [d, F] using hgap
+  have hsq : c ^ 2 * (v - q) ^ 2 ≤ d ^ 2 := by
+    have hmul := mul_self_le_mul_self
+      (mul_nonneg hc.le (abs_nonneg (v - q))) hgap'
+    calc
+      c ^ 2 * (v - q) ^ 2 =
+          (c * |v - q|) * (c * |v - q|) := by
+            nlinarith [sq_abs (v - q)]
+      _ ≤ |d| * |d| := hmul
+      _ = d ^ 2 := by nlinarith [sq_abs d]
+
+  refine ⟨lam, hlam, ?_⟩
+  have hzero' : F 0 ≤ 2 * rsPathValue β h q s := by
+    simpa [F] using hzero
+  nlinarith [ht', hsq]
+
 /-- The squared distance between any two admissible overlaps is at most four. -/
 lemma sub_sq_le_four_of_overlap
     {q v : ℝ}

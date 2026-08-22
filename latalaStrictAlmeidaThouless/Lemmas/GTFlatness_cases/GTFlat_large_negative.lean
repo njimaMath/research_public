@@ -4,7 +4,7 @@ open MeasureTheory ProbabilityTheory Set
 
 namespace SpinGlass.AT
 
-/-! ### Overlaps `-1 ≤ v ≤ -q` -/
+/-! ### Large negative overlaps `-1 ≤ v ≤ -q` -/
 
 /-- On the large-negative-overlap branch, the distance to `q` is at most two. -/
 lemma sub_sq_le_four_of_negative_overlap
