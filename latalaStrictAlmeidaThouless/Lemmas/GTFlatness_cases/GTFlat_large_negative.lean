@@ -2,6 +2,7 @@ import Lemmas.GTFlatness_cases.GTFlatnessCore
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 
 open MeasureTheory ProbabilityTheory Set
+open scoped MeasureTheory NNReal
 
 namespace SpinGlass.AT
 
@@ -800,46 +801,207 @@ private lemma flatness_log_cosh_nonneg
     0 ≤ Real.log (Real.cosh x) := by
   exact Real.log_nonneg (Real.one_le_cosh x)
 
-private lemma flatness_log_cosh_le_sq
+private lemma flatness_log_cosh_le_abs
     (x : ℝ) :
-    Real.log (Real.cosh x) ≤ x ^ 2 / 2 := by
+    Real.log (Real.cosh x) ≤ |x| := by
+  have hcosh :
+      Real.cosh x ≤ Real.exp |x| := by
+    rw [Real.cosh_eq]
+    have h₁ :
+        Real.exp x ≤ Real.exp |x| :=
+      Real.exp_le_exp.mpr (le_abs_self x)
+    have h₂ :
+        Real.exp (-x) ≤ Real.exp |x| :=
+      Real.exp_le_exp.mpr (neg_le_abs x)
+    linarith
   exact
     (Real.log_le_iff_le_exp (Real.cosh_pos x)).2
-      (Real.cosh_le_exp_half_sq x)
+      hcosh
 
-private lemma flatness_integrable_log_cosh_affine
-    (y c : ℝ) :
+private lemma flatness_integrable_log_cosh_affine_gaussian
+    (h a m : ℝ) (v : ℝ≥0) :
     Integrable
-      (fun z : ℝ => Real.log (Real.cosh (y + c * z)))
-      (gaussianReal 0 1) := by
-  have hz2 :
-      Integrable (fun z : ℝ => |z| ^ 2) (gaussianReal 0 1) := by
-    simpa only [Real.norm_eq_abs, id_eq] using
-      (memLp_id_gaussianReal
-        (μ := 0) (v := (1 : NNReal)) 2).integrable_norm_pow'
+      (fun z : ℝ =>
+        Real.log (Real.cosh (h + a * z)))
+      (gaussianReal m v) := by
+  have hz :
+      Integrable
+        (fun z : ℝ => |z|)
+        (gaussianReal m v) :=
+    (GTFrame.expMoments_gaussianReal m v).integrable_abs
   have hdom :
-      Integrable (fun z : ℝ => y ^ 2 + c ^ 2 * |z| ^ 2)
-        (gaussianReal 0 1) := by
-    exact (integrable_const (y ^ 2)).add (hz2.const_mul (c ^ 2))
+      Integrable
+        (fun z : ℝ => |h| + |a| * |z|)
+        (gaussianReal m v) :=
+    (integrable_const |h|).add
+      (hz.const_mul |a|)
   have hc :
-      Continuous (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
-    have hcosh : Continuous (fun z : ℝ => Real.cosh (y + c * z)) := by
+      Continuous
+        (fun z : ℝ =>
+          Real.log (Real.cosh (h + a * z))) := by
+    have hcosh :
+        Continuous
+          (fun z : ℝ =>
+            Real.cosh (h + a * z)) := by
       fun_prop
-    exact hcosh.log (fun z => (Real.cosh_pos (y + c * z)).ne')
+    exact hcosh.log
+      (fun z =>
+        (Real.cosh_pos (h + a * z)).ne')
   refine hdom.mono' hc.aestronglyMeasurable ?_
   filter_upwards [] with z
   have hbound :
-      Real.log (Real.cosh (y + c * z)) ≤ y ^ 2 + c ^ 2 * |z| ^ 2 := by
+      Real.log (Real.cosh (h + a * z))
+        ≤ |h| + |a| * |z| := by
     calc
-      Real.log (Real.cosh (y + c * z)) ≤ (y + c * z) ^ 2 / 2 :=
-        flatness_log_cosh_le_sq _
-      _ ≤ y ^ 2 + c ^ 2 * |z| ^ 2 := by
-        nlinarith [sq_nonneg (y - c * z), sq_abs z]
-  have hright : 0 ≤ y ^ 2 + c ^ 2 * |z| ^ 2 := by
+      Real.log (Real.cosh (h + a * z))
+          ≤ |h + a * z| :=
+        flatness_log_cosh_le_abs _
+      _ ≤ |h| + |a * z| :=
+        abs_add_le _ _
+      _ = |h| + |a| * |z| := by
+        rw [abs_mul]
+  have hright :
+      0 ≤ |h| + |a| * |z| := by
+    positivity
+  simpa [
+      Real.norm_eq_abs,
+      abs_of_nonneg
+        (flatness_log_cosh_nonneg (h + a * z)),
+      abs_of_nonneg hright] using hbound
+
+private lemma flatness_integrable_log_cosh_two_affine
+    (h a b : ℝ) :
+    Integrable
+      (fun p : ℝ × ℝ =>
+        Real.log (Real.cosh (h + a * p.1 + b * p.2)))
+      ((gaussianReal 0 1).prod (gaussianReal 0 1)) := by
+  have hz : Integrable (fun z : ℝ => |z|) (gaussianReal 0 1) :=
+    (GTFrame.expMoments_gaussianReal 0 1).integrable_abs
+  have hz₁ :
+      Integrable (fun p : ℝ × ℝ => |p.1|)
+        ((gaussianReal 0 1).prod (gaussianReal 0 1)) :=
+    hz.comp_fst (gaussianReal 0 1)
+  have hz₂ :
+      Integrable (fun p : ℝ × ℝ => |p.2|)
+        ((gaussianReal 0 1).prod (gaussianReal 0 1)) :=
+    hz.comp_snd (gaussianReal 0 1)
+  have hdom :
+      Integrable
+        (fun p : ℝ × ℝ =>
+          (|h| + |a| * |p.1|) + |b| * |p.2|)
+        ((gaussianReal 0 1).prod (gaussianReal 0 1)) :=
+    ((integrable_const |h|).add (hz₁.const_mul |a|)).add
+      (hz₂.const_mul |b|)
+  have hc :
+      Continuous
+        (fun p : ℝ × ℝ =>
+          Real.log (Real.cosh (h + a * p.1 + b * p.2))) := by
+    have hcosh :
+        Continuous
+          (fun p : ℝ × ℝ => Real.cosh (h + a * p.1 + b * p.2)) := by
+      fun_prop
+    exact hcosh.log (fun p => (Real.cosh_pos _).ne')
+  refine hdom.mono' hc.aestronglyMeasurable ?_
+  filter_upwards [] with p
+  have hbound :
+      Real.log (Real.cosh (h + a * p.1 + b * p.2)) ≤
+        (|h| + |a| * |p.1|) + |b| * |p.2| := by
+    calc
+      Real.log (Real.cosh (h + a * p.1 + b * p.2)) ≤
+          |h + a * p.1 + b * p.2| := flatness_log_cosh_le_abs _
+      _ ≤ |h + a * p.1| + |b * p.2| := abs_add_le _ _
+      _ ≤ (|h| + |a * p.1|) + |b * p.2| := by
+        gcongr
+        exact abs_add_le _ _
+      _ = (|h| + |a| * |p.1|) + |b| * |p.2| := by
+        rw [abs_mul, abs_mul]
+  have hright : 0 ≤ (|h| + |a| * |p.1|) + |b| * |p.2| := by
     positivity
   simpa [Real.norm_eq_abs,
-      abs_of_nonneg (flatness_log_cosh_nonneg (y + c * z)),
+      abs_of_nonneg (flatness_log_cosh_nonneg _),
       abs_of_nonneg hright] using hbound
+
+private lemma flatness_gaussian_convolution_log_cosh_add_const
+    (h k a b c : ℝ)
+    (hc : c ^ 2 = a ^ 2 + b ^ 2) :
+    (∫ x, ∫ y, Real.log (Real.cosh (h + a * x + b * y)) + k
+      ∂gaussianReal 0 1 ∂gaussianReal 0 1) =
+    ∫ z, Real.log (Real.cosh (h + c * z)) + k ∂gaussianReal 0 1 := by
+  let va : ℝ≥0 := NNReal.mk (a ^ 2) (sq_nonneg a) * 1
+  let vb : ℝ≥0 := NNReal.mk (b ^ 2) (sq_nonneg b) * 1
+  let vc : ℝ≥0 := NNReal.mk (c ^ 2) (sq_nonneg c) * 1
+  have hma : Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1) =
+      gaussianReal 0 va := by
+    simpa [va] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : ℝ≥0)) a)
+  have hmb : Measure.map (fun x : ℝ => b * x) (gaussianReal 0 1) =
+      gaussianReal 0 vb := by
+    simpa [vb] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : ℝ≥0)) b)
+  have hmc : Measure.map (fun x : ℝ => c * x) (gaussianReal 0 1) =
+      gaussianReal 0 vc := by
+    simpa [vc] using (gaussianReal_map_const_mul (μ := 0) (v := (1 : ℝ≥0)) c)
+  have hv : va + vb = vc := by
+    apply NNReal.eq
+    simp [va, vb, vc, hc]
+  have hf :
+      Integrable (fun z : ℝ => Real.log (Real.cosh (h + z)) + k)
+        (gaussianReal 0 va ∗ gaussianReal 0 vb) := by
+    rw [gaussianReal_conv_gaussianReal, hv, zero_add]
+    simpa using
+      (flatness_integrable_log_cosh_affine_gaussian h 1 0 vc).add
+        (integrable_const k)
+  have hprod :
+      Integrable (fun p : ℝ × ℝ => Real.log (Real.cosh (h + (p.1 + p.2))) + k)
+        ((gaussianReal 0 va).prod (gaussianReal 0 vb)) := by
+    rw [Measure.conv] at hf
+    exact (integrable_map_measure hf.1 (by fun_prop)).mp hf
+  have houter :
+      AEStronglyMeasurable
+        (fun x : ℝ => ∫ y, Real.log (Real.cosh (h + (x + y))) + k
+          ∂gaussianReal 0 vb)
+        (gaussianReal 0 va) := hprod.integral_prod_left.1
+  have hinner (x : ℝ) :
+      (∫ y, Real.log (Real.cosh (h + a * x + b * y)) + k ∂gaussianReal 0 1) =
+        ∫ y, Real.log (Real.cosh (h + a * x + y)) + k ∂gaussianReal 0 vb := by
+    have hm : AEStronglyMeasurable
+        (fun y : ℝ => Real.log (Real.cosh (h + a * x + y)) + k)
+        (Measure.map (fun y : ℝ => b * y) (gaussianReal 0 1)) := by
+      apply (Continuous.add _ continuous_const).aestronglyMeasurable
+      apply Continuous.log
+      · fun_prop
+      · intro y
+        exact (Real.cosh_pos _).ne'
+    rw [← hmb, integral_map (by fun_prop) hm]
+  have houter_map :
+      (∫ x, ∫ y, Real.log (Real.cosh (h + a * x + y)) + k
+        ∂gaussianReal 0 vb ∂gaussianReal 0 1) =
+        ∫ x, ∫ y, Real.log (Real.cosh (h + x + y)) + k
+          ∂gaussianReal 0 vb ∂gaussianReal 0 va := by
+    have hm : AEStronglyMeasurable
+        (fun x : ℝ => ∫ y, Real.log (Real.cosh (h + (x + y))) + k
+          ∂gaussianReal 0 vb)
+        (Measure.map (fun x : ℝ => a * x) (gaussianReal 0 1)) := by
+      simpa [hma] using houter
+    rw [← hma]
+    simpa only [add_assoc] using (integral_map (by fun_prop) hm).symm
+  calc
+    (∫ x, ∫ y, Real.log (Real.cosh (h + a * x + b * y)) + k
+      ∂gaussianReal 0 1 ∂gaussianReal 0 1) =
+        ∫ x, ∫ y, Real.log (Real.cosh (h + x + y)) + k
+          ∂gaussianReal 0 vb ∂gaussianReal 0 va := by
+            rw [integral_congr_ae (Filter.Eventually.of_forall hinner)]
+            exact houter_map
+    _ = ∫ z, Real.log (Real.cosh (h + z)) + k
+          ∂(gaussianReal 0 va ∗ gaussianReal 0 vb) := by
+            simpa only [add_assoc] using (integral_conv hf).symm
+    _ = ∫ z, Real.log (Real.cosh (h + z)) + k ∂gaussianReal 0 vc := by
+            rw [gaussianReal_conv_gaussianReal, hv, zero_add]
+    _ = ∫ z, Real.log (Real.cosh (h + c * z)) + k ∂gaussianReal 0 1 := by
+            rw [← hmc, integral_map (by fun_prop)]
+            apply (Continuous.add _ continuous_const).aestronglyMeasurable
+            apply Continuous.log
+            · fun_prop
+            · intro z
+              exact (Real.cosh_pos _).ne'
 
 private lemma flatness_standardGaussian_log_cosh_neg_scale
     (y c : ℝ) :
@@ -886,14 +1048,16 @@ private lemma flatness_negative_half_step_goodFam
     (a b : ℝ) :
     ∃ D : Unit → ℝ → ℝ × ℝ → ℝ,
       GTFrame.GoodFam
-        (fun (_ : Unit) (_ : ℝ) (x : ℝ × ℝ) =>
+        (fun (_ : Unit) l (x : ℝ × ℝ) =>
           gtRankOneStep (1 / 2) a (-1)
-            (gtDiagonalStep 1 b (gtTerminal 0))
+            (gtDiagonalStep 1 b (gtTerminal l))
             x.1 x.2)
         D := by
-  let F0 : Unit → ℝ → ℝ × ℝ → ℝ := fun _ _ x =>
-    gtDiagonalStep 1 b (gtTerminal 0) x.1 x.2
-  let D0 : Unit → ℝ → ℝ × ℝ → ℝ := fun _ _ _ => 0
+  let F0 : Unit → ℝ → ℝ × ℝ → ℝ := fun _ l x =>
+    gtDiagonalStep 1 b (gtTerminal l) x.1 x.2
+  let D0 : Unit → ℝ → ℝ × ℝ → ℝ := fun _ l x =>
+    GTFrame.fLbaseD l x
+  have hbase := GTFrame.goodFam_fLbase (P := Unit)
   have hF0 : GTFrame.GoodFam F0 D0 := by
     refine
       { contF := ?_
@@ -901,44 +1065,25 @@ private lemma flatness_negative_half_step_goodFam
         hasDeriv := ?_
         lipx := ?_
         bddD := ?_ }
-    · have hterm :
-          Continuous (fun w : Unit × ℝ × (ℝ × ℝ) => GTFrame.fLbase 0 w.2.2) :=
-        GTFrame.continuous_fLbase.comp
-          (continuous_const.prodMk (continuous_snd.comp continuous_snd))
-      change Continuous
-        (fun w : Unit × ℝ × (ℝ × ℝ) =>
-          gtTerminal 0 w.2.2.1 w.2.2.2) at hterm
-      have hF0eq :
-          (fun w : Unit × ℝ × (ℝ × ℝ) => F0 w.1 w.2.1 w.2.2) =
-            ((fun w : Unit × ℝ × (ℝ × ℝ) =>
-              gtTerminal 0 w.2.2.1 w.2.2.2) + fun _ => b ^ 2) := by
-        funext w
-        change gtDiagonalStep 1 b (gtTerminal 0) w.2.2.1 w.2.2.2 = _
-        rw [gtDiagonalStep_one_terminal]
-        rfl
-      rw [hF0eq]
-      exact hterm.add continuous_const
-    · dsimp [D0]
-      fun_prop
+    · have hc :
+          Continuous (fun w : Unit × ℝ × (ℝ × ℝ) =>
+            GTFrame.fLbase w.2.1 w.2.2 + b ^ 2) :=
+        hbase.contF.add continuous_const
+      simpa [F0, gtDiagonalStep_one_terminal] using hc
+    · simpa [D0] using hbase.contD
     · intro p l x
-      dsimp [F0, D0]
-      simpa using
-        (hasDerivAt_const (x := l)
-          (c := gtDiagonalStep 1 b (gtTerminal 0) x.1 x.2))
+      simpa [F0, D0, gtDiagonalStep_one_terminal] using
+        (hbase.hasDeriv p l x).add_const (b ^ 2)
     · intro p l x y
-      dsimp [F0]
-      have h :
-          |gtTerminal 0 x.1 x.2 - gtTerminal 0 y.1 y.2| ≤
-            |x.1 - y.1| + |x.2 - y.2| :=
-        GTFrame.fLbase_lipx 0 x y
-      simpa [gtDiagonalStep_one_terminal] using h
-    · simp [D0]
+      simpa [F0, gtDiagonalStep_one_terminal] using hbase.lipx p l x y
+    · intro p l x
+      simpa [D0] using hbase.bddD p l x
   let α : Unit → ℝ := fun _ => a
-  let β : Unit → ℝ := fun _ => (-1) * a
+  let βdir : Unit → ℝ := fun _ => (-1) * a
   let F1 : Unit → ℝ → ℝ × ℝ → ℝ :=
-    GTFrame.stepM (gaussianReal 0 1) (1 / 2) α β F0
+    GTFrame.stepM (gaussianReal 0 1) (1 / 2) α βdir F0
   let D1 : Unit → ℝ → ℝ × ℝ → ℝ :=
-    GTFrame.stepMD (gaussianReal 0 1) (1 / 2) α β F0 D0
+    GTFrame.stepMD (gaussianReal 0 1) (1 / 2) α βdir F0 D0
   have hF1 : GTFrame.GoodFam F1 D1 := by
     exact
       GTFrame.stepM_good
@@ -947,12 +1092,12 @@ private lemma flatness_negative_half_step_goodFam
         (by norm_num)
         (by fun_prop)
         (by fun_prop)
-  let H : Unit → ℝ → ℝ × ℝ → ℝ := fun _ _ x =>
+  let H : Unit → ℝ → ℝ × ℝ → ℝ := fun _ l x =>
     gtRankOneStep (1 / 2) a (-1)
-      (gtDiagonalStep 1 b (gtTerminal 0)) x.1 x.2
+      (gtDiagonalStep 1 b (gtTerminal l)) x.1 x.2
   have hHF : H = F1 := by
     funext p l x
-    norm_num [H, F1, F0, α, β, GTFrame.stepM, gtRankOneStep,
+    norm_num [H, F1, F0, α, βdir, GTFrame.stepM, gtRankOneStep,
       standardGaussianExpectation]
   refine ⟨D1, ?_⟩
   change GTFrame.GoodFam H D1
@@ -1001,11 +1146,13 @@ private lemma flatness_negative_zero_step_lt
   have hlog₁ :
       Integrable (fun z : ℝ => Real.log (Real.cosh (y + c * z)))
         (gaussianReal 0 1) :=
-    flatness_integrable_log_cosh_affine y c
+    flatness_integrable_log_cosh_affine_gaussian
+      y c 0 (1 : NNReal)
   have hlog₂ :
       Integrable (fun z : ℝ => Real.log (Real.cosh (y + (-c) * z)))
         (gaussianReal 0 1) :=
-    flatness_integrable_log_cosh_affine y (-c)
+    flatness_integrable_log_cosh_affine_gaussian
+      y (-c) 0 (1 : NNReal)
   have hUcont : Continuous U := by
     have hc₁ : Continuous (fun z : ℝ => Real.cosh (y + c * z)) := by
       fun_prop
@@ -1120,5 +1267,388 @@ private lemma flatness_negative_zero_step_lt
     _ = b ^ 2 + a ^ 2 +
         2 * standardGaussianExpectation
           (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := hUeval
+
+private lemma flatness_negative_zero_step_goodFam
+    (a b c : ℝ) :
+    ∃ D : Unit → ℝ → ℝ × ℝ → ℝ,
+      GTFrame.GoodFam
+        (fun (_ : Unit) l (x : ℝ × ℝ) =>
+          gtRankOneStep 0 c (-1)
+            (gtRankOneStep (1 / 2) a (-1)
+              (gtDiagonalStep 1 b (gtTerminal l)))
+            x.1 x.2)
+        D := by
+  obtain ⟨Dhalf, hhalf⟩ := flatness_negative_half_step_goodFam a b
+  let Fhalf : Unit → ℝ → ℝ × ℝ → ℝ := fun _ l x =>
+    gtRankOneStep (1 / 2) a (-1)
+      (gtDiagonalStep 1 b (gtTerminal l)) x.1 x.2
+  let α : Unit → ℝ := fun _ => c
+  let βdir : Unit → ℝ := fun _ => (-1) * c
+  let F0 : Unit → ℝ → ℝ × ℝ → ℝ :=
+    GTFrame.step0 (gaussianReal 0 1) α βdir Fhalf
+  let D0 : Unit → ℝ → ℝ × ℝ → ℝ :=
+    GTFrame.step0 (gaussianReal 0 1) α βdir Dhalf
+  have hF0 : GTFrame.GoodFam F0 D0 := by
+    exact GTFrame.step0_good
+      (GTFrame.expMoments_gaussianReal 0 1)
+      hhalf
+      (by fun_prop)
+      (by fun_prop)
+  let H : Unit → ℝ → ℝ × ℝ → ℝ := fun _ l x =>
+    gtRankOneStep 0 c (-1)
+      (gtRankOneStep (1 / 2) a (-1)
+        (gtDiagonalStep 1 b (gtTerminal l))) x.1 x.2
+  have hHF : H = F0 := by
+    funext p l x
+    norm_num [H, F0, Fhalf, α, βdir, GTFrame.step0, gtRankOneStep,
+      standardGaussianExpectation]
+  refine ⟨D0, ?_⟩
+  change GTFrame.GoodFam H D0
+  rw [hHF]
+  exact hF0
+
+private lemma flatness_negative_zero_rhs_integrable
+    (a b c y : ℝ) :
+    Integrable
+      (fun z : ℝ =>
+        b ^ 2 + a ^ 2 +
+          Real.log (Real.cosh (y + c * z)) +
+          Real.log (Real.cosh (y + (-c) * z)))
+      (gaussianReal 0 1) := by
+  have h₁ :=
+    flatness_integrable_log_cosh_affine_gaussian
+      y c 0 (1 : NNReal)
+  have h₂ :=
+    flatness_integrable_log_cosh_affine_gaussian
+      y (-c) 0 (1 : NNReal)
+  exact ((integrable_const (b ^ 2 + a ^ 2)).add h₁).add h₂
+
+private lemma flatness_negative_zero_rhs_integral
+    (a b c y : ℝ) :
+    (∫ z,
+        b ^ 2 + a ^ 2 +
+          Real.log (Real.cosh (y + c * z)) +
+          Real.log (Real.cosh (y + (-c) * z))
+      ∂gaussianReal 0 1) =
+    b ^ 2 + a ^ 2 +
+      2 * standardGaussianExpectation
+        (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+  have h₁ :=
+    flatness_integrable_log_cosh_affine_gaussian
+      y c 0 (1 : NNReal)
+  have h₂ :=
+    flatness_integrable_log_cosh_affine_gaussian
+      y (-c) 0 (1 : NNReal)
+  have hsym :
+      (∫ z, Real.log (Real.cosh (y + (-c) * z))
+        ∂gaussianReal 0 1) =
+      ∫ z, Real.log (Real.cosh (y + c * z))
+        ∂gaussianReal 0 1 := by
+    simpa [standardGaussianExpectation] using
+      flatness_standardGaussian_log_cosh_neg_scale y c
+  let u : ℝ → ℝ := fun _ => b ^ 2 + a ^ 2
+  let v : ℝ → ℝ := fun z => Real.log (Real.cosh (y + c * z))
+  let w : ℝ → ℝ := fun z => Real.log (Real.cosh (y + (-c) * z))
+  have hsum :
+      (fun z : ℝ =>
+        b ^ 2 + a ^ 2 +
+          Real.log (Real.cosh (y + c * z)) +
+          Real.log (Real.cosh (y + (-c) * z))) = u + v + w := by
+    funext z
+    rfl
+  have hu : Integrable u (gaussianReal 0 1) := by simp [u]
+  have hv : Integrable v (gaussianReal 0 1) := by simpa [v] using h₁
+  have hw : Integrable w (gaussianReal 0 1) := by simpa [w] using h₂
+  have huv :
+      (∫ z, (u + v) z ∂gaussianReal 0 1) =
+        (∫ z, u z ∂gaussianReal 0 1) +
+          ∫ z, v z ∂gaussianReal 0 1 := by
+    simpa only [Pi.add_apply] using integral_add hu hv
+  rw [hsum]
+  calc
+    (∫ z, (u + v + w) z ∂gaussianReal 0 1) =
+        (∫ z, (u + v) z ∂gaussianReal 0 1) +
+          ∫ z, w z ∂gaussianReal 0 1 := by
+            simpa only [Pi.add_apply] using integral_add (hu.add hv) hw
+    _ = (∫ z, u z ∂gaussianReal 0 1) +
+          (∫ z, v z ∂gaussianReal 0 1) +
+          ∫ z, w z ∂gaussianReal 0 1 := by
+            rw [huv]
+    _ = b ^ 2 + a ^ 2 +
+        2 * standardGaussianExpectation
+          (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+            dsimp [u, v, w]
+            simp only [integral_const, probReal_univ, one_smul]
+            rw [hsym]
+            unfold standardGaussianExpectation
+            ring
+
+private lemma flatness_negative_zero_step_le
+    (a b c y : ℝ) :
+    gtRankOneStep 0 c (-1)
+        (gtRankOneStep (1 / 2) a (-1)
+          (gtDiagonalStep 1 b (gtTerminal 0)))
+        y y
+      ≤
+    b ^ 2 + a ^ 2 +
+      2 * standardGaussianExpectation
+        (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+  obtain ⟨Dhalf, hhalfGood⟩ := flatness_negative_half_step_goodFam a b
+  let H : ℝ → ℝ := fun z =>
+    gtRankOneStep (1 / 2) a (-1)
+      (gtDiagonalStep 1 b (gtTerminal 0))
+      (y + c * z) (y + (-c) * z)
+  let U : ℝ → ℝ := fun z =>
+    b ^ 2 + a ^ 2 +
+      Real.log (Real.cosh (y + c * z)) +
+      Real.log (Real.cosh (y + (-c) * z))
+  have hHint : Integrable H (gaussianReal 0 1) := by
+    have h :=
+      hhalfGood.integrable_shift
+        (GTFrame.expMoments_gaussianReal 0 1)
+        () 0 c (-c) (y, y)
+    simpa [H] using h
+  have hUint : Integrable U (gaussianReal 0 1) := by
+    simpa [U] using flatness_negative_zero_rhs_integrable a b c y
+  have hpoint : ∀ z : ℝ, H z ≤ U z := by
+    intro z
+    have h := flatness_negative_half_step_le
+      a b (y + c * z) (y + (-c) * z)
+    simpa [H, U] using h
+  have hInt :
+      (∫ z, H z ∂gaussianReal 0 1) ≤
+        ∫ z, U z ∂gaussianReal 0 1 :=
+    integral_mono hHint hUint hpoint
+  have hstep :
+      gtRankOneStep 0 c (-1)
+          (gtRankOneStep (1 / 2) a (-1)
+            (gtDiagonalStep 1 b (gtTerminal 0))) y y =
+        ∫ z, H z ∂gaussianReal 0 1 := by
+    simp [gtRankOneStep, H, standardGaussianExpectation]
+  rw [hstep]
+  calc
+    (∫ z, H z ∂gaussianReal 0 1) ≤
+        ∫ z, U z ∂gaussianReal 0 1 := hInt
+    _ = b ^ 2 + a ^ 2 +
+        2 * standardGaussianExpectation
+          (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+            simpa [U] using flatness_negative_zero_rhs_integral a b c y
+
+private lemma flatness_gtIncrementScale_sq
+    {β s lower upper : ℝ}
+    (hs : 0 ≤ s)
+    (hlu : lower ≤ upper) :
+    gtIncrementScale β s lower upper ^ 2 =
+      s * β ^ 2 * (upper - lower) := by
+  unfold gtIncrementScale
+  rw [mul_pow, mul_pow, Real.sq_sqrt hs,
+    Real.sq_sqrt (sub_nonneg.mpr hlu)]
+  ring
+
+private lemma flatness_gtIncrementScale_ne_zero
+    {β s lower upper : ℝ}
+    (hβ : 0 < β)
+    (hs : 0 < s)
+    (hlu : lower < upper) :
+    gtIncrementScale β s lower upper ≠ 0 := by
+  unfold gtIncrementScale
+  exact mul_ne_zero
+    (mul_ne_zero hβ.ne' (Real.sqrt_pos.2 hs).ne')
+    (Real.sqrt_pos.2 (sub_pos.mpr hlu)).ne'
+
+private lemma flatness_large_negative_semigroup_zero_lt
+    {β h q s v : ℝ}
+    (hβ : 0 < β)
+    (hh : 0 < h)
+    (hq0 : 0 < q)
+    (hs : s ∈ Icc (0 : ℝ) 1)
+    (hs0 : 0 < s)
+    (hv : v ∈ Icc (-1 : ℝ) (-q))
+    (hvq : v < -q) :
+    standardGaussianExpectation (fun z =>
+      gtSemigroupSolution β q s 0 v 0
+        (h + β * Real.sqrt ((1 - s) * q) * z)
+        (h + β * Real.sqrt ((1 - s) * q) * z))
+      <
+    2 * standardGaussianExpectation
+        (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
+      s * β ^ 2 * (1 - q) := by
+  let r : ℝ := |v|
+  have hvneg : v < 0 := by linarith
+  have hr_eq : r = -v := by
+    dsimp [r]
+    rw [abs_of_neg hvneg]
+  have hqr : q < r := by
+    rw [hr_eq]
+    linarith
+  have hr1 : r ≤ 1 := by
+    rw [hr_eq]
+    linarith [hv.1]
+  have hr0 : 0 < r := lt_trans hq0 hqr
+  have hqabs : q ≤ |v| := by simpa [r] using hqr.le
+  have habs0 : ¬ |v| ≤ 0 := by simpa [r] using (not_le.mpr hr0)
+  have hqzero : ¬ q ≤ (0 : ℝ) := not_le.mpr hq0
+  have hsign : gtPathSign v = -1 := by
+    simp [gtPathSign, not_le.mpr hvneg]
+  let a : ℝ := gtIncrementScale β s q r
+  let b : ℝ := gtIncrementScale β s r 1
+  let c : ℝ := gtIncrementScale β s 0 q
+  let d : ℝ := β * Real.sqrt ((1 - s) * q)
+  have ha : a ≠ 0 := by
+    dsimp [a]
+    exact flatness_gtIncrementScale_ne_zero hβ hs0 hqr
+  have ha2 : a ^ 2 = s * β ^ 2 * (r - q) := by
+    dsimp [a]
+    exact flatness_gtIncrementScale_sq hs.1 hqr.le
+  have hb2 : b ^ 2 = s * β ^ 2 * (1 - r) := by
+    dsimp [b]
+    exact flatness_gtIncrementScale_sq hs.1 hr1
+  have hab2 : b ^ 2 + a ^ 2 = s * β ^ 2 * (1 - q) := by
+    rw [hb2, ha2]
+    ring
+  have hc2 : c ^ 2 = s * β ^ 2 * q := by
+    dsimp [c]
+    simpa using
+      (flatness_gtIncrementScale_sq
+        (β := β) (s := s) (lower := 0) (upper := q) hs.1 hq0.le)
+  have h1sq : 0 ≤ (1 - s) * q := by
+    exact mul_nonneg (sub_nonneg.mpr hs.2) hq0.le
+  have hd2 : d ^ 2 = (1 - s) * β ^ 2 * q := by
+    dsimp [d]
+    rw [mul_pow, Real.sq_sqrt h1sq]
+    ring
+  have hk2 : (β * Real.sqrt q) ^ 2 = d ^ 2 + c ^ 2 := by
+    have hk : (β * Real.sqrt q) ^ 2 = β ^ 2 * q := by
+      rw [mul_pow, Real.sq_sqrt hq0.le]
+    rw [hk, hd2, hc2]
+    ring
+  have hsemigroup (y : ℝ) :
+      gtSemigroupSolution β q s 0 v 0 y y =
+        gtRankOneStep 0 c (-1)
+          (gtRankOneStep (1 / 2) a (-1)
+            (gtDiagonalStep 1 b (gtTerminal 0))) y y := by
+    simp [gtSemigroupSolution, hqabs, habs0, hqzero, hsign, a, b, c, r]
+  let L : ℝ → ℝ := fun z =>
+    gtRankOneStep 0 c (-1)
+      (gtRankOneStep (1 / 2) a (-1)
+        (gtDiagonalStep 1 b (gtTerminal 0)))
+      (h + d * z) (h + d * z)
+  let Q : ℝ → ℝ := fun z =>
+    standardGaussianExpectation
+      (fun w => Real.log (Real.cosh (h + d * z + c * w)))
+  let R : ℝ → ℝ := fun z => b ^ 2 + a ^ 2 + 2 * Q z
+  obtain ⟨Dzero, hzeroGood⟩ := flatness_negative_zero_step_goodFam a b c
+  have hLint : Integrable L (gaussianReal 0 1) := by
+    have h := hzeroGood.integrable_shift
+      (GTFrame.expMoments_gaussianReal 0 1)
+      () 0 d d (h, h)
+    simpa [L] using h
+  have hprod := flatness_integrable_log_cosh_two_affine h d c
+  have hQint : Integrable Q (gaussianReal 0 1) := by
+    have hinner := hprod.integral_prod_left
+    simpa [Q, standardGaussianExpectation] using hinner
+  have hRint : Integrable R (gaussianReal 0 1) := by
+    dsimp [R]
+    exact (integrable_const (b ^ 2 + a ^ 2)).add (hQint.const_mul 2)
+  have hLR : ∀ z : ℝ, L z ≤ R z := by
+    intro z
+    have hle := flatness_negative_zero_step_le a b c (h + d * z)
+    simpa [L, R, Q] using hle
+  letI : NullSingletonClass (gaussianReal 0 1) :=
+    nullSingletonClass_gaussianReal
+      (μ := (0 : ℝ)) (v := (1 : NNReal)) (by norm_num)
+  have hyAE : ∀ᵐ z ∂gaussianReal 0 1, h + d * z ≠ 0 := by
+    by_cases hd0 : d = 0
+    · filter_upwards [] with z
+      simp [hd0, hh.ne']
+    · have hne := Measure.ae_ne (gaussianReal 0 1) (-h / d)
+      filter_upwards [hne] with z hz
+      intro hy
+      apply hz
+      apply (eq_div_iff hd0).2
+      nlinarith [hy]
+  have hLRstrict : ∀ᵐ z ∂gaussianReal 0 1, L z < R z := by
+    filter_upwards [hyAE] with z hy
+    have hlt := flatness_negative_zero_step_lt a b c (h + d * z) ha hy
+    simpa [L, R, Q] using hlt
+  have hIntLe :
+      (∫ z, L z ∂gaussianReal 0 1) ≤ ∫ z, R z ∂gaussianReal 0 1 :=
+    integral_mono hLint hRint hLR
+  have hIntNe :
+      (∫ z, L z ∂gaussianReal 0 1) ≠ ∫ z, R z ∂gaussianReal 0 1 := by
+    intro heq
+    have haeEq : L =ᵐ[gaussianReal 0 1] R :=
+      (integral_eq_iff_of_ae_le hLint hRint
+        (Filter.Eventually.of_forall hLR)).1 heq
+    have hboth : ∀ᵐ z ∂gaussianReal 0 1, L z = R z ∧ L z < R z :=
+      haeEq.and hLRstrict
+    obtain ⟨z, hzEq, hzLt⟩ := Filter.nonempty_of_mem hboth
+    exact (ne_of_lt hzLt) hzEq
+  have hInt :
+      (∫ z, L z ∂gaussianReal 0 1) < ∫ z, R z ∂gaussianReal 0 1 :=
+    lt_of_le_of_ne hIntLe hIntNe
+  have hconv :
+      (∫ z, standardGaussianExpectation
+          (fun w => Real.log (Real.cosh (h + d * z + c * w)))
+        ∂gaussianReal 0 1) =
+      standardGaussianExpectation
+        (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) := by
+    have hconv := flatness_gaussian_convolution_log_cosh_add_const
+      h 0 d c (β * Real.sqrt q) hk2
+    simpa [standardGaussianExpectation] using hconv
+  have hReval :
+      (∫ z, R z ∂gaussianReal 0 1) =
+      2 * standardGaussianExpectation
+          (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
+        s * β ^ 2 * (1 - q) := by
+    dsimp [R]
+    rw [integral_add (integrable_const (b ^ 2 + a ^ 2)) (hQint.const_mul 2)]
+    rw [integral_const_mul]
+    simp only [integral_const, probReal_univ, one_smul]
+    rw [show
+      (∫ z, Q z ∂gaussianReal 0 1) =
+        standardGaussianExpectation
+          (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) by
+      simpa [Q] using hconv]
+    rw [hab2]
+    ring
+  have hLeft :
+      standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s 0 v 0
+          (h + β * Real.sqrt ((1 - s) * q) * z)
+          (h + β * Real.sqrt ((1 - s) * q) * z)) =
+        ∫ z, L z ∂gaussianReal 0 1 := by
+    unfold standardGaussianExpectation
+    apply integral_congr_ae
+    filter_upwards [] with z
+    have h := hsemigroup (h + d * z)
+    simpa [L, d] using h
+  rw [hLeft]
+  calc
+    (∫ z, L z ∂gaussianReal 0 1) < ∫ z, R z ∂gaussianReal 0 1 := hInt
+    _ = 2 * standardGaussianExpectation
+          (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) +
+        s * β ^ 2 * (1 - q) := hReval
+
+lemma flatness_gtFunctional_zero_lt_two_rsPathValue_large_negative
+    {β h q s v : ℝ}
+    (hβ : 0 < β)
+    (hh : 0 < h)
+    (hq : q = rsQ β h)
+    (hs : s ∈ Icc (0 : ℝ) 1)
+    (hs0 : 0 < s)
+    (hv : v ∈ Icc (-1 : ℝ) (-q))
+    (hvq : v < -q) :
+    gtFunctional β h q s 0 v < 2 * rsPathValue β h q s := by
+  have hq0 : 0 < q := by
+    rw [hq]
+    exact rsQ_pos hβ hh
+  have hsemigroup :=
+    flatness_large_negative_semigroup_zero_lt hβ hh hq0 hs hs0 hv hvq
+  unfold gtFunctional
+  unfold rsPathValue
+  unfold gtCorrection
+  simp only [zero_mul, sub_zero]
+  nlinarith [hsemigroup]
 
 end SpinGlass.AT
