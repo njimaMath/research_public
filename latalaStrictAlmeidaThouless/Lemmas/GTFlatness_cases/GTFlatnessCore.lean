@@ -1783,6 +1783,18 @@ lemma convexOn_gtFunctional_lam (β h q s v : ℝ) :
     simpa only [Function.iterate_succ_apply, Function.iterate_zero_apply] using
       (gt_lambda_derivative_bounds β h q s lam v 0 0 0).2.1
 
+/-- The second derivative of the GT functional in its multiplier is globally
+bounded above on the admissible overlap interval. -/
+lemma flatness_second_deriv_gtFunctional_le
+    {β h q s v lam : ℝ}
+    (_hv : v ∈ Icc (-1 : ℝ) 1) :
+    deriv
+      (fun l =>
+        deriv (fun l' => gtFunctional β h q s l' v) l)
+      lam ≤ 5 / 2 := by
+  simpa only [Function.iterate_succ_apply, Function.iterate_zero_apply] using
+    (gt_lambda_derivative_bounds β h q s lam v 0 0 0).2.2
+
 /-!
 ## Continuity of the GT functional
 -/

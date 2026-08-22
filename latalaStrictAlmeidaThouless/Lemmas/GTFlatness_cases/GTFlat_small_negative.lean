@@ -1,4 +1,4 @@
-import Lemmas.GTFlatnessCore
+import Lemmas.GTFlatness_cases.GTFlat_small_positive
 
 open MeasureTheory ProbabilityTheory Set
 
@@ -162,18 +162,27 @@ lemma flatness_deriv_gtFunctional_zero_negative_global_separation
     simpa using
       (scalarOrderParameterCorrect_sign data hp hs).1 0 ⟨le_rfl, hqpos⟩
   have hbase : c₀ * rsQ β h ≤ f 0 := by
-    have h := hsep hp hs (show (0 : ℝ) ∈ Icc (0 : ℝ) 1 by norm_num)
-    rw [hf0, abs_of_nonpos (by linarith : 0 - rsQ β h ≤ 0),
-      abs_of_pos hzero] at h
-    simpa using h
+    have hseparation := hsep hp hs (show (0 : ℝ) ∈ Icc (0 : ℝ) 1 by
+      exact ⟨le_rfl, zero_le_one⟩)
+    rw [← hf0, sub_zero, abs_of_pos hzero] at hseparation
+    have habs : |(0 : ℝ) - rsQ β h| = rsQ β h := by
+      rw [abs_of_neg (by linarith : 0 - rsQ β h < 0)]
+      ring
+    rwa [habs] at hseparation
   by_cases hv0 : v = 0
   · subst v
     rw [flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg β h (rsQ β h) s 0
       ⟨hqpos, rsQ_lt_one hβ hh⟩ hs ⟨by linarith, le_rfl⟩]
-    rw [show flatnessTildeG β h (rsQ β h) s 0 = f 0 by rfl,
-      abs_of_pos hzero, abs_of_neg (by linarith : 0 - rsQ β h < 0)]
+    change min c₀ data.gap * |0 - rsQ β h| ≤ |f 0 - 0|
+    rw [sub_zero, abs_of_pos hzero]
     have hmin : min c₀ data.gap ≤ c₀ := min_le_left _ _
-    nlinarith
+    calc
+      min c₀ data.gap * |0 - rsQ β h| = min c₀ data.gap * rsQ β h := by
+        rw [abs_of_neg (by linarith : 0 - rsQ β h < 0)]
+        ring
+      _ ≤ c₀ * rsQ β h :=
+        mul_le_mul_of_nonneg_right hmin hqpos.le
+      _ ≤ f 0 := hbase
   · have hvneg : v < 0 := lt_of_le_of_ne hv.2 hv0
     have hcont : ContinuousOn f (Icc v 0) := by
       apply (flatnessTildeG_continuousOn_neg β h (rsQ β h) s).mono
@@ -198,8 +207,16 @@ lemma flatness_deriv_gtFunctional_zero_negative_global_separation
       nlinarith
     rw [flatness_deriv_gtFunctional_zero_eq_tildeG_sub_neg β h (rsQ β h) s v
       ⟨hqpos, rsQ_lt_one hβ hh⟩ hs hv]
-    rw [abs_of_nonneg (by linarith : 0 ≤ f v - v),
-      abs_of_nonpos (by linarith : v - rsQ β h ≤ 0)]
-    exact hmain
+    have hmain0 : 0 ≤ f v - v := by
+      apply le_trans ?_ hmain
+      exact mul_nonneg (le_of_lt (lt_min hc₀ data.gap_pos))
+        (by linarith : 0 ≤ rsQ β h - v)
+    rw [abs_of_nonneg hmain0]
+    calc
+      min c₀ data.gap * |v - rsQ β h| =
+          min c₀ data.gap * (rsQ β h - v) := by
+        rw [abs_of_nonpos (by linarith : v - rsQ β h ≤ 0)]
+        ring
+      _ ≤ f v - v := hmain
 
 end SpinGlass.AT
