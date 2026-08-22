@@ -652,7 +652,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.Complex.ExponentialBounds
-import SpinGlass.Mathlib.Probability.Distributions.GaussianIntegrationByParts
+import SpinGlassAT.Mathlib.Probability.Distributions.GaussianIntegrationByParts
 
 open MeasureTheory ProbabilityTheory Real Filter
 open scoped MeasureTheory NNReal Topology
