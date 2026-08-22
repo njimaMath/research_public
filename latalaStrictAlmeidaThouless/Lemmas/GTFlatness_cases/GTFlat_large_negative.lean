@@ -477,9 +477,6 @@ private lemma flatness_negative_half_step_lt_of_nontrivial
     filter_upwards [] with z
     have hs := sq_nonneg (f z - g z)
     rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (hf0 z) (hg0 z))]
-    have hright : 0 ≤ (1 / 2 : ℝ) * (f z ^ 2 + g z ^ 2) := by
-      positivity
-    rw [Real.norm_eq_abs, abs_of_nonneg hright]
     nlinarith
   let E₁ : ℝ := Real.exp (a ^ 2 / 2) * Real.cosh x₁
   let E₂ : ℝ := Real.exp (a ^ 2 / 2) * Real.cosh x₂
@@ -604,6 +601,8 @@ private lemma flatness_negative_half_step_lt_of_nontrivial
         simpa using ha'
       exact ha ha0
   have hDpos : 0 < ∫ z, D z ^ 2 ∂gaussianReal 0 1 := by
+    letI : (gaussianReal 0 1).IsOpenPosMeasure :=
+      (gaussianReal_absolutelyContinuous' 0 (by norm_num)).isOpenPosMeasure
     exact integral_pos_of_integrable_nonneg_nonzero
       (μ := gaussianReal 0 1)
       (x := (1 : ℝ))
@@ -614,23 +613,41 @@ private lemma flatness_negative_half_step_lt_of_nontrivial
   have hDformula :
       (∫ z, D z ^ 2 ∂gaussianReal 0 1) =
         B ^ 2 * E₁ - (2 * A * B) * I + A ^ 2 * E₂ := by
+    let u : ℝ → ℝ := fun z => B ^ 2 * f z ^ 2
+    let v : ℝ → ℝ := fun z => (2 * A * B) * (f z * g z)
+    let w : ℝ → ℝ := fun z => A ^ 2 * g z ^ 2
+    have hu : Integrable u (gaussianReal 0 1) := by
+      simpa [u] using hBf
+    have hv : Integrable v (gaussianReal 0 1) := by
+      simpa [v] using hcross
+    have hw : Integrable w (gaussianReal 0 1) := by
+      simpa [w] using hAg
     calc
       (∫ z, D z ^ 2 ∂gaussianReal 0 1) =
-          ∫ z, (B ^ 2 * f z ^ 2 - (2 * A * B) * (f z * g z) +
-            A ^ 2 * g z ^ 2) ∂gaussianReal 0 1 := by
+          ∫ z, (u - v + w) z ∂gaussianReal 0 1 := by
               apply integral_congr_ae
               filter_upwards [] with z
-              dsimp [D]
+              dsimp [D, u, v, w]
               ring
+      _ = (∫ z, (u - v) z ∂gaussianReal 0 1) +
+          ∫ z, w z ∂gaussianReal 0 1 :=
+            integral_add (hu.sub hv) hw
+      _ = (∫ z, u z ∂gaussianReal 0 1) -
+          (∫ z, v z ∂gaussianReal 0 1) +
+          ∫ z, w z ∂gaussianReal 0 1 := by
+            have huv :
+                (∫ z, (u - v) z ∂gaussianReal 0 1) =
+                  (∫ z, u z ∂gaussianReal 0 1) -
+                    ∫ z, v z ∂gaussianReal 0 1 := by
+              simpa only [Pi.sub_apply] using integral_sub hu hv
+            rw [huv]
       _ = B ^ 2 * (∫ z, f z ^ 2 ∂gaussianReal 0 1) -
           (2 * A * B) * (∫ z, f z * g z ∂gaussianReal 0 1) +
           A ^ 2 * (∫ z, g z ^ 2 ∂gaussianReal 0 1) := by
-            rw [integral_add (hBf.sub hcross) hAg]
-            rw [integral_sub hBf hcross]
+            dsimp [u, v, w]
             rw [integral_const_mul, integral_const_mul, integral_const_mul]
       _ = B ^ 2 * E₁ - (2 * A * B) * I + A ^ 2 * E₂ := by
             rw [hfE, hgE]
-            rfl
   have hDformula' :
       (∫ z, D z ^ 2 ∂gaussianReal 0 1) =
         2 * (A * B) ^ 2 - 2 * (A * B) * I := by
@@ -652,7 +669,7 @@ private lemma flatness_negative_half_step_lt_of_nontrivial
     dsimp [E₁, E₂, C]
     rw [Real.log_mul (Real.exp_ne_zero _) (Real.cosh_pos x₁).ne']
     rw [Real.log_mul (Real.exp_ne_zero _) (Real.cosh_pos x₂).ne']
-    rw [Real.log_exp, Real.log_exp]
+    rw [Real.log_exp]
     ring
   have hIexp : I < Real.exp (C / 2) := by
     rw [← hAB]
