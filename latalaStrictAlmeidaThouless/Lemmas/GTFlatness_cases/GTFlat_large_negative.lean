@@ -459,7 +459,7 @@ private lemma flatness_negative_half_step_lt_of_nontrivial
       calc
         Real.cosh (x₂ + (-a) * z) =
             Real.cosh (x₂ + (-1) * a * z) := by
-              congr 2 <;> ring
+              (congr 2; ring)
         _ = g z ^ 2 := (hg_sq z).symm)
   have hf0 (z : ℝ) : 0 ≤ f z := by
     dsimp [f]
@@ -794,5 +794,331 @@ private lemma flatness_negative_half_step_eq_iff
         rw [Real.log_exp, Real.cosh_neg]
         ring
       simpa [gtRankOneStep, J] using hmain
+
+private lemma flatness_log_cosh_nonneg
+    (x : ℝ) :
+    0 ≤ Real.log (Real.cosh x) := by
+  exact Real.log_nonneg (Real.one_le_cosh x)
+
+private lemma flatness_log_cosh_le_sq
+    (x : ℝ) :
+    Real.log (Real.cosh x) ≤ x ^ 2 / 2 := by
+  exact
+    (Real.log_le_iff_le_exp (Real.cosh_pos x)).2
+      (Real.cosh_le_exp_half_sq x)
+
+private lemma flatness_integrable_log_cosh_affine
+    (y c : ℝ) :
+    Integrable
+      (fun z : ℝ => Real.log (Real.cosh (y + c * z)))
+      (gaussianReal 0 1) := by
+  have hz2 :
+      Integrable (fun z : ℝ => |z| ^ 2) (gaussianReal 0 1) := by
+    simpa only [Real.norm_eq_abs, id_eq] using
+      (memLp_id_gaussianReal
+        (μ := 0) (v := (1 : NNReal)) 2).integrable_norm_pow'
+  have hdom :
+      Integrable (fun z : ℝ => y ^ 2 + c ^ 2 * |z| ^ 2)
+        (gaussianReal 0 1) := by
+    exact (integrable_const (y ^ 2)).add (hz2.const_mul (c ^ 2))
+  have hc :
+      Continuous (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+    have hcosh : Continuous (fun z : ℝ => Real.cosh (y + c * z)) := by
+      fun_prop
+    exact hcosh.log (fun z => (Real.cosh_pos (y + c * z)).ne')
+  refine hdom.mono' hc.aestronglyMeasurable ?_
+  filter_upwards [] with z
+  have hbound :
+      Real.log (Real.cosh (y + c * z)) ≤ y ^ 2 + c ^ 2 * |z| ^ 2 := by
+    calc
+      Real.log (Real.cosh (y + c * z)) ≤ (y + c * z) ^ 2 / 2 :=
+        flatness_log_cosh_le_sq _
+      _ ≤ y ^ 2 + c ^ 2 * |z| ^ 2 := by
+        nlinarith [sq_nonneg (y - c * z), sq_abs z]
+  have hright : 0 ≤ y ^ 2 + c ^ 2 * |z| ^ 2 := by
+    positivity
+  simpa [Real.norm_eq_abs,
+      abs_of_nonneg (flatness_log_cosh_nonneg (y + c * z)),
+      abs_of_nonneg hright] using hbound
+
+private lemma flatness_standardGaussian_log_cosh_neg_scale
+    (y c : ℝ) :
+    standardGaussianExpectation
+        (fun z : ℝ => Real.log (Real.cosh (y + (-c) * z))) =
+      standardGaussianExpectation
+        (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+  unfold standardGaussianExpectation
+  let φ : ℝ → ℝ := fun z => Real.log (Real.cosh (y + c * z))
+  have hφcont : Continuous φ := by
+    dsimp [φ]
+    have hcosh : Continuous (fun z : ℝ => Real.cosh (y + c * z)) := by
+      fun_prop
+    exact hcosh.log (fun z => (Real.cosh_pos (y + c * z)).ne')
+  have hmap :
+      Measure.map (fun z : ℝ => -z) (gaussianReal 0 1) =
+        gaussianReal 0 1 := by
+    simpa using
+      (gaussianReal_map_neg (μ := (0 : ℝ)) (v := (1 : NNReal)))
+  have hm :
+      AEStronglyMeasurable φ
+        (Measure.map (fun z : ℝ => -z) (gaussianReal 0 1)) := by
+    rw [hmap]
+    exact hφcont.aestronglyMeasurable
+  calc
+    (∫ z, Real.log (Real.cosh (y + (-c) * z)) ∂gaussianReal 0 1) =
+        ∫ z, φ (-z) ∂gaussianReal 0 1 := by
+          apply integral_congr_ae
+          filter_upwards [] with z
+          dsimp [φ]
+          congr 2
+          ring
+    _ = ∫ z, φ z ∂(Measure.map (fun z : ℝ => -z) (gaussianReal 0 1)) := by
+          exact (integral_map measurable_neg.aemeasurable hm).symm
+    _ = ∫ z, φ z ∂gaussianReal 0 1 := by
+          rw [hmap]
+
+/--
+The negative half-step, viewed as a dummy-parameter family, is a `GoodFam`.
+This gives exactly the continuity and linear-growth integrability needed for
+the subsequent mass-zero Gaussian average.
+-/
+private lemma flatness_negative_half_step_goodFam
+    (a b : ℝ) :
+    ∃ D : Unit → ℝ → ℝ × ℝ → ℝ,
+      GTFrame.GoodFam
+        (fun (_ : Unit) (_ : ℝ) (x : ℝ × ℝ) =>
+          gtRankOneStep (1 / 2) a (-1)
+            (gtDiagonalStep 1 b (gtTerminal 0))
+            x.1 x.2)
+        D := by
+  let F0 : Unit → ℝ → ℝ × ℝ → ℝ := fun _ _ x =>
+    gtDiagonalStep 1 b (gtTerminal 0) x.1 x.2
+  let D0 : Unit → ℝ → ℝ × ℝ → ℝ := fun _ _ _ => 0
+  have hF0 : GTFrame.GoodFam F0 D0 := by
+    refine
+      { contF := ?_
+        contD := ?_
+        hasDeriv := ?_
+        lipx := ?_
+        bddD := ?_ }
+    · have hterm :
+          Continuous (fun w : Unit × ℝ × (ℝ × ℝ) => GTFrame.fLbase 0 w.2.2) :=
+        GTFrame.continuous_fLbase.comp
+          (continuous_const.prodMk (continuous_snd.comp continuous_snd))
+      change Continuous
+        (fun w : Unit × ℝ × (ℝ × ℝ) =>
+          gtTerminal 0 w.2.2.1 w.2.2.2) at hterm
+      have hF0eq :
+          (fun w : Unit × ℝ × (ℝ × ℝ) => F0 w.1 w.2.1 w.2.2) =
+            ((fun w : Unit × ℝ × (ℝ × ℝ) =>
+              gtTerminal 0 w.2.2.1 w.2.2.2) + fun _ => b ^ 2) := by
+        funext w
+        change gtDiagonalStep 1 b (gtTerminal 0) w.2.2.1 w.2.2.2 = _
+        rw [gtDiagonalStep_one_terminal]
+        rfl
+      rw [hF0eq]
+      exact hterm.add continuous_const
+    · dsimp [D0]
+      fun_prop
+    · intro p l x
+      dsimp [F0, D0]
+      simpa using
+        (hasDerivAt_const (x := l)
+          (c := gtDiagonalStep 1 b (gtTerminal 0) x.1 x.2))
+    · intro p l x y
+      dsimp [F0]
+      have h :
+          |gtTerminal 0 x.1 x.2 - gtTerminal 0 y.1 y.2| ≤
+            |x.1 - y.1| + |x.2 - y.2| :=
+        GTFrame.fLbase_lipx 0 x y
+      simpa [gtDiagonalStep_one_terminal] using h
+    · simp [D0]
+  let α : Unit → ℝ := fun _ => a
+  let β : Unit → ℝ := fun _ => (-1) * a
+  let F1 : Unit → ℝ → ℝ × ℝ → ℝ :=
+    GTFrame.stepM (gaussianReal 0 1) (1 / 2) α β F0
+  let D1 : Unit → ℝ → ℝ × ℝ → ℝ :=
+    GTFrame.stepMD (gaussianReal 0 1) (1 / 2) α β F0 D0
+  have hF1 : GTFrame.GoodFam F1 D1 := by
+    exact
+      GTFrame.stepM_good
+        (GTFrame.expMoments_gaussianReal 0 1)
+        hF0
+        (by norm_num)
+        (by fun_prop)
+        (by fun_prop)
+  let H : Unit → ℝ → ℝ × ℝ → ℝ := fun _ _ x =>
+    gtRankOneStep (1 / 2) a (-1)
+      (gtDiagonalStep 1 b (gtTerminal 0)) x.1 x.2
+  have hHF : H = F1 := by
+    funext p l x
+    norm_num [H, F1, F0, α, β, GTFrame.stepM, gtRankOneStep,
+      standardGaussianExpectation]
+  refine ⟨D1, ?_⟩
+  change GTFrame.GoodFam H D1
+  rw [hHF]
+  exact hF1
+
+/--
+Strictness survives the mass-zero rank-one step provided the common center
+`y` is nonzero.
+
+The pointwise half-step bound is nonnegative everywhere. At the Gaussian
+point `z = 0` the two fields are `(y,y)`, so when `y ≠ 0` they are not
+opposites and the previously proved half-step inequality is strict there.
+Continuity then makes the Gaussian integral of the gap strictly positive.
+-/
+private lemma flatness_negative_zero_step_lt
+    (a b c y : ℝ)
+    (ha : a ≠ 0)
+    (hy : y ≠ 0) :
+    gtRankOneStep 0 c (-1)
+        (gtRankOneStep (1 / 2) a (-1)
+          (gtDiagonalStep 1 b (gtTerminal 0)))
+        y y
+      <
+    b ^ 2 + a ^ 2 +
+      2 * standardGaussianExpectation
+        (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+  obtain ⟨Dhalf, hhalfGood⟩ := flatness_negative_half_step_goodFam a b
+  let H : ℝ → ℝ := fun z =>
+    gtRankOneStep (1 / 2) a (-1)
+      (gtDiagonalStep 1 b (gtTerminal 0))
+      (y + c * z) (y + (-c) * z)
+  let U : ℝ → ℝ := fun z =>
+    b ^ 2 + a ^ 2 +
+      Real.log (Real.cosh (y + c * z)) +
+      Real.log (Real.cosh (y + (-c) * z))
+  have hHcont : Continuous H := by
+    have h := hhalfGood.cont_shift () 0 c (-c) (y, y)
+    simpa [H] using h
+  have hHint : Integrable H (gaussianReal 0 1) := by
+    have h :=
+      hhalfGood.integrable_shift
+        (GTFrame.expMoments_gaussianReal 0 1)
+        () 0 c (-c) (y, y)
+    simpa [H] using h
+  have hlog₁ :
+      Integrable (fun z : ℝ => Real.log (Real.cosh (y + c * z)))
+        (gaussianReal 0 1) :=
+    flatness_integrable_log_cosh_affine y c
+  have hlog₂ :
+      Integrable (fun z : ℝ => Real.log (Real.cosh (y + (-c) * z)))
+        (gaussianReal 0 1) :=
+    flatness_integrable_log_cosh_affine y (-c)
+  have hUcont : Continuous U := by
+    have hc₁ : Continuous (fun z : ℝ => Real.cosh (y + c * z)) := by
+      fun_prop
+    have hc₂ : Continuous (fun z : ℝ => Real.cosh (y + (-c) * z)) := by
+      fun_prop
+    have hl₁ :
+        Continuous (fun z : ℝ => Real.log (Real.cosh (y + c * z))) :=
+      hc₁.log (fun z => (Real.cosh_pos (y + c * z)).ne')
+    have hl₂ :
+        Continuous (fun z : ℝ => Real.log (Real.cosh (y + (-c) * z))) :=
+      hc₂.log (fun z => (Real.cosh_pos (y + (-c) * z)).ne')
+    dsimp [U]
+    exact (continuous_const.add hl₁).add hl₂
+  have hUint : Integrable U (gaussianReal 0 1) := by
+    dsimp [U]
+    exact ((integrable_const (b ^ 2 + a ^ 2)).add hlog₁).add hlog₂
+  let G : ℝ → ℝ := fun z => U z - H z
+  have hGcont : Continuous G := by
+    dsimp [G]
+    exact hUcont.sub hHcont
+  have hGint : Integrable G (gaussianReal 0 1) := by
+    dsimp [G]
+    exact hUint.sub hHint
+  have hGnonneg : ∀ z : ℝ, 0 ≤ G z := by
+    intro z
+    have hle :=
+      flatness_negative_half_step_le
+        a b (y + c * z) (y + (-c) * z)
+    dsimp [G, U, H]
+    linarith
+  have hy_not_opposite : y ≠ -y := by
+    intro h
+    apply hy
+    linarith
+  have hstrict0 :=
+    flatness_negative_half_step_lt_of_nontrivial a b y y ha hy_not_opposite
+  have hG0pos : 0 < G 0 := by
+    simpa [G, U, H] using (sub_pos.mpr hstrict0)
+  have hG0ne : G 0 ≠ 0 := ne_of_gt hG0pos
+  have hGpos : 0 < ∫ z, G z ∂gaussianReal 0 1 := by
+    letI : (gaussianReal 0 1).IsOpenPosMeasure :=
+      (gaussianReal_absolutelyContinuous' 0 (by norm_num)).isOpenPosMeasure
+    exact
+      integral_pos_of_integrable_nonneg_nonzero
+        (μ := gaussianReal 0 1)
+        (x := (0 : ℝ))
+        hGcont
+        hGint
+        hGnonneg
+        hG0ne
+  have hGformula :
+      (∫ z, G z ∂gaussianReal 0 1) =
+        (∫ z, U z ∂gaussianReal 0 1) -
+          (∫ z, H z ∂gaussianReal 0 1) := by
+    dsimp [G]
+    rw [integral_sub hUint hHint]
+  have hHU :
+      (∫ z, H z ∂gaussianReal 0 1) <
+        ∫ z, U z ∂gaussianReal 0 1 := by
+    rw [hGformula] at hGpos
+    linarith
+  have hsym := flatness_standardGaussian_log_cosh_neg_scale y c
+  unfold standardGaussianExpectation at hsym
+  have hUeval :
+      (∫ z, U z ∂gaussianReal 0 1) =
+        b ^ 2 + a ^ 2 +
+          2 * standardGaussianExpectation
+            (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := by
+    unfold standardGaussianExpectation
+    let u : ℝ → ℝ := fun _ => b ^ 2 + a ^ 2
+    let v : ℝ → ℝ := fun z => Real.log (Real.cosh (y + c * z))
+    let w : ℝ → ℝ := fun z => Real.log (Real.cosh (y + (-c) * z))
+    have hu : Integrable u (gaussianReal 0 1) := by
+      simp [u]
+    have hv : Integrable v (gaussianReal 0 1) := by
+      simpa [v] using hlog₁
+    have hw : Integrable w (gaussianReal 0 1) := by
+      simpa [w] using hlog₂
+    have hU : U = u + v + w := by
+      funext z
+      dsimp [U, u, v, w]
+    have huv :
+        (∫ z, (u + v) z ∂gaussianReal 0 1) =
+          (∫ z, u z ∂gaussianReal 0 1) +
+            ∫ z, v z ∂gaussianReal 0 1 := by
+      simpa only [Pi.add_apply] using integral_add hu hv
+    calc
+      (∫ z, U z ∂gaussianReal 0 1) =
+          ∫ z, (u + v + w) z ∂gaussianReal 0 1 := by rw [hU]
+      _ = (∫ z, (u + v) z ∂gaussianReal 0 1) +
+          ∫ z, w z ∂gaussianReal 0 1 := by
+            simpa only [Pi.add_apply] using integral_add (hu.add hv) hw
+      _ = (∫ z, u z ∂gaussianReal 0 1) +
+          (∫ z, v z ∂gaussianReal 0 1) +
+          ∫ z, w z ∂gaussianReal 0 1 := by rw [huv]
+      _ = b ^ 2 + a ^ 2 +
+          2 * ∫ z, Real.log (Real.cosh (y + c * z)) ∂gaussianReal 0 1 := by
+            dsimp [u, v, w]
+            simp only [integral_const, probReal_univ, one_smul]
+            rw [hsym]
+            ring
+  have hstep :
+      gtRankOneStep 0 c (-1)
+          (gtRankOneStep (1 / 2) a (-1)
+            (gtDiagonalStep 1 b (gtTerminal 0))) y y =
+        ∫ z, H z ∂gaussianReal 0 1 := by
+    simp [gtRankOneStep, H, standardGaussianExpectation]
+  rw [hstep]
+  calc
+    (∫ z, H z ∂gaussianReal 0 1) <
+        ∫ z, U z ∂gaussianReal 0 1 := hHU
+    _ = b ^ 2 + a ^ 2 +
+        2 * standardGaussianExpectation
+          (fun z : ℝ => Real.log (Real.cosh (y + c * z))) := hUeval
 
 end SpinGlass.AT

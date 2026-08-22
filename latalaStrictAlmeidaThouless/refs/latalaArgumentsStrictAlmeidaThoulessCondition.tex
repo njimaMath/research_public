@@ -45,7 +45,7 @@
 
 \title{A quantitative replica-symmetric bound in strict AT region}
 \author{
-  Seiichiro Kusuoka\thanks{Department of Mathematics and Mathematical Sciences, Graduate School of Science, Kyoto University. E-mail: \texttt{kusuoka@math.kyoto-u.ac.jp}}
+  Seiichiro Kusuoka\thanks{Graduate School of Science, Kyoto University. E-mail: \texttt{kusuoka@math.kyoto-u.ac.jp}}
   \and
   Shuta Nakajima\thanks{Department of Mathematics, Keio University. E-mail: \texttt{njima@keio.jp}}
 }
@@ -63,29 +63,20 @@ We prove that, uniformly on compact subsets of the strict
 de Almeida--Thouless region:
 $$\beta^2\E\sech^4\bigl(h+\beta\sqrt q\,Z\bigr) <1,$$ 
 the overlap satisfies the concentration:
-\[
+$$
  \E\braket{(R_{12}-q)^2}=O(N^{-1}).
-\]
+$$
   As a consequence, we
 obtain an $O(N^{-1})$ replica-symmetric free-energy correction and
-identify the finite-volume replicon susceptibility.  Unlike the approach
-of Lopatto \cite{Lopatto}, our proof does not use the identification of
-the limiting free energy with the Parisi variational formula.
+identify the finite-volume replicon susceptibility.  Our proof does not use the identification of
+the limiting free energy with the Parisi variational formula, although it is inspired by the proof of   Parisi formula in [Talagrand, Ann. Math., 2006].
 \end{abstract}
 
-\section{Model and main results}\label{sec:intro}
+\section{Introduction}\label{sec:intro}
 
-The Sherrington--Kirkpatrick model is the basic mean-field model of a
-disordered Ising system.  In a nonzero external field, its
-replica-symmetric order parameter is determined by a scalar fixed-point
-equation, while the de Almeida--Thouless condition describes the
-stability of that solution against two-replica perturbations.  The
-strict inequality in the AT condition is therefore expected to imply
-that the overlap has fluctuations of order $N^{-1/2}$ and that the
-replica-symmetric free energy is accurate up to order $N^{-1}$. Our purpose is to prove these claims
-uniformly on compact subsets of the strict AT region.
-\subsection{Model and the strict AT region}
+\subsection{Model and main results}
 
+In the present paper, we consider the Sherrington--Kirkpatrick model, and in particular the replica symmetry in the de Almeida-Touless region.
 Let $N \in {\mathbb N}$ and $\Sigma_N\coloneqq\{-1,1\}^N$.  For $\beta>0$ and $h>0$, let
 \[
  H_N(\sigma)
@@ -95,19 +86,17 @@ Let $N \in {\mathbb N}$ and $\Sigma_N\coloneqq\{-1,1\}^N$.  For $\beta>0$ and $h
 \]
 where $(g_{ij})_{1\le i,j\le N}$ are independent standard normal random variables. 
 
-Let $q(\beta,h)$ be the unique solution of
+Let $q= q(\beta,h)$ be the unique solution of
 \begin{equation}
  q=\E\tanh^2\bigl(h+\beta\sqrt q\,Z\bigr),
  \qquad Z\sim N(0,1),
  \label{eq:q}
 \end{equation}
 and write $q\coloneqq q(\beta,h)$.
-Existence and uniqueness for $h>0$ are standard; see, for example,
-\cite[Proposition~1.3.8]{Talagrand}.  Continuity follows directly from
-uniqueness: if $(\beta_n,h_n)\to(\beta,h)$, every convergent
-subsequence of $q(\beta_n,h_n)\in[0,1]$ has, by dominated convergence
-in \eqref{eq:q}, a limit solving the fixed-point equation at
-$(\beta,h)$.  Uniqueness identifies that limit with $q(\beta,h)$, so
+The existence and uniqueness for all $h>0$ are obtained by a standard way (see, for example, \cite[Proposition~1.3.8]{Talagrand}).
+The continuity of $q(\beta ,h )$ in $(\beta , h)$ follows directly from the uniqueness.
+Indeed, if $(\beta_n,h_n)\to(\beta,h)$, every convergent subsequence of $q(\beta_n,h_n)\in[0,1]$ has, by the dominated convergence theorem, the limit solving the fixed-point equation \eqref{eq:q} at $(\beta,h)$.
+The uniqueness identifies that limit with $q(\beta,h)$, so
 the entire sequence converges.
 Set
 \begin{equation}
@@ -125,25 +114,22 @@ We work on a fixed compact set
  \cK\Subset\{(\beta,h):\beta>0,\ h>0,\ \alpha(\beta,h)<1\}.
  \label{eq:K}
 \end{equation}
-Thus, for some $\delta_{\cK}>0$,
+Then, there exists $\delta_{\cK}>0$ such that
 \begin{equation}
  1-\alpha\ge\delta_{\cK}
  \qquad\text{on }\cK.
  \label{eq:delta}
 \end{equation}
-The maps $q,r,\alpha$ are therefore continuous on $\cK$.  In
-particular, compactness and $h>0$ imply
+Since the maps $q$,$r$ and $\alpha$ are continuous on $\cK$, the compactness and $h>0$ imply
 \begin{equation}
  0<q_{\cK}\coloneqq\inf_{(\beta,h)\in\cK}q
  \le \sup_{(\beta,h)\in\cK}q<1.
  \label{eq:qcompact}
 \end{equation}
-Indeed, $q=0$ would contradict \eqref{eq:q} and $h>0$; 
-$q<1$ holds because $\tanh^2(h+\beta\sqrt q\,Z)<1$.
+This inequality follows from the facts that $q=0$ would contradict \eqref{eq:q} with $h>0$, and that $q<1$ follows from the inequality $\tanh^2(h+\beta\sqrt q\,Z)<1$.
 
-\subsection{The replica-symmetric smart path}
 
-For $0\le s\le1$, define the smart-path Hamiltonian
+For $0\le s\le 1$, define the smart-path Hamiltonian $H_{N,s}$ by 
 \begin{equation}
  H_{N,s}(\sigma)
  \coloneqq
@@ -153,13 +139,13 @@ For $0\le s\le1$, define the smart-path Hamiltonian
  \bigl(h+\beta\sqrt{(1-s)q}\,z_i\bigr)\sigma_i,
  \label{eq:path}
 \end{equation}
-where $(z_i)$ is an independent standard Gaussian family.  We write
-$\braket{\cdot}_s$ for the Gibbs expectation, i.e.
+where $(z_i)$ is a family of independent standard Gaussian random variables. Note that $H_{N,1}=H_N.$
+We write $\braket{\cdot}_s$ for the Gibbs expectation, i.e. 
 \[
 \braket{F}_s \coloneqq \frac{1}{Z_{N, s}}\sum _{\sigma \in \Sigma _N} F(\sigma ) e^{H_{N, s}(\sigma)}
 \]
-for a function $F$ on $\Sigma _N$, where $Z_{N,s} \coloneqq \sum _{\sigma \in \Sigma _N} e^{H_{N,s}(\sigma )}$. For replicas $\sigma^1,\sigma^2,\ldots$ sampled independently from the
-Gibbs measure for fixed disorder, put
+for a function $F$ on $\Sigma _N$, where $Z_{N,s} \coloneqq \sum _{\sigma \in \Sigma _N} e^{H_{N,s}(\sigma )}$.
+For replicas $\sigma^1,\sigma^2,\ldots$ which are sampled independently from the Gibbs measure for fixed disorder, put
 \[
  R_{ab}\coloneqq\frac1N\sum_{i=1}^N\sigma_i^a\sigma_i^b.
 \]
@@ -170,13 +156,10 @@ Set
 \]
 We also write
 \begin{equation}
- \phi_N(s)\coloneqq\frac1N\E\log Z_{N,s}.
+ \phi_N(s)\coloneqq\frac1N\E\log Z_{N,s}
  \label{eq:pathfreeenergy}
 \end{equation}
-
-\subsection{Main result}
-
-Define
+and define
 \begin{equation}
  A_s\coloneqq\nu_s[Q_{12}^2],\qquad
  B_s\coloneqq\nu_s[Q_{12}Q_{13}],\qquad
@@ -184,47 +167,55 @@ Define
  \label{eq:ABC}
 \end{equation}
 
+Now we state the main theorem of the present paper.
+
 \begin{theorem}
 \label{thm:main}
-There is a constant $C_{\cK}<\infty$ such that, for every $N\ge1$,
-\[
+Under the setting above, the overlap concentration holds in the sense that there exists a constant $C_{\cK}<\infty$ such that, for every $N\ge1$,
+\begin{equation}\label{eq:main1}
  \sup_{\substack{(\beta,h)\in\cK\\0\le s\le1}}
  N\,\nu_s[Q_{12}^2]\le C_{\cK}.
-\]
-Consequently, if
+\end{equation}
+Consequently, the expected free energy 
 \[
- \phi_N(\beta,h)\coloneqq
+ \phi_N(\beta,h)\coloneqq \phi_N(1) = 
  \frac1N\E\log\sum_{\sigma\in\Sigma_N}e^{H_N(\sigma)}
 \]
-and
+and the replica-symmetric free energy
 \[
  \phi^{\mathrm{RS}}(\beta,h)
  \coloneqq
  \log2+\E\log\cosh(h+\beta\sqrt q\,Z)
- +\frac{\beta^2}{4}(1-q)^2,
+ +\frac{\beta^2}{4}(1-q)^2
 \]
-then uniformly on $\cK$, 
-\[ 
+satisfy the quantitative estimate uniformly on $\cK$:
+\begin{equation}\label{eq:main2}
  0\le\phi^{\mathrm{RS}}(\beta,h)-\phi_N(\beta,h)
  \le\frac{C_{\cK}}N.
-\]
-
-
-Moreover, uniformly for $(\beta,h,s)\in\cK\times[0,1]$,
-\[
+\end{equation}
+Moreover, it holds that
+\begin{equation}\label{eq:main3}
  N\bigl(A_s-2B_s+C_s\bigr)
  =
  \frac{\alpha}{\beta^2(1-s\alpha)}+o_{\cK}(1).
-\]
-Here and below, $o_{\cK}(1)\to0$ as $N\to\infty$, uniformly over the
- compact set $\mathcal K$.
+\end{equation}
+uniformly for $(\beta,h,s)\in\cK\times[0,1]$.
+Here and below, the notation "$o_{\cK}(1)\to0$" as $N\to\infty$ means the uniform convergence over the compact set $\mathcal K$.
 \end{theorem}
+
+By taking limit as $N\rightarrow \infty$ in \eqref{eq:main2} in Theorem~\ref{thm:main}, we obtain the replica symmetry
+\[
+\lim _{N\rightarrow \infty } \phi _N(\beta ,h) = \phi ^{\mathrm{RS}}(\beta ,h)
+\]
+in the entire de Almeida-Thouless region, which had been an open problem since many years ago and very recently solved by Lopatto in \cite{Lopatto}.
+In the following subsection, we give a brief history and previous research of the Sherrington--Kirkpatrick model.
+
 \subsection{A brief history and previous research} 
-Spin glasses were introduced to describe magnetic materials in which the interactions between microscopic spins are both disordered and frustrated. Experiments on dilute magnetic alloys in the 1970s showed behavior very different from that of ordinary ferromagnets: a sharp freezing transition, very slow relaxation, and a strong dependence on the history of the sample. These findings suggested that the low-temperature phase could not be described by a single equilibrium state of the usual kind, and they led to probabilistic models with quenched disorder.
+Spin glasses were introduced to describe magnetic materials in which the interactions between microscopic spins are both disordered and frustrated. Experiments on dilute magnetic alloys in the 1970s showed some behavior very different from that of ordinary ferromagnets: a sharp freezing transition, very slow relaxation, and a strong dependence on the history of the sample. These results suggested that the low-temperature phase could not be described by a single equilibrium state of the usual kind, and they led to probabilistic models with quenched disorder.
 
-One of the first such models was proposed by Edwards and Anderson \cite{EdwardsAnderson1975}. In their model, spins sit on the vertices of a finite-dimensional lattice and interact through random nearest-neighbor couplings. This formulation is physically natural, but its mathematical analysis is very hard. The local interactions compete with each other because of frustration, and the quenched disorder removes the spatial regularity that classical arguments rely on. As a result, even basic questions about the low-temperature phase remain difficult in finite dimensions.
+One of the first such models was proposed by Edwards and Anderson \cite{EdwardsAnderson1975}. In their model, spins sit on the vertices of a finite-dimensional lattice and interact through random nearest-neighbor couplings. This formulation is physically natural, but its mathematical analysis is extremely hard. The local interactions compete with each other because of frustration, and the quenched disorder removes the spatial regularity that classical arguments rely on. As a result, even basic questions about the low-temperature phase remain difficult in finite dimensions.
 
-A decisive simplification was proposed by Sherrington and Kirkpatrick \cite{SherringtonKirkpatrick1975}. They replaced the short-range geometry of the Edwards--Anderson model by a mean-field interaction, in which every spin interacts weakly with every other spin. The resulting model, now called the Sherrington--Kirkpatrick (SK) model, keeps both disorder and frustration but is much easier to study by analytic methods. Using the replica method, Sherrington and Kirkpatrick derived a formula for the limiting free energy under the assumption of replica symmetry. The replica method is not rigorous: it starts from identities for integer moments of the partition function and then uses an analytic continuation in the number of replicas. More importantly, the replica-symmetric formula gave a negative entropy at low temperature, which is unphysical. It was soon understood that the replica-symmetric ansatz could not describe the whole phase diagram.
+A simplified model was proposed by Sherrington and Kirkpatrick \cite{SherringtonKirkpatrick1975}. They replaced the short-range geometry of the Edwards--Anderson model by a mean-field interaction, in which every spin interacts weakly with every other spin. The resulting model, now called the Sherrington--Kirkpatrick (SK) model, keeps both disorder and frustration, but is easier to study by analytic methods. Using the replica method, Sherrington and Kirkpatrick derived a formula for the limiting free energy under the assumption of replica symmetry. The replica method is not mathematically rigorous, because it starts from integer moments of the partition function and then uses an analytic continuation in the number of replicas. More importantly, the replica-symmetric formula gave a negative entropy at low temperature, which is unphysical. It was soon understood that the replica-symmetric ansatz could not describe the whole phase diagram.
 
 A fundamental step was taken by de Almeida and Thouless \cite{deAlmeidaThouless1978}, who studied the local stability of the replica-symmetric solution. 
 Their computation predicted that the replica-symmetric solution is  stable when
@@ -234,23 +225,24 @@ Their computation predicted that the replica-symmetric solution is  stable when
 \end{align}
 and unstable when the reverse strict inequality holds. This boundary is now called the de Almeida--Thouless line, or AT line. So, the AT condition comes from the physical stability analysis of the replica-symmetric state.
 
-The failure of replica symmetry below the AT line led Parisi to propose a much richer picture of the low-temperature phase \cite{Parisi1979,Parisi1980}. In this picture, the symmetry among replicas is broken in a hierarchical way, and the thermodynamic state is described by an order parameter that gives the distribution of overlaps between typical configurations. This led to the Parisi variational formula for the limiting free energy. The Parisi theory fixed the low-temperature problem of the replica-symmetric solution and gave a single framework that covers both the replica-symmetric and the replica-symmetry-breaking phases.
+The failure of replica symmetry below the AT line led Parisi to propose a much richer picture of the low-temperature phase (see \cite{Parisi1979,Parisi1980}). In this picture, the symmetry among replicas is broken in a hierarchical way, and the thermodynamic state is described by an order parameter that gives the distribution of overlaps between typical configurations. This led to the Parisi variational formula for the limiting free energy. The Parisi theory fixed the low-temperature problem of the replica-symmetric solution and gave a single framework that covers both the replica-symmetric and the replica-symmetry-breaking phases.
 
-These ideas have since found use far beyond condensed matter physics. In computer science, random constraint satisfaction problems such as random $K$-SAT and random graph coloring show threshold phenomena similar to replica symmetry breaking, and algorithms based on the cavity method, such as survey propagation, are still among the best known methods for these problems \cite{MezardParisiZecchina2002,MezardMontanari2009}. In information theory and high-dimensional statistics, the free energy of a suitable spin glass model gives the fundamental limits in error-correcting codes, compressed sensing, and inference in graphical models \cite{Nishimori2001,ZdeborovaKrzakala2016}. In machine learning, the Hopfield model of associative memory is a spin glass in which the stored patterns play the role of quenched disorder \cite{Hopfield1982,AmitGutfreundSompolinsky1985}, and spin glass methods have been used to study the loss landscapes and training dynamics of neural networks. More generally, the notions of frustration, energy landscapes, and metastability, first identified in spin glasses, are now standard tools in the study of complex systems, from protein folding to financial networks.
+These ideas have been used far beyond condensed matter physics. In computer science, random constraint satisfaction problems such as random $K$-SAT and random graph coloring show threshold phenomena similar to replica symmetry breaking, and algorithms based on the cavity method, such as belief and survey propagation, are still among the best known methods for these problems (see \cite{MezardParisiZecchina2002,MezardMontanari2009}). In the information theory and the high-dimensional statistics, the free energy of a suitable spin glass model gives the fundamental limits in error-correcting codes, compressed sensing, and inference in graphical models (see \cite{Nishimori2001,ZdeborovaKrzakala2016}). In machine learning, the Hopfield model of associative memory is also a spin glass model in which the stored patterns play the role of quenched disorder (see \cite{Hopfield1982}), and spin glass methods have been used to study the loss landscapes and training dynamics of neural networks. More generally, the notions of frustration, energy landscapes, and metastability, identified in spin glasses, are now standard tools in the study of complex systems, from protein folding to financial networks.
 
-The rigorous mathematical study of the SK model developed along a different route. An early landmark was the work of Aizenman, Lebowitz, and Ruelle \cite{AizenmanLebowitzRuelle1987}, who proved Gaussian fluctuations of the free energy at high temperature and zero external field, using a cluster expansion. At zero external field, replica symmetry is now known to hold for all $\beta<1$, and the critical point $\beta=1$ separates the replica-symmetric and symmetry-breaking regimes. With an external field, finding the full replica-symmetric region turned out to be much harder. Talagrand proved the replica-symmetric formula at sufficiently high temperature with the cavity method, and a simple interpolation argument due to Lata\l{}a gave another proof in the range $\beta \in [0,1/2)$ and $h\in \R$. A recent work of the authors extended Lata\l{}a's argument to a wider range including the region $\beta\leq 1$. These high-temperature results, together with the interpolation methods developed at the same time, form much of the mathematical basis for the quantitative study of the overlap.
+The rigorous mathematical study of the SK model developed along different routes. An early landmark was the work by Aizenman, Lebowitz, and Ruelle \cite{AizenmanLebowitzRuelle1987}, who proved Gaussian fluctuations of the free energy at high temperature and zero external field by using a cluster expansion. At zero external field, replica symmetry is now known to hold for all $\beta<1$, and the critical point $\beta=1$ separates the replica-symmetric and symmetry-breaking regimes. With an external field, finding the full replica-symmetric region turned out to be much harder. Talagrand  proved the replica-symmetric formula at sufficiently high temperature by the cavity method, and a simple interpolation argument due to Lata\l{}a gave another proof in the range $\beta \in [0,1/2)$ and $h\in \R$. A recent work of the authors extended Lata\l{}a's argument to a wider range including the region $\beta\leq 1$ (see \cite{KusuokaNakajima1}).
 
-In parallel, a different line of work dealt with the limiting free energy at all temperatures. Guerra introduced an interpolation argument that proved the appropriate Parisi bound, and Talagrand then proved the matching opposite bound. Together, these results established the Parisi formula for the SK model. This turned the study of the phase diagram from a problem based on the replica calculus into a rigorous variational problem. In particular, replica symmetry can be characterized through the minimizer of the Parisi functional, and this variational point of view has become one of the main tools for studying the AT transition.
+In parallel, a different line of works dealt with the limiting free energy at all temperatures. In \cite{Guerra} Guerra introduced an interpolation argument that proved the appropriate Parisi bound, and then in \cite{TalagrandParisi} Talagrand proved the matching opposite bound. Together, these results established the Parisi formula for the SK model. This turned the study of the phase diagram of the free energy into a rigorous variational problem. In particular, the replica symmetry can be characterized through the minimizer of the Parisi functional, and this variational point of view has become one of the main tools for studying the AT transition.
 
-One question remained: does the AT stability condition exactly characterize the replica-symmetric phase of the SK model with a nonzero external field? Several rigorous results proved replica symmetry in regions inside the predicted AT region, or replica symmetry breaking on the other side of the line, but reaching the physical boundary itself remained difficult. Very recently, Lopatto \cite{Lopatto} proved, for a positive uniform external field, that replica symmetry holds throughout the AT region \eqref{eq: AT region} 
- using the variational characterization of the Parisi measure. The de Almeida--Thouless prediction for the replica-symmetric side of the phase diagram is therefore now rigorously established.
+One question remained: does the AT stability condition exactly characterize the replica-symmetric phase of the SK model with a nonzero external field? Several rigorous results proved the replica symmetry in regions inside the predicted AT region, or the replica symmetry breaking on the other side of the line, but reaching the physical boundary itself remained difficult and had been a major open problem in this field. Very recently, in \cite{Lopatto} Lopatto proved that the replica symmetry holds throughout the AT region \eqref{eq: AT region} 
+ using the variational characterization of the Parisi formula. 
 
 The present paper gives a quantitative counterpart of this picture. Instead of asking only whether the thermodynamic limit is replica symmetric, we work under the strict AT condition
  and prove the quantitative estimate stated above. The strict inequality gives a positive stability margin away from the AT boundary, and our argument turns this margin into finite-$N$ control. In this sense, our result complements the characterization of the replica-symmetric phase. 
 \subsection{Outline of the proof: from coupled free energy to optimal overlap bound}
 \label{subsec:proof-outline}
 
-We briefly describe the proof of the first claim in the main result; the second and third are obtained from this using a standard interpolation argument (see Section~\ref{sec:conclusion}).
+We briefly describe the schetch of the proof of the first claim in the main result.
+The second and third are obtained from this using a standard interpolation argument (see Section~\ref{sec:conclusion}).
 
 For $u \in \mathbb R$, define the constrained
 two-replica pressure by
@@ -261,7 +253,7 @@ two-replica pressure by
  \sum_{\sigma^1,\sigma^2}
  \exp\left(
  H_{N,s}(\sigma^1)+H_{N,s}(\sigma^2)
- +\frac{u  N}{2}Q_{12}^2\right)
+ +\frac{u  N}{2}Q_{12}^2\right).
 \label{eq:constrained-two-replica-pressure}
 \end{equation}
 The Guerra--Talagrand interpolation gives
@@ -273,39 +265,57 @@ p_{N,s}^{(2)}(u )
 \end{equation}
 uniformly in $(\beta,h)\in\mathcal K$, $s\in[0,1]$, and
 $u\in[-1,1]$. Here $\mathfrak P_s(u )$ denotes the
-corresponding one-step replica-symmetry-breaking formula. Using Lopatto's argument \cite{Lopatto}, one obtains that as $u \to 0+$,
+corresponding one-step replica-symmetry-breaking formula. Using a similar argument to Lopatto's work \cite{Lopatto}, one obtains the flatness condition that for $u>0$ small enough,
  \begin{equation}
 \mathfrak P_s(u )
-= \mathfrak P_s(0)+ o(u ).
+= \mathfrak P_s(0). %+ o(u ).
 \label{eq:global-GT-gap-outline}
 \end{equation}
 
 Let \begin{equation*}
  D_N(s)\coloneqq \mathfrak P_s(0)-\phi_N(s).
 \end{equation*} 
-By Gaussian integration by parts, we have for $u_0>0$ sufficiently small,  
+By some computationis with Gaussian integration by parts, we have for $u_0>0$ sufficiently small,  
 \[
 D_N'(s) =  \frac{\beta^2}{4} \nu_s [Q_{12}^2]  \leq \frac{\beta^2}{u_0} ({p_{N,s}^{(2)}(u_0)-\phi_N(s)}) \leq   \frac{\beta^2}{u_0} D_N(s) +  o_\cK(1),
 \]
-where we have used Jensen's inequality with $p_{N,s}^{(2)}(u_0)-\phi_N(s)= \mathbb E\log \langle e^{u_0 N Q_{12}^2/2} \rangle_s$ for the first inequality, and \eqref{eq:GT-constrained-bound-outline} and \eqref{eq:global-GT-gap-outline} with $o_\cK(1)$ being arbitrarily small for the last inequality.  Since $D_N(0) = 0$, by Gronwall's inequality, we have
+where we have used Jensen's inequality with $p_{N,s}^{(2)}(u_0)-\phi_N(s)= (2N)^{-1}\mathbb E\log \langle e^{u_0 N Q_{12}^2/2} \rangle_s$ for the first inequality, and \eqref{eq:GT-constrained-bound-outline} and \eqref{eq:global-GT-gap-outline} for the last inequality. Since $D_N(0) = 0$, by Gronwall's inequality, we have
 $$D_N(s) = o_\cK(1),\quad  p_{N,s}^{(2)}(u_0)-\phi_N(s)= \frac{1}{2N}\mathbb E\log \langle e^{u_0 N Q_{12}^2/2} \rangle_s = o_\cK(1).$$ 
-Hence, using a standard Gaussian Lipschitz concentration inequality, one gets the preliminary
-overlap concentration estimate
-\begin{equation}
-\sup_{\substack{(\beta,h)\in\mathcal K\\ 0\le s\le 1}}
-\nu_s\left(
+
+For fixed $\delta>0$, we have 
+\begin{align*}
+        \nu_s\left(
 |Q_{12}|\ge\delta
-\right)
-\le
+\right)&\le \mathbb P( \langle e^{u_0 N Q_{12}^2/2} \rangle_s\ge e^{\delta^2 u_0 N/4}) + \mathbb E \Big[\mathbf{1}\{\langle e^{u_0 N Q_{12}^2/2} \rangle_s<e^{\delta^2 u_0 N/4}\}\langle \mathbf{1}\{|Q_{12}|\ge\delta\}\rangle_s\Big].
+\end{align*}
+For the first term,  using a standard Gaussian Lipschitz concentration inequality for $\log \langle e^{u_0 N Q_{12}^2/2} \rangle_s$,  one gets 
+\begin{align*}
+\mathbb P( \langle e^{u_0 N Q_{12}^2/2} \rangle_s\ge e^{\delta^2 u_0 N/4})\leq C_{\mathcal K,\delta}
+\exp(-c_{\mathcal K,\delta}N).
+\end{align*}
+For the  second term, by Markov's inequality, we have
+\begin{align*}
+    &\mathbb E \Big[\mathbf{1}\{\langle e^{u_0 N Q_{12}^2/2} \rangle_s<e^{\delta^2 u_0 N/4}\}\langle \mathbf{1}\{|Q_{12}|\ge\delta\}\rangle_s\Big]\\
+    &\leq \mathbb E \Big[\mathbf{1}\{\langle e^{u_0 N Q_{12}^2/2} \rangle_s<e^{\delta^2 u_0 N/4}\}\langle e^{u_0 N Q_{12}^2/2}\rangle_s e^{-u_0 \delta^2 N/2}\Big]\\
+&\le
 C_{\mathcal K,\delta}
-\exp(-c_{\mathcal K,\delta}N),
-\qquad \delta>0.
+\exp(-c_{\mathcal K,\delta}N).
+\end{align*}
+Therefore, we reach a weak concentration for overlap:
+\begin{equation}
+\begin{split}
+    \nu_s\left(
+|Q_{12}|\ge\delta
+\right)&\leq 
+2 C_{\mathcal K,\delta}
+\exp(-c_{\mathcal K,\delta}N).
 \label{eq:fixed-deviation-overlap-tail-outline}
+\end{split}
 \end{equation}
 
 To obtain the $N^{-1}$ bound, we use
-the cavity bootstrap developed in the high-temperature analysis of
-Talagrand \cite[Chapter~1]{Talagrand}: Estimating the influence of adding one spin, we reach
+the cavity bootstrap developed in the high-temperature analysis by Talagrand (see \cite[Chapter~1]{Talagrand}).
+Estimating the influence of adding one spin, we reach
 \begin{equation}
 \nu_s[Q_{12}^2] \leq C_\cK 
  \left(
@@ -313,16 +323,14 @@ Talagrand \cite[Chapter~1]{Talagrand}: Estimating the influence of adding one sp
 \right).
 \label{eq:cavity-remainder-outline}
 \end{equation}
-The preliminary concentration estimate \eqref{eq:fixed-deviation-overlap-tail-outline} yields that for any fixed
-$0<\delta$,
+The weak concentration estimate \eqref{eq:fixed-deviation-overlap-tail-outline} yields that for any fixed
+$\delta >0$,
 \begin{align}
 \nu_s|Q_{12}|^3
 &\le
 \delta\nu_s[Q_{12}^2]
 +
-8\nu_s\left(|Q_{12}|\ge\delta\right)
-\notag\\
-&\le
+8\nu_s\left(|Q_{12}|\ge\delta\right) \le
 \delta \nu_s[Q_{12}^2]+
 C_{\mathcal K,\delta}e^{-c_{\mathcal K,\delta}N}.
 \label{eq:cubic-bootstrap-outline}
@@ -333,13 +341,28 @@ Consequently, we have
 \]
 Choosing $\delta=1/(2C_\cK)>0$, we obtain
 \begin{equation}
-\sup_{\substack{(\beta,h)\in\mathcal K\\ 0\le s\le 1}}
 \nu_s[Q_{12}^2]
 \le
 \frac{C'_{\mathcal K}}{N},
 \label{eq:optimal-overlap-bound-outline}
 \end{equation}
-with some $C'_\cK$. This completes the proof of the quantitative bound for overlaps.
+with some $C'_\cK$.
+This is the sketch of the proof of the quantitative bound for overlaps.
+
+\subsection{Organization of the present paper}
+
+The rest of the paper is the proof of Theorem~\ref{thm:main}.
+In Section~\ref{sec:coercivity} we give estimates on the coercivity of the replica-symmetry.
+The argument in this part is inspired by the approach by Talagrand given in \cite{TalagrandParisi}, and including a lot of technical and explicit calculations.
+Section~\ref{sec:concentration} gives estimates about the overlap concentration. This part is similar to the argument in \cite{KusuokaNakajima1}.
+In Section~\ref{sec:conclusion} we prove the main theorem (Theorem~\ref{thm:main}) by applying the results in Sections~\ref{sec:coercivity}~and~\ref{sec:concentration}.
+
+In Appendix, we present the proofs of some technical results which are applied in Sections~\ref{sec:coercivity}~and~\ref{sec:concentration}.
+In Section~\ref{app:cavity-identities} we give the proof of Proposition~\ref{prop:cavity}, which is about the estimates of overlaps in Section~\ref{sec:concentration}.
+Section~\ref{app:specialGT} is about the finite-volume Guerra-Talagrand upper bound, which is applied in Section~\ref{subsec:GT}.
+In Section~\ref{sec:Price} we give Price's theorem, which is applied also in Section~\ref{subsec:GT}.
+
+We use \(C_{\mathcal K}\) and \(c_{\mathcal K}\) to denote, respectively, large and small positive constants depending only on the compact set \(\mathcal K\). Their values may vary from line to line.
 \section{Replica-symmetric coercivity}\label{sec:coercivity}
 
 \subsection{Gaussian calculus}\label{subsec:gaussian}
@@ -375,60 +398,22 @@ This inequality and Jensen's inequality imply
 &\le \frac{\log|I|}{t}+\frac{tL^2}{2}, \end{aligned} \] 
 where the first inequality follows from Jensen's inequality. 
 For $|I|\ge2$ and $L>0$, optimize the upper bound by choosing
-$t=\sqrt{2\log|I|}/L$.  The cases $|I|=1$ and $L=0$ are immediate.
+$t=\sqrt{2\log|I|}/L$.  The cases $|I|=1$ and $L=0$ are trivial.
 Thus, we obtain \eqref{eq:gaussianmaxgeneral}.
 
-\subsection{The replica-symmetric path}\label{subsec:ATsign}
+\subsection{Estimates on the replica-symmetric path}\label{subsec:ATsign}
 
 Fix $(\beta,h,s)\in\cK\times[0,1]$.
 For $t\ge0$, let $\mathsf H_t$ be the heat semigroup, i.e. 
 \[
- (\mathsf H_t\varphi)(x)\coloneqq\E\varphi(x+\sqrt t\,Z) .
+ (\mathsf H_t\varphi)(x)\coloneqq\E\varphi(x+\sqrt t\,Z),
 \]
+where $Z$ is a standard normal random variable.
 Then, it holds that
 \begin{equation}\label{eq:genH}
 \partial _t (\mathsf H_t\varphi)(x) = \frac{1}{2} \mathsf H_t (\partial ^2 \varphi)(x) .
 \end{equation}
-For $0\le u\le1$ and $x\in\mathbb R$, define
-\begin{equation}
- \Psi(u,x)
- \coloneqq
- \E\log\cosh\left(
- x+\beta\sqrt{s(q-u)_+}\,Z
- \right)
- +\frac{s\beta^2}{2}\bigl(1-\max\{u,q\}\bigr),
- \qquad Z\sim N(0,1),
- \label{eq:Psi-explicit}
-\end{equation}
-where $(a)_+\coloneqq\max\{a,0\}$.  Equivalently,
-\[
- \Psi(u,x)
- =
- \begin{cases}
-  (\mathsf H_{s\beta^2(q-u)}\log\cosh)(x)
-  +\dfrac{s\beta^2}{2}(1-q),
-  &0\le u\le q,\\[2mm]
-  \log\cosh(x)+\dfrac{s\beta^2}{2}(1-u),
-  &q\le u\le1.
- \end{cases}
-\]
-Differentiating \eqref{eq:Psi-explicit} in $x$ gives
-\begin{equation}
- \partial_x\Psi(u,x)
- =
- \E\tanh\left(
- x+\beta\sqrt{s(q-u)_+}\,Z
- \right)
- =
- \begin{cases}
-  (\mathsf H_{s\beta^2(q-u)}\tanh)(x),
-      &0\le u\le q,\\
-  \tanh(x),&q\le u\le1.
- \end{cases}
- \label{eq:Psi-x}
-\end{equation}
-
-For the upper interval, introduce the tilted heat semigroup
+We introduce the tilted heat semigroup
 \begin{equation}
  (\mathsf T_t\varphi)(x)
  \coloneqq e^{-t/2}
@@ -451,29 +436,17 @@ let $X_{s,u}$ denote a random variable whose law is specified by
  \end{cases}
  \label{eq:localfieldlaw}
 \end{equation}
-In particular,
+In particular, it holds that
 \begin{equation}\label{eq:Xsq}
-X_{s,q}\stackrel{\mathrm d}=h+\beta\sqrt q\,Z.
+X_{s,q}\stackrel{\mathrm d}=h+\beta\sqrt q\,Z,
 \end{equation}
-The replica-symmetric free energy for $H_{N,s}$ along the path is
-\begin{align}
- P_s^*& \coloneqq\log2+
- \E\Psi(0,h+\beta\sqrt{(1-s)q}\,Z)
- -\frac{s\beta^2}{2}\int_q^1u\,\dd u
- \label{eq:scalartrial}\\
- &= \log2+\E\log\cosh(h+\beta\sqrt q\,Z)
- +\frac{s\beta^2}{4}(1-q)^2,
- \label{eq:RSpathvalue}
-\end{align}
-where we have used the semigroup property and
-$\beta^2(1-s)q+s\beta^2q=\beta^2q$.
+where ``$\stackrel{\mathrm d}=$" means the equality in law.
 
 \begin{lemma}
 \label{lem:uppercomparison}
-If $s\beta^2(1-q)>1$, then
+If $s\beta^2(1-q)>1$ and $q\le u\le1$, then
 \begin{equation}
- \beta^2\E\sech^4(X_{s,u})\le\alpha,
- \qquad q\le u\le1.
+ \beta^2\E\sech^4(X_{s,u})\le\alpha.
  \label{eq:uppercomparison}
 \end{equation}
 \end{lemma}
@@ -481,35 +454,12 @@ If $s\beta^2(1-q)>1$, then
 
 
 \begin{proof}
-Fix $q\le u\le1$ and set
-\[
- \sigma^2\coloneqq\beta^2q,
- \qquad
- t\coloneqq s\beta^2(u-q),
- \qquad
- X\coloneqq h+\sigma Z.
-\]
-By \eqref{eq:localfieldlaw},
-\[
- \E\sech^4(X_{s,u})
- =
- \E\bigl[(\mathsf T_t\sech^4)(X)\bigr].
-\]
-Thus it suffices to prove
-\[
- \E\bigl[(\mathsf T_t\sech^4)(X)\bigr]
- \le
- \E\sech^4(X).
-\]
-
 We first note that
 \begin{equation}
- h<\sigma^2.
+ h<\sigma^2:=\beta^2    q .
  \label{eq:h-less-sigma}
 \end{equation}
-Indeed, suppose that $h\ge\sigma^2$. Since the convolution of an even
-function decreasing on $[0,\infty)$ with a centered Gaussian density has
-the same property,
+Indeed, suppose that $h\ge\sigma^2$. It is straightforward to check that 
 \[
  1-q
  =
@@ -518,29 +468,49 @@ the same property,
  \E\sech^2(\sigma^2+\sigma Z).
 \]
 Let $\varepsilon$ be a symmetric Rademacher variable, independent of $Z$,
-and put $Y=\sigma^2\varepsilon+\sigma Z$. Then
-$\E[\varepsilon\mid Y]=\tanh Y$ due to $\mathbb P(\varepsilon=\pm 1,\,Y\in dy) = \frac{1}{2\sqrt{2\pi \sigma^2}}e^{-(y - (\pm \sigma^2) )^2/2\sigma^2} dy$, and hence
+and put $Y=\sigma^2\varepsilon+\sigma Z$. Then $\varepsilon^2=1$ and 
+$\E[\varepsilon\mid Y]=\tanh Y$ due to $\mathbb P(\varepsilon=\pm 1,\,Y\in {\mathrm d}y) = \frac{1}{2\sqrt{2\pi \sigma^2}}e^{-(y - (\pm \sigma^2) )^2/2\sigma^2} {\mathrm d}y$, and hence
 \[
  \E\sech^2(\sigma^2+\sigma Z)
  =
  \E\operatorname{Var}(\varepsilon\mid Y)
  \le
- \inf_{a\in\R}\E(\varepsilon-aY)^2
+\E\Big(\varepsilon-\frac{1}{1+\sigma^2}Y\Big)^2
  =
  \frac{1}{1+\sigma^2}.
 \]
 Therefore
 \[
- (1-q)(1+\beta^2q)\le1,
+ (1-q)(1+\beta^2q)\le1.
 \]
-which, since $q>0$, implies $\beta^2(1-q)\le1$. This contradicts
+Organizing this with $q>0$ implies $\beta^2(1-q)\le1$. This contradicts the assumption 
 $s\beta^2(1-q)>1$ because $s\le1$.
+Thus, we obtain \eqref{eq:h-less-sigma}.
+
+Fix $q\le u\le1$ and set
+\[
+ t\coloneqq s\beta^2(u-q),
+ \qquad
+ X\coloneqq h+\sigma Z.
+\]
+From \eqref{eq:localfieldlaw} it follows that
+\[
+ \E\sech^4(X_{s,u})
+ =
+ \E\bigl[(\mathsf T_t\sech^4)(X)\bigr].
+\]
+Hence, for \eqref{eq:uppercomparison} it suffices to prove
+\[
+ \E\bigl[(\mathsf T_t\sech^4)(X)\bigr]
+ \le
+ \E\sech^4(X).
+\]
+
+
 
 Now put
 \[
- f\coloneqq\sech^4,
- \qquad
- g_t\coloneqq\mathsf T_t f,
+ g_t\coloneqq\mathsf T_t \sech^4 \qquad \mbox{and}\quad
  \qquad
  M(t)\coloneqq\E g_t(X).
 \]
@@ -550,12 +520,13 @@ Since
  =
  e^{-t/2}\frac{\mathsf H_t(\sech^3)(x)}{\cosh x},
 \]
-$g_t$ is even and nonincreasing on $[0,\infty)$; in particular,
+$g_t$ is an even and nonincreasing function on $[0,\infty)$.
+In particular, it holds that
 \[
  g_t'(x)\le0,
  \qquad x>0.
 \]
-By \eqref{eq:genH} and \eqref{eq:tiltedsemigroup},
+By \eqref{eq:genH} and \eqref{eq:tiltedsemigroup} we have
 \begin{equation}\label{eq:partialT_t}
  \partial_t(\mathsf T_t\varphi)(x)
  =\frac{1}{2\cosh^2x}\partial_x\left(
@@ -611,11 +582,11 @@ we obtain
  \tanh x+\frac{x}{2\sigma^2}
  -\frac{h}{2\sigma^2}\tanh\left(\frac{hx}{\sigma^2}\right).
 \]
-Since $0<h/\sigma^2<1$ (see \eqref{eq:h-less-sigma}),
+Since $0<h/\sigma^2<1$ due to \eqref{eq:h-less-sigma},
 \(
  \tanh\left(\frac{hx}{\sigma^2}\right)\le\tanh x .
 \)
-This inequality and \eqref{eq:K} implis that for $x>0$
+This inequality  implies that for $x>0$
 \[
  \frac{\sigma K(x)}{
   \phi((x-h)/\sigma)+\phi((-x-h)/\sigma)}
@@ -636,6 +607,58 @@ In particular, it holds that $M(t)\le M(0)$. From this inequality we obtain
  =\alpha.
 \]
 \end{proof}
+For $0\le u\le1$ and $x\in\mathbb R$, define
+\begin{equation}
+ \Psi(u,x)
+ \coloneqq
+ \E\log\cosh\left(
+ x+\beta\sqrt{s(q-u)_+}\,Z
+ \right)
+ +\frac{s\beta^2}{2}\bigl(1-\max\{u,q\}\bigr),
+ \qquad Z\sim N(0,1),
+ \label{eq:Psi-explicit}
+\end{equation}
+where $(a)_+\coloneqq\max\{a,0\}$.  Equivalently, we can define $\Psi (u,x)$ by
+\[
+ \Psi(u,x)
+ =
+ \begin{cases}
+  (\mathsf H_{s\beta^2(q-u)}\log\cosh)(x)
+  +\dfrac{s\beta^2}{2}(1-q),
+  &0\le u\le q,\\[2mm]
+  \log\cosh(x)+\dfrac{s\beta^2}{2}(1-u),
+  &q\le u\le1.
+ \end{cases}
+\]
+Differentiating \eqref{eq:Psi-explicit} in $x$ gives
+\begin{equation}
+ \partial_x\Psi(u,x)
+ =
+ \E\tanh\left(
+ x+\beta\sqrt{s(q-u)_+}\,Z
+ \right)
+ =
+ \begin{cases}
+  (\mathsf H_{s\beta^2(q-u)}\tanh)(x),
+      &0\le u\le q,\\
+  \tanh(x),&q\le u\le1.
+ \end{cases}
+ \label{eq:Psi-x}
+\end{equation}
+
+The replica-symmetric free energy for $H_{N,s}$ along the path is defined by
+\begin{align}
+ P_s^*& \coloneqq\log2+
+ \E\Psi(0,h+\beta\sqrt{(1-s)q}\,Z)
+ -\frac{s\beta^2}{2}\int_q^1u\,\dd u
+ \label{eq:scalartrial}\\
+ &= \log2+\E\log\cosh(h+\beta\sqrt q\,Z)
+ +\frac{s\beta^2}{4}(1-q)^2,
+ \label{eq:RSpathvalue}
+\end{align}
+where we have used the semigroup property and
+$\beta^2(1-s)q+s\beta^2q=\beta^2q$.
+
 
 \begin{proposition}
 \label{prop:pathRS}
@@ -729,10 +752,10 @@ On the other hand, \eqref{eq:genH}, \eqref{eq:tiltedsemigroup} and \eqref{eq:loc
 %
 &= \frac{s\beta ^2}{2} \E (\partial ^2 \varphi )(X_{s,u}) + s\beta ^2 \mathsf H_{\beta ^2 q} \left( e^{-\frac{s\beta ^2}{2}(u-q)} \frac{\mathsf H_{s\beta ^2 (u-q)}( ( \partial \varphi ) \cdot \sinh )}{\cosh} \right) (h).
 \end{align*}
-Hence,
+Hence, it holds that
 \begin{align*}
 g_s'(u) &= s\beta ^2 \E \sech ^4 (X_{s,u}) -2 s\beta ^2 \E \tanh ^2(X_{s,u}) \sech ^2 (X_{s,u})\\
-&\quad + 2 s\beta ^2 \mathsf H_{\beta ^2 q} \left( e^{-\frac{s\beta ^2}{2}(u-q)} \frac{\mathsf H_{s\beta ^2 (u-q)}( \sech \cdot \tanh ^2 )}{\cosh} \right) (h)
+&\quad + 2 s\beta ^2 \mathsf H_{\beta ^2 q} \left( e^{-\frac{s\beta ^2}{2}(u-q)} \frac{\mathsf H_{s\beta ^2 (u-q)}( \sech \cdot \tanh ^2 )}{\cosh} \right) (h).
 \end{align*}
 Thus, by recalling \eqref{eq:tiltedsemigroup} and \eqref{eq:localfieldlaw}, we have
 \begin{equation}
@@ -760,22 +783,33 @@ g_s(u) - u < 0 \qquad (u>q) .
 \]
 This yields \eqref{eq:ATsign} for $u>q$.
 
-We have \eqref{eq:linearATsign} from \eqref{eq:leftstrict} and \eqref{eq:gs-upper-derivative}.
+To prove \eqref{eq:linearATsign}, note first that \eqref{eq:leftstrict} and
+\eqref{eq:delta} give
+\[
+ g_s(u)-u\ge\delta_{\cK}(q-u),
+ \qquad 0\le u<q.
+\]
+Moreover, the expression for $g_s'(u)$ in \eqref{eq:gs-upper-derivative}
+is jointly continuous in $(\beta,h,s,u)$ on the set $q\le u\le1$.
+Since $g_s'(q)=s\alpha\le1-\delta_{\cK}$, compactness gives
+$\varepsilon_{\cK}>0$ such that $\text{whenever }q\le u\le q+\varepsilon_{\cK}$,
+\[
+ g_s'(u)\le1-\frac{\delta_{\cK}}2.
+\]
+Thus, for $q<u\le q+\varepsilon_{\cK}$,
+\[
+ g_s(u)-u
+ =\int_q^u\bigl(g_s'(v)-1\bigr)\,\dd v
+ \le-\frac{\delta_{\cK}}2(u-q).
+\]
+Putting things together, we have 
+\eqref{eq:linearATsign} with $c_{\cK}=\delta_{\cK}/2$ after decreasing
+$\varepsilon_{\cK}$ if necessary.
 \end{proof}
 
 \subsection{Two-replica Guerra--Talagrand coercivity}\label{subsec:GT}
 
-For an attainable overlap $v\in\mathcal R_N
-\coloneqq\{-1,-1+2/N,\ldots,1\}$, define
-\begin{equation}
- Z^{(2)}_{N,s}(v)
- \coloneqq
- \sum_{\substack{\sigma^1,\sigma^2\in\Sigma_N\\R_{12}=v}}
- e^{H_{N,s}(\sigma^1)+H_{N,s}(\sigma^2)}
- \label{eq:constrainedZ}
-\end{equation}
-and retain the notation $P_s^*$ from \eqref{eq:RSpathvalue}.  For
-$\lambda\in\mathbb R$, define
+For $\lambda\in\mathbb R$, define a function $f_\lambda$ on ${\mathbb R}^2$ by
 \begin{equation}
  f_\lambda(x_1,x_2)
  \coloneqq\log\left(\frac14\sum_{\varepsilon_1,\varepsilon_2=\pm1}
@@ -783,60 +817,92 @@ $\lambda\in\mathbb R$, define
        +\lambda\varepsilon_1\varepsilon_2)\right).
  \label{eq:GTterminal}
 \end{equation}
-
-For $(\beta,h,s)\in\cK\times[0,1]$, define $\xi_s$ by
+For $(\beta,h,s)\in\cK\times[0,1]$, define a function $\xi_s$ on ${\mathbb R}$ by
 \begin{equation}
  \xi_s(r)\coloneqq\beta^2(1-s)qr+\frac{s\beta^2}{2}r^2.
 \label{eq:xi}
 \end{equation}
-Given $v\in[-1,1]$, write
-$r_v\coloneqq|v|$ and put $\iota_v\coloneqq1$ for $v\ge0$ and
-$\iota_v\coloneqq-1$ for $v<0$.  Let $\{ a_j \}_{j=1}^{M+1}$ be the increasing list of the distinct elements of $\{0,q,r_v,1\}$, i.e.
+Given $v\in[-1,1]$, put $\iota_v\coloneqq1$ for $v\ge0$ and
+$\iota_v\coloneqq-1$ for $v<0$.  Let $\{ a_j \}_{j=0}^{M}$ be the increasing list of the distinct elements of $\{0,q,|v|,1\}$, i.e.
 \[
-\{ a_j \}_{j=1}^{M+1}= \{0,q,r_v,1\} \quad and \quad a_j< a_{j+1} \ (0\le j \le M).
+\{ a_j \}_{j=0}^{M}= \{0,q,|v|,1\} \quad \mbox{and} \quad a_j< a_{j+1} \ (0\le j \le M-1).
 \]
-Note that $M=1$ if $r_v =q,1$, and $M=2$ otherwise.
+Note that $M=2$ if $|v| \in \{0,q,1\}$, and $M=3$ otherwise.
 Define
 \begin{equation}
  Q_j^v\coloneqq
  \begin{pmatrix}
- a_j&\iota_v(a_j\wedge r_v)\\
- \iota_v(a_j\wedge r_v)&a_j
+ a_j&\iota_v(a_j\wedge |v|)\\
+ \iota_v(a_j\wedge |v|)&a_j
  \end{pmatrix},
- \qquad 0\le j\le M+1.
+ \qquad 0\le j\le M.
 \end{equation}
-For $1\le j\le M$, set
+For $0\le j\le M$, set
 \begin{equation}
  m_j\coloneqq
  \begin{cases}
  0,&a_j\le q,\\[1mm]
- \frac12,&q<a_j\le r_v,\\[1mm]
- 1,&a_j>\max\{q,r_v\}.
+ \frac12,&q<a_j\le |v|,\\[1mm]
+ 1,&a_j>\max\{q,|v|\}.
  \end{cases}
 \end{equation}
-The levels $\{ m_j\} _{j=1}^{M}$ are nondecreasing.  More explicitly, if $r_v\le q$, $\{ m_j\} _{j=1}^{M} = \{ 0,1\}$; if $q<r_v<1$, $\{ m_j\} _{j=1}^{M} = \{ 0,\frac12,1\}$; and if $r_v=1$, $\{ m_j\} _{j=1}^{M} = \{ 0,\frac12\}$.  Thus
-$\{ m_j\} _{j=1}^{M} \subset [0,1]$ in every case, including
-the cases that $r_v=0$ and that $r_v=q$.  In the interpolation below we separately set
-$m_{M+1}=1$, even in the case that $r_v=1$.
+We call $(a_j)_{j=0}^M$ the breakpoints and $(m_j)_{j=0}^{M}$ the levels.
+For each $v$, the breaking points and levels are given as follows.
 
-Define, entrywise,
-\begin{equation}
+\begin{center}
+\begin{tabular}{|c||c|c|}
+\hline
+& the breaking points $(a_j)_{j=0}^M$ & the levels $(m_j)_{j=0}^{M}$ \\[1mm]
+\hline
+$|v|=0$ & $0,q,1$ & $0,0,1$\\[1mm]
+\hline
+$0<|v|<q$ & $0,|v|,q,1$ & $0,0,0,1$ \\[1mm]
+\hline
+$|v|=q$ & $0,q,1$ & $0,0,1$ \\[1mm]
+\hline 
+$q<|v|<1$ & $0,q,|v|,1$ & $0,0,\frac12,1$ \\[1mm]
+\hline
+$|v|=1$ & $0,q,1$ & $0,0,\frac12$\\[1mm]
+\hline
+\end{tabular}
+\end{center}
+%\footnote{\textcolor{red}{SN: The table heading says the levels are $(m_j)_{j=0}^M$, but the rows list only $(m_j)_{j=1}^M$. For example, when $|v|=0$, the full level vector is $(0,0,1)$, not $(0,1)$.}}
+%
+We also set
+\[
+m_{M+1}=1.
+\]
+
+%The levels $(m_j)_{j=1}^{M}$ are nondecreasing.  More explicitly, if
+%$|v|=0$, then the breakpoints $(a_j)_{j=1}^M$ are $(0,q,1)$ and the levels $(m_j)_{j=1}^{M}$ are $(0,1)$;
+%if $0<|v|<q$, then the breakpoints are $(0,|v|,q,1)$ and the levels are
+%$(0,0,1)$; if $|v|=q$, then the breakpoints are $(0,q,1)$ and the levels
+%are $(0,1)$; if $q<|v|<1$, then the breakpoints are
+%(0,q,|v|,1)$ and the levels are $(0,\frac12,1)$; and if $|v|=1$, then
+%the breakpoints are $(0,q,1)$ and the levels are $(0,\frac12)$.  We also set
+%\[
+%m_0=0,\qquad m_{M+1}=1.
+%\]
+
+Define a $2\times 2$-matrix $B_j$ by
+\begin{equation}\label{eq:defB}
  B_j\coloneqq\beta^2(1-s)q
  \begin{pmatrix}1&1\\1&1\end{pmatrix}
  +s\beta^2Q_j^v
  =\xi_s'(Q_j^v),
- \qquad 0\le j\le M+1.
+ \qquad 0\le j\le M.
 \end{equation}
-Since $r_v$ is a breakpoint, every increment is of one of the forms
+Since $|v|$ is a breakpoint, every increment is of one of the forms
 \begin{equation}
  Q_j^v-Q_{j-1}^v=
  \begin{cases}
  (a_j-a_{j-1})
- \begin{pmatrix}1&\iota_v\\\iota_v&1\end{pmatrix},&a_j\le r_v,\\[3mm]
- (a_j-a_{j-1})I_2,&a_{j-1}\ge r_v.
+ \begin{pmatrix}1&\iota_v\\\iota_v&1\end{pmatrix},&a_j\le |v|,\\[3mm]
+ (a_j-a_{j-1})I_2,&a_{j}> |v|.
  \end{cases}
  \label{eq:GT-overlap-increments}
 \end{equation}
+Here, note that $a_{j-1} \geq |v|$ if $a_j >|v|$.
 Both displayed matrices are positive semidefinite.  Consequently,
 \begin{equation}\label{eq:finite-step-vector-increments}
  B_j-B_{j-1}=s\beta^2(Q_j^v-Q_{j-1}^v)\succeq0.
@@ -852,7 +918,7 @@ centered Gaussian vector with covariance $C$, and define
  \end{cases}
  \label{eq:GTsemigroup}
 \end{equation}
-Define deterministic stage functions by
+Define functions $U_{s,M}^{\lambda,v}$ by
 \begin{equation}
  U_{s,M}^{\lambda,v}=f_\lambda,
  \qquad
@@ -865,12 +931,13 @@ and for $x=(x_1,x_2) \in {\mathbb R}^2$ set
 \begin{equation}
  U_s^{\lambda,v}(x)\coloneqq U_{s,0}^{\lambda,v}(x).
 \end{equation}
-When a breakpoint should be clarified, we use the discrete notation
-\[
+At a breakpoint $a_j$, we use the notation
+\begin{equation}\label{eq:U@a}
  U_s^{\lambda,v}(a_j,x)\coloneqq U_{s,j}^{\lambda,v}(x).
-\]
+\end{equation}
 
-Equivalently, choose independent centered Gaussian vectors
+We give another construction of $U_s^{\lambda,v}$ via random variables.
+Choose independent centered Gaussian vectors
 $G_1,\ldots,G_M$ with $\Var(G_j)=B_j-B_{j-1}$ and let
 $\mathcal F_j=\sigma(G_1,\ldots,G_j)$, with $\mathcal F_0$ trivial.
 For fixed $x\in\mathbb R^2$, put
@@ -899,18 +966,18 @@ also covers the case that $s=0$.
 In the case, every covariance increment vanishes.
 
 Next, put
-\begin{equation}
+\begin{equation}\label{eq:defd}
  d_j\coloneqq\frac{s\beta^2}{2}
  \sum_{k,\ell =1}^2(Q_{j,k\ell}^v)^2,
- \qquad 0\le j\le M
+ \qquad 0\le j\le M,
 \end{equation}
 where $Q_{j,k\ell}^v$ is the $(k,\ell)$ entry of $Q_{j}^v$.
 As a function of a breakpoint value $a$, this quantity is given by
 \[
  d(a)=
  \begin{cases}
- 2s\beta^2a^2,&0\le a\le r_v,\\[1mm]
- s\beta^2(a^2+r_v^2),&r_v\le a\le1.
+ 2s\beta^2a^2,&0\le a\le |v|,\\[1mm]
+ s\beta^2(a^2+|v|^2),&|v|\le a\le1.
  \end{cases}
 \]
 Indeed, it holds that $d_j = d(a_j)$.
@@ -924,18 +991,18 @@ Define
  \frac12\sum_{j=1}^Mm_j(d_j-d_{j-1}).
 \end{equation}
 This normalization is the scalar Gaussian contribution at the
-$t=1$ endpoint of the interpolation in Appendix~\ref{app:specialGT}, and is independent of $v$.  Indeed, if $r_v\le q$, then
+endpoint $t=1$ of the interpolation in Appendix~\ref{app:specialGT}, and is independent of $v$.  Indeed, if $|v|\le q$, then
 \[
 \sum_{j=1}^Mm_j(d_j-d_{j-1}) = d(1)-d(q)=s\beta^2(1-q^2).
 \]
-If $q<r_v < 1$,
+If $q<|v| < 1$,
 \begin{align*}
 &\sum_{j=1}^Mm_j(d_j-d_{j-1})
- =\frac12(d(r_v)-d(q))+d(1)-d(r_v) \\
-& =s\beta^2(r_v^2-q^2)+s\beta^2(1-r_v^2)
+ =\frac12(d(|v|)-d(q))+d(1)-d(|v|) \\
+& =s\beta^2(|v|^2-q^2)+s\beta^2(1-|v|^2)
  =s\beta^2(1-q^2).
 \end{align*}
-If $r_v=1$,
+If $|v|=1$,
 \[
  \sum_{j=1}^M m_j(d_j-d_{j-1}) = \frac12(d(1)-d(q))=s\beta^2(1-q^2).
 \]
@@ -944,31 +1011,38 @@ Therefore,
  \mathcal L_s(v)=\frac{s\beta^2}{2}(1-q^2),
  \label{eq:GTcorrection}
 \end{equation}
-in particular $\mathcal L_s(v)$ is independent of $v$.
+In particular, this yields that $\mathcal L_s(v)$ is independent of $v$.
 
-With $Y_0=h+\beta\sqrt{(1-s)q}\,Z_0$, set
+With $Y_0=h+\beta\sqrt{(1-s)q}\,Z$ where $Z$ is a standard normal random variable, set
 \begin{equation}
  \mathfrak P_s(\lambda,v)
  \coloneqq2\log2+\E U_s^{\lambda,v}(Y_0,Y_0)
  -\lambda v-\mathcal L_s(v).
  \label{eq:GTfunctional}
 \end{equation}
+Recall the notation $P_s^*$ from \eqref{eq:RSpathvalue}. For  $v\in\mathcal R_N
+\coloneqq\{-1,-1+2/N,\ldots,1\}$, define
+\begin{equation}
+ Z^{(2)}_{N,s}(v)
+ \coloneqq
+ \sum_{\substack{\sigma^1,\sigma^2\in\Sigma_N\\R_{12}=v}}
+ e^{H_{N,s}(\sigma^1)+H_{N,s}(\sigma^2)}.
+ \label{eq:constrainedZ}
+\end{equation}
 
-The following finite-volume Guerra--Talagrand upper bound is
-Lemma~\ref{lem:specialGT}, proved in Appendix~\ref{app:specialGT}. It is a special case
-of the general two-dimensional bound of Talagrand and Chen
-\cite{Talagrand,ChenGT}:
+
+The following finite-volume Guerra--Talagrand upper bound follows from Lemma~\ref{lem:specialGT}, which is proved in Appendix~\ref{app:specialGT}. It is a special case of the general two-dimensional bound obtained by Talagrand and Chen in \cite{Talagrand,ChenGT}:
 \begin{equation}
  \frac1N\E\log Z^{(2)}_{N,s}(v)
  \le \inf_{\lambda\in \mathbb R} \mathfrak P_s(\lambda,v).
  \label{eq:GTfunctionalbound}
 \end{equation}
-
+\iffalse
 The following technical lemma is also postponed to Appendix~\ref{app: technical}.
 
 \begin{lemma}
 \label{lem:GTcontinuity}
-On every compact set on which $\lambda$ is bounded, the maps
+The maps
 \[
  (\beta,h,s,\lambda,v)\longmapsto
  \mathfrak P_s(\lambda,v)-2P_s^*,
@@ -977,9 +1051,9 @@ On every compact set on which $\lambda$ is bounded, the maps
  \partial_\lambda\mathfrak P_s(\lambda,v)
 \]
 are jointly continuous for
-$(\beta,h,s,v)\in\cK\times[0,1]\times[-1,1]$.
+$(\beta,h,s,\lambda,v)\in\cK\times[0,1]\times\mathbb R \times[-1,1]$.
 \end{lemma}
-
+\fi
 \begin{lemma}
 \label{lem:U-finite-step-derivatives}
 In the recursion \eqref{eq:U-conditional-recursion}, define the tilted
@@ -1090,13 +1164,13 @@ By applying \eqref{eq:U-first-derivative-recursion} recursively, we have
 \]
 Similarly, applying \eqref{eq:U-second-derivative-recursion} recursively, we have 
 \[
-\partial_{\lambda\lambda}X_0^\lambda = \E_0^\lambda \cdots \E_M^\lambda
+\partial_{\lambda\lambda}X_0^\lambda = \E_1^\lambda \cdots \E_M^\lambda
 \left[
 \partial_{\lambda\lambda}X_M^\lambda
 \right]
 +
-\sum _{j=0}^M m_j
-\E_0^\lambda \cdots \E_j^\lambda \left[ \operatorname{Var}_j^\lambda
+\sum _{j=1}^M m_j
+\E_1^\lambda \cdots \E_{j-1}^\lambda \left[ \operatorname{Var}_j^\lambda
 \left(
 \partial_\lambda X_j^\lambda
 \right) \right] .
@@ -1106,10 +1180,10 @@ This equality, \eqref{eq:relationXU} and the fact that $0\le\partial_{\lambda\la
  0\le\partial_{\lambda\lambda}U_s^{\lambda,v}(x)
  \le1+\sum_{j=1}^Mm_j.
 \end{equation}
-If $r_v\le q$, the sum is at most $1$.  If
-$q<r_v<1$, $\{ m_j\} _{j=1}^m = \{ 0,\frac12,1\}$ and their sum is $3/2$.
-If $r_v=1$, $\{ m_j\} _{j=1}^m = \{ 0,\frac12\}$ and their sum is $1/2$.
-Noting that $M=1,2$, consequently we have in every boundary configuration,
+If $|v|\le q$, the sum is at most $1$.  If
+$q<|v|<1$, $(m_j)_{j=1}^M = ( 0,\frac12,1)$ and their sum is $3/2$.
+If $|v|=1$, $(m_j)_{j=1}^M = ( 0,\frac12)$ and their sum is $1/2$.
+Consequently, we have in every case,
 \[
  1+\sum_{j=1}^Mm_j\le\frac52.
 \]
@@ -1134,18 +1208,11 @@ Put
  \Gamma_s(v)\coloneqq\inf_{\lambda\in\mathbb R}
  \mathfrak P_s(\lambda,v).
 \]
-There is a constant $c_{\cK}>0$ such that
+There is a constant $c_{\cK}>0$ such that for $(\beta,h,s,v)\in\cK\times[0,1]\times[-1,1]$,
 \begin{equation}
  \Gamma_s(v)
- \le 2P_s^*-c_{\cK}(v-q)^2
- \label{eq:Gamma-coercivity}
-\end{equation}
-for $(\beta,h,s,v)\in\cK\times[0,1]\times[-1,1]$.  Consequently,
-for every $N$ and $v\in\mathcal R_N$,
-\begin{equation}
- \frac1N\E\log Z^{(2)}_{N,s}(v)
  \le 2P_s^*-c_{\cK}(v-q)^2.
- \label{eq:GTcoercivity}
+ \label{eq:Gamma-coercivity}
 \end{equation}
 Moreover,
 \begin{equation}
@@ -1156,52 +1223,68 @@ Moreover,
 
 \begin{proof}
 
-We first evaluate the finite recursion at $\lambda=0$.  Suppose that
-$-q\le v\le q$.  The level-$1$ recursion above $q$ {\color{red}(What is this?)} and the identities
+We first evaluate the finite recursion at $\lambda=0$.
+Suppose that
+$-q\le v\le q$.
+In this case, $a_{M-1}=q$, $m_M =1$ and $B_M - B_{M-1} = s\beta ^2 (1-q)I_2$.
+Hence, with independent Gaussian random variables $G_1$ and $G_2$ with means $0$ and variances $s\beta ^2(1-q)$, the identities
 \[
  f_0(x_1,x_2)=\log\cosh x_1+\log\cosh x_2,
  \qquad
  \left.\partial_\lambda f_\lambda(x_1,x_2)
- \right|_{\lambda=0}=\tanh x_1\tanh x_2
+ \right|_{\lambda=0}=\tanh x_1\tanh x_2 ,
 \]
-give, at the breakpoint $q$, 
+\eqref{eq:GTsemigroup}, \eqref{eq:U-stage-recursion} and \eqref{eq:U@a} give 
 \begin{align*}
- U_s^{0,v}(q,x_1,x_2)
- &=s\beta^2(1-q)+\log\cosh x_1+\log\cosh x_2,\\
- \left.\partial_\lambda U_s^{\lambda,v}(q,x_1,x_2)
- \right|_{\lambda=0}
+ U_s^{0,v}(q,x_1,x_2) & = \log \E \left[ \frac{1}{4} \sum _{\varepsilon _1, \varepsilon _2 \in {\pm 1}} \exp (\varepsilon _1 (x_1 + G_1) + \varepsilon _2 (x_2 + G_2))\right] \\
+ &=s\beta^2(1-q)+\log\cosh x_1+\log\cosh x_2,
+\end{align*}
+and
+\begin{align*}
+ \left.\partial_\lambda U_s^{\lambda,v}(q,x_1,x_2) \right|_{\lambda=0}
+ &= \frac{\E \left[ \frac{1}{4} \sum _{\varepsilon _1, \varepsilon _2 \in {\pm 1}} \varepsilon _1 \varepsilon _2 \exp (\varepsilon _1 (x_1 + G_1) + \varepsilon _2 (x_2 + G_2))\right]}{\E \left[ \frac{1}{4} \sum _{\varepsilon _1, \varepsilon _2 \in {\pm 1}} \exp (\varepsilon _1 (x_1 + G_1) + \varepsilon _2 (x_2 + G_2))\right]}\\
+ %
  &=\tanh x_1\tanh x_2.
 \end{align*}
-All recursions below $q$ have level zero.{\color{red}(What does it mean?)}
-Let $(Y_1(v),Y_2(v))$  a Gaussian
-pair such that both $Y_1(v)$ and $Y_2(v)$ have means $h$ and variances $\beta^2q$, and have the covariance
+Hence, by these equalities, the fact that $m_j=0$ for $j<M$, and \eqref{eq:GT-overlap-increments}, we obtain
+\begin{align}
+U_s^{0,v}(x_1,x_2) &= s\beta^2(1-q) + \E \log\cosh (x_1 + \beta \sqrt{sq}Z_0 ) + \E \log\cosh (x_2 + \beta \sqrt{sq}Z_0 ), \\
+\left.\partial_\lambda U_s^{\lambda,v}(x_1,x_2) \right|_{\lambda=0} &= \E \left[ \tanh (x_1 + \beta \sqrt{s|v|}Z_0 + \beta \sqrt{s(q -|v|)} Z_1) \right. \nonumber\\
+&\qquad \qquad \left. \times \tanh (x_2 + \iota _v \beta \sqrt{s|v|}Z_0 + \beta \sqrt{s(q-|v|)}Z_2 )\right],
+\end{align}
+where $Z_0$, $Z_1$ and $Z_2$ are independent standard normal random variables. 
+From these equalities it follows that
+\begin{align*}
+\E U_s^{0,v}(Y_0,Y_0) &= s\beta^2(1-q) + 2 \E \log\cosh (h + \beta \sqrt{q} Z ) \\
+%
+\left.\partial_\lambda \E U_s^{\lambda ,v}(Y_0,Y_0) \right|_{\lambda=0} &=\E \left[ \tanh (Y_1(v)) \tanh (Y_2(v) )\right]=:\tilde{g}_s(v),
+\end{align*}
+where $Y_0 = h +\beta \sqrt{(1-s)q}\,Z$, $Z$ is a standard normal random variable independent from other random variables, and $(Y_1(v),Y_2(v))$ is a  Gaussian pair such that both $Y_1(v)$ and $Y_2(v)$ have means $h$ and variances $\beta^2q$, and have the covariance
 \[
- \Cov(Y_1(v),Y_2(v))
- =\beta^2\bigl((1-s)q+sv\bigr).
+ \Cov(Y_1(v),Y_2(v)) =\beta^2\bigl((1-s)q+sv\bigr).
 \]
-It follows directly from the conditional expectations below $q$ {\color{red}(What does this mean?)}, \eqref{eq:GTcorrection} and
-\eqref{eq:RSpathvalue} that
+Thus, by applying \eqref{eq:RSpathvalue} and \eqref{eq:GTcorrection}  we have 
 \begin{equation}
  \mathfrak P_s(0,v)=2P_s^*,
- \qquad
- \partial_\lambda\mathfrak P_s(0,v)= \tilde{g}_s(v)-v \qquad (-q\le v\le q)
+ \quad
+ \partial_\lambda\mathfrak P_s(0,v)= \tilde{g}_s(v)-v , \qquad -q\le v\le q.
  \label{eq:GT-zero-signed-simple}
 \end{equation}
-where
+%\[
+% \tilde{g}_s(v)
+% \coloneqq
+% \E[\tanh Y_1(v)\tanh Y_2(v)].
+%\]
+Since Price's theorem (Theorem~\ref{thm:Price}) implies
+\begin{align*}
+\tilde{g}_s'(v) &= s\beta ^2 \E[\sech ^2 Y_1(v)\sech ^2 Y_2(v)],
+\end{align*}
+the Cauchy--Schwarz inequality yields
 \[
- \tilde{g}_s(v)
- \coloneqq
- \E[\tanh Y_1(v)\tanh Y_2(v)].
-\]
-Gaussian differentiation {\color{red}(What is this?)} and the Cauchy--Schwarz inequality yield
-\[
- \tilde{g}_s'(v)
- =s\beta^2
-  \E[\sech^2Y_1(v)\sech^2Y_2(v)]
- \le s\alpha
+ \tilde{g}_s'(v) \le s\beta ^2 \E[\sech ^4 (h+\beta\sqrt{q}Z)]\le s\alpha,
 \]
 where $\alpha$ is defined in \eqref{eq:alpha}.
-Since $\Cov(Y_1(q),Y_2(q)) = \beta ^2 q = \operatorname{Var} (Y_0)$, it holds that $\tilde{g}_s (q) = \E[\tanh ^2 (Y_0)] =q$ where $Y_0 = h + \beta \sqrt{(1-s)q}Z_0$.
+Since $\Cov(Y_1(q),Y_2(q)) = \beta ^2 q = \operatorname{Var} (Y_1(q))$, it holds that $\tilde{g}_s (q) = \E[\tanh ^2 (Y_1(q))] =q$.
 Hence, it follows that
 \begin{equation}
 \tilde{g}_s(v) -v
@@ -1210,75 +1293,77 @@ Hence, it follows that
  \label{eq:GT-signed-positive-simple}
 \end{equation}
 
-For $0\le v\le q$, put $t=s\beta^2(q-v)$, let
-$X\sim N(h,\beta^2((1-s)q+sv))$, and let $Z_1$ and $Z_2$ be random variables with the standard normal law which are also independent of other random variables.  
+In the case that $0\le v\le q$, put $t=s\beta^2(q-v)$, let
+$X$ be a Gaussian random variable with mean $h$ and variance $\beta^2((1-s)q+sv))$ which is independent of other random variables.  
 The variables
 \[
  X+\sqrt t\,Z_1,
  \qquad X+\sqrt t\,Z_2,
 \]
 have the joint law of $(Y_1(v),Y_2(v))$, and are independent under the probability measure conditioned on $X$.
-Consequently,
+Hence, it follows that
 \begin{equation}\label{eq:gv(0<v<q)}
  \tilde{g}_s(v) =\E\left[
  \bigl(\mathsf H_t(\tanh)(X)\bigr)^2
  \right]=g_s(v), \qquad 0\le v \le q
 \end{equation}
-by \eqref{eq:Psi-x}, \eqref{eq:localfieldlaw}, and \eqref{eq:gs-def}.
+in view of \eqref{eq:localfieldlaw}, \eqref{eq:Psi-x}, and \eqref{eq:gs-def}.
 
-Now let $q<v\le1$ and put $t=s\beta^2(v-q)$.  Above $v$ the level is
-$1$ and the coordinate increments are independent.  The stage
-recursion gives
+Now we consider the case that $q<v\le1$. Let $t \coloneqq s\beta^2(v-q)$.
+Similarly to the case that $-q\le v\le q$, it holds that for $q< v< 1$
 \begin{align*}
  U_s^{0,v}(v,x_1,x_2)
  &=s\beta^2(1-v)+\log\cosh x_1+\log\cosh x_2,\\
- D_v(x_1,x_2)
- &\coloneqq
+ %
  \left.\partial_\lambda U_s^{\lambda,v}(v,x_1,x_2)
  \right|_{\lambda=0}
- =\tanh x_1\tanh x_2.
+ & =\tanh x_1\tanh x_2.
 \end{align*}
-For $v=1$, the stage above $v$ is absent and these formulas reduce to
-the terminal identities.  Between $q$ and $v$, the increment is
-$(\sqrt t\,Z,\sqrt t\,Z)$ and its level is $1/2$.  Hence, on the
-diagonal,
-\begin{align}
- U_s^{0,v}(q,(x,x))
+Since $a_{M-1} = v$, $a_{M-2}=q$, $m_{M-1}= \frac{1}{2}$ and 
+\[
+B_{M-1} - B_{M-2} = s\beta ^2 (v-q)\left( \begin{array}{cc} 1&1\\ 1&1 \end{array}\right) = t \left( \begin{array}{cc} 1&1\\ 1&1 \end{array}\right),
+\]
+we have%\footnote{\textcolor{red}{The $q<v$ Guerra--Talagrand recursion is missing a factor $2$. Since $m_{M-1}=1/2$, $\mathcal T_{1/2,C}F=2\log\E e^{F/2}$. Thus the logarithmic term below must be $2\log\E\sqrt{\cosh(x_1+\sqrt t\,Z_0)\cosh(x_2+\sqrt t\,Z_0)}$. Without this factor, setting $x_1=x_2=x$ does not yield the subsequently claimed value $2\log\cosh x+s\beta^2(1-q)$; with the factor restored, the diagonal value and the $\lambda$-derivative calculation are consistent.}}
+\begin{align*}
+ U_s^{0,v}(q,x_1 ,x_2 )
  &=s\beta^2(1-v)
- +2\log\E\cosh(x+\sqrt t\,Z)\notag\\
- &=2\log\cosh x+s\beta^2(1-q),
- \label{eq:GT-positive-diagonal-value}
-\end{align}
-where $\E\cosh(x+\sqrt t\,Z)=e^{t/2}\cosh x$.  The derivative
-recursion in Lemma~\ref{lem:U-finite-step-derivatives} gives
+ + 2 \log\E \sqrt{ \cosh(x_1 +\sqrt t\,Z_0) \cosh(x_2+\sqrt t\,Z_0 )} ,
+\end{align*}
+and 
+\begin{align*}
+ & \left.\partial_\lambda U_s^{\lambda,v}(q,x_1,x_2) \right|_{\lambda=0} \\
+ %
+ &= \frac{\E \left[ \left.\partial_\lambda U_s^{\lambda,v}(v,x_1 +\sqrt t\,Z_0 ,x_2 +\sqrt t\,Z_0)
+ \right|_{\lambda=0}\exp \left( \frac{1}{2} U_s^{0,v}(v,x_1 +\sqrt t\,Z_0 ,x_2 +\sqrt t\,Z_0 ) \right) \right] }{\E \exp \left( \frac{1}{2} U_s^{0,v}(v,x_1 +\sqrt t\,Z_0 ,x_2 +\sqrt t\,Z_0 ) \right) } \\
+ %
+ &= \frac{\E \left[ \tanh (x_1 +\sqrt t\,Z_0) \tanh (x_2 +\sqrt t\,Z_0)
+ \sqrt{\cosh (x_1 +\sqrt t\,Z_0) \cosh (x_2 +\sqrt t\,Z_0)} \right] }{\E \left[ \sqrt{\cosh (x_1 +\sqrt t\,Z_0) \cosh (x_2 +\sqrt t\,Z_0)} \right] } .
+\end{align*}
+Note that these equalities holds also for $v=1$.
+Hence, by letting $x_1=x_2$, we obtain
 \begin{align}
- D_q(x,x)
- &=
- \left.\partial_\lambda U_s^{\lambda,v}(q,(x,x))
- \right|_{\lambda=0}\notag\\
- &=\frac{\E[\tanh^2(x+\sqrt t\,Z)
-                \cosh(x+\sqrt t\,Z)]}
-         {\E\cosh(x+\sqrt t\,Z)}
- =\bigl(\mathsf T_t\tanh^2\bigr)(x).
- \label{eq:GT-positive-diagonal-derivative}
+U_s^{0,v}(q,x_1 ,x_1) &= 2\log\cosh x_1 +s\beta^2(1-q) , \label{eq:GT-positive-diagonal-value} \\
+%
+\left.\partial_\lambda U_s^{\lambda,v}(q,x_1,x_1) \right|_{\lambda=0} &= \frac{\E[\tanh^2(x_1 +\sqrt t\,Z_0 )
+                \cosh(x_1 +\sqrt t\,Z_0 )]}
+         {\E\cosh(x_1 +\sqrt t\,Z_0 )}
+ =\bigl(\mathsf T_t\tanh^2\bigr)(x_1) , \label{eq:GT-positive-diagonal-derivative}
 \end{align}
-Below $q$, the increment is common to both coordinates and its level
-is zero.  Combining it with $Y_0$ in
-\eqref{eq:GT-positive-diagonal-value} gives
-\[
- \E U_s^{0,v}(Y_0,Y_0)
- =2\E\log\cosh(h+\beta\sqrt q\,Z)+s\beta^2(1-q).
-\]
-Likewise, \eqref{eq:GT-positive-diagonal-derivative} and
-\eqref{eq:localfieldlaw} give
-\[
- \E\left.
- \partial_\lambda U_s^{\lambda,v}(Y_0,Y_0)
- \right|_{\lambda=0}
- =\bigl(\mathsf H_{\beta^2q}
-       \mathsf T_{s\beta^2(v-q)}\tanh^2\bigr)(h)
- =g_s(v) .
-\]
+where we applied the fact that $\E\cosh(x+\sqrt t\,Z)=e^{t/2}\cosh x$.
+Since $a_1 = q$, $m_1 = 0$ and $B_1 - B_0 = s\beta ^2 q \left( \begin{array}{cc} 1&1\\ 1&1 \end{array}\right)$, from \eqref{eq:GT-positive-diagonal-value} and \eqref{eq:GT-positive-diagonal-derivative} it follows that
+\begin{align*}
+U_s^{0,v}(x_1 ,x_1) &= 2 \E \log\cosh (x_1 + \beta \sqrt{sq} Z_0) +s\beta^2(1-q) , \\
+%
+\left.\partial_\lambda U_s^{\lambda,v}(x_1,x_1) \right|_{\lambda=0} &= \E \bigl(\mathsf T_t\tanh^2\bigr)(x_1 + \beta \sqrt{sq} Z_0) .
+\end{align*}
+Since these equalities yield
+\begin{align*}
+ \E U_s^{0,v}(Y_0,Y_0) & = 2\E\log\cosh(h+\beta\sqrt q\,Z_0)+s\beta^2(1-q) , \\
+ %
+ \E\left. \partial_\lambda U_s^{\lambda,v}(Y_0,Y_0) \right|_{\lambda=0}&= \bigl(\mathsf H_{\beta^2q} \mathsf T_{s\beta^2(v-q)}\tanh^2\bigr)(h)
+ =g_s(v),
+\end{align*}
+where \eqref{eq:Psi-x}, \eqref{eq:localfieldlaw}, and \eqref{eq:gs-def} are applied in the last equality.
 Thus, together with \eqref{eq:GT-zero-signed-simple} and \eqref{eq:gv(0<v<q)}, we obtain
 \begin{equation}
  \mathfrak P_s(0,v)=2P_s^*,
@@ -1288,52 +1373,50 @@ Thus, together with \eqref{eq:GT-zero-signed-simple} and \eqref{eq:gv(0<v<q)}, w
  \label{eq:GT-zero-positive-simple}
 \end{equation}
 
-We also need a strict gap in the case that $v<-q$.  Suppose first that $s>0$ and
-write
+We also need a strict gap in the case that $v<-q$.  Suppose first that $s>0$ and let $t=s\beta^2(|v|-q)>0$.
+Again, similarly to the case that $-q\le v\le q$, it holds that for $v< -q$
 \[
- r=|v|>q,
- \qquad
- t=s\beta^2(r-q)>0.
+ U_s^{0,v}(|v|,x_1,x_2)
+ =s\beta^2(1-|v|)+\log\cosh x_1+\log\cosh x_2.
 \]
-The stage recursion above $r$, whose level is $1$, gives
-\[
- U_s^{0,v}(r,x_1,x_2)
- =s\beta^2(1-r)+\log\cosh x_1+\log\cosh x_2.
-\]
-The stage recursion from $r$ to $q$, whose level is $1/2$ and whose
-Gaussian increment is $(\sqrt t\,Z,-\sqrt t\,Z)$, gives
+Hence, noting that $|v|>q$, in a similar way to above we have
 \[
  U_s^{0,v}(q,x_1,x_2)
  =
- s\beta^2(1-r)
+ s\beta^2(1-|v|)
  +2\log\E\sqrt{
    \cosh(x_1+\sqrt t\,Z)\cosh(x_2-\sqrt t\,Z)}.
 \]
-By Cauchy--Schwarz,
+From this equality, the Cauchy--Schwarz inequality and the fact that $\E\cosh(x+\sqrt t\,Z)=e^{t/2}\cosh x$, it follows that
 \begin{align*}
  U_s^{0,v}(q,x_1,x_2)
  &\le
- s\beta^2(1-r)+t
+ s\beta^2(1-|v|)+t
  +\log\cosh x_1+\log\cosh x_2\\
- &=\Psi(q,x_1)+\Psi(q,x_2).
+ &=\log\cosh x_1+\log\cosh x_2 + s\beta^2(1-q).
 \end{align*}
-The formulas remain valid at $v=-1$, where the stage above $r$ has
-zero covariance.  Since $t>0$, equality holds only when
-$x_1=-x_2$.  Below $q$ the recursion is
-linear, and it evaluates the two sides at
+%where $\Psi$ is defied in \eqref{eq:Psi-explicit}.
+%The formulas remain valid at $v=-1$, where the stage above $r$ has zero covariance.
+Since $t>0$, equality holds only when $x_1=-x_2$.
+From the fact that $a_1=q$ and $m_1=0$ we have
 \[
- X_1=Y_0+\beta\sqrt{sq}\,Z,
- \qquad
- X_2=Y_0-\beta\sqrt{sq}\,Z.
+U_s^{0,v}(x_1,x_2) \le \E \log\cosh (x_1 +\beta\sqrt{sq}\,Z_0) + \E \log\cosh (x_2-\beta\sqrt{sq}\,Z_0) + s\beta^2(1-q).
 \]
-Since $\Pbb(X_1=-X_2)=\Pbb(Y_0=0)=0$, also when $s=1$ because then
-$Y_0=h>0$, the propagated inequality is strict.  Therefore
+Since 
+\[
+\Pbb \left[ Y_0+\beta\sqrt{sq}\,Z_0 = - (Y_0-\beta\sqrt{sq}\,Z_0 ) \right] =\Pbb(Y_0=0) = 0,
+\]
+where $Y_0 = h +\beta \sqrt{(1-s)q}Z$ and $h>0$, we have the strict inequality:
+\[
+\E U_s^{0,v}(Y_0,Y_0) < 2 \E \log\cosh (h +\beta\sqrt{q}\,Z) + s\beta^2(1-q) .
+\]
+This yields
 \begin{equation}
  \mathfrak P_s(0,v)<2P_s^*,
  \qquad v<-q,\quad s>0.
  \label{eq:GT-negative-strict-simple}
 \end{equation}
-At $s=0$, a direct calculation gives
+When $s=0$, a direct calculation gives
 \begin{equation}
  \mathfrak P_0(0,v)=2P_0^*,
  \quad
@@ -1346,64 +1429,65 @@ Choose
 $\varepsilon_{\cK}<q_{\cK}/2$ so that
 \eqref{eq:linearATsign} holds when
 $|v-q|\le\varepsilon_{\cK}$.  Proposition~\ref{prop:pathRS} gives
-$a_{\cK}>0$ such that
+$a_{\cK}\in (0,1)$ such that %\footnote{\textcolor{red}{SN: This local quadratic estimate is needed. The sign of $g_s(v)-v$ alone gives only a pointwise gap and does not provide a uniform quadratic gap as $v\to q$.}}
 \begin{equation}
  (g_s(v)-v)(v-q)
  \le-a_{\cK}(v-q)^2,
  \qquad |v-q|\le\varepsilon_{\cK}.
- \label{eq:GT-local-slope-simple} {\color{red}\mbox{(Why this one is needed?)}}
+ \label{eq:GT-local-slope-simple}
 \end{equation}
-These values of $v$ are positive, so
-\eqref{eq:GTsecondderivative-simple} and \eqref{eq:GT-zero-positive-simple} imply
+Since $v\geq 0$ for $|v-q|\le\varepsilon_{\cK}$ with sufficiently small $\varepsilon_{\cK} >0$, \eqref{eq:GTsecondderivative-simple} and \eqref{eq:GT-zero-positive-simple} imply
 \[
  \mathfrak P_s(\lambda,v)
  \le
  2P_s^*+\lambda(g_s(v)-v)
- +\frac{M_{\cK}}2\lambda^2.
+ +\frac{5}4 \lambda^2.
 \]
-Taking $\lambda=a_{\cK}(v-q)/M_{\cK}$ yields
+Taking $\lambda=2 a_{\cK}(v-q)/5 \in [-1,1]$ and applying \eqref{eq:GT-local-slope-simple} to this inequality yield
 \begin{equation}
  \Gamma_s(v)
  \le
  2P_s^*
- -\frac{a_{\cK}^2}{2M_{\cK}}(v-q)^2,
+ -\frac{a_{\cK}^2}{5}(v-q)^2,
  \qquad |v-q|\le\varepsilon_{\cK}.
  \label{eq:GT-local-coercivity-simple}
 \end{equation}
 
 It remains to consider overlaps bounded away from $q$.  We claim that
 \begin{equation}
- \Gamma_s(v)<2P_s^*
+\inf_{\lambda\in [-1,1]}
+ \mathfrak P_s(\lambda,v)<2P_s^*
  \qquad\text{for }v\ne q.
  \label{eq:GT-pointwise-gap-simple}
 \end{equation}
-In the case that $0\le v<q$ and $q<v\le1$, this follows from \eqref{eq:GT-zero-positive-simple} and \eqref{eq:ATsign} by moving
-$\lambda$ slightly in the direction opposite to the derivative.
+In the case that $0\le v<q$ and $q<v\le1$, this follows from  \eqref{eq:ATsign} and \eqref{eq:GT-zero-positive-simple}  by moving
+$\lambda\in (0,1]$ slightly in the direction opposite to the derivative.
 For the case $-q\le v<0$, use \eqref{eq:GT-zero-signed-simple} and \eqref{eq:GT-signed-positive-simple}.
 For the case that $v<-q$ and $s>0$, apply \eqref{eq:GT-negative-strict-simple}.
-For the case that $v<-q$ and $s=0$, \eqref{eq:GT-szero-simple} gives the claim by taking a sufficiently small negative $\lambda$.
+For the case that $v<-q$ and $s=0$, \eqref{eq:GT-szero-simple} gives the claim by taking a sufficiently small negative $\lambda\in [-1,0)$.
 
-Consider the compact set
+% Consider the compact set
+% \[
+%  \mathcal D_{\cK}
+%  =
+%  \left\{
+%  (\beta,h,s,v):
+%  (\beta,h)\in\cK,\ 0\le s\le1,\ -1\le v\le1,\
+%  |v-q|\ge\varepsilon_{\cK}
+%  \right\}.
+% \]
+% At every point $\theta\in\mathcal D_{\cK}$,
+% \eqref{eq:GT-pointwise-gap-simple} provides
+% $\lambda_\theta\in\mathbb R$ such that
+% \[
+%  \mathfrak P_s(\lambda_\theta,v)<2P_s^*.
+% \]
+% In view of Lemma~\ref{lem:GTcontinuity}, this inequality persists with a
+% positive margin on a neighborhood of $\theta$.
+Due to the compactness of $\cK$, there exists $\delta _{\cK}>0$ such that
 \[
- \mathcal D_{\cK}
- =
- \left\{
- (\beta,h,s,v):
- (\beta,h)\in\cK,\ 0\le s\le1,\ -1\le v\le1,\
- |v-q|\ge\varepsilon_{\cK}
- \right\}.
-\]
-At every point $\theta\in\mathcal D_{\cK}$,
-\eqref{eq:GT-pointwise-gap-simple} provides
-$\lambda_\theta\in\mathbb R$ such that
-\[
- \mathfrak P_s(\lambda_\theta,v)<2P_s^*.
-\]
-In view of Lemma~\ref{lem:GTcontinuity}, this inequality persists with a
-positive margin on a neighborhood of $\theta$.
-The compactness of ${\mathcal D}_\cK$ gives $\delta _{\cK}>0$ such that
-\[
- \Gamma_s(v)\le2P_s^*-\delta _{\cK},
+ \Gamma_s(v)\le \inf_{\lambda\in\mathbb [-1,1]}
+ \mathfrak P_s(\lambda,v)\le2P_s^*-\delta _{\cK},
  \qquad |v-q|\ge\varepsilon_{\cK}.
 \]
 Since $|v-q|\le2$,
@@ -1421,12 +1505,10 @@ Combining \eqref{eq:GT-local-coercivity-simple} and
  c_{\cK}
  =
  \min\left\{
- \frac{a_{\cK}^2}{2M_{\cK}},
+ \frac{a_{\cK}^2}{5},
  \frac{\delta _{\cK}}4
  \right\}>0.
 \]
-The finite-volume estimate \eqref{eq:GTcoercivity} follows from
-\eqref{eq:GTfunctionalbound}.
 
 Finally, at $v=q$, \eqref{eq:GT-zero-positive-simple} gives
 \[
@@ -1441,6 +1523,15 @@ a global minimizer.  Hence
 \]
 which proves \eqref{eq:Gamma-at-q}.
 \end{proof}
+Together with \eqref{eq:GTfunctionalbound}, the proposition above yields the following. 
+\begin{corollary}
+        For every $N$ and $v\in\mathcal R_N$,
+\begin{equation}
+ \frac1N\E\log Z^{(2)}_{N,s}(v)
+ \le 2P_s^*-c_{\cK}(v-q)^2.
+ \label{eq:GTcoercivity}
+\end{equation}
+\end{corollary}
 
 
 \section{Preliminary overlap concentration}\label{sec:concentration}
@@ -1476,9 +1567,9 @@ Proposition~\ref{prop:GTcoercivity}.
 
 \begin{lemma}
 \label{lem:sublinearpressure}
-It holds
+There is $C_\cK>0$ such that for any $s\in [0,1]$ and $N\in \mathbb N$, 
 \begin{equation}
- p^{(2)}_{N,s}(\rho_0)\le P_s^*+O_{\cK}(1) 
+ p^{(2)}_{N,s}(\rho_0)\le P_s^*+C_{\cK} 
  \sqrt{\frac{\log(N+1)}N}.
  \label{eq:pressureenvelope}
 \end{equation}
@@ -1498,12 +1589,11 @@ $O_{\cK}(1)N$.  Indeed,
 and summing up the squares over $i,j$ and $i$ gives the claim.  Hence, by \eqref{eq:gaussianmaxgeneral}, 
 \begin{equation}
  \E\max_{v\in\mathcal R_N}(L_v-\E L_v)
- \le O_{\cK}(1)\sqrt{N\log(N+1)}
+ \le C_{\cK} \sqrt{N\log(N+1)},
  \label{eq:gaussianmax}
 \end{equation}
 where we recall $\mathcal R_N \coloneqq \{ -1,-1+2/N,\ldots,1\}$.
-Thus, by using \eqref{eq:gaussianmax},
-\eqref{eq:GTcoercivity} and \eqref{eq:rho0-choice}, we have
+Thus, by using \eqref{eq:GTcoercivity}, \eqref{eq:rho0-choice}, and \eqref{eq:gaussianmax}, we have
 \begin{align*}
  2Np^{(2)}_{N,s}(\rho_0)
  &=
@@ -1512,8 +1602,8 @@ Thus, by using \eqref{eq:gaussianmax},
  &\le
  \log(N+1)+
  \max_v\left\{\E L_v+\frac{\rho_0N}{2}(v-q)^2\right\}
- +O_{\cK}(1)\sqrt{N\log(N+1)}\\
- &\le2NP_s^*+O_{\cK}(1) 
+ +C_{\cK}\sqrt{N\log(N+1)}\\
+ &\le2NP_s^*+C_{\cK} 
  \sqrt{{N\log(N+1)}}.
 \end{align*}
 This proves \eqref{eq:pressureenvelope}.
@@ -1526,19 +1616,19 @@ Put
 \end{equation}
 \begin{lemma}
 \label{lem:preconcentration}
-It holds that for $s\in [0,1]$
+There is $C_\cK>0$ such that for $s\in [0,1]$
 \begin{equation}
- D_N(s)\le O_{\cK}(1) 
+ D_N(s)\le C_{\cK} 
  \sqrt{\frac{\log(N+1)}N},
  \qquad
- A_s\le O_{\cK}(1) 
+ A_s=\nu_s[Q_{12}^2]\le C_{\cK} 
  \sqrt{\frac{\log(N+1)}N}.
  \label{eq:preconcentration}
 \end{equation}
 \end{lemma}
 \begin{proof}
 Write 
-$$\epsilon_N:= O_{\cK}(1) 
+$$\epsilon_N:= C_{\cK} 
  \sqrt{\frac{\log(N+1)}N}.$$
 Similarly to \cite[(14)]{KusuokaNakajima1}, via Gaussian integration by parts (see \cite[Vol.~1,~Sec.~A.4]{Talagrand}), it follows that
 \begin{equation}\label{eq:p-derivative}
@@ -1623,7 +1713,7 @@ Let
 By \eqref{eq:normalizedcoupling}, \eqref{eq:preconcentration} and \eqref{eq:lemreconcentration2},
 \begin{equation}\label{eq:EY}
  \E Y_{N,s}=2NF_{N,s}(\rho_0)
- \le O_{\cK}(1)N\epsilon_N=o(N)
+ \le C_{\cK} N\epsilon_N=o(N)
 \end{equation}
 uniformly in $s\in [0,1]$.
 It is known that the map
@@ -1729,7 +1819,7 @@ and put
 \begin{proposition}
 \label{prop:cavity}
 There are remainders
-$\mathcal R^U_{N,s},\mathcal R^V_{N,s},\mathcal R^D_{N,s}$ such that
+$\mathcal R^U_{N,s},\mathcal R^V_{N,s},\mathcal R^D_{N,s}$ and $C_\cK>0$ such that
 \begin{align}
  (1-s\beta^2\kappa )U_s
  &=\frac{\kappa }N+\mathcal R^U_{N,s},
@@ -1749,7 +1839,7 @@ and uniformly on $\cK\times[0,1]$,
 \end{equation}
 \end{proposition}
 
-The proof follows from a straightforward, though technical, application of Talagrand's cavity argument; see \cite[Chapter~1]{Talagrand}. We postpone the details to Appendix~\ref{app:cavity-identities}.
+The proof follows from a straightforward, though technical, application of Talagrand's cavity argument (see \cite[Chapter~1]{Talagrand}). We postpone the details to Appendix~\ref{app:cavity-identities}.
 
 Since $r\le q$,
 \[
@@ -1774,9 +1864,9 @@ and the boundedness of $\zeta$ on $\cK$ imply
  \le C_{\cK}\left(\frac1N+N^{-3/2}+\nu_s[|Q_{12}|^3]\right).
 \]
 Since
-\[
+$
  A_s=-V_s-2U_s+3D_s,
-\]
+$ 
 we conclude that
 \begin{equation}
  A_s\le \frac{C_{\cK}}N
@@ -1784,8 +1874,9 @@ we conclude that
  \label{eq:preabsorb}
 \end{equation}
 
-\section{Conclusions}\label{sec:conclusion}
-\subsection{Absorption of the cubic remainder}\label{subsec:absorb}
+\section{Proof of the main theorem}\label{sec:conclusion}
+
+\subsection{Absorption of the cubic remainder and the proof of \eqref{eq:main1}}\label{subsec:absorb}
 
 Fix $\varepsilon>0$.  Since $|Q_{12}|\le2$,
 \begin{align}
@@ -1799,18 +1890,16 @@ Fix $\varepsilon>0$.  Since $|Q_{12}|\le2$,
  \label{eq:thirdsplit}
 \end{align}
 where Corollary~\ref{cor:tail} was used.  Choose
-$\varepsilon=\varepsilon_{\cK}$
+$\varepsilon=\varepsilon_{\cK}=1/(2C_\cK)$
 so that the coefficient of $A_s$ obtained by substituting
 \eqref{eq:thirdsplit} into \eqref{eq:preabsorb} is at most $1/2$.
 We obtain
 \[
- A_s=\nu_s[Q_{12}^2] \le\frac{C_{\cK}}N
+ A_s=\nu_s[Q_{12}^2] \le\frac{C_{\cK}'}N,
 \]
-uniformly on $\cK\times[0,1]$, after increasing $C_{\cK}$ to include
-the finitely many small values of $N$.  This proves the first claim
-of Theorem~\ref{thm:main}.
+with some $C_\cK'>0$ uniformly on $\cK\times[0,1]$.  This proves \eqref{eq:main1}
 
-\subsection{Free energy}\label{subsec:freeenergy}
+\subsection{Quantitative estimate of the free energy: Proof of \eqref{eq:main2}}\label{subsec:freeenergy}
 
 Recall that $D_N(s):= P_s^* -\phi_N(s)$. The identity \eqref{eq:DNprime}, $D_N'(s) = \frac{\beta^2}{4}\nu_s[Q_{12}^2]$, with $P_1^*  =  \phi^{\mathrm{RS}}(\beta,h)$ and  $D_N(0)=0$ gives
 \begin{equation}
@@ -1820,10 +1909,9 @@ Recall that $D_N(s):= P_s^* -\phi_N(s)$. The identity \eqref{eq:DNprime}, $D_N'(
  \label{eq:freeenergyidentity}
 \end{equation}
 The integrand is nonnegative, and the  
-bound above makes the right-hand side at most $C_{\cK}/N$.  This proves the
-free-energy claim of Theorem~\ref{thm:main}.
+bound above makes the right-hand side at most $C_{\cK}/N$.  This proves \eqref{eq:main2}.
 
-\subsection{Replicon susceptibility}\label{subsec:susceptibility}
+\subsection{Replicon susceptibility: Proof of \eqref{eq:main3}}\label{subsec:susceptibility}
 
 The $O(N^{-1})$ second-moment estimate and
 \eqref{eq:thirdsplit} imply, for every fixed $\varepsilon>0$,
@@ -1842,9 +1930,8 @@ uniformly in $s$.  Equation \eqref{eq:cavity-D}, together with
 \[
  ND_s
  =
- \frac{\alpha}{\beta^2(1-s\alpha)}+o_{\cK}(1),
+ \frac{\alpha}{\beta^2(1-s\alpha)}+o_{\cK}(1).
 \]
-which is the final claim of Theorem~\ref{thm:main}.
 
 \appendix
 \section{Proof of the cavity approximations}
@@ -1853,7 +1940,7 @@ which is the final claim of Theorem~\ref{thm:main}.
 \begin{proof}[Proof of Proposition~\ref{prop:cavity}]
  All implicit constants in this proof depend only on $\cK$.  Write
 \[
-\eta_{N,s}\coloneqq N^{-3/2}+\nu_s[|Q_{12}|^3] ,\quad  \varepsilon_a\coloneqq\sigma_N^a,
+\varepsilon_a\coloneqq\sigma_N^a,
  \quad
  Q^-_{ab}\coloneqq\frac1N\sum_{i<N}\sigma_i^a\sigma_i^b-q,
 \]
@@ -1927,7 +2014,7 @@ Since
 Gronwall's inequality, applied backward from $u=1$, yields
 \begin{equation}
  \sup_{0\le u\le1}\nu_{s,u}[|Q^-_{12}|^3]
- \le C_{\cK}\eta_{N,s}.
+ \le C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]).
  \label{eq:M3-gronwall-proof}
 \end{equation}
 
@@ -1941,7 +2028,7 @@ expectations of three cavity overlaps.  Hence H\"older's inequality and
 \eqref{eq:M3-gronwall-proof} show that
 \[
  |\nu_{s,0}[P^-]-\nu_{s,1}[P^-]|
- \le C_{\cK}\eta_{N,s}.
+ \le C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]).
 \]
 Moreover, \eqref{eq:Qab} gives
 \[
@@ -1955,7 +2042,7 @@ Using
 we obtain
 \begin{equation}
  \left|\nu_{s,0}[P^-]-\nu_s[Q_{ab}Q_{cd}]\right|
- \le C_{\cK}\eta_{N,s}.
+ \le C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]).
  \label{eq:endpoint-replacement-proof}
 \end{equation}
 
@@ -1970,7 +2057,7 @@ and form $U_s^-,V_s^-,D_s^-$ from $A_s^-,B_s^-,C_s^-$ as in
 \eqref{eq:endpoint-replacement-proof} that
 \begin{equation}
  |U_s^--U_s|+|V_s^--V_s|+|D_s^--D_s|
- \le C_{\cK}\eta_{N,s}.
+ \le C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]).
  \label{eq:cavity-mode-replacement}
 \end{equation}
 
@@ -2012,7 +2099,7 @@ Independence at $u=0$ gives $g_j(0)=0$.  Applying
 \eqref{eq:cavity-derivative-proof} twice, H\"older's inequality and
 \eqref{eq:M3-gronwall-proof} give
 \begin{equation}
- g_X(1)=g_X'(0)+C_{\cK}\eta_{N,s},
+ g_X(1)=g_X'(0)+C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]),
  \qquad X\in\{U,V,D\}.
  \label{eq:cavity-Taylor-modes}
 \end{equation}
@@ -2037,8 +2124,7 @@ by the three linear combinations above, gives
  \label{eq:scalar-first-derivatives}\\
  g_D'(0)&=s\alpha D_s^- .\nonumber
 \end{align}
-This is the cancellation for which the modes in
-\eqref{eq:cavity-modes} were chosen.
+
 
 The last-spin moments also give
 \begin{align}
@@ -2055,31 +2141,30 @@ Since $E_A,E_B,E_C$ are uniformly bounded,
  \qquad X\in\{U,V,D\}.
 \]
 The inequality
-\[
+\(
  \frac{|Q^-_{12}|}{N}
  \le\frac{|Q^-_{12}|^3}{3}+\frac{2}{3N^{3/2}}
-\]
+\) 
 and \eqref{eq:M3-gronwall-proof} therefore imply
 \begin{equation}
  \frac1N|e_X(1)-e_X(0)|
- \le C_{\cK}\eta_{N,s},
+ \le C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]),
  \qquad X\in\{U,V,D\}.
  \label{eq:scalar-diagonal-remainders}
 \end{equation}
 
-Taking the three mode combinations in
-\eqref{eq:cavity-decomposition-proof}, and then using
-\eqref{eq:cavity-mode-replacement},
+Using
+\eqref{eq:cavity-mode-replacement}, \eqref{eq:cavity-decomposition-proof}, 
 \eqref{eq:cavity-Taylor-modes}, \eqref{eq:scalar-first-derivatives},
 \eqref{eq:scalar-diagonal-terms}, and
 \eqref{eq:scalar-diagonal-remainders}, gives
 \begin{align*}
  U_s&=s\beta^2\kappa U_s+\frac{\kappa }N
- +C_{\cK}\eta_{N,s},\\
+ +C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]),\\
  V_s&=s\beta^2(\zeta U_s+\kappa V_s)+\frac{\zeta}N
- +C_{\cK}\eta_{N,s},\\
+ +C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]),\\
  D_s&=s\alpha D_s+\frac{\alpha}{\beta^2N}
- +C_{\cK}\eta_{N,s}.
+ +C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]).
 \end{align*}
 These are \eqref{eq:cavity-U}--\eqref{eq:cavity-remainders}.
 \end{proof}
@@ -2105,23 +2190,22 @@ Let $\{G_{k,t}(\xi):\xi\in\mathcal S,\ t\in[0,1]\}_{0\le k\le M}$ be independent
 \[
 \mathcal G_t(\xi) \coloneqq \sum_{k=0}^M G_{k,t}(\xi),
 \qquad
-C_t^{(j)}(\xi,\eta) \coloneqq \sum_{k=0}^jK_{k,t}(\xi,\eta),
+C_t^{(j)}(\xi,\eta) \coloneqq \sum_{k=0}^jK_{k,t}(\xi,\eta).
 \]
-and write $C_t=C_t^{(M)}$. For a deterministic function
-$V:\mathcal S\to\mathbb R$, define
+For a deterministic function $V:\mathcal S\to\mathbb R$, define
 \[
 X_M(t)=\log\sum_{\xi\in \mathcal S}
 \mu(\xi )e^{\mathcal G_t(\xi)+V(\xi)}
 \]
 and, recursively for $j=M,\ldots,1$,
-\[
+\begin{equation}\label{eq:defXB1}
 X_{j-1}(t) \coloneqq
 \begin{cases}
 \displaystyle
 \frac1{m_j}\log\E_j e^{m_jX_j(t)},&m_j>0,\\[3mm]
 \E_jX_j(t),&m_j=0,
 \end{cases}
-\]
+\end{equation}
 where $\E_j$ integrates only the field $G_{j,t}$.  For
 $0\leq j\leq M$, set
 \[
@@ -2151,7 +2235,7 @@ where an empty operator product is the identity.  Then, for $0<t<1$,
 \begin{aligned}
 \frac{\mathrm d}{\mathrm dt} \E_0X_0(t)
 ={}&\frac1{2}\E\left\langle
-\dot C_t(\xi,\xi)
+\dot C_t^{(M)}(\xi,\xi)
 \right\rangle_t-\frac1{2}\sum_{j=0}^M(m_{j+1}-m_j)
 \E\left\langle
 \dot C_t^{(j)}(\xi,\eta)
@@ -2221,12 +2305,12 @@ By \eqref{eq:finite-step-first-chain-rule}, we have
 \end{equation}
 When $m_k>0$, by Gaussian integration by parts (see \cite[Vol. 1, Sec. A.4]{Talagrand}), i.e. for centered jointly  Gaussians $X,Y_i$,  
 $$\mathbb E[Xf(Y_1\dots Y_d)] = 
-\sum_{i=1}^d \operatorname{Cov}(X,Y_i),\mathbb E[\partial_i f(Y)],$$ 
-where $\operatorname{Cov}(\dot{G}_{k,t}(\xi),\dot{G}_{k,t}(\eta)) = \dot K_{k,t}(\xi,\eta) $, by \eqref{eq:dX=IP} we have
+\sum_{i=1}^d \operatorname{Cov}(X,Y_i)\mathbb E[\partial_i f(Y)],$$ 
+where $\operatorname{Cov}(\dot{G}_{k,t}(\xi),{G}_{k,t}(\eta))+\operatorname{Cov}(\dot{G}_{k,t}(\eta),{G}_{k,t}(\xi)) = \dot K_{k,t}(\xi,\eta)$, by \eqref{eq:dX=IP} we have
 \begin{align*}
- \mathcal{I}_k\left(\dot{G}_{k,t}(\xi) (\mathcal{I}_{k+1} \dots\mathcal{I}_{M} p_t(\xi) )\right)& = Z_k^{-1}  \mathbb E_k\left[e^{m_k X_k} \dot{G}_{k,t}(\xi) (\mathcal{I}_{k+1} \dots\mathcal{I}_{M} p_t(\xi) )\right] \\
- & = \sum_{\eta\in \mathcal{S}} \dot K_{k,t}(\xi,\eta) (Z_k)^{-1}\mathbb E_k\left[\partial_{{G}_{k,t}(\eta)}  ({e^{m_k X_k}} (\mathcal{I}_{k+1} \dots\mathcal{I}_{M} p_t(\xi) )) \right]\\
- &=\sum_{\eta\in \mathcal{S}} \dot K_{k,t}(\xi,\eta) (m_k Z_k)^{-1}\mathbb E_k\left[\partial_{{G}_{k,t}(\eta)} \partial_{{G}_{k,t}(\xi)} {e^{m_k X_k}}\right] .
+\sum_{\xi\in \mathcal S} \mathcal{I}_k\left(\dot{G}_{k,t}(\xi) (\mathcal{I}_{k+1} \dots\mathcal{I}_{M} p_t(\xi) )\right)& = \sum_{\xi\in \mathcal S} Z_k^{-1}  \mathbb E_k\left[e^{m_k X_k} \dot{G}_{k,t}(\xi) (\mathcal{I}_{k+1} \dots\mathcal{I}_{M} p_t(\xi) )\right] \\
+ & =\frac{1}{2} \sum_{\xi,\eta\in \mathcal{S}} \dot K_{k,t}(\xi,\eta) (Z_k)^{-1}\mathbb E_k\left[\partial_{{G}_{k,t}(\eta)}  ({e^{m_k X_k}} (\mathcal{I}_{k+1} \dots\mathcal{I}_{M} p_t(\xi) )) \right]\\
+ &=\frac{1}{2}\sum_{\xi,\eta\in \mathcal{S}} \dot K_{k,t}(\xi,\eta) (m_k Z_k)^{-1}\mathbb E_k\left[\partial_{{G}_{k,t}(\eta)} \partial_{{G}_{k,t}(\xi)} {e^{m_k X_k}}\right] .
 \end{align*}
 Let $H_{j,t}(\xi)=\sum^j_{r=0} G_{r,t}(\xi)$.   For fixed $k$, write
 \[
@@ -2326,7 +2410,7 @@ Substituting \eqref{eq:finite-step-telescoped-hessian} into
 \dot K_{k,t}(\xi,\eta)
 \right\rangle_{j,t}\\
 ={}&\frac12\E\left\langle
-\dot C_t(\xi,\xi)
+\dot C_t^{(M)}(\xi,\xi)
 \right\rangle_t
 -\frac12\sum_{j=0}^M(m_{j+1}-m_j)
 \E\left\langle
@@ -2338,7 +2422,12 @@ where we have used $\sum_{k=0}^M\sum_{j=k}^M\dot K_{k,t}(\xi,\eta)=\sum_{j=0}^M\
 
 \subsection{Application to the two-replica path}
 Fix $N\geq1$, $\beta>0$, $h\in\mathbb R$, $s\in[0,1]$, and $q\in(0,1)$.
-We use the same notation as in Section \ref{subsec:GT}.
+We use the same notation as in Section \ref{subsec:GT}. Recall that
+\[
+\xi_s(r)
+=
+\beta^2(1-s)qr+\frac{s\beta^2}{2}r^2.
+\]
 Let $H_{N,s}^{\mathrm{cen}}$ be a centered Gaussian field on
 $\Sigma_N$ normalized by
 \begin{equation}
@@ -2350,10 +2439,7 @@ H_{N,s}^{\mathrm{cen}}(\tau)
 Set
 \[
 H_{N,s}(\sigma)=H_{N,s}^{\mathrm{cen}}(\sigma)
-+h\sum_{i=1}^N\sigma_i
-\]
-and
-\[
++h\sum_{i=1}^N\sigma_i,\quad 
 \mathcal R_N=\{-1,-1+2/N,\ldots,1\}.
 \]
 For $v\in\mathcal R_N$, let
@@ -2455,19 +2541,18 @@ For every $N\geq1$ and $v\in\mathcal R_N$,
 %\eqref{eq:finite-step-scalar-increments}.
 In view of \eqref{eq:finite-step-vector-increments} and \eqref{eq:finite-step-scalar-increments}, we are able to choose independent Gaussian vectors $z_{i,j}\in\mathbb R^2$ and
 independent Gaussian variables $y_j$ with
-\[
+\begin{equation}\label{eq:covzy}
 \E z_{i,j}z_{i,j}^{\mathsf T}=B_j-B_{j-1},
 \qquad
 \E y_j^2=d_j-d_{j-1}.
-\]
+\end{equation}
 Let $Y_{i,0}$ be independent copies of
 $Y_0=h+\beta\sqrt{(1-s)q}\,Z$. Since
 \[
 B_0=\beta^2(1-s)q
 \begin{pmatrix}1&1\\1&1\end{pmatrix},
 \]
-the vector $(Y_{i,0}-h,Y_{i,0}-h)$ supplies the level-zero covariance $B_0$.
-
+the vector $(Y_{i,0}-h,Y_{i,0}-h)$ has the covariance $B_0$.
 Write
 \[
 {\mathcal{S}}_N(v)=\{(\sigma^1,\sigma^2)\in\Sigma_N^2:
@@ -2499,77 +2584,94 @@ X_M(t) \coloneqq \log\sum_{\boldsymbol\sigma\in{\mathcal{S}}_N(v)}
 define $\{ X_j(t)\} _{j=0}^M$ as in Lemma~\ref{lem:finite-step-interpolation-derivative},
 and set
 \[
-\varphi_N(t) \coloneqq \frac1N\E_0X_0(t).
+\varphi_N(t) \coloneqq \frac1N\E X_0(t).
 \]
 
-We first compute the values at the endpoints.  At $t=0$, remove the overlap
-constraint from the partition function.  The maps in
-\eqref{eq:U-stage-recursion} are monotone, and the independent site
-increments factorize.  The defining recursion {\color{red}What is this?} therefore gives
+We first compute $\varphi_N(t)$ at the endpoints $t=0,1$. 
+Note that
+\begin{align*}
+X_M(0) &= \log\sum_{\boldsymbol\sigma\in{\mathcal{S}}_N(v)} \exp\left( \sum _{i=1}^N Y_{i,0}(\sigma _i^1 + \sigma _i^2) + \sum _{j=1}^M \sum _{i=1}^N (z_{i,j}^1 \sigma _i^1 + z_{i,j}^2 \sigma _i^2 ) +\lambda\sum_{i=1}^N\sigma_i^1\sigma_i^2-\lambda Nv \right) \\
+%
+&\leq \log \sum_{\boldsymbol\sigma \in\Sigma_N^2} \exp\left( \sum _{i=1}^N Y_{i,0}(\sigma _i^1 + \sigma _i^2) + \sum _{j=1}^M \sum _{i=1}^N (z_{i,j}^1 \sigma _i^1 + z_{i,j}^2 \sigma _i^2 ) +\lambda\sum_{i=1}^N\sigma_i^1\sigma_i^2-\lambda Nv \right) \\
+%
+&= \log \prod _{i=1}^N \sum _{\varepsilon _1, \varepsilon _2 = \pm 1}  \exp\left( \left( \varepsilon _1 \left( Y_{0,i} + \sum _{j=1}^M z_{i,j}^1 \right) + \varepsilon _2 \left( Y_{0,i} + \sum _{j=1}^M z_{i,j}^2 \right) + \lambda \varepsilon _1 \varepsilon _2 \right) \right) -\lambda N v \\
+%
+&= 2 N \log 2 + \sum _{i=1}^N \log f_\lambda \left( Y_{0,i} + \sum _{j=1}^M z_{i,j}^1 , Y_{0,i} + \sum _{j=1}^M z_{i,j}^2 \right) -\lambda N v .
+\end{align*}
+Since $G_j$ in Section \ref{subsec:GT} has the same law as $z_{i,j}$ (see \eqref{eq:covzy}), by the monotonicity of the map ${\mathcal T}_{m,C}$ defined in \eqref{eq:GTsemigroup}, similarly to \eqref{eq:relationXU} we obtain
+\[
+X_0(0) \leq 2 N \log 2 + \sum _{i=1}^N U_s^{\lambda ,v} (Y_{0,i}, Y_{0,i}) -\lambda N v .
+\]
+This inequality and the independance of $Y_{0,i}$ in $i$ yield
 \begin{equation}
 \varphi_N(0)
-\leq2\log2+\E U_s^{\lambda,v}(Y_0,Y_0)-\lambda v.
+\leq
+2\log2+\E U_s^{\lambda,v}(Y_0,Y_0)-\lambda v.
 \label{eq:GT-endpoint-zero}
 \end{equation}
-The factor $2\log2$ comes from the normalization $1/4$ in
-$f_\lambda$.
 
-At $t=1$, the Lagrange term vanishes on ${\mathcal{S}}_N(v)$, while the
-sitewise Gaussian increments vanish. For a quantity $x$ independent
-of $y_j$, the $j$th recursion gives
+We consider the case that $t=1$.
+An explicit calculation implies
+\begin{align*}
+X_M(1) &= \log \sum_{\boldsymbol\sigma\in{\mathcal{S}}_N(v)} \exp \left( H_{N,s}(\sigma ^1) + H_{N,s}(\sigma ^2) + \sqrt{N} \sum _{j=1}^M y_j\right) \\
+%
+&= \log Z_{N,s}^{(2)}(v) + \sqrt{N} \sum _{j=1}^M y_j,
+\end{align*}
+where $Z_{N,s}^{(2)}(v)$ is defined in \eqref{eq:appendix-constrained-partition}
+Since for each $x\in {\mathbb R}$ it holds that
 \[
 \begin{cases}
 \displaystyle
-\frac1{m_j}\log\E_j e^{m_j(x+\sqrt N\,y_j)}
+\frac1{m_j}\log\E e^{m_j(x+\sqrt N\,y_j)}
 =x+\frac{Nm_j}{2}(d_j-d_{j-1}),&m_j>0,\\[3mm]
 \displaystyle
-\E_j(x+\sqrt N\,y_j)=x,&m_j=0.
+\E (x+\sqrt N\,y_j)=x,&m_j=0 ,
 \end{cases}
 \]
-Hence, by applying this equality recursively we have {\color{red} ($m_M=1$? Is the label should be shifted?)}
+by \eqref{eq:defXB1} we have
 \begin{align}
 \varphi_N(1)
-&=\frac1N E_0 \dots E_{M-1} \left[ \log \E _M e^{m_M X_M(1)} \right] 
-+\frac12\sum_{j=1}^Mm_j(d_j-d_{j-1})
+&=\frac1N\E\log Z_{N,s}^{(2)}(v)+\frac12\sum_{j=1}^Mm_j(d_j-d_{j-1})
 \notag\\
-&=\frac1N\E\log Z_{N,s}^{(2)}(v)+\mathcal L_s(v)
+&=\frac1N\E\log Z_{N,s}^{(2)}(v)+\mathcal L_s(v),
 \label{eq:GT-endpoint-one}
 \end{align}
-where $Z_{N,s}^{(2)}(v)$  and $\mathcal L_s(v)$ are defined in \eqref{eq:appendix-constrained-partition} and \eqref{eq:defLv}, respectively.
+where $\mathcal L_s(v)$ is defined in \eqref{eq:defLv}.
 
-It remains to compute the derivative of $\varphi _N$. Set $m_0=0$, $m_{M+1}=1$, and
-for two spin pairs $\boldsymbol\sigma,\boldsymbol\tau\in{\mathcal{S}}_N(v)$
-write
-\[
-q_j^{k\ell}=Q_{j,k\ell}^v,
-\qquad
-R^{k\ell}=R(\sigma^k,\tau^\ell).
-\]
-Also write
-\[
-\theta_s(x)=x\xi_s'(x)-\xi_s(x)=\frac{s\beta^2}{2}x^2.
-\]
+We calculate the derivative of $\varphi _N$.
 Denote the covariance of $\sum _{i=0}^j G_{i,t} (\boldsymbol\sigma)$ and $\sum _{i=0}^j G_{i,t} (\boldsymbol\tau)$ by $C_t^{(j)}(\boldsymbol\sigma,\boldsymbol\tau)$.
-If $\boldsymbol\sigma _i = \boldsymbol\tau _i$ for $i=1,2,\dots ,j$, then it holds that
-\begin{align}
-C_t^{(j)}(\boldsymbol\sigma,\boldsymbol\tau)&
-={}tN\sum_{k,\ell=1}^2\xi_s(R^{k\ell})
-+(1-t)N\sum_{k,\ell=1}^2\xi_s'(q_j^{k\ell})R^{k\ell}
- +tN\sum_{k,\ell=1}^2\theta_s(q_j^{k\ell})
-\label{eq:GT-split-covariance} {\color{red}Why?}\\
-&=N\sum_{k,\ell=1}^2\xi_s'(q_j^{k\ell})R^{k\ell}+ t\left(\frac{s \beta^2 N}{2}\sum_{k,\ell=1}^2(R^{k\ell}-q_j^{k\ell})^2\right),
-\end{align}
+Since \eqref{eq:appendix-exact-covariance} and $\E (Y_{0,i} - h)^2 = \beta ^2 (1-s) q$ imply
+\[
+\E \left[ G_{0,t} (\boldsymbol\sigma) G_{0,t} (\boldsymbol\tau)\right] = tN\sum_{k,\ell=1}^2\xi_s (R(\sigma^k,\tau^\ell)) + (1-t) \beta ^2 (1-s) q N \sum_{k,\ell=1}^2 R(\sigma^k,\tau^\ell)
+\]
+and \eqref{eq:covzy} implies
+\begin{align*}
+\E \left[ G_{j,t} (\boldsymbol\sigma) G_{j,t} (\boldsymbol\tau)\right] &= (1-t) \sum _{i=1}^N \sum_{k,\ell=1}^2 \sigma _i ^k \tau_i^{\ell} \E [z_{i,j}^k z_{i,j}^\ell ] + tN \E y_j^2 \\
+%
+&= (1-t) \sum _{i=1}^N \boldsymbol\sigma _i ^{\mathsf T} (B_j -B_{j-1}) \boldsymbol\tau _i + tN (d_j -d_{j-1}),
+\end{align*}
+by \eqref{eq:defB} and \eqref{eq:defd} we have
+\begin{align*}
+C_t^{(j)}(\boldsymbol\sigma,\boldsymbol\tau)&={} tN\sum_{k,\ell=1}^2\xi_s (R(\sigma^k,\tau^\ell)) + (1-t) \beta ^2 (1-s) q N \sum_{k,\ell=1}^2 R(\sigma^k,\tau^\ell) \\
+&\quad + (1-t) \sum _{i=1}^N \boldsymbol\sigma _i ^{\mathsf T} (B_j -B_0) \boldsymbol\tau _i + tN (d_j -d_0)\\
+%
+&={}tN\sum_{k,\ell=1}^2\xi_s(R(\sigma^k,\tau^\ell))
++(1-t)N\sum_{k,\ell=1}^2\xi_s'(Q_{j,k\ell}^v)R(\sigma^k,\tau^\ell)
+ +\frac{s\beta ^2 tN}{2}\sum_{k,\ell=1}^2 (Q_{j,k\ell}^v)^2\\
+%
+&=N\sum_{k,\ell=1}^2\xi_s'(Q_{j,k\ell}^v)R(\sigma^k,\tau^\ell)+ t\left(\frac{s \beta^2 N}{2}\sum_{k,\ell=1}^2 (R(\sigma^k,\tau^\ell) -Q_{j,k\ell}^v )^2\right),
+\end{align*}
 due to $\xi_s(x)-\xi_s(y)-\xi_s'(y)(x-y)=\frac{s\beta^2}{2}(x-y)^2$. 
-For a single constrained pair, its $2\times2$ overlap matrix is
+Since for $\boldsymbol\sigma\in{\mathcal{S}}_N(v)$
 \[
 \bigl(R(\sigma^k,\sigma^\ell )\bigr)_{k,\ell =1}^2
-=\begin{pmatrix}1&v\\v&1\end{pmatrix}=Q_M^v.
+=\begin{pmatrix}1&v\\v&1\end{pmatrix}=Q_M^v,
 \]
-Consequently,
+it follows that
 \[
 \dot C_t^{(M)}(\boldsymbol\sigma,\boldsymbol\sigma)
 =\frac{s\beta^2 N}{2}\sum_{k,\ell=1}^2
-(Q_{M,k\ell}^v-Q_{M,k\ell}^v)^2=0.
+(R(\sigma^k,\sigma^\ell) -Q_{M,k\ell}^v)^2=0.
 \]
 Hence, Lemma~\ref{lem:finite-step-interpolation-derivative} 
 now yields
@@ -2578,7 +2680,7 @@ now yields
 =-\frac{s\beta^2}{4}
 \sum_{j=0}^M(m_{j+1}-m_j)
 \E\left\langle
-\sum_{k,\ell=1}^2(R^{k\ell}-Q_{j,k\ell}^v)^2
+\sum_{k,\ell=1}^2(R(\sigma^k,\tau^\ell) -Q_{j,k\ell}^v)^2
 \right\rangle_{j,t}
 \leq0.
 \label{eq:special-GT-interpolation-derivative}
@@ -2589,7 +2691,7 @@ Combining \eqref{eq:GT-endpoint-zero},
 \eqref{eq:appendix-GT-infimum}.
 \end{proof}
 
-
+\iffalse
 \section{Proof of a technical lemma}\label{app: technical}
 \begin{proof}[Proof of Lemma~\ref{lem:GTcontinuity}]
 Fix $L<\infty$ and let
@@ -2650,14 +2752,68 @@ definition \eqref{eq:GTfunctional} and
 \]
 prove the asserted joint continuity.
 \end{proof}
+\fi
+
+\section{Price's theorem}\label{sec:Price}
+
+\begin{theorem}[Price's theorem \cite{Price}]\label{thm:Price}
+For each $t\in {\mathbb R}$, let $X(t)$ be an $n$-dimensional centered Gaussian vector with a covariance matrix $C(t) = (C_{ij}(t))_{i,j =1}^n$.
+Assume that $C_{ij}(t)$ is continuously differentiable for all $i,j =1,2, \dots ,n$. 
+Then, for any $f\in C_b^2 ({\mathbb R}^n)$, it holds that %\footnote{\textcolor{red}{SN: The theorem permits singular covariance matrices, but the proof below uses $\det C(t)$ and $C(t)^{-1}$. It needs an approximation $C\mapsto C+\varepsilon I$ followed by $\varepsilon\downarrow0$, or a singular-covariance proof via characteristic functions.}}
+\[
+\frac{\mathrm d}{\mathrm dt} \E f(X_t) = \frac{1}{2} \sum _{i,j =1}^n \left( \frac{\mathrm d}{\mathrm dt} C_{i,j}(t)\right) \E \left[ \frac{\partial ^2 f}{\partial x_i \partial x_j} (X(t)) \right] .
+\]
+\end{theorem}
+
+\begin{proof}
+It is sufficient to show the claim for $f\in C_b^2({\mathbb R}^n)$ with a compact support. 
+Let ${\mathcal F}g$ be a Fourier transformation of $g$, i.e.
+\[
+({\mathcal F} g) (\xi ) = \frac{1}{(2\pi )^{n/2}}\int _{\mathbb R^n} g(x) e^{-\sqrt{-1}x\cdot \xi } dx, \quad \xi \in {\mathbb R}^n ,
+\]
+and let $C^\varepsilon (t) := \varepsilon I + C(t)$ where $\varepsilon >0$ and $I$ is the unit matrix.
+Denote an $n$-dimensional centered Gaussian vector with a covariance matrix $C^\varepsilon (t)$ by $X^\varepsilon (t)$ for $t\in {\mathbb R}$.
+Then, by the Plancherel equality we have
+\begin{align*}
+\E f(X^\varepsilon (t)) &= \int _{{\mathbb R}^n} f(x) \cdot \frac{1}{\sqrt{(2\pi)^n \det C^\varepsilon(t)}} \exp \left( -\frac{1}{2}\langle x , C^\varepsilon (t)^{-1} x \rangle \right) dx \\
+%
+&= \frac{1}{(2\pi )^{n/2}} \int _{{\mathbb R}^n} ({\mathcal F}f)(\xi ) \exp \left( -\frac{1}{2} \langle \xi , C^\varepsilon (t)\xi \rangle \right) d\xi,
+\end{align*}
+where $\langle \cdot ,\cdot \rangle$ is the innter product on ${\mathbb R}^n$ and $\det C^\varepsilon(t)$ is the determinant of $C^\varepsilon(t)$.
+Since, as $\varepsilon \downarrow 0$, $X^\varepsilon (t)$ converges to $X(t)$ in law and $ C^\varepsilon (t)$ converges to $C(t)$ component-wise, the differentiation with respect $t$ of both sides after taking limit as $\varepsilon \downarrow 0$ yields
+\begin{align*}
+\frac{\mathrm d}{\mathrm dt} \E f(X(t)) &= - \frac{1}{2(2\pi )^{n/2}}\sum _{i,j =1}^n \left( \frac{\mathrm d}{\mathrm dt} C_{i,j}(t)\right) \int _{{\mathbb R}^n} ({\mathcal F}f)(\xi ) \xi _i \xi _j \exp \left( -\frac{1}{2} \langle \xi , C(t)\xi \rangle \right) d\xi,
+\end{align*}
+where $\xi = (\xi _1, \xi _2 ,\dots , \xi _n)$.
+Applying the fact
+\[
+\xi _i \xi _j ({\mathcal F}f)(\xi ) = - {\mathcal F} \left( \frac{\partial ^2 f}{\partial x_i \partial x_j} \right)(\xi ) ,
+\]
+to this equality, we obtain
+\begin{equation}\label{eq:Price01}
+\frac{\mathrm d}{\mathrm dt} \E f(X(t)) = \frac{1}{2(2\pi )^{n/2}}\sum _{i,j =1}^n \left( \frac{\mathrm d}{\mathrm dt} C_{i,j}(t)\right) \int _{{\mathbb R}^n} {\mathcal F} \left( \frac{\partial ^2 f}{\partial x_i \partial x_j} \right)(\xi ) \exp \left( -\frac{1}{2} \langle \xi , C(t)\xi \rangle \right) d\xi .
+\end{equation}
+Similarly to above, it holds that
+\begin{align*}
+&\frac{1}{(2\pi )^{n/2}} \int _{{\mathbb R}^n} {\mathcal F} \left( \frac{\partial ^2 f}{\partial x_i \partial x_j} \right)(\xi ) \exp \left( -\frac{1}{2} \langle \xi , C(t)\xi \rangle \right) d\xi \\
+%
+&= \lim _{\varepsilon \downarrow 0} \int _{{\mathbb R}^n} \left( \frac{\partial ^2 f}{\partial x_i \partial x_j} \right) (x) \cdot \frac{1}{\sqrt{(2\pi)^n \det C^\varepsilon(t)}} \exp \left( -\frac{1}{2}\langle x , C^\varepsilon (t)^{-1} x \rangle \right) dx\\
+%
+&= \E \left[ \frac{\partial ^2 f}{\partial x_i \partial x_j} (X(t)) \right] .
+\end{align*}
+This equality and \eqref{eq:Price01} yield the assertion.
+\end{proof}
+
 \section*{Acknowledgements}
 
 S.K.\ acknowledges support from JSPS KAKENHI Grant Numbers JP22H00099 and JP23K20801.
 S.N.\ acknowledges support from JSPS KAKENHI Grant Numbers JP24K16937 and JP25K00911.
 
 \section*{Statement on the Use of Artificial Intelligence}
+Soon after posting \cite{KusuokaNakajima1}, inspired by the arguments in \cite{TalagrandParisi}, the authors realized that the flatness of the Guerra-Talagrand one-step  RSB bound near the replica-symmetric point is sufficient to obtain a preliminary weak concentration estimate for the overlap, as explained in Subsection~\ref{subsec:proof-outline}. This weak concentration can be upgraded, using Talagrand's cavity method, to the optimal $N^{-1}$ bound. Thus, the main remaining task was to establish the required flatness of the one-step RSB bound.
 
-Codex was used to assist with revising the presentation and performing compilation checks. The authors take full responsibility for the content of this work.
+To investigate this flatness,  we asked ChatGPT 5.6 Sol to construct a proof, referring it to Lopatto's paper \cite{Lopatto}. After several iterations, ChatGPT produced an argument that led to the proof used in the present paper. The authors subsequently checked and revised the argument in detail and take full responsibility for its correctness. 
+
 
 \begin{thebibliography}{10}
 
@@ -2673,66 +2829,6 @@ D.~J.~Amit, H.~Gutfreund, and H.~Sompolinsky,
 \emph{Spin-glass models of neural networks},
 \newblock \emph{Physical Review A} 32 (1985), 1007--1018.
 
-\bibitem{deAlmeidaThouless1978}
-J.~R.~L.~de Almeida and D.~J.~Thouless,
-\newblock
-\emph{Stability of the Sherrington--Kirkpatrick solution},
-\newblock \emph{Journal of Physics A: Mathematical and General} 11 (1978), 983--990.
-
-\bibitem{EdwardsAnderson1975}
-S.~Edwards and P.~W.~Anderson,
-\newblock
-\emph{Theory of spin glasses},
-\newblock \emph{Journal of Physics F: Metal Physics} 5 (1975), 965--974.
-
-\bibitem{Hopfield1982}
-J.~J.~Hopfield,
-\newblock
-\emph{Neural networks and physical systems with emergent collective computational abilities},
-\newblock \emph{Proceedings of the National Academy of Sciences} 79 (1982), 2554--2558.
-
-\bibitem{MezardMontanari2009}
-M.~M{\'e}zard and A.~Montanari,
-\newblock
-\emph{Information, Physics, and Computation},
-\newblock Oxford University Press, 2009.
-
-\bibitem{MezardParisiZecchina2002}
-M.~M{\'e}zard, G.~Parisi, and R.~Zecchina,
-\newblock
-\emph{Analytic and algorithmic solution of random satisfiability problems},
-\newblock \emph{Science} 297 (2002), 812--815.
-
-\bibitem{Nishimori2001}
-H.~Nishimori,
-\newblock
-\emph{Statistical Physics of Spin Glasses and Information Processing: An Introduction},
-\newblock Oxford University Press, 2001.
-
-\bibitem{Parisi1979}
-G.~Parisi,
-\newblock
-\emph{Infinite number of order parameters for spin glasses},
-\newblock \emph{Physical Review Letters} 43 (1979), 1754--1756.
-
-\bibitem{Parisi1980}
-G.~Parisi,
-\newblock
-\emph{A sequence of approximated solutions to the S-K model for spin glasses},
-\newblock \emph{Journal of Physics A: Mathematical and General} 13 (1980), L115--L121.
-
-\bibitem{SherringtonKirkpatrick1975}
-D.~Sherrington and S.~Kirkpatrick,
-\newblock
-\emph{Solvable model of a spin-glass},
-\newblock \emph{Physical Review Letters} 35 (1975), 1792--1796.
-
-\bibitem{ZdeborovaKrzakala2016}
-L.~Zdeborov{\'a} and F.~Krzakala,
-\newblock
-\emph{Statistical physics of inference: Thresholds and algorithms},
-\newblock \emph{Advances in Physics} 65 (2016), 453--552.
-
 \bibitem{ChenGT}
 W.-K.~Chen,
 \newblock
@@ -2740,6 +2836,13 @@ W.-K.~Chen,
 two-dimensional Guerra--Talagrand bound},
 \newblock \emph{Annals of Probability} 45 (2017), 3929--3966.
 \href{https://arxiv.org/abs/1501.06635}{arXiv:1501.06635}.
+
+\bibitem{deAlmeidaThouless1978}
+J.~R.~L.~de Almeida and D.~J.~Thouless,
+\newblock
+\emph{Stability of the Sherrington--Kirkpatrick solution},
+\newblock \emph{Journal of Physics A: Mathematical and General} 11 (1978),
+983--990.
 
 \bibitem{DeyWu}
 P.~S.~Dey and Q.~Wu,
@@ -2750,9 +2853,30 @@ Sherrington--Kirkpatrick model in the replica symmetric regime},
 Paper No.~22.
 \href{https://arxiv.org/abs/2012.13381}{arXiv:2012.13381}.
 
-\bibitem{KusuokaNakajima1}
+\bibitem{EdwardsAnderson1975}
+S.~Edwards and P.~W.~Anderson,
 \newblock
+\emph{Theory of spin glasses},
+\newblock \emph{Journal of Physics F: Metal Physics} 5 (1975), 965--974.
+
+\bibitem{Guerra}
+F.~Guerra,
+\newblock
+\emph{Broken replica symmetry bounds in the mean field spin glass model},
+\newblock \emph{Communications in Mathematical Physics} 233 (2003),
+no.~1, 1--12.
+
+\bibitem{Hopfield1982}
+J.~J.~Hopfield,
+\newblock
+\emph{Neural networks and physical systems with emergent collective
+computational abilities},
+\newblock \emph{Proceedings of the National Academy of Sciences} 79 (1982),
+2554--2558.
+
+\bibitem{KusuokaNakajima1}
 S.~Kusuoka and S.~Nakajima,
+\newblock
 \emph{A note on Lata{\l}a's argument in SK model},
 \newblock preprint (2026).
 \href{https://arxiv.org/abs/2607.23427}{arXiv:2607.23427}.
@@ -2772,11 +2896,61 @@ Sherrington--Kirkpatrick model},
 \newblock preprint (2026).
 \href{https://arxiv.org/abs/2604.11921}{arXiv:2604.11921}.
 
+\bibitem{MezardMontanari2009}
+M.~M{\'e}zard and A.~Montanari,
+\newblock
+\emph{Information, Physics, and Computation},
+\newblock Oxford University Press, 2009.
+
+\bibitem{MezardParisiZecchina2002}
+M.~M{\'e}zard, G.~Parisi, and R.~Zecchina,
+\newblock
+\emph{Analytic and algorithmic solution of random satisfiability problems},
+\newblock \emph{Science} 297 (2002), 812--815.
+
+\bibitem{Nishimori2001}
+H.~Nishimori,
+\newblock
+\emph{Statistical Physics of Spin Glasses and Information Processing:
+An Introduction},
+\newblock Oxford University Press, 2001.
+
 \bibitem{Panchenko}
 D.~Panchenko,
 \newblock
 \emph{The Sherrington--Kirkpatrick Model},
 \newblock Springer Monographs in Mathematics, Springer, New York, 2013.
+
+\bibitem{Parisi1979}
+G.~Parisi,
+\newblock
+\emph{Infinite number of order parameters for spin glasses},
+\newblock \emph{Physical Review Letters} 43 (1979), 1754--1756.
+
+\bibitem{Parisi1980}
+G.~Parisi,
+\newblock
+\emph{A sequence of approximated solutions to the S-K model for spin glasses},
+\newblock \emph{Journal of Physics A: Mathematical and General} 13 (1980),
+L115--L121.
+
+\bibitem{Price}
+R.~Price,
+\newblock
+\emph{A useful theorem for nonlinear devices having Gaussian inputs},
+\newblock IRE Trans. IT-4 (1958), 69--72.
+
+\bibitem{SherringtonKirkpatrick1975}
+D.~Sherrington and S.~Kirkpatrick,
+\newblock
+\emph{Solvable model of a spin-glass},
+\newblock \emph{Physical Review Letters} 35 (1975), 1792--1796.
+
+\bibitem{TalagrandParisi}
+M.~Talagrand,
+\newblock
+\emph{The Parisi formula},
+\newblock \emph{Annals of Mathematics} 163 (2006), no.~1, 221--263.
 
 \bibitem{Talagrand}
 M.~Talagrand,
@@ -2784,9 +2958,13 @@ M.~Talagrand,
 \emph{Mean Field Models for Spin Glasses}, Vols.~I--II,
 \newblock Springer, 2011.
 
+\bibitem{ZdeborovaKrzakala2016}
+L.~Zdeborov{\'a} and F.~Krzakala,
+\newblock
+\emph{Statistical physics of inference: Thresholds and algorithms},
+\newblock \emph{Advances in Physics} 65 (2016), 453--552.
+
 \end{thebibliography}
-
-
 \end{document}
 
     
