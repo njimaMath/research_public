@@ -88,7 +88,15 @@ private lemma flatness_largepos_rank_one_half_terminal_zero
       (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 =
         b ^ 2 / 2 + Real.log (Real.cosh (x + a * z)) by ring,
       Real.exp_add, Real.exp_log (Real.cosh_pos _)]
-  simp_rw [hexp]
+  have hexp' (z : ℝ) :
+      Real.exp (1 / 2 *
+        (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z)))) =
+        Real.exp (b ^ 2 / 2) * Real.cosh (x + a * z) := by
+    rw [show
+      1 / 2 * (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) =
+        (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 by ring,
+      hexp]
+  simp_rw [hexp']
   unfold standardGaussianExpectation
   rw [integral_const_mul]
   change
@@ -96,7 +104,9 @@ private lemma flatness_largepos_rank_one_half_terminal_zero
       (Real.exp (b ^ 2 / 2) *
         standardGaussianExpectation (fun z => Real.cosh (x + a * z))) = _
   rw [standardGaussianExpectation_cosh_shift]
-  rw [Real.log_mul (Real.exp_pos _) (mul_pos (Real.exp_pos _) (Real.cosh_pos _))]
+  rw [Real.log_mul (Real.exp_pos _).ne'
+    (mul_ne_zero (Real.exp_pos _).ne' (Real.cosh_pos _).ne')]
+  rw [Real.log_mul (Real.exp_pos _).ne' (Real.cosh_pos _).ne']
   rw [Real.log_exp, Real.log_exp]
   ring
 
@@ -222,16 +232,8 @@ lemma gtFunctional_upper_positive_away_quadratic_gap
   have hzero0 :
       gtFunctional β h q s 0 v =
         2 * rsPathValue β h q s := by
-    apply flatness_gtFunctional_zero_eq_two_rsPathValue
-    all_goals
-      first
-      | assumption
-      | exact hqpos
-      | exact hq_lt_one
-      | exact ⟨hqpos, hq_lt_one⟩
-      | exact hvIcc
-      | exact hvIcc01
-      | linarith
+    exact flatness_gtFunctional_zero_eq_two_rsPathValue_large_positive
+      β h q s v ⟨hqpos, hq_lt_one⟩ hs ⟨hqv.le, hv1⟩
 
   have hzero :
       F 0 = 2 * rsPathValue β h q s := by
