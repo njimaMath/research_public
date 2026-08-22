@@ -1,0 +1,169 @@
+
+private lemma flatness_smallneg_gaussian_convolution_log_cosh_add_const
+    (h k a b c : ℝ)
+    (hc : c ^ 2 = a ^ 2 + b ^ 2) :
+    standardGaussianExpectation (fun x =>
+      standardGaussianExpectation (fun y =>
+        Real.log
+            (Real.cosh
+              (h + a * x + b * y)) + k))
+      =
+    standardGaussianExpectation (fun z =>
+      Real.log
+          (Real.cosh (h + c * z)) + k) := by
+  let va : ℝ≥0 :=
+    NNReal.mk (a ^ 2) (sq_nonneg a) * 1
+
+  let vb : ℝ≥0 :=
+    NNReal.mk (b ^ 2) (sq_nonneg b) * 1
+
+  let vc : ℝ≥0 :=
+    NNReal.mk (c ^ 2) (sq_nonneg c) * 1
+
+  have hma :
+      Measure.map (fun x : ℝ => a * x)
+          (gaussianReal 0 1) =
+        gaussianReal 0 va := by
+    simpa [va] using
+      (gaussianReal_map_const_mul
+        (μ := 0) (v := (1 : ℝ≥0)) a)
+
+  have hmb :
+      Measure.map (fun x : ℝ => b * x)
+          (gaussianReal 0 1) =
+        gaussianReal 0 vb := by
+    simpa [vb] using
+      (gaussianReal_map_const_mul
+        (μ := 0) (v := (1 : ℝ≥0)) b)
+
+  have hmc :
+      Measure.map (fun x : ℝ => c * x)
+          (gaussianReal 0 1) =
+        gaussianReal 0 vc := by
+    simpa [vc] using
+      (gaussianReal_map_const_mul
+        (μ := 0) (v := (1 : ℝ≥0)) c)
+
+  have hv :
+      va + vb = vc := by
+    apply NNReal.eq
+    simp [va, vb, vc, hc]
+
+  have hf :
+      Integrable
+        (fun z : ℝ =>
+          Real.log (Real.cosh (h + z)) + k)
+        (gaussianReal 0 va ∗ gaussianReal 0 vb) := by
+    rw [
+      gaussianReal_conv_gaussianReal,
+      hv,
+      zero_add
+    ]
+
+    exact
+      (flatness_smallneg_integrable_log_cosh_affine
+        h 1 0 vc).add
+        (integrable_const k)
+
+  have hprod :
+      Integrable
+        (fun p : ℝ × ℝ =>
+          Real.log
+              (Real.cosh
+                (h + (p.1 + p.2))) + k)
+        ((gaussianReal 0 va).prod
+          (gaussianReal 0 vb)) := by
+    rw [Measure.conv] at hf
+    exact
+      (integrable_map_measure
+        hf.1 (by fun_prop)).mp hf
+
+  have houter :
+      AEStronglyMeasurable
+        (fun x : ℝ =>
+          ∫ y,
+            Real.log
+                (Real.cosh
+                  (h + (x + y))) + k
+            ∂gaussianReal 0 vb)
+        (gaussianReal 0 va) :=
+    hprod.integral_prod_left.1
+
+  have hinner (x : ℝ) :
+      (∫ y,
+          Real.log
+              (Real.cosh
+                (h + a * x + b * y)) + k
+        ∂gaussianReal 0 1)
+        =
+      ∫ y,
+        Real.log
+            (Real.cosh
+              (h + a * x + y)) + k
+        ∂gaussianReal 0 vb := by
+    have hc' :
+        Continuous
+          (fun y : ℝ =>
+            Real.log
+                (Real.cosh
+                  (h + a * x + y)) + k) := by
+      have hcosh :
+          Continuous
+            (fun y : ℝ =>
+              Real.cosh
+                (h + a * x + y)) := by
+        fun_prop
+      exact
+        (hcosh.log
+          (fun y =>
+            (Real.cosh_pos
+              (h + a * x + y)).ne')).add
+          continuous_const
+
+    have hm :
+        AEStronglyMeasurable
+          (fun y : ℝ =>
+            Real.log
+                (Real.cosh
+                  (h + a * x + y)) + k)
+          (Measure.map
+            (fun y : ℝ => b * y)
+            (gaussianReal 0 1)) :=
+      hc'.aestronglyMeasurable
+
+    rw [← hmb,
+      integral_map (by fun_prop) hm]
+
+  have houter_map :
+      (∫ x,
+          ∫ y,
+            Real.log
+                (Real.cosh
+                  (h + a * x + y)) + k
+            ∂gaussianReal 0 vb
+        ∂gaussianReal 0 1)
+        =
+      ∫ x,
+        ∫ y,
+          Real.log
+              (Real.cosh
+                (h + x + y)) + k
+          ∂gaussianReal 0 vb
+        ∂gaussianReal 0 va := by
+    have hm :
+        AEStronglyMeasurable
+          (fun x : ℝ =>
+            ∫ y,
+              Real.log
+                  (Real.cosh
+                    (h + (x + y))) + k
+              ∂gaussianReal 0 vb)
+          (Measure.map
+            (fun x : ℝ => a * x)
+            (gaussianReal 0 1)) := by
+      simpa [hma] using houter
+
+    rw [← hma]
+
+    simpa only [add_assoc] using
+      (integral_map (by fun_prop) hm).symm

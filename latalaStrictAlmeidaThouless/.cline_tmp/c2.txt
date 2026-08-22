@@ -1,0 +1,99 @@
+
+private lemma flatness_smallneg_integrable_log_cosh_two_affine
+    (h a b : ℝ) :
+    Integrable
+      (fun p : ℝ × ℝ =>
+        Real.log
+          (Real.cosh
+            (h + a * p.1 + b * p.2)))
+      ((gaussianReal 0 1).prod
+        (gaussianReal 0 1)) := by
+  have hz :
+      Integrable
+        (fun z : ℝ => |z|)
+        (gaussianReal 0 1) :=
+    (GTFrame.expMoments_gaussianReal 0 1).integrable_abs
+
+  have hz₁ :
+      Integrable
+        (fun p : ℝ × ℝ => |p.1|)
+        ((gaussianReal 0 1).prod
+          (gaussianReal 0 1)) :=
+    hz.comp_fst (gaussianReal 0 1)
+
+  have hz₂ :
+      Integrable
+        (fun p : ℝ × ℝ => |p.2|)
+        ((gaussianReal 0 1).prod
+          (gaussianReal 0 1)) :=
+    hz.comp_snd (gaussianReal 0 1)
+
+  have hdom :
+      Integrable
+        (fun p : ℝ × ℝ =>
+          (|h| + |a| * |p.1|) +
+            |b| * |p.2|)
+        ((gaussianReal 0 1).prod
+          (gaussianReal 0 1)) :=
+    ((integrable_const |h|).add
+      (hz₁.const_mul |a|)).add
+        (hz₂.const_mul |b|)
+
+  have hc :
+      Continuous
+        (fun p : ℝ × ℝ =>
+          Real.log
+            (Real.cosh
+              (h + a * p.1 + b * p.2))) := by
+    have hcosh :
+        Continuous
+          (fun p : ℝ × ℝ =>
+            Real.cosh
+              (h + a * p.1 + b * p.2)) := by
+      fun_prop
+    exact
+      hcosh.log
+        (fun p =>
+          (Real.cosh_pos
+            (h + a * p.1 + b * p.2)).ne')
+
+  refine hdom.mono' hc.aestronglyMeasurable ?_
+
+  filter_upwards [] with p
+
+  have hbound :
+      Real.log
+          (Real.cosh
+            (h + a * p.1 + b * p.2))
+        ≤
+      (|h| + |a| * |p.1|) +
+        |b| * |p.2| := by
+    calc
+      Real.log
+          (Real.cosh
+            (h + a * p.1 + b * p.2))
+          ≤ |h + a * p.1 + b * p.2| :=
+        flatness_smallneg_log_cosh_le_abs _
+      _ ≤ |h + a * p.1| + |b * p.2| :=
+        abs_add _ _
+      _ ≤ (|h| + |a * p.1|) + |b * p.2| := by
+        gcongr
+        exact abs_add _ _
+      _ =
+          (|h| + |a| * |p.1|) +
+            |b| * |p.2| := by
+        rw [abs_mul, abs_mul]
+
+  have hright :
+      0 ≤
+        (|h| + |a| * |p.1|) +
+          |b| * |p.2| := by
+    positivity
+
+  simpa [
+      Real.norm_eq_abs,
+      abs_of_nonneg
+        (flatness_smallneg_log_cosh_nonneg
+          (h + a * p.1 + b * p.2)),
+      abs_of_nonneg hright
+    ] using hbound

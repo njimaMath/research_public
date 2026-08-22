@@ -1,0 +1,67 @@
+
+  unfold standardGaussianExpectation
+
+  calc
+    (∫ x,
+        ∫ y,
+          Real.log
+              (Real.cosh
+                (h + a * x + b * y)) + k
+          ∂gaussianReal 0 1
+      ∂gaussianReal 0 1)
+        =
+      ∫ x,
+        ∫ y,
+          Real.log
+              (Real.cosh
+                (h + x + y)) + k
+          ∂gaussianReal 0 vb
+        ∂gaussianReal 0 va := by
+          rw [
+            integral_congr_ae
+              (Filter.Eventually.of_forall hinner)
+          ]
+          exact houter_map
+
+    _ =
+      ∫ z,
+        Real.log
+            (Real.cosh (h + z)) + k
+        ∂(gaussianReal 0 va ∗
+          gaussianReal 0 vb) := by
+          simpa only [add_assoc] using
+            (integral_conv hf).symm
+
+    _ =
+      ∫ z,
+        Real.log
+            (Real.cosh (h + z)) + k
+        ∂gaussianReal 0 vc := by
+          rw [
+            gaussianReal_conv_gaussianReal,
+            hv,
+            zero_add
+          ]
+
+    _ =
+      ∫ z,
+        Real.log
+            (Real.cosh (h + c * z)) + k
+        ∂gaussianReal 0 1 := by
+          rw [
+            ← hmc,
+            integral_map (by fun_prop)
+          ]
+
+          have hcosh :
+              Continuous
+                (fun z : ℝ =>
+                  Real.cosh (h + z)) := by
+            fun_prop
+
+          exact
+            ((hcosh.log
+              (fun z =>
+                (Real.cosh_pos
+                  (h + z)).ne')).add
+              continuous_const).aestronglyMeasurable

@@ -1,0 +1,176 @@
+
+private lemma flatness_smallneg_incrementScale_sq
+    {β s lower upper : ℝ}
+    (hs : 0 ≤ s)
+    (hlu : lower ≤ upper) :
+    gtIncrementScale β s lower upper ^ 2 =
+      s * β ^ 2 * (upper - lower) := by
+  unfold gtIncrementScale
+
+  rw [
+    mul_pow,
+    mul_pow,
+    Real.sq_sqrt hs,
+    Real.sq_sqrt (sub_nonneg.mpr hlu)
+  ]
+
+  ring
+
+private lemma flatness_smallneg_diagonal_zero_zero
+    (F : GTTwoField) (x₁ x₂ : ℝ) :
+    gtDiagonalStep 0 0 F x₁ x₂ =
+      F x₁ x₂ := by
+  simp [
+    gtDiagonalStep,
+    standardGaussianExpectation
+  ]
+
+private lemma flatness_smallneg_rankOne_half_zero
+    (sign : ℝ)
+    (F : GTTwoField)
+    (x₁ x₂ : ℝ) :
+    gtRankOneStep (1 / 2) 0 sign F x₁ x₂ =
+      F x₁ x₂ := by
+  simp [
+    gtRankOneStep,
+    standardGaussianExpectation
+  ]
+  ring
+
+private lemma flatness_smallneg_diagonal_zero_split
+    (a b x₁ x₂ : ℝ) :
+    gtDiagonalStep 0 a
+        (gtDiagonalStep 1 b (gtTerminal 0))
+        x₁ x₂
+      =
+    standardGaussianExpectation
+        (fun z =>
+          Real.log
+            (Real.cosh (x₁ + a * z)))
+      +
+    standardGaussianExpectation
+        (fun z =>
+          Real.log
+            (Real.cosh (x₂ + a * z)))
+      +
+    b ^ 2 := by
+  have hu :
+      gtDiagonalStep 1 b (gtTerminal 0) =
+        fun y₁ y₂ =>
+          Real.log (Real.cosh y₁) +
+            Real.log (Real.cosh y₂) +
+            b ^ 2 := by
+    funext y₁ y₂
+    rw [
+      gtDiagonalStep_one_terminal,
+      gtTerminal_zero
+    ]
+    ring
+
+  rw [hu]
+
+  simp only [
+    gtDiagonalStep,
+    if_pos rfl
+  ]
+
+  unfold standardGaussianExpectation
+
+  have h₁ :
+      Integrable
+        (fun z : ℝ =>
+          Real.log
+            (Real.cosh (x₁ + a * z)))
+        (gaussianReal 0 1) :=
+    flatness_smallneg_integrable_log_cosh_affine
+      x₁ a 0 1
+
+  have h₂ :
+      Integrable
+        (fun z : ℝ =>
+          Real.log
+            (Real.cosh (x₂ + a * z)))
+        (gaussianReal 0 1) :=
+    flatness_smallneg_integrable_log_cosh_affine
+      x₂ a 0 1
+
+  have hinner (z₁ : ℝ) :
+      (∫ z₂,
+          (Real.log
+              (Real.cosh (x₁ + a * z₁)) +
+            Real.log
+              (Real.cosh (x₂ + a * z₂))) +
+            b ^ 2
+        ∂gaussianReal 0 1)
+        =
+      Real.log
+          (Real.cosh (x₁ + a * z₁))
+        +
+      (∫ z₂,
+          Real.log
+            (Real.cosh (x₂ + a * z₂))
+        ∂gaussianReal 0 1)
+        +
+      b ^ 2 := by
+    rw [
+      integral_add
+        ((integrable_const _).add h₂)
+        (integrable_const _)
+    ]
+
+    rw [
+      integral_add
+        (integrable_const _)
+        h₂
+    ]
+
+    simp only [
+      integral_const,
+      probReal_univ,
+      one_smul
+    ]
+
+  rw [
+    integral_congr_ae
+      (Filter.Eventually.of_forall hinner)
+  ]
+
+  let C : ℝ :=
+    (∫ z₂,
+        Real.log
+          (Real.cosh (x₂ + a * z₂))
+      ∂gaussianReal 0 1)
+
+  have hfun :
+      (fun z₁ : ℝ =>
+        Real.log
+            (Real.cosh (x₁ + a * z₁)) +
+          (∫ z₂,
+            Real.log
+              (Real.cosh (x₂ + a * z₂))
+            ∂gaussianReal 0 1) +
+          b ^ 2)
+        =
+      fun z₁ =>
+        Real.log
+            (Real.cosh (x₁ + a * z₁)) +
+          (C + b ^ 2) := by
+    funext z₁
+    rfl
+
+  rw [hfun]
+
+  rw [
+    integral_add
+      h₁
+      (integrable_const (C + b ^ 2))
+  ]
+
+  simp only [
+    integral_const,
+    probReal_univ,
+    one_smul
+  ]
+
+  dsimp [C]
+  ring

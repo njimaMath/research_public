@@ -1,0 +1,115 @@
+
+private lemma flatness_smallneg_zero_steps_value
+    (r a b c y : ℝ)
+    (hc : c ^ 2 = r ^ 2 + a ^ 2) :
+    gtRankOneStep 0 r (-1)
+        (gtDiagonalStep 0 a
+          (gtDiagonalStep 1 b
+            (gtTerminal 0)))
+        y y
+      =
+    2 * standardGaussianExpectation
+        (fun z =>
+          Real.log
+            (Real.cosh (y + c * z)))
+      + b ^ 2 := by
+  let A : ℝ → ℝ := fun z =>
+    standardGaussianExpectation (fun w =>
+      Real.log
+        (Real.cosh
+          (y + r * z + a * w)))
+
+  let B : ℝ → ℝ := fun z =>
+    standardGaussianExpectation (fun w =>
+      Real.log
+        (Real.cosh
+          (y + (-r) * z + a * w)))
+
+  have hAprod :=
+    flatness_smallneg_integrable_log_cosh_two_affine
+      y r a
+
+  have hBprod :=
+    flatness_smallneg_integrable_log_cosh_two_affine
+      y (-r) a
+
+  have hAint :
+      Integrable A (gaussianReal 0 1) := by
+    have h := hAprod.integral_prod_left
+    simpa [
+      A,
+      standardGaussianExpectation
+    ] using h
+
+  have hBint :
+      Integrable B (gaussianReal 0 1) := by
+    have h := hBprod.integral_prod_left
+    simpa [
+      B,
+      standardGaussianExpectation
+    ] using h
+
+  have hconvA :
+      standardGaussianExpectation A =
+        standardGaussianExpectation
+          (fun z =>
+            Real.log
+              (Real.cosh (y + c * z))) := by
+    simpa [A] using
+      flatness_smallneg_gaussian_convolution_log_cosh_add_const
+        y 0 r a c hc
+
+  have hcB :
+      c ^ 2 = (-r) ^ 2 + a ^ 2 := by
+    nlinarith [hc]
+
+  have hconvB :
+      standardGaussianExpectation B =
+        standardGaussianExpectation
+          (fun z =>
+            Real.log
+              (Real.cosh (y + c * z))) := by
+    simpa [B] using
+      flatness_smallneg_gaussian_convolution_log_cosh_add_const
+        y 0 (-r) a c hcB
+
+  simp only [
+    gtRankOneStep,
+    if_pos rfl
+  ]
+
+  apply Eq.trans ?_ ?_
+
+  · apply congrArg standardGaussianExpectation
+    funext z
+
+    have h :=
+      flatness_smallneg_diagonal_zero_split
+        a b
+        (y + r * z)
+        (y + (-1) * r * z)
+
+    simpa [A, B] using h
+
+  · unfold standardGaussianExpectation at hconvA hconvB ⊢
+
+    rw [
+      integral_add
+        (hAint.add hBint)
+        (integrable_const (b ^ 2))
+    ]
+
+    rw [
+      integral_add
+        hAint hBint
+    ]
+
+    simp only [
+      integral_const,
+      probReal_univ,
+      one_smul
+    ]
+
+    rw [hconvA, hconvB]
+
+    ring
