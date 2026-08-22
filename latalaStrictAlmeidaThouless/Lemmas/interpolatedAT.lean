@@ -883,7 +883,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-import SpinGlass.Mathlib.Probability.Distributions.GaussianIntegrationByParts
+import SpinGlassAT.Mathlib.Probability.Distributions.GaussianIntegrationByParts
 
 open MeasureTheory ProbabilityTheory Real
 open scoped MeasureTheory NNReal
