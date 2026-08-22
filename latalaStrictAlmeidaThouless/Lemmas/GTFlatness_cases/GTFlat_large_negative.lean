@@ -262,7 +262,9 @@ lemma flatness_negative_half_step_le
     exact h.congr (Filter.Eventually.of_forall fun z => by
       calc
         Real.cosh (x₂ + (-a) * z) =
-            Real.cosh (x₂ + (-1) * a * z) := by congr 2 <;> ring
+            Real.cosh (x₂ + (-1) * a * z) := by
+              congr 2
+              ring
         _ = g z ^ 2 := (hg_sq z).symm)
   have hfmem : MemLp f 2 (gaussianReal 0 1) := by
     exact (memLp_two_iff_integrable_sq hfcont.aestronglyMeasurable).2 hf_sq_int
