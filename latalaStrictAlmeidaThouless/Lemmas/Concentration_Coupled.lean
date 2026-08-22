@@ -96,6 +96,15 @@ noncomputable def coupledConstrainedLogPartition
   Real.log
     (constrainedPartition (coupledCoordinateHamiltonian N β h q s x) v)
 
+/-- The quadratically coupled log-partition function in canonical Gaussian
+coordinates. -/
+noncomputable def quadraticCoupledCoordinateLogPartition
+    (N : ℕ) (β h q s rho : ℝ)
+    (x : EuclideanSpace ℝ (CoupledGaussianIndex N)) : ℝ :=
+  Real.log
+    (quadraticCoupledPartition
+      (coupledCoordinateHamiltonian N β h q s x) q rho)
+
 private lemma coupled_pair_coefficient_norm_le
     (N : ℕ) (β q s : ℝ) (hN : 0 < N)
     (hs : s ∈ Set.Icc (0 : ℝ) 1)
@@ -243,6 +252,71 @@ theorem coupled_constrained_log_partition_lipschitz
     ring
   rw [hfun]
   exact hLip
+
+/-- The quadratically coupled two-replica log-partition function is
+`2 |β| √N`-Lipschitz in the canonical Gaussian coordinates. -/
+theorem quadraticCoupledCoordinateLogPartition_lipschitz
+    (N : ℕ) (β h q s rho : ℝ)
+    (hN : 0 < N)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q ∈ Set.Icc (0 : ℝ) 1) :
+    LipschitzWith (2 * |β| * Real.sqrt N).toNNReal
+      (quadraticCoupledCoordinateLogPartition N β h q s rho) := by
+  classical
+  let A : (SpinGlass.Config N × SpinGlass.Config N) →
+      EuclideanSpace ℝ (CoupledGaussianIndex N) →L[ℝ] ℝ := fun p =>
+    innerSL ℝ
+      (coupledDisorderCoefficient N β q s p.1 +
+        coupledDisorderCoefficient N β q s p.2)
+  let b : (SpinGlass.Config N × SpinGlass.Config N) → ℝ := fun p =>
+    h * ((∑ i : Fin N, SpinGlass.spin N p.1 i) +
+      ∑ i : Fin N, SpinGlass.spin N p.2 i) +
+      rho * (N : ℝ) / 2 * (SpinGlass.overlap N p.1 p.2 - q) ^ 2
+  have hA (p : SpinGlass.Config N × SpinGlass.Config N) :
+      ‖A p‖ ≤ 2 * |β| * Real.sqrt N := by
+    change ‖innerSL ℝ (coupledDisorderCoefficient N β q s p.1 +
+      coupledDisorderCoefficient N β q s p.2)‖ ≤ _
+    rw [innerSL_apply_norm]
+    exact coupled_pair_coefficient_norm_le N β q s hN hs hq p.1 p.2
+  have hC : 0 ≤ 2 * |β| * Real.sqrt N := by positivity
+  have hLip := lipschitzWith_log_sum_exp A b
+    (2 * |β| * Real.sqrt N) hC hA
+  have hfun : quadraticCoupledCoordinateLogPartition N β h q s rho =
+      fun x => Real.log (∑ p, Real.exp (A p x + b p)) := by
+    funext x
+    unfold quadraticCoupledCoordinateLogPartition quadraticCoupledPartition
+    congr 2
+    funext p
+    simp [A, b, coupledCoordinateHamiltonian]
+    ring
+  rw [hfun]
+  exact hLip
+
+/-- The logarithm of the coupled Gibbs moment, written as the difference of
+the coupled log-partition functions at `rho` and at zero, is
+`4 |β| √N`-Lipschitz. -/
+theorem quadraticCoupledCoordinateLogRatio_lipschitz
+    (N : ℕ) (β h q s rho : ℝ)
+    (hN : 0 < N)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q ∈ Set.Icc (0 : ℝ) 1) :
+    LipschitzWith (4 * |β| * Real.sqrt N).toNNReal
+      (fun x => quadraticCoupledCoordinateLogPartition N β h q s rho x -
+        quadraticCoupledCoordinateLogPartition N β h q s 0 x) := by
+  have hρ := quadraticCoupledCoordinateLogPartition_lipschitz
+    N β h q s rho hN hs hq
+  have h₀ := quadraticCoupledCoordinateLogPartition_lipschitz
+    N β h q s 0 hN hs hq
+  have hconst : (4 * |β| * Real.sqrt N).toNNReal =
+      (2 * |β| * Real.sqrt N).toNNReal +
+        (2 * |β| * Real.sqrt N).toNNReal := by
+    apply NNReal.eq
+    simp only [NNReal.coe_add]
+    rw [Real.coe_toNNReal _ (by positivity : 0 ≤ 4 * |β| * Real.sqrt N),
+      Real.coe_toNNReal _ (by positivity : 0 ≤ 2 * |β| * Real.sqrt N)]
+    ring
+  rw [hconst]
+  exact hρ.sub h₀
 
 /-- The spin-product sum is determined by the number of coordinates on which
 the two configurations agree. -/

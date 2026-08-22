@@ -620,6 +620,195 @@ private lemma constrainedPartition_flipEnergy
   intro p
   simp [e, flipEnergyCLM, overlap_flip]
 
+private lemma quadraticCoupledPartition_flipEnergy
+    {N : ℕ} (H : SpinGlass.EnergySpace N) (q rho : ℝ) :
+    quadraticCoupledPartition (flipEnergyCLM N H) q rho =
+      quadraticCoupledPartition H q rho := by
+  classical
+  let e : SpinGlass.Config N × SpinGlass.Config N ≃
+      SpinGlass.Config N × SpinGlass.Config N :=
+    (flipConfig N).prodCongr (flipConfig N)
+  unfold quadraticCoupledPartition
+  apply Fintype.sum_equiv e
+  intro p
+  simp [e, flipEnergyCLM, overlap_flip]
+
+/-- The log ratio of the quadratically coupled partition function to its
+uncoupled value has the canonical Gaussian-coordinate law. -/
+theorem quadraticCoupled_log_ratio_law
+    {Omega : Type*} [MeasureSpace Omega]
+    [IsProbabilityMeasure (volume : Measure Omega)]
+    {N : ℕ} {beta h q : ℝ}
+    (path : RSSmartPathDisorder Omega N beta h q)
+    (s : Set.Icc (0 : ℝ) 1) (hq : 0 ≤ q) (rho : ℝ) :
+    Measure.map (fun omega =>
+        Real.log (quadraticCoupledPartition
+          (fullPathHamiltonian path s.1 omega) q rho) -
+        Real.log (quadraticCoupledPartition
+          (fullPathHamiltonian path s.1 omega) q 0)) volume =
+      Measure.map (fun x =>
+        quadraticCoupledCoordinateLogPartition N beta h q s.1 rho x -
+        quadraticCoupledCoordinateLogPartition N beta h q s.1 0 x)
+        (SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) := by
+  let Phi : SpinGlass.EnergySpace N → ℝ := fun H =>
+    Real.log (quadraticCoupledPartition H q rho) -
+      Real.log (quadraticCoupledPartition H q 0)
+  have hPhi : Measurable Phi := by
+    unfold Phi quadraticCoupledPartition
+    fun_prop
+  have hlaw := fullPath_flipped_energy_law path s hq
+  have hmap := congrArg (Measure.map Phi) hlaw
+  have hleftAE : AEMeasurable (fun omega => flipEnergyCLM N
+      (fullPathHamiltonian path s.1 omega)) volume := by
+    rw [show (fun omega => flipEnergyCLM N
+        (fullPathHamiltonian path s.1 omega)) =
+      fun omega => flippedSmartRandomPairCLM N s.1
+        (path.sk.U omega, path.simple.V omega) -
+          SpinGlass.magnetic_field_vector N h by
+      funext omega
+      exact flipEnergy_fullPathHamiltonian path s.1 omega]
+    have hUlaw := gaussianHilbert_hasGaussianLaw path.sk.hU
+    have hVlaw := gaussianHilbert_hasGaussianLaw path.simple.hV
+    exact ((path.independent.hasGaussianLaw hUlaw hVlaw).map_fun
+      (flippedSmartRandomPairCLM N s.1)).aemeasurable.sub aemeasurable_const
+  have hrightMeas : Measurable (coupledCoordinateHamiltonian N beta h q s.1) := by
+    rw [show coupledCoordinateHamiltonian N beta h q s.1 =
+        fun x => coordinateRandomCLM N beta q s.1 x -
+          SpinGlass.magnetic_field_vector N h by
+      funext x
+      exact coordinateHamiltonian_eq_random_sub_field N beta h q s.1 x]
+    fun_prop
+  rw [AEMeasurable.map_map_of_aemeasurable hPhi.aemeasurable hleftAE,
+    AEMeasurable.map_map_of_aemeasurable hPhi.aemeasurable
+      hrightMeas.aemeasurable] at hmap
+  rw [show (fun omega =>
+        Real.log (quadraticCoupledPartition
+          (fullPathHamiltonian path s.1 omega) q rho) -
+        Real.log (quadraticCoupledPartition
+          (fullPathHamiltonian path s.1 omega) q 0)) =
+      Phi ∘ (fun omega => flipEnergyCLM N
+        (fullPathHamiltonian path s.1 omega)) by
+      funext omega
+      simp [Phi, quadraticCoupledPartition_flipEnergy],
+    show (fun x =>
+        quadraticCoupledCoordinateLogPartition N beta h q s.1 rho x -
+        quadraticCoupledCoordinateLogPartition N beta h q s.1 0 x) =
+      Phi ∘ coupledCoordinateHamiltonian N beta h q s.1 by rfl]
+  exact hmap
+
+/-- Uniform upper-tail concentration for the logarithm of the coupled Gibbs
+moment along an arbitrary realization of the smart path. -/
+theorem quadraticCoupled_log_ratio_upper_tail_path
+    {Omega : Type*} [MeasureSpace Omega]
+    [IsProbabilityMeasure (volume : Measure Omega)]
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    {N : ℕ} (hN : 0 < N) {beta h : ℝ}
+    (hp : (beta, h) ∈ K)
+    (s : Set.Icc (0 : ℝ) 1)
+    (path : RSSmartPathDisorder Omega N beta h (rsQ beta h))
+    (rho t : ℝ) (ht : 0 < t) :
+    volume {omega |
+        (Real.log (quadraticCoupledPartition
+            (fullPathHamiltonian path s.1 omega) (rsQ beta h) rho) -
+          Real.log (quadraticCoupledPartition
+            (fullPathHamiltonian path s.1 omega) (rsQ beta h) 0)) -
+          ∫ eta,
+            (Real.log (quadraticCoupledPartition
+                (fullPathHamiltonian path s.1 eta) (rsQ beta h) rho) -
+              Real.log (quadraticCoupledPartition
+                (fullPathHamiltonian path s.1 eta) (rsQ beta h) 0))
+            ∂volume > t} ≤
+      ENNReal.ofReal (Real.exp
+        (-t ^ 2 / (2 * (4 * data.βmax * Real.sqrt N) ^ 2))) := by
+  let Y : Omega → ℝ := fun omega =>
+    Real.log (quadraticCoupledPartition
+        (fullPathHamiltonian path s.1 omega) (rsQ beta h) rho) -
+      Real.log (quadraticCoupledPartition
+        (fullPathHamiltonian path s.1 omega) (rsQ beta h) 0)
+  let F : EuclideanSpace ℝ (CoupledGaussianIndex N) → ℝ := fun x =>
+    quadraticCoupledCoordinateLogPartition N beta h (rsQ beta h) s.1 rho x -
+      quadraticCoupledCoordinateLogPartition N beta h (rsQ beta h) s.1 0 x
+  let gamma := SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)
+  have hsmall := quadraticCoupledCoordinateLogRatio_lipschitz
+    N beta h (rsQ beta h) s.1 rho hN s.2 (rsQ_mem_Icc beta h)
+  have hbeta : |beta| ≤ data.βmax := by
+    rw [abs_of_pos (data.β_pos (beta, h) hp)]
+    exact data.β_bound (beta, h) hp
+  have hconst : 4 * |beta| * Real.sqrt N ≤
+      4 * data.βmax * Real.sqrt N := by gcongr
+  have hlargeNonneg : 0 ≤ 4 * data.βmax * Real.sqrt N :=
+    mul_nonneg (mul_nonneg (by norm_num) data.βmax_pos.le)
+      (Real.sqrt_nonneg _)
+  have hLip : LipschitzWith
+      (4 * data.βmax * Real.sqrt N).toNNReal F := by
+    apply LipschitzWith.of_dist_le_mul
+    intro x y
+    have hdist := hsmall.dist_le_mul x y
+    rw [Real.coe_toNNReal _ (by positivity :
+      0 ≤ 4 * |beta| * Real.sqrt N)] at hdist
+    rw [Real.coe_toNNReal _ hlargeNonneg]
+    exact hdist.trans (mul_le_mul_of_nonneg_right hconst dist_nonneg)
+  have hFmeas : Measurable F := hLip.continuous.measurable
+  have hfullAE : AEMeasurable (fullPathHamiltonian path s.1) volume := by
+    have hUlaw := gaussianHilbert_hasGaussianLaw path.sk.hU
+    have hVlaw := gaussianHilbert_hasGaussianLaw path.simple.hV
+    have hpairAE : AEMeasurable
+        (fun omega => (path.sk.U omega, path.simple.V omega)) volume :=
+      hUlaw.aemeasurable.prodMk hVlaw.aemeasurable
+    rw [show fullPathHamiltonian path s.1 = fun omega =>
+        smartRandomPairCLM N s.1 (path.sk.U omega, path.simple.V omega) +
+          SpinGlass.magnetic_field_vector N h by
+      funext omega
+      simp [fullPathHamiltonian, smartRandomPairCLM]]
+    exact ((smartRandomPairCLM N s.1).measurable.comp_aemeasurable hpairAE).add
+      aemeasurable_const
+  have hPhi : Measurable (fun H : SpinGlass.EnergySpace N =>
+      Real.log (quadraticCoupledPartition H (rsQ beta h) rho) -
+        Real.log (quadraticCoupledPartition H (rsQ beta h) 0)) := by
+    unfold quadraticCoupledPartition
+    fun_prop
+  have hYAE : AEMeasurable Y volume := by
+    change AEMeasurable
+      ((fun H : SpinGlass.EnergySpace N =>
+        Real.log (quadraticCoupledPartition H (rsQ beta h) rho) -
+          Real.log (quadraticCoupledPartition H (rsQ beta h) 0)) ∘
+        fullPathHamiltonian path s.1) volume
+    exact hPhi.aemeasurable.comp_aemeasurable hfullAE
+  have hlaw : Measure.map Y volume = Measure.map F gamma := by
+    simpa [Y, F, gamma] using quadraticCoupled_log_ratio_law
+      path s (rsQ_mem_Icc beta h).1 rho
+  have hmean : ∫ omega, Y omega ∂volume = ∫ x, F x ∂gamma := by
+    calc
+      ∫ omega, Y omega ∂volume = ∫ z, z ∂Measure.map Y volume :=
+        (integral_map hYAE aestronglyMeasurable_id).symm
+      _ = ∫ z, z ∂Measure.map F gamma := by rw [hlaw]
+      _ = ∫ x, F x ∂gamma :=
+        integral_map hFmeas.aemeasurable aestronglyMeasurable_id
+  have hset : MeasurableSet {z : ℝ | z - ∫ x, F x ∂gamma > t} := by
+    change MeasurableSet
+      ((fun z : ℝ => z - ∫ x, F x ∂gamma) ⁻¹' Set.Ioi t)
+    exact (measurable_id.sub measurable_const) measurableSet_Ioi
+  have hevent : volume {omega | Y omega - ∫ eta, Y eta ∂volume > t} =
+      gamma {x | F x - ∫ y, F y ∂gamma > t} := by
+    rw [hmean]
+    calc
+      volume {omega | Y omega - ∫ x, F x ∂gamma > t} =
+          (Measure.map Y volume) {z | z - ∫ x, F x ∂gamma > t} := by
+        rw [Measure.map_apply_of_aemeasurable hYAE hset]
+        rfl
+      _ = (Measure.map F gamma) {z | z - ∫ x, F x ∂gamma > t} := by
+        rw [hlaw]
+      _ = gamma {x | F x - ∫ y, F y ∂gamma > t} := by
+        rw [Measure.map_apply_of_aemeasurable hFmeas.aemeasurable hset]
+        rfl
+  change volume {omega | Y omega - ∫ eta, Y eta ∂volume > t} ≤ _
+  rw [hevent]
+  exact SYK.product_standardGaussian_upper_tail F
+    (4 * data.βmax * Real.sqrt N) t
+      (mul_pos (mul_pos (by norm_num) data.βmax_pos)
+        (Real.sqrt_pos.2 (by exact_mod_cast hN))) ht hLip
+
 /-- The joint vector of constrained log-partition functions for an arbitrary
 smart-path realization has the same law as the canonical coordinate vector. -/
 theorem coupled_constrained_log_partition_vector_law

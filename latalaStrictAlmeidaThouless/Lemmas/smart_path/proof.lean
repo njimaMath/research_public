@@ -2657,6 +2657,25 @@ private lemma coupledFreeEnergy_eq_integral_det_beforeIBP
   rw [← integral_const_mul]
   rw [← integral_add hfree (hlog.const_mul _)]
 
+/-- Integral representation of the coupled smart-path free energy. -/
+lemma coupledFreeEnergy_eq_integral_det
+    (s Λ : ℝ) :
+    coupledFreeEnergy
+        (N := N) (β := β) (h := h) (q := q)
+        (sk := sk) (sim := sim) s Λ
+      =
+    ∫ w,
+      coupledFreeEnergyDet
+        (N := N) (q := q)
+        (H_t
+          (N := N) (β := β) (h := h) (q := q)
+          (sk := sk) (sim := sim) s w)
+        Λ
+      ∂ℙ :=
+  coupledFreeEnergy_eq_integral_det_beforeIBP
+    (N := N) (β := β) (h := h) (q := q)
+    (sk := sk) (sim := sim) s Λ
+
 private lemma integral_coupledFreeEnergyDet_hasDerivAt_beforeIBP
     {t Λ : ℝ} (ht : t ∈ Set.Ioo (0 : ℝ) 1) :
     HasDerivAt
@@ -6168,6 +6187,25 @@ private lemma interpolatedPressure_continuousOn :
       simp only [H_t, H_gauss]
       fun_prop
     exact ((SpinGlass.contDiff_free_energy_density (N := N)).continuous.comp hHt).continuousOn
+
+/-- Public form of continuity of the interpolated pressure on the smart-path interval. -/
+lemma interpolatedPressure_continuousOn_Icc :
+    ContinuousOn
+      (interpolatedPressure
+        (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim))
+      (Set.Icc (0 : ℝ) 1) :=
+  interpolatedPressure_continuousOn
+    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim)
+
+/-- Value of the interpolated pressure at the independent endpoint. -/
+lemma interpolatedPressure_zero
+    (hN : 0 < N) (hq0 : 0 ≤ q) :
+    interpolatedPressure
+        (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) 0 =
+      Real.log 2 + standardGaussianExpectation
+        (fun z => Real.log (Real.cosh (h + β * Real.sqrt q * z))) :=
+  endpoint_pressure
+    (N := N) (β := β) (h := h) (q := q) (sk := sk) (sim := sim) hN hq0
 
 /-- Integrated Guerra sum rule, including evaluation of the independent endpoint. -/
 lemma replica_symmetric_sum_rule

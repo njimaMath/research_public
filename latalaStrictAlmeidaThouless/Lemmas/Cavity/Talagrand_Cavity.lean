@@ -1,5 +1,6 @@
 import Lemmas.ATDefs
 import Mathlib.Tactic
+import Lemmas.weak_concentration
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ProbabilityTheory NNReal
@@ -172,7 +173,7 @@ theorem cavityModeRemainder_bound_from_lastSpin
 /--
 The mode estimate implies the `ATDefs.HasCavityRemainderBound` estimate.
 The loss of the harmless numerical factor `6` is only the norm of the fixed
-inverse change of basis.
+inverse change of basis. assume this
 -/
 theorem exists_hasCavityRemainderBound
     {Ω : Type u} [MeasureSpace Ω]
@@ -181,5 +182,8 @@ theorem exists_hasCavityRemainderBound
     (data : UniformATData K) :
     ∃ C : ℝ, HasCavityRemainderBound (Ω := Ω) data C := by
   sorry
+
+
+
 
 end SpinGlass.AT

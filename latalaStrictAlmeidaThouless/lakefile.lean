@@ -17,6 +17,10 @@ lean_lib GeneralizedSupport where
 
 lean_lib LatalaMeetsAT where
   globs := #[
+    .one `SpinGlass.SKModel,
+    .one `SpinGlass.GuerraBound,
+    .one `SpinGlass.Calculus,
+    .one `SpinGlass.Replicas,
     .submodules `SpinGlassAT,
     .submodules `Lemmas,
     .one `Latala_AT
