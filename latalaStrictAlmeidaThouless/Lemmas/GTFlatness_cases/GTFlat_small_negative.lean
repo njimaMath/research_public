@@ -1514,6 +1514,183 @@ lemma flatness_gtFunctional_zero_eq_two_rsPathValue_small_positive
       ring
     _ = 2 * rsPathValue β h q s := by rw [htrial]
 
+private lemma flatness_largepos_rank_one_half_terminal_zero
+    (a b x : ℝ) :
+    gtRankOneStep (1 / 2) a 1
+        (gtDiagonalStep 1 b (gtTerminal 0)) x x =
+      a ^ 2 + b ^ 2 + 2 * Real.log (Real.cosh x) := by
+  have hterminal (z : ℝ) :
+      gtDiagonalStep 1 b (gtTerminal 0)
+          (x + a * z) (x + a * z) =
+        b ^ 2 + 2 * Real.log (Real.cosh (x + a * z)) := by
+    rw [gtDiagonalStep_one_terminal, gtTerminal_zero]
+    ring
+  rw [gtRankOneStep, if_neg (by norm_num : (1 / 2 : ℝ) ≠ 0)]
+  norm_num
+  simp_rw [hterminal]
+  have hexp (z : ℝ) :
+      Real.exp ((b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2) =
+        Real.exp (b ^ 2 / 2) * Real.cosh (x + a * z) := by
+    rw [show
+      (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 =
+        b ^ 2 / 2 + Real.log (Real.cosh (x + a * z)) by ring,
+      Real.exp_add, Real.exp_log (Real.cosh_pos _)]
+  have hexp' (z : ℝ) :
+      Real.exp (1 / 2 *
+        (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z)))) =
+        Real.exp (b ^ 2 / 2) * Real.cosh (x + a * z) := by
+    rw [show
+      1 / 2 * (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) =
+        (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 by ring,
+      hexp]
+  simp_rw [hexp']
+  unfold standardGaussianExpectation
+  rw [integral_const_mul]
+  change
+    2 * Real.log
+      (Real.exp (b ^ 2 / 2) *
+        standardGaussianExpectation (fun z => Real.cosh (x + a * z))) = _
+  rw [standardGaussianExpectation_cosh_shift]
+  rw [Real.log_mul (Real.exp_pos _).ne'
+    (mul_ne_zero (Real.exp_pos _).ne' (Real.cosh_pos _).ne')]
+  rw [Real.log_mul (Real.exp_pos _).ne' (Real.cosh_pos _).ne']
+  rw [Real.log_exp, Real.log_exp]
+  ring
+
+lemma flatness_gtFunctional_zero_eq_two_rsPathValue_large_positive
+    (β h q s v : ℝ)
+    (hq : q ∈ Ioo (0 : ℝ) 1)
+    (hs : s ∈ Icc (0 : ℝ) 1)
+    (hv : v ∈ Icc q 1) :
+    gtFunctional β h q s 0 v =
+      2 * rsPathValue β h q s := by
+  let r : ℝ := gtIncrementScale β s 0 q
+  let a : ℝ := gtIncrementScale β s q v
+  let b : ℝ := gtIncrementScale β s v 1
+  let d : ℝ := β * Real.sqrt ((1 - s) * q)
+  let c : ℝ := β * Real.sqrt q
+  have hr2 : r ^ 2 = s * β ^ 2 * q := by
+    dsimp [r]
+    simpa using flatness_smallneg_incrementScale_sq
+      (β := β) (s := s) (lower := 0) (upper := q) hs.1 hq.1.le
+  have ha2 : a ^ 2 = s * β ^ 2 * (v - q) := by
+    dsimp [a]
+    exact flatness_smallneg_incrementScale_sq hs.1 hv.1
+  have hb2 : b ^ 2 = s * β ^ 2 * (1 - v) := by
+    dsimp [b]
+    exact flatness_smallneg_incrementScale_sq hs.1 hv.2
+  have hab : a ^ 2 + b ^ 2 = s * β ^ 2 * (1 - q) := by
+    rw [ha2, hb2]
+    ring
+  have hdc : c ^ 2 = d ^ 2 + r ^ 2 := by
+    dsimp [c, d]
+    rw [mul_pow, Real.sq_sqrt hq.1.le,
+      mul_pow, Real.sq_sqrt (mul_nonneg (sub_nonneg.mpr hs.2) hq.1.le), hr2]
+    ring
+  let A : ℝ → ℝ := fun z =>
+    standardGaussianExpectation (fun w =>
+      Real.log (Real.cosh (h + d * z + r * w)))
+  have hAprod :=
+    flatness_smallneg_integrable_log_cosh_two_affine h d r
+  have hAint : Integrable A (gaussianReal 0 1) := by
+    have h := hAprod.integral_prod_left
+    simpa [A, standardGaussianExpectation] using h
+  have hconvA :
+      standardGaussianExpectation A =
+        standardGaussianExpectation (fun z =>
+          Real.log (Real.cosh (h + c * z))) := by
+    simpa [A] using
+      flatness_smallneg_gaussian_convolution_log_cosh_add_const
+        h 0 d r c hdc
+  have houter :
+      standardGaussianExpectation (fun z => 2 * A z + a ^ 2 + b ^ 2) =
+        2 * standardGaussianExpectation (fun z =>
+          Real.log (Real.cosh (h + c * z))) + a ^ 2 + b ^ 2 := by
+    have hfun :
+        (fun z => 2 * A z + a ^ 2 + b ^ 2) =
+          fun z => 2 * A z + (a ^ 2 + b ^ 2) := by
+      funext z
+      ring
+    rw [hfun]
+    unfold standardGaussianExpectation at hconvA ⊢
+    rw [integral_add (hAint.const_mul 2) (integrable_const _)]
+    rw [integral_const_mul]
+    simp only [integral_const, probReal_univ, one_smul]
+    rw [hconvA]
+    ring
+  have hsem (y : ℝ) :
+      gtSemigroupSolution β q s 0 v 0 y y =
+        2 * standardGaussianExpectation (fun z =>
+          Real.log (Real.cosh (y + r * z))) + a ^ 2 + b ^ 2 := by
+    have hsign : gtPathSign v = 1 := by
+      simp [gtPathSign, le_trans hq.1.le hv.1]
+    have hq0 : ¬ q ≤ (0 : ℝ) := not_le.mpr hq.1
+    have hvpos : 0 < v := lt_of_lt_of_le hq.1 hv.1
+    have hqv : q ≤ |v| := by
+      rw [abs_of_nonneg (le_trans hq.1.le hv.1)]
+      exact hv.1
+    have hform :
+        gtSemigroupSolution β q s 0 v 0 y y =
+          gtRankOneStep 0 r 1
+            (gtRankOneStep (1 / 2) a 1
+              (gtDiagonalStep 1 b (gtTerminal 0))) y y := by
+      simp [gtSemigroupSolution,
+        abs_of_nonneg (le_trans hq.1.le hv.1), hsign, hv.1,
+        not_le.mpr hvpos, hq0, r, a, b]
+    rw [hform, gtRankOneStep]
+    simp only [if_true, one_mul]
+    calc
+      standardGaussianExpectation (fun z =>
+        gtRankOneStep (1 / 2) a 1
+          (gtDiagonalStep 1 b (gtTerminal 0))
+          (y + r * z) (y + r * z)) =
+        standardGaussianExpectation (fun z =>
+          a ^ 2 + b ^ 2 +
+            2 * Real.log (Real.cosh (y + r * z))) := by
+              apply congrArg standardGaussianExpectation
+              funext z
+              rw [flatness_largepos_rank_one_half_terminal_zero]
+      _ =
+        2 * standardGaussianExpectation (fun z =>
+          Real.log (Real.cosh (y + r * z))) + a ^ 2 + b ^ 2 := by
+          have hlog :
+              Integrable (fun z : ℝ =>
+                Real.log (Real.cosh (y + r * z)))
+                (gaussianReal 0 1) :=
+            flatness_smallneg_integrable_log_cosh_affine y r 0 1
+          unfold standardGaussianExpectation
+          rw [integral_add (integrable_const _) (hlog.const_mul 2)]
+          rw [integral_const_mul]
+          simp only [integral_const, probReal_univ, one_smul]
+          ring
+  have hE :
+      standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s 0 v 0
+          (h + d * z) (h + d * z)) =
+        2 * standardGaussianExpectation (fun z =>
+          Real.log (Real.cosh (h + c * z))) + a ^ 2 + b ^ 2 := by
+    calc
+      standardGaussianExpectation (fun z =>
+        gtSemigroupSolution β q s 0 v 0
+          (h + d * z) (h + d * z)) =
+        standardGaussianExpectation (fun z => 2 * A z + a ^ 2 + b ^ 2) := by
+          apply congrArg standardGaussianExpectation
+          funext z
+          simpa [A] using hsem (h + d * z)
+      _ = 2 * standardGaussianExpectation (fun z =>
+          Real.log (Real.cosh (h + c * z))) + a ^ 2 + b ^ 2 := houter
+  rw [gtFunctional, show
+    (fun z => gtSemigroupSolution β q s 0 v 0
+      (h + β * Real.sqrt ((1 - s) * q) * z)
+      (h + β * Real.sqrt ((1 - s) * q) * z)) =
+      fun z => gtSemigroupSolution β q s 0 v 0 (h + d * z) (h + d * z) by
+        funext z
+        rfl]
+  rw [hE]
+  unfold rsPathValue gtCorrection
+  dsimp [c] at hE ⊢
+  nlinarith [hab]
+
 lemma flatness_gtFunctional_quadratic_gap_small_negative
     {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :

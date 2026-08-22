@@ -1,4 +1,4 @@
-import Lemmas.GTFlatness_cases.GTFlatnessCore
+import Lemmas.GTFlatness_cases.GTFlat_small_negative
 
 open MeasureTheory ProbabilityTheory Set
 
@@ -264,17 +264,8 @@ lemma gtFunctional_lower_positive_away_quadratic_gap
   have hzero0 :
       gtFunctional β h q s 0 v =
         2 * rsPathValue β h q s := by
-    apply flatness_gtFunctional_zero_eq_two_rsPathValue
-    all_goals
-      first
-      | assumption
-      | exact hqpos
-      | exact hq_lt_one
-      | exact ⟨hqpos, hq_lt_one⟩
-      | exact hvIcc
-      | exact hvIcc01
-      | exact ⟨hv0, hvq⟩
-      | linarith
+    exact flatness_gtFunctional_zero_eq_two_rsPathValue_small_positive
+      β h q s v ⟨hqpos, hq_lt_one⟩ hs ⟨hv0, hvq.le⟩
 
   have hzero :
       F 0 = 2 * rsPathValue β h q s := by
@@ -422,16 +413,13 @@ lemma gtFunctional_central_positive_quadratic_gap
   have hzero0 :
       gtFunctional β h q s 0 v =
         2 * rsPathValue β h q s := by
-    apply flatness_gtFunctional_zero_eq_two_rsPathValue
-    all_goals
-      first
-      | assumption
-      | exact hqpos
-      | exact hq_lt_one
-      | exact ⟨hqpos, hq_lt_one⟩
-      | exact hv
-      | exact hvIcc01
-      | linarith
+    rcases le_total v q with hvq | hqv
+    · exact
+        flatness_gtFunctional_zero_eq_two_rsPathValue_small_positive
+          β h q s v ⟨hqpos, hq_lt_one⟩ hs ⟨hv0, hvq⟩
+    · exact
+        flatness_gtFunctional_zero_eq_two_rsPathValue_large_positive
+          β h q s v ⟨hqpos, hq_lt_one⟩ hs ⟨hqv, hv1⟩
 
   have hzero :
       F 0 = 2 * rsPathValue β h q s := by
