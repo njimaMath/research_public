@@ -42,12 +42,20 @@ def cavityModeSource (q r : ℝ) : Fin 3 → ℝ :=
 theorem cavityChangeMatrix_mul_cavityMatrix (β q r : ℝ) :
     cavityChangeMatrix * cavityMatrix β q r =
       cavityModeMatrix β q r * cavityChangeMatrix := by
-  sorry
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [cavityChangeMatrix, cavityMatrix, cavityModeMatrix,
+      cavityKappa, cavityZeta, Matrix.mul_apply, Fin.sum_univ_succ] <;>
+    ring
 
 /-- The source vector in the `(V,U,D)` basis is `(ζ,κ,1-2q+r)`. -/
 theorem cavityChangeMatrix_mulVec_theta (q r : ℝ) :
     cavityChangeMatrix.mulVec (theta q r) = cavityModeSource q r := by
-  sorry
+  ext i
+  fin_cases i <;>
+    simp [cavityChangeMatrix, theta, cavityModeSource, cavityKappa,
+      cavityZeta, Matrix.mulVec, dotProduct, Fin.sum_univ_succ] <;>
+    ring
 
 /-- `cavityChangeMatrix` sends `(A,B,C)` to `(V,U,D)`. -/
 theorem cavityChangeMatrix_mulVec_cavityVector
@@ -57,9 +65,14 @@ theorem cavityChangeMatrix_mulVec_cavityVector
     (path : RSSmartPathDisorder Ω N β h q) :
     cavityChangeMatrix.mulVec (cavityVector path s) =
       ![cavityV path s, cavityU path s, cavityD path s] := by
-  sorry
+  ext i
+  fin_cases i <;>
+    simp [cavityChangeMatrix, cavityVector, cavityV, cavityU, cavityD,
+      Matrix.mulVec, dotProduct, Fin.sum_univ_succ] <;>
+    ring
 
 /-- Explicit `(V,U,D)` form of the vector remainder. -/
+set_option maxHeartbeats 2000000 in
 theorem cavityChangeMatrix_mulVec_cavityRemainder
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
@@ -79,13 +92,42 @@ theorem cavityChangeMatrix_mulVec_cavityRemainder
           s * β ^ 2 * (1 - 2 * q + rsR β h) * cavityD path s -
           (1 / (N : ℝ)) * (1 - 2 * q + rsR β h)
       ] := by
-  sorry
+  have hmul :
+      cavityChangeMatrix.mulVec
+          ((cavityMatrix β q (rsR β h)).mulVec (cavityVector path s)) =
+        (cavityModeMatrix β q (rsR β h)).mulVec
+          ![cavityV path s, cavityU path s, cavityD path s] := by
+    calc
+      cavityChangeMatrix.mulVec
+          ((cavityMatrix β q (rsR β h)).mulVec (cavityVector path s)) =
+          (cavityChangeMatrix * cavityMatrix β q (rsR β h)).mulVec
+            (cavityVector path s) := by
+              rw [Matrix.mulVec_mulVec]
+      _ = (cavityModeMatrix β q (rsR β h) * cavityChangeMatrix).mulVec
+            (cavityVector path s) := by
+              rw [cavityChangeMatrix_mul_cavityMatrix]
+      _ = (cavityModeMatrix β q (rsR β h)).mulVec
+            (cavityChangeMatrix.mulVec (cavityVector path s)) := by
+              rw [Matrix.mulVec_mulVec]
+      _ = (cavityModeMatrix β q (rsR β h)).mulVec
+            ![cavityV path s, cavityU path s, cavityD path s] := by
+              rw [cavityChangeMatrix_mulVec_cavityVector]
+  rw [cavityRemainder, Matrix.mulVec_sub, Matrix.mulVec_sub,
+    Matrix.mulVec_smul, Matrix.mulVec_smul, hmul,
+    cavityChangeMatrix_mulVec_cavityVector,
+    cavityChangeMatrix_mulVec_theta]
+  ext i
+  fin_cases i <;>
+    simp [cavityModeMatrix, Matrix.mulVec, dotProduct,
+      Fin.sum_univ_succ, smul_eq_mul] <;>
+    ring_nf
 
 /-- At the RS fixed point the replicon coefficient is the AT parameter. -/
 theorem beta_sq_mul_repliconCoefficient_eq_atParameter
     {β h q : ℝ} (hq : q = rsQ β h) :
     β ^ 2 * (1 - 2 * q + rsR β h) = atParameter β h := by
-  sorry
+  subst q
+  exact (atParameter_eq_beta_sq_mul_one_sub_two_q_add_r β h).symm
 
 /-! ## Inverting the fixed mode change -/
 
@@ -93,7 +135,10 @@ theorem beta_sq_mul_repliconCoefficient_eq_atParameter
 theorem cavityChangeMatrixInv_mul_cavityChangeMatrix :
     cavityChangeMatrixInv * cavityChangeMatrix =
       (1 : Matrix (Fin 3) (Fin 3) ℝ) := by
-  sorry
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    norm_num [cavityChangeMatrixInv, cavityChangeMatrix, Matrix.mul_apply,
+      Fin.sum_univ_succ]
 
 /-- Explicit action of the inverse mode change. -/
 theorem cavityChangeMatrixInv_mulVec_eq (x : Fin 3 → ℝ) :
@@ -101,7 +146,10 @@ theorem cavityChangeMatrixInv_mulVec_eq (x : Fin 3 → ℝ) :
       ![-x 0 - 2 * x 1 + 3 * x 2,
         -x 0 - (3 / 2 : ℝ) * x 1 + (3 / 2 : ℝ) * x 2,
         -x 0 - x 1 + x 2] := by
-  sorry
+  ext i
+  fin_cases i <;>
+    simp [cavityChangeMatrixInv, Matrix.mulVec, dotProduct, Fin.sum_univ_succ] <;>
+    ring
 
 /-- The inverse change of basis costs at most a factor `6` in the sup norm. -/
 theorem cavityChangeMatrixInv_mulVec_norm_le (x : Fin 3 → ℝ) :
