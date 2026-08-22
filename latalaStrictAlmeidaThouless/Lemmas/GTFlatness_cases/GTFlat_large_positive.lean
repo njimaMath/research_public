@@ -82,10 +82,11 @@ private lemma flatness_largepos_rank_one_half_terminal_zero
   norm_num
   simp_rw [hterminal]
   have hexp (z : ℝ) :
-      Real.exp ((b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2) =
+      Real.exp ((1 / 2 : ℝ) *
+        (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z)))) =
         Real.exp (b ^ 2 / 2) * Real.cosh (x + a * z) := by
     rw [show
-      (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) / 2 =
+      (1 / 2 : ℝ) * (b ^ 2 + 2 * Real.log (Real.cosh (x + a * z))) =
         b ^ 2 / 2 + Real.log (Real.cosh (x + a * z)) by ring,
       Real.exp_add, Real.exp_log (Real.cosh_pos _)]
   simp_rw [hexp]
