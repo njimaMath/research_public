@@ -205,7 +205,7 @@ private theorem nat_mul_exp_neg_tendsto_zero (c : ℝ) (hc : 0 < c) :
   convert hscaled using 1
   · funext N
     field_simp [hc.ne']
-    congr 1 <;> ring
+    congr 1 <;> ring_nf
   · norm_num
 
 /--
@@ -299,7 +299,6 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
           mul_le_mul_of_nonneg_left hpre' hNr.le
         _ = Cpre + Cpre * ((N : ℝ) * thirdMoment path s) := by
           field_simp [hNr.ne']
-          <;> ring
     have hcoef : Cpre * split = 1 / 2 := by
       dsimp [split]
       field_simp [hCpre.ne']
@@ -408,14 +407,16 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     let eta : ℝ := target * data.gap / (4 * Cmode * (M + 1))
     have heta : 0 < eta := by
       dsimp [eta]
-      positivity
+      exact div_pos (mul_pos htarget data.gap_pos)
+        (mul_pos (mul_pos (by norm_num) hCmode) (by linarith [hM]))
     obtain ⟨ct, hct, Ct, hCt, htailEta⟩ :=
       overlap_tail (Omega := Ω) data heta
     let delta : ℝ :=
       target * data.gap / (4 * Cmode * (1 + 8 * Ct))
     have hdelta : 0 < delta := by
       dsimp [delta]
-      positivity
+      exact div_pos (mul_pos htarget data.gap_pos)
+        (mul_pos (mul_pos (by norm_num) hCmode) (by linarith [hCt]))
     obtain ⟨Nr, hNr⟩ :=
       (Metric.tendsto_atTop.1 nat_mul_rpow_neg_three_halves_tendsto_zero)
         delta hdelta
@@ -437,8 +438,9 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
       le_trans (le_trans (le_max_right Nr Ne) (le_max_right 1 (max Nr Ne))) hN0
     have hrSmall : (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) < delta := by
       have hd := hNr N hNrIndex
-      simpa [Real.dist_eq, abs_of_nonneg
-        (mul_nonneg hNrPos.le (Real.rpow_nonneg hNrPos.le _))] using hd
+      rw [Real.dist_eq, sub_zero, abs_of_nonneg
+        (mul_nonneg hNrPos.le (Real.rpow_nonneg hNrPos.le _))] at hd
+      exact hd
     have heSmall : (N : ℝ) * Real.exp (-ct * (N : ℝ)) < delta := by
       have hd := hNe N hNeIndex
       simpa [Real.dist_eq, abs_of_nonneg
@@ -505,8 +507,16 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
         (N : ℝ) * cavityD path s -
             rsA β h / (1 - s * atParameter β h) =
           ((N : ℝ) * R 2) / (1 - s * atParameter β h) := by
-      field_simp [hNrPos.ne', hdenPos.ne'] at hDeq ⊢
-      linear_combination (N : ℝ) * hDeq
+      apply (eq_div_iff hdenPos.ne').2
+      rw [sub_mul, div_mul_cancel₀ _ hdenPos.ne']
+      calc
+        (N : ℝ) * cavityD path s * (1 - s * atParameter β h) - rsA β h =
+            (N : ℝ) * ((1 - s * atParameter β h) * cavityD path s) -
+              rsA β h := by ring
+        _ = (N : ℝ) * (rsA β h / (N : ℝ) + R 2) - rsA β h := by
+          rw [hDeq]
+        _ = (N : ℝ) * R 2 := by
+          field_simp [hNrPos.ne']; ring
     have herrorBound :
         |(N : ℝ) * cavityD path s -
             rsA β h / (1 - s * atParameter β h)| ≤
@@ -519,9 +529,12 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
           (N : ℝ) * (Cmode *
             ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s)) :=
         mul_le_mul_of_nonneg_left hRcomp hNrPos.le
+      have herr0 : 0 ≤
+          (N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s :=
+        add_nonneg (Real.rpow_nonneg hNrPos.le _) (thirdMoment_nonneg path s)
       have hnum0 : 0 ≤ (N : ℝ) * (Cmode *
           ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s)) := by
-        positivity
+        exact mul_nonneg hNrPos.le (mul_nonneg hCmode.le herr0)
       calc
         (N : ℝ) * |R 2| / (1 - s * atParameter β h) ≤
             ((N : ℝ) * (Cmode *
@@ -547,14 +560,12 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
           target / 4 * (M / (M + 1)) := by
         dsimp [eta]
         field_simp [hCmode.ne', data.gap_pos.ne']
-        <;> ring
       rw [heq]
       exact mul_lt_of_lt_one_right (by positivity) hratio
     have hdeltaPart :
         (Cmode / data.gap) * ((1 + 8 * Ct) * delta) = target / 4 := by
       dsimp [delta]
       field_simp [hCmode.ne', data.gap_pos.ne']
-      <;> ring
     have hcoefPos : 0 < Cmode / data.gap := div_pos hCmode data.gap_pos
     calc
       |(N : ℝ) * (A path s - 2 * B path s + C path s) -
