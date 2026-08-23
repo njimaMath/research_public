@@ -72,7 +72,6 @@ theorem cavityChangeMatrix_mulVec_cavityVector
     ring
 
 /-- Explicit `(V,U,D)` form of the vector remainder. -/
-set_option maxHeartbeats 2000000 in
 theorem cavityChangeMatrix_mulVec_cavityRemainder
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
@@ -112,15 +111,25 @@ theorem cavityChangeMatrix_mulVec_cavityRemainder
       _ = (cavityModeMatrix β q (rsR β h)).mulVec
             ![cavityV path s, cavityU path s, cavityD path s] := by
               rw [cavityChangeMatrix_mulVec_cavityVector]
+  have hmode :
+      (cavityModeMatrix β q (rsR β h)).mulVec
+          ![cavityV path s, cavityU path s, cavityD path s] =
+        ![β ^ 2 * cavityKappa q (rsR β h) * cavityV path s +
+            β ^ 2 * cavityZeta q (rsR β h) * cavityU path s,
+          β ^ 2 * cavityKappa q (rsR β h) * cavityU path s,
+          β ^ 2 * (1 - 2 * q + rsR β h) * cavityD path s] := by
+    ext i
+    fin_cases i <;>
+      simp [cavityModeMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_succ]
   rw [cavityRemainder, Matrix.mulVec_sub, Matrix.mulVec_sub,
     Matrix.mulVec_smul, Matrix.mulVec_smul, hmul,
+    hmode,
     cavityChangeMatrix_mulVec_cavityVector,
     cavityChangeMatrix_mulVec_theta]
   ext i
   fin_cases i <;>
-    simp [cavityModeMatrix, Matrix.mulVec, dotProduct,
-      Fin.sum_univ_succ, smul_eq_mul] <;>
-    ring_nf
+    simp [cavityModeSource, smul_eq_mul] <;>
+    ring
 
 /-- At the RS fixed point the replicon coefficient is the AT parameter. -/
 theorem beta_sq_mul_repliconCoefficient_eq_atParameter
@@ -154,7 +163,36 @@ theorem cavityChangeMatrixInv_mulVec_eq (x : Fin 3 → ℝ) :
 /-- The inverse change of basis costs at most a factor `6` in the sup norm. -/
 theorem cavityChangeMatrixInv_mulVec_norm_le (x : Fin 3 → ℝ) :
     ‖cavityChangeMatrixInv.mulVec x‖ ≤ 6 * ‖x‖ := by
-  sorry
+  rw [cavityChangeMatrixInv_mulVec_eq,
+    pi_norm_le_iff_of_nonneg (mul_nonneg (by norm_num) (norm_nonneg x))]
+  have h0 : ‖x 0‖ ≤ ‖x‖ := norm_le_pi_norm x 0
+  have h1 : ‖x 1‖ ≤ ‖x‖ := norm_le_pi_norm x 1
+  have h2 : ‖x 2‖ ≤ ‖x‖ := norm_le_pi_norm x 2
+  intro i
+  fin_cases i
+  · calc
+      ‖-x 0 - 2 * x 1 + 3 * x 2‖ ≤
+          ‖-x 0 - 2 * x 1‖ + ‖3 * x 2‖ := norm_add_le _ _
+      _ ≤ (‖-x 0‖ + ‖2 * x 1‖) + ‖3 * x 2‖ :=
+        add_le_add (norm_sub_le _ _) le_rfl
+      _ = ‖x 0‖ + 2 * ‖x 1‖ + 3 * ‖x 2‖ := by
+        simp [norm_mul]
+      _ ≤ 6 * ‖x‖ := by linarith
+  · calc
+      ‖-x 0 - (3 / 2 : ℝ) * x 1 + (3 / 2 : ℝ) * x 2‖ ≤
+          ‖-x 0 - (3 / 2 : ℝ) * x 1‖ + ‖(3 / 2 : ℝ) * x 2‖ :=
+        norm_add_le _ _
+      _ ≤ (‖-x 0‖ + ‖(3 / 2 : ℝ) * x 1‖) +
+          ‖(3 / 2 : ℝ) * x 2‖ := add_le_add (norm_sub_le _ _) le_rfl
+      _ = ‖x 0‖ + (3 / 2 : ℝ) * ‖x 1‖ + (3 / 2 : ℝ) * ‖x 2‖ := by
+        simp [norm_mul]
+      _ ≤ 6 * ‖x‖ := by linarith [norm_nonneg x]
+  · calc
+      ‖-x 0 - x 1 + x 2‖ ≤ ‖-x 0 - x 1‖ + ‖x 2‖ := norm_add_le _ _
+      _ ≤ (‖-x 0‖ + ‖x 1‖) + ‖x 2‖ :=
+        add_le_add (norm_sub_le _ _) le_rfl
+      _ = ‖x 0‖ + ‖x 1‖ + ‖x 2‖ := by simp
+      _ ≤ 6 * ‖x‖ := by linarith [norm_nonneg x]
 
 /-- Recover the original remainder from the three scalar mode remainders. -/
 theorem cavityRemainder_eq_inverseModeRemainder
@@ -165,7 +203,16 @@ theorem cavityRemainder_eq_inverseModeRemainder
     cavityRemainder path s =
       cavityChangeMatrixInv.mulVec
         (cavityChangeMatrix.mulVec (cavityRemainder path s)) := by
-  sorry
+  calc
+    cavityRemainder path s =
+        (1 : Matrix (Fin 3) (Fin 3) ℝ).mulVec (cavityRemainder path s) := by
+      simp
+    _ = (cavityChangeMatrixInv * cavityChangeMatrix).mulVec
+          (cavityRemainder path s) := by
+      rw [cavityChangeMatrixInv_mul_cavityChangeMatrix]
+    _ = cavityChangeMatrixInv.mulVec
+          (cavityChangeMatrix.mulVec (cavityRemainder path s)) := by
+      rw [Matrix.mulVec_mulVec]
 
 /-! ## The analytic last-spin estimate -/
 
@@ -185,7 +232,7 @@ def HasCavityModeRemainderBound
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {K : Set (ℝ × ℝ)}
-    (data : UniformATData K) (C : ℝ) : Prop :=
+    (_data : UniformATData K) (C : ℝ) : Prop :=
   0 < C ∧
     ∀ {N : ℕ}, 0 < N → ∀ {β h q s : ℝ},
       (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
@@ -221,7 +268,7 @@ theorem cavityModeRemainder_bound_from_lastSpin
 /--
 The mode estimate implies the `ATDefs.HasCavityRemainderBound` estimate.
 The loss of the harmless numerical factor `6` is only the norm of the fixed
-inverse change of basis. assume this
+inverse change of basis.
 -/
 theorem exists_hasCavityRemainderBound
     {Ω : Type u} [MeasureSpace Ω]
@@ -229,9 +276,17 @@ theorem exists_hasCavityRemainderBound
     {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ C : ℝ, HasCavityRemainderBound (Ω := Ω) data C := by
-  sorry
-
-
-
-
+  obtain ⟨C, hCpos, hC⟩ :=
+    cavityModeRemainder_bound_from_lastSpin (Ω := Ω) data
+  refine ⟨6 * C, mul_pos (by norm_num) hCpos, ?_⟩
+  intro N hN β h q s hK hq hs path
+  rw [cavityRemainder_eq_inverseModeRemainder]
+  calc
+    ‖cavityChangeMatrixInv.mulVec
+        (cavityChangeMatrix.mulVec (cavityRemainder path s))‖ ≤
+        6 * ‖cavityChangeMatrix.mulVec (cavityRemainder path s)‖ :=
+      cavityChangeMatrixInv_mulVec_norm_le _
+    _ ≤ 6 * (C * cavityErrorScale path s) :=
+      mul_le_mul_of_nonneg_left (hC hN hK hq hs path) (by norm_num)
+    _ = (6 * C) * cavityErrorScale path s := by ring
 end SpinGlass.AT
