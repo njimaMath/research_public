@@ -753,4 +753,419 @@ lemma fderiv_gtHalfBaseWeight_apply
   rw [hcancel]
   ring
 
+lemma continuous_gtHalfBaseDenominator
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) :
+    Continuous (gtHalfBaseDenominator V L) := by
+  exact continuous_iff_continuousAt.2 fun H =>
+    (hasFDerivAt_gtHalfBaseDenominator V L H).continuousAt
+
+lemma continuous_gtHalfBaseNumerator
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) (ξ : S) :
+    Continuous (fun H => gtHalfBaseNumerator V L H ξ) := by
+  exact continuous_iff_continuousAt.2 fun H =>
+    (hasFDerivAt_gtHalfBaseNumerator V L H ξ).continuousAt
+
+lemma continuous_gtHalfBasePairNumerator
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) (ξ η : S) :
+    Continuous (fun H => gtHalfBasePairNumerator V L H ξ η) := by
+  rw [continuous_iff_continuousAt]
+  intro H
+  let bound : (I → ℝ) → ℝ := fun z =>
+    Real.exp ((hasModerateGrowth_gtStateLogPartition V).C *
+      (2 + ‖L‖ + ‖H‖) *
+        (1 + ‖(WithLp.toLp 2 z : EuclideanSpace ℝ I)‖))
+  apply MeasureTheory.continuousAt_of_dominated
+  · filter_upwards with H'
+    exact (integrable_gtHalfBasePairNumerator_integrand V L H' ξ η).1
+  · filter_upwards [Metric.ball_mem_nhds H one_pos] with H' hH'
+    filter_upwards with z
+    have hnear : ‖H' - H‖ < 1 := by
+      simpa [Metric.mem_ball, dist_eq_norm] using hH'
+    have hd := gtHalfBaseDensity_affine_local_bound V L H H'
+      (WithLp.toLp 2 z) hnear
+    have hξ0 := gtStateGibbs_nonneg V (L (WithLp.toLp 2 z) + H') ξ
+    have hξ1 := gtStateGibbs_le_one V (L (WithLp.toLp 2 z) + H') ξ
+    have hη0 := gtStateGibbs_nonneg V (L (WithLp.toLp 2 z) + H') η
+    have hη1 := gtStateGibbs_le_one V (L (WithLp.toLp 2 z) + H') η
+    rw [Real.norm_eq_abs, abs_mul, abs_mul,
+      abs_of_nonneg (gtHalfBaseDensity_pos V _).le,
+      abs_of_nonneg hξ0, abs_of_nonneg hη0]
+    calc
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H') *
+          (gtStateGibbs V (L (WithLp.toLp 2 z) + H') ξ *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H') η) ≤
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H') * 1 := by
+          apply mul_le_mul_of_nonneg_left _
+            (gtHalfBaseDensity_pos V (L (WithLp.toLp 2 z) + H')).le
+          calc
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H') ξ *
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H') η ≤
+              1 * gtStateGibbs V (L (WithLp.toLp 2 z) + H') η :=
+                mul_le_mul_of_nonneg_right hξ1 hη0
+            _ ≤ 1 := by simpa using hη1
+      _ = gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H') := mul_one _
+      _ ≤ bound z := hd
+  · exact integrable_gtHalfBaseDensity_affine_local_bound V L H
+  · filter_upwards with z
+    exact (((contDiff_gtHalfBaseDensity V).continuous.comp (by fun_prop)).mul
+      (((contDiff_gtStateGibbs V ξ).continuous.comp (by fun_prop)).mul
+        ((contDiff_gtStateGibbs V η).continuous.comp (by fun_prop)))).continuousAt
+
+lemma continuous_gtHalfBaseWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) (ξ : S) :
+    Continuous (fun H => gtHalfBaseWeight V L H ξ) := by
+  unfold gtHalfBaseWeight
+  exact (continuous_gtHalfBaseNumerator V L ξ).div
+    (continuous_gtHalfBaseDenominator V L)
+    (fun H => (gtHalfBaseDenominator_pos V L H).ne')
+
+lemma continuous_gtHalfBasePairWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) (ξ η : S) :
+    Continuous (fun H => gtHalfBasePairWeight V L H ξ η) := by
+  unfold gtHalfBasePairWeight
+  exact (continuous_gtHalfBasePairNumerator V L ξ η).div
+    (continuous_gtHalfBaseDenominator V L)
+    (fun H => (gtHalfBaseDenominator_pos V L H).ne')
+
+lemma contDiff_gtHalfBaseWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) (ξ : S) :
+    ContDiff ℝ 1 (fun H => gtHalfBaseWeight V L H ξ) := by
+  classical
+  rw [contDiff_one_iff_fderiv]
+  refine ⟨fun H => (hasFDerivAt_gtHalfBaseWeight V L H ξ).differentiableAt, ?_⟩
+  change Continuous (fun H =>
+    fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) H)
+  rw [show (fun H => fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) H) =
+      fun H => ∑ κ : S,
+        (gtHalfBaseWeight V L H ξ * (if κ = ξ then 1 else 0) -
+          (1 / 2 : ℝ) * gtHalfBasePairWeight V L H ξ κ -
+          (1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+            gtHalfBaseWeight V L H κ) •
+          (EuclideanSpace.proj κ : GTStateSpace S →L[ℝ] ℝ) by
+    funext H
+    ext K
+    rw [fderiv_gtHalfBaseWeight_apply]
+    simp only [ContinuousLinearMap.sum_apply, ContinuousLinearMap.smul_apply,
+      smul_eq_mul]
+    simp_rw [sub_mul]
+    rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib]
+    simp only [PiLp.proj_apply, ite_mul, one_mul, zero_mul,
+      Finset.sum_ite_eq', Finset.mem_univ, if_true]
+    simp_rw [mul_assoc]
+    rw [← Finset.mul_sum, ← Finset.mul_sum]
+    have hite : (∑ x : S, (if x = ξ then (1 : ℝ) else 0) * K x) = K ξ := by
+      rw [Finset.sum_eq_single ξ]
+      · simp
+      · intro b hb hbξ
+        simp [hbξ]
+      · simp
+    rw [hite]
+    have hsum :
+        (∑ x : S, (1 / 2 : ℝ) *
+          (gtHalfBaseWeight V L H ξ *
+            (gtHalfBaseWeight V L H x * K x))) =
+        (1 / 2 : ℝ) * (gtHalfBaseWeight V L H ξ *
+          ∑ x : S, gtHalfBaseWeight V L H x * K x) := by
+      rw [show (1 / 2 : ℝ) * (gtHalfBaseWeight V L H ξ *
+          ∑ x : S, gtHalfBaseWeight V L H x * K x) =
+        ((1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ) *
+          ∑ x : S, gtHalfBaseWeight V L H x * K x by ring]
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro x hx
+      ring
+    rw [hsum]]
+  apply continuous_finset_sum
+  intro κ hκ
+  have hc : Continuous (fun H =>
+      gtHalfBaseWeight V L H ξ * (if κ = ξ then 1 else 0) -
+        (1 / 2 : ℝ) * gtHalfBasePairWeight V L H ξ κ -
+        (1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+          gtHalfBaseWeight V L H κ) :=
+    ((((continuous_gtHalfBaseWeight V L ξ).mul continuous_const).sub
+    (continuous_const.mul (continuous_gtHalfBasePairWeight V L ξ κ))).sub
+      ((continuous_const.mul (continuous_gtHalfBaseWeight V L ξ)).mul
+        (continuous_gtHalfBaseWeight V L κ)))
+  exact hc.smul continuous_const
+
+lemma gtHalfBaseWeight_nonneg
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ : S) : 0 ≤ gtHalfBaseWeight V L H ξ := by
+  unfold gtHalfBaseWeight gtHalfBaseNumerator
+  exact div_nonneg (integral_nonneg fun z =>
+    mul_nonneg (gtHalfBaseDensity_pos V _).le (gtStateGibbs_nonneg V _ ξ))
+    (gtHalfBaseDenominator_pos V L H).le
+
+lemma sum_gtHalfBaseWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) : ∑ ξ : S, gtHalfBaseWeight V L H ξ = 1 := by
+  classical
+  unfold gtHalfBaseWeight gtHalfBaseNumerator
+  rw [← Finset.sum_div, ← integral_finset_sum]
+  · simp_rw [← Finset.mul_sum, sum_gtStateGibbs, mul_one]
+    exact div_self (gtHalfBaseDenominator_pos V L H).ne'
+  · intro ξ hξ
+    exact integrable_gtHalfBaseNumerator_integrand V L H ξ
+
+lemma gtHalfBasePairWeight_nonneg
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ η : S) : 0 ≤ gtHalfBasePairWeight V L H ξ η := by
+  unfold gtHalfBasePairWeight gtHalfBasePairNumerator
+  exact div_nonneg (integral_nonneg fun z =>
+    mul_nonneg (gtHalfBaseDensity_pos V _).le
+      (mul_nonneg (gtStateGibbs_nonneg V _ ξ) (gtStateGibbs_nonneg V _ η)))
+    (gtHalfBaseDenominator_pos V L H).le
+
+lemma sum_gtHalfBasePairWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) :
+    ∑ ξ : S, ∑ η : S, gtHalfBasePairWeight V L H ξ η = 1 := by
+  classical
+  unfold gtHalfBasePairWeight gtHalfBasePairNumerator
+  simp_rw [← Finset.sum_div]
+  rw [div_eq_iff (gtHalfBaseDenominator_pos V L H).ne']
+  simp only [one_mul]
+  rw [Finset.sum_comm]
+  calc
+    (∑ η : S, ∑ ξ : S, ∫ z : I → ℝ,
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+      ∑ η : S, ∫ z : I → ℝ, ∑ ξ : S,
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1) := by
+          apply Finset.sum_congr rfl
+          intro η hη
+          rw [integral_finset_sum]
+          intro ξ hξ
+          exact integrable_gtHalfBasePairNumerator_integrand V L H ξ η
+    _ = ∫ z : I → ℝ, ∑ η : S, ∑ ξ : S,
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1) := by
+          rw [integral_finset_sum]
+          intro η hη
+          exact integrable_finset_sum _ fun ξ hξ =>
+            integrable_gtHalfBasePairNumerator_integrand V L H ξ η
+    _ = gtHalfBaseDenominator V L H := by
+      unfold gtHalfBaseDenominator
+      apply integral_congr_ae
+      filter_upwards with z
+      have hinner (η : S) :
+          (∑ ξ : S, gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+            (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)) =
+            gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η := by
+        rw [show (∑ ξ : S, gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)) =
+            (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η) *
+                ∑ ξ : S, gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ by
+          rw [Finset.mul_sum]
+          apply Finset.sum_congr rfl
+          intro ξ hξ
+          ring]
+        rw [sum_gtStateGibbs, mul_one]
+      simp_rw [hinner]
+      rw [← Finset.mul_sum, sum_gtStateGibbs, mul_one]
+
+lemma gtHalfBaseWeight_le_one
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ : S) : gtHalfBaseWeight V L H ξ ≤ 1 := by
+  rw [← sum_gtHalfBaseWeight V L H]
+  exact Finset.single_le_sum (fun η hη => gtHalfBaseWeight_nonneg V L H η)
+    (Finset.mem_univ ξ)
+
+lemma gtHalfBasePairWeight_le_one
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ η : S) : gtHalfBasePairWeight V L H ξ η ≤ 1 := by
+  rw [← sum_gtHalfBasePairWeight V L H]
+  calc
+    gtHalfBasePairWeight V L H ξ η ≤
+        ∑ η' : S, gtHalfBasePairWeight V L H ξ η' :=
+      Finset.single_le_sum (fun η' hη' => gtHalfBasePairWeight_nonneg V L H ξ η')
+        (Finset.mem_univ η)
+    _ ≤ ∑ ξ' : S, ∑ η' : S, gtHalfBasePairWeight V L H ξ' η' :=
+      Finset.single_le_sum (fun ξ' hξ' => Finset.sum_nonneg fun η' hη' =>
+        gtHalfBasePairWeight_nonneg V L H ξ' η') (Finset.mem_univ ξ)
+
+lemma norm_fderiv_gtHalfBaseWeight_le_two
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ : S) :
+    ‖fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) H‖ ≤ 2 := by
+  classical
+  apply ContinuousLinearMap.opNorm_le_bound _ (by norm_num)
+  intro K
+  rw [Real.norm_eq_abs, fderiv_gtHalfBaseWeight_apply]
+  have hcoord (η : S) : |K η| ≤ ‖K‖ := by
+    simpa [Real.norm_eq_abs] using PiLp.norm_apply_le (p := (2 : ENNReal)) K η
+  have hwavg : |∑ η : S, gtHalfBaseWeight V L H η * K η| ≤ ‖K‖ := by
+    calc
+      |∑ η : S, gtHalfBaseWeight V L H η * K η| ≤
+          ∑ η : S, |gtHalfBaseWeight V L H η * K η| :=
+        Finset.abs_sum_le_sum_abs _ _
+      _ = ∑ η : S, gtHalfBaseWeight V L H η * |K η| := by
+        apply Finset.sum_congr rfl
+        intro η hη
+        rw [abs_mul, abs_of_nonneg (gtHalfBaseWeight_nonneg V L H η)]
+      _ ≤ ∑ η : S, gtHalfBaseWeight V L H η * ‖K‖ := by
+        exact Finset.sum_le_sum fun η hη =>
+          mul_le_mul_of_nonneg_left (hcoord η) (gtHalfBaseWeight_nonneg V L H η)
+      _ = ‖K‖ := by rw [← Finset.sum_mul, sum_gtHalfBaseWeight, one_mul]
+  have hpavg : |∑ η : S, gtHalfBasePairWeight V L H ξ η * K η| ≤ ‖K‖ := by
+    have hrow : ∑ η : S, gtHalfBasePairWeight V L H ξ η ≤ 1 := by
+      rw [← sum_gtHalfBasePairWeight V L H]
+      exact Finset.single_le_sum (fun ξ' hξ' => Finset.sum_nonneg fun η hη =>
+        gtHalfBasePairWeight_nonneg V L H ξ' η) (Finset.mem_univ ξ)
+    calc
+      |∑ η : S, gtHalfBasePairWeight V L H ξ η * K η| ≤
+          ∑ η : S, |gtHalfBasePairWeight V L H ξ η * K η| :=
+        Finset.abs_sum_le_sum_abs _ _
+      _ = ∑ η : S, gtHalfBasePairWeight V L H ξ η * |K η| := by
+        apply Finset.sum_congr rfl
+        intro η hη
+        rw [abs_mul, abs_of_nonneg (gtHalfBasePairWeight_nonneg V L H ξ η)]
+      _ ≤ ∑ η : S, gtHalfBasePairWeight V L H ξ η * ‖K‖ := by
+        exact Finset.sum_le_sum fun η hη =>
+          mul_le_mul_of_nonneg_left (hcoord η)
+            (gtHalfBasePairWeight_nonneg V L H ξ η)
+      _ = (∑ η : S, gtHalfBasePairWeight V L H ξ η) * ‖K‖ :=
+        (Finset.sum_mul ..).symm
+      _ ≤ ‖K‖ := by
+        simpa using mul_le_mul_of_nonneg_right hrow (norm_nonneg K)
+  have hw0 := gtHalfBaseWeight_nonneg V L H ξ
+  have hw1 := gtHalfBaseWeight_le_one V L H ξ
+  calc
+    |gtHalfBaseWeight V L H ξ * K ξ -
+        (1 / 2 : ℝ) * ∑ η : S, gtHalfBasePairWeight V L H ξ η * K η -
+        (1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+          ∑ η : S, gtHalfBaseWeight V L H η * K η| ≤
+      |gtHalfBaseWeight V L H ξ * K ξ| +
+        |(1 / 2 : ℝ) * ∑ η : S, gtHalfBasePairWeight V L H ξ η * K η| +
+        |(1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+          ∑ η : S, gtHalfBaseWeight V L H η * K η| := by
+            exact (abs_sub _ _).trans (add_le_add (abs_sub _ _) le_rfl)
+    _ ≤ ‖K‖ + (1 / 2 : ℝ) * ‖K‖ + (1 / 2 : ℝ) * ‖K‖ := by
+      rw [abs_mul, abs_mul, abs_mul, abs_mul,
+        abs_of_nonneg hw0, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
+      have ht1 : gtHalfBaseWeight V L H ξ * |K ξ| ≤ ‖K‖ := by
+        calc
+          gtHalfBaseWeight V L H ξ * |K ξ| ≤ 1 * |K ξ| :=
+            mul_le_mul_of_nonneg_right hw1 (abs_nonneg _)
+          _ ≤ ‖K‖ := by simpa using hcoord ξ
+      have ht2 : (1 / 2 : ℝ) *
+          |∑ η : S, gtHalfBasePairWeight V L H ξ η * K η| ≤
+          (1 / 2 : ℝ) * ‖K‖ := mul_le_mul_of_nonneg_left hpavg (by norm_num)
+      have ht3 : (1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+          |∑ η : S, gtHalfBaseWeight V L H η * K η| ≤
+          (1 / 2 : ℝ) * ‖K‖ := by
+        calc
+          (1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+              |∑ η : S, gtHalfBaseWeight V L H η * K η| ≤
+            (1 / 2 : ℝ) * 1 *
+              |∑ η : S, gtHalfBaseWeight V L H η * K η| := by
+                gcongr
+          _ ≤ (1 / 2 : ℝ) * ‖K‖ := by
+            simpa using mul_le_mul_of_nonneg_left hwavg (by norm_num : (0 : ℝ) ≤ 1 / 2)
+      exact add_le_add (add_le_add ht1 ht2) ht3
+    _ = 2 * ‖K‖ := by ring
+
+noncomputable def hasModerateGrowth_gtHalfBaseWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S) (ξ : S) :
+    PhysLean.Probability.GaussianIBP.HasModerateGrowth
+      (fun H => gtHalfBaseWeight V L H ξ) := by
+  refine ⟨3, 0, by norm_num, ?_, ?_⟩
+  · intro H
+    rw [pow_zero, mul_one, abs_of_nonneg (gtHalfBaseWeight_nonneg V L H ξ)]
+    exact (gtHalfBaseWeight_le_one V L H ξ).trans (by norm_num)
+  · intro H
+    rw [pow_zero, mul_one]
+    exact (norm_fderiv_gtHalfBaseWeight_le_two V L H ξ).trans (by norm_num)
+
+noncomputable def hasModerateGrowth_gtHalfBaseWeight_comp
+    {S I J : Type*} [Fintype S] [Nonempty S] [Fintype I] [Fintype J]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (M : EuclideanSpace ℝ J →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ : S) :
+    PhysLean.Probability.GaussianIBP.HasModerateGrowth
+      (fun z => gtHalfBaseWeight V L (M z + H) ξ) := by
+  let C : ℝ := 3 * (‖M‖ + 1)
+  refine ⟨C, 0, by dsimp [C]; positivity, ?_, ?_⟩
+  · intro z
+    rw [pow_zero, mul_one, abs_of_nonneg (gtHalfBaseWeight_nonneg V L _ ξ)]
+    calc
+      gtHalfBaseWeight V L (M z + H) ξ ≤ 1 := gtHalfBaseWeight_le_one V L _ ξ
+      _ ≤ C := by dsimp [C]; nlinarith [norm_nonneg M]
+  · intro z
+    have hg := hasFDerivAt_gtHalfBaseWeight V L (M z + H) ξ
+    have hc := hg.comp z (M.hasFDerivAt.add_const H)
+    have hf := hc.fderiv
+    change fderiv ℝ (fun z => gtHalfBaseWeight V L (M z + H) ξ) z = _ at hf
+    rw [hf, pow_zero, mul_one]
+    calc
+      ‖(fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) (M z + H)).comp M‖ ≤
+          ‖fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) (M z + H)‖ * ‖M‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ 2 * ‖M‖ := by
+        gcongr
+        exact norm_fderiv_gtHalfBaseWeight_le_two V L (M z + H) ξ
+      _ ≤ C := by dsimp [C]; nlinarith [norm_nonneg M]
+
+/-- Directional Stein identity for a half-mass averaged Gibbs coordinate in
+an affine outer Gaussian field. -/
+lemma gtHalfBaseWeight_stein
+    {S I J : Type*} [Fintype S] [Nonempty S] [Fintype I] [Fintype J]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (M : EuclideanSpace ℝ J →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (a : EuclideanSpace ℝ J) (ξ : S) :
+    (∫ z : J → ℝ,
+        inner ℝ (WithLp.toLp 2 z : EuclideanSpace ℝ J) a *
+          gtHalfBaseWeight V L (M (WithLp.toLp 2 z) + H) ξ
+        ∂Measure.pi (fun _ : J => gaussianReal 0 1)) =
+      ∫ z : J → ℝ,
+        (gtHalfBaseWeight V L (M (WithLp.toLp 2 z) + H) ξ * (M a) ξ -
+          (1 / 2 : ℝ) * ∑ η : S,
+            gtHalfBasePairWeight V L (M (WithLp.toLp 2 z) + H) ξ η * (M a) η -
+          (1 / 2 : ℝ) * gtHalfBaseWeight V L (M (WithLp.toLp 2 z) + H) ξ *
+            ∑ η : S,
+              gtHalfBaseWeight V L (M (WithLp.toLp 2 z) + H) η * (M a) η)
+        ∂Measure.pi (fun _ : J => gaussianReal 0 1) := by
+  let F : EuclideanSpace ℝ J → ℝ := fun z =>
+    gtHalfBaseWeight V L (M z + H) ξ
+  have hFdiff : ContDiff ℝ 1 F :=
+    (contDiff_gtHalfBaseWeight V L ξ).comp
+      (M.contDiff.add (contDiff_const : ContDiff ℝ 1
+        (fun _ : EuclideanSpace ℝ J => H)))
+  have hibp := gaussianProduct_stein_inner a F hFdiff
+    (hasModerateGrowth_gtHalfBaseWeight_comp V L M H ξ)
+  rw [hibp]
+  apply integral_congr_ae
+  filter_upwards with z
+  have hg := hasFDerivAt_gtHalfBaseWeight V L (M (WithLp.toLp 2 z) + H) ξ
+  have hc := hg.comp (WithLp.toLp 2 z) (M.hasFDerivAt.add_const H)
+  have hf := hc.fderiv
+  change fderiv ℝ F (WithLp.toLp 2 z) = _ at hf
+  rw [hf]
+  exact fderiv_gtHalfBaseWeight_apply V L (M (WithLp.toLp 2 z) + H) (M a) ξ
+
 end SpinGlass.AT
