@@ -1293,10 +1293,13 @@ lemma gtHalfBase_inner_stein
     simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply,
       smul_eq_mul]
     rw [fderiv_gtHalfBaseDensity_mul_gibbs_apply]
-    change D⁻¹ * _ = _
-    have hkL : L ((PiLp.continuousLinearEquiv 2 ℝ (fun _ : I => ℝ)).symm k) =
-        L (WithLp.toLp 2 k : EuclideanSpace ℝ I) := rfl
-    rw [hkL]
+    change D⁻¹ *
+        (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            ((L (WithLp.toLp 2 k)) ξ -
+              (1 / 2 : ℝ) * ∑ η : S,
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H) η *
+                  (L (WithLp.toLp 2 k)) η)) = _
     ring
   have hderiv (z : I → ℝ) (i : I) :
       |fderiv ℝ hfun z (Pi.single i 1)| ≤
@@ -1393,9 +1396,9 @@ lemma gtHalfBase_inner_stein
                 exact hvalue z
           _ = |(|a i| * C) *
               (|z i| * Real.exp (c * ∑ j : I, |z j|))| := by
-                rw [abs_of_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) hC0)
-                  (mul_nonneg (abs_nonneg _) (Real.exp_pos _).le)))]
-                ring
+                have hnon : 0 ≤ (|a i| * C) *
+                    (|z i| * Real.exp (c * ∑ j : I, |z j|)) := by positivity
+                exact (abs_of_nonneg hnon).symm
   simp_rw [hcoord]
   simp_rw [← integral_const_mul]
   rw [← integral_finset_sum]
