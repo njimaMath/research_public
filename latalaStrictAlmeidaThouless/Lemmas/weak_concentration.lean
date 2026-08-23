@@ -263,8 +263,15 @@ theorem quadraticCoupledPressure_sublinear
       zero_mul, zero_add, Real.log_one, Real.sqrt_zero]
     simpa using rsPathValue_nonneg beta h (rsQ beta h) s
   · have hNpos : 0 < N := Nat.pos_of_ne_zero hN
+    have hβ : 0 < beta := by
+      simpa using data.β_pos (beta, h) hp
+    have hh : 0 < h := by
+      simpa using data.h_pos (beta, h) hp
     let I := {v : ℝ // v ∈ attainableOverlaps N}
     let q := rsQ beta h
+    have hq : q ∈ Set.Ioo (0 : ℝ) 1 := by
+      dsimp [q]
+      exact ⟨rsQ_pos hβ hh, rsQ_lt_one hβ hh⟩
     let P := rsPathValue beta h q s.1
     let F : I → Omega → ℝ := fun v omega =>
       Real.log (constrainedPartition
@@ -277,7 +284,7 @@ theorem quadraticCoupledPressure_sublinear
         attainableOverlap_mem_Icc hNpos v.2
       obtain ⟨lam, hlam, hflat⟩ :=
         hgap hp rfl s.2 hvIcc
-      have hgt := twoReplica_GT_bound path lam hNpos s.2 v.2
+      have hgt := twoReplica_GT_bound path lam hNpos hβ hh hq s.2 v.2
       have hcombined := hgt.trans hflat
       unfold expectedConstrainedFreeEnergy at hcombined
       have hNr : 0 < (N : ℝ) := by exact_mod_cast hNpos

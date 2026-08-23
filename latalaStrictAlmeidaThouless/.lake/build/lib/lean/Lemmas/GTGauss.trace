@@ -108,8 +108,8 @@
      [["LatalaMeetsAT/LatalaMeetsAT:extraDep",
        [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
       ["imports",
-       [["Lemmas.ATDefs transitive imports (legacy)", "c5787a0e24346019"],
-        ["Lemmas.ATDefs:importAllArts", "d1fc3ec495b0bea1"],
+       [["Lemmas.ATDefs transitive imports (legacy)", "8b3934e56f80bc5b"],
+        ["Lemmas.ATDefs:importAllArts", "93ec615659c4d976"],
         ["Mathlib.Analysis.Calculus.ParametricIntegral transitive imports (legacy)",
          "7d107f4a5140e299"],
         ["Mathlib.Analysis.Calculus.ParametricIntegral:importAllArts",
@@ -128,4 +128,4 @@
   ["Module.name: Lemmas.GTGauss", "d54f178306bd021f"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "b93bb54e6acb4435"}
+ "depHash": "6b37e2d53901b2ad"}

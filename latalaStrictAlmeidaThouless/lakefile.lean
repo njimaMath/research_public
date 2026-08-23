@@ -21,7 +21,7 @@ lean_lib LatalaMeetsAT where
     .one `SpinGlass.GuerraBound,
     .one `SpinGlass.Calculus,
     .one `SpinGlass.Replicas,
-    .submodules `SpinGlassAT,
+    .submodules `SpinGlass.AT,
     .submodules `Lemmas,
     .one `Latala_AT
   ]

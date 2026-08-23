@@ -24,6 +24,9 @@ theorem twoReplica_GT_bound
     (path : RSSmartPathDisorder Ω N β h q)
     (lam : ℝ)
     (hN : 0 < N)
+    (hβ : 0 < β)
+    (hh : 0 < h)
+    (hq : q ∈ Set.Ioo (0 : ℝ) 1)
     (hs : s ∈ Set.Icc (0 : ℝ) 1)
     (hv : v ∈ attainableOverlaps N) :
     expectedConstrainedFreeEnergy path s v ≤

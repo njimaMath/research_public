@@ -1,1 +1,1 @@
-import SpinGlassAT.Calculus
+import SpinGlass.AT.Calculus

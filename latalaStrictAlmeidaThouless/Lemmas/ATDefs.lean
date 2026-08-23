@@ -1,5 +1,5 @@
 import Lemmas.fixed_point
-import SpinGlassAT.SKModel
+import SpinGlass.AT.SKModel
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ProbabilityTheory NNReal

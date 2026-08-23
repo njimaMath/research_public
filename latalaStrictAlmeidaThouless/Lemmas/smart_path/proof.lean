@@ -1,6 +1,6 @@
-import SpinGlassAT.SKModel
-import SpinGlassAT.Calculus
-import SpinGlassAT.GuerraBound
+import SpinGlass.AT.SKModel
+import SpinGlass.AT.Calculus
+import SpinGlass.AT.GuerraBound
 import Lemmas.smart_path.KS_inequality
 import Lemmas.smart_path.IndependentEndpoint
 import Lemmas.smart_path.IndependentGaussianAffineIBP

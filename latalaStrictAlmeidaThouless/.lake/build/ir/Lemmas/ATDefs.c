@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Lemmas.ATDefs
-// Imports: public import Init public meta import Init public import Lemmas.fixed_point public import SpinGlassAT.SKModel
+// Imports: public import Init public meta import Init public import Lemmas.fixed_point public import SpinGlass.AT.SKModel
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -1373,7 +1373,7 @@ return v_res_425_;
 lean_object* initialize_Init(uint8_t builtin);
 lean_object* initialize_Init(uint8_t builtin);
 lean_object* initialize_LatalaMeetsAT_Lemmas_fixed__point(uint8_t builtin);
-lean_object* initialize_LatalaMeetsAT_SpinGlassAT_SKModel(uint8_t builtin);
+lean_object* initialize_LatalaMeetsAT_SpinGlass_AT_SKModel(uint8_t builtin);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_LatalaMeetsAT_Lemmas_ATDefs(uint8_t builtin) {
 lean_object * res;
@@ -1388,7 +1388,7 @@ lean_dec_ref(res);
 res = initialize_LatalaMeetsAT_Lemmas_fixed__point(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_LatalaMeetsAT_SpinGlassAT_SKModel(builtin);
+res = initialize_LatalaMeetsAT_SpinGlass_AT_SKModel(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));

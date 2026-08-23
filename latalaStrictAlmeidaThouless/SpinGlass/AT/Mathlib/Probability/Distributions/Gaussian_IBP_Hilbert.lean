@@ -7,7 +7,7 @@ Authors: Matteo Cipollina
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Data.Real.CompleteField
-import SpinGlassAT.Mathlib.Probability.Distributions.GaussianIntegrationByParts
+import SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts
 
 /-!
 # Gaussian Integration by Parts on a real Hilbert space (finite-dimensional, covariant form)

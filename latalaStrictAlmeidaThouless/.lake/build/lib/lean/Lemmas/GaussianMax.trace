@@ -1,10 +1,10 @@
 {"synthetic": false,
  "schemaVersion": "2025-09-10",
  "outputs":
- {"o": ["c7c255a7876bbc42.olean"],
+ {"o": ["71cc9c62f36cefbb.olean"],
   "m": false,
-  "i": "c3a21aa62e3fc756.ilean",
-  "c": "c3d6ad820ac3a8e2.c"},
+  "i": "20403c5139e482fa.ilean",
+  "c": "82602a3d8bca9706.c"},
  "log":
  [{"message":
    ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\GaussianMax.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GaussianMax.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GaussianMax.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\GaussianMax.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\GaussianMax.setup.json --json",
@@ -15,10 +15,10 @@
      [["LatalaMeetsAT/LatalaMeetsAT:extraDep",
        [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
       ["imports",
-       [["SpinGlassAT.Gaussian_concentration.gaussian_concentration transitive imports (legacy)",
+       [["SpinGlass.AT.Gaussian_concentration.gaussian_concentration transitive imports (legacy)",
          "b2d94a9152e1b4f2"],
-        ["SpinGlassAT.Gaussian_concentration.gaussian_concentration:importAllArts",
-         "42fec91fb7636f43"],
+        ["SpinGlass.AT.Gaussian_concentration.gaussian_concentration:importAllArts",
+         "a54fd0cb6c567f7b"],
         ["Mathlib.Analysis.Convex.Integral transitive imports (legacy)",
          "7bbb429e9bb2e45a"],
         ["Mathlib.Analysis.Convex.Integral:importAllArts",
@@ -31,10 +31,10 @@
   ["Lean 4.32.1, commit f054605aea4b840552cca2e725580bffd1e1b704",
    "4ce1780d8d26fd00"],
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\GaussianMax.lean",
-   "f52ecd1d6f3f2173"],
+   "4827c03fab55bd74"],
   ["options", "00000000000006bb"],
   ["isModule: false", "feefd2a0d3a1847e"],
   ["Module.name: Lemmas.GaussianMax", "3d3a373bc25410cd"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "3f4e1fb6c43de5d5"}
+ "depHash": "2dbfceb26702e759"}

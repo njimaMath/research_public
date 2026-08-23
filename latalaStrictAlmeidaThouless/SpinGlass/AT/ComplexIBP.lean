@@ -4,7 +4,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.Topology.MetricSpace.Lipschitz
-import SpinGlassAT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
+import SpinGlass.AT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
 
 /-!
 # Complex integration-by-parts tools (Arguin–Tai Lemma `lem: by parts`)

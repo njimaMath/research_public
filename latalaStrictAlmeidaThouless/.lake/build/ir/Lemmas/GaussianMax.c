@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Lemmas.GaussianMax
-// Imports: public import Init public meta import Init public import SpinGlassAT.Gaussian_concentration.gaussian_concentration public import Mathlib.Analysis.Convex.Integral
+// Imports: public import Init public meta import Init public import SpinGlass.AT.Gaussian_concentration.gaussian_concentration public import Mathlib.Analysis.Convex.Integral
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -15,7 +15,7 @@ extern "C" {
 #endif
 lean_object* initialize_Init(uint8_t builtin);
 lean_object* initialize_Init(uint8_t builtin);
-lean_object* initialize_LatalaMeetsAT_SpinGlassAT_Gaussian__concentration_gaussian__concentration(uint8_t builtin);
+lean_object* initialize_LatalaMeetsAT_SpinGlass_AT_Gaussian__concentration_gaussian__concentration(uint8_t builtin);
 lean_object* initialize_mathlib_Mathlib_Analysis_Convex_Integral(uint8_t builtin);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_LatalaMeetsAT_Lemmas_GaussianMax(uint8_t builtin) {
@@ -28,7 +28,7 @@ lean_dec_ref(res);
 res = initialize_Init(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_LatalaMeetsAT_SpinGlassAT_Gaussian__concentration_gaussian__concentration(builtin);
+res = initialize_LatalaMeetsAT_SpinGlass_AT_Gaussian__concentration_gaussian__concentration(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_mathlib_Mathlib_Analysis_Convex_Integral(builtin);

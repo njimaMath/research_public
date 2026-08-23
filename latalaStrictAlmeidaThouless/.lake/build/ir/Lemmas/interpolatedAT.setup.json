@@ -4,14 +4,14 @@
  "name": "Lemmas.interpolatedAT",
  "isModule": false,
  "importArts":
- {"SpinGlassAT.SKModel":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlassAT\\SKModel.olean"],
-  "SpinGlassAT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlassAT\\Mathlib\\Probability\\Distributions\\Gaussian_IBP_Hilbert.olean"],
-  "SpinGlassAT.Mathlib.Probability.Distributions.GaussianIntegrationByParts":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlassAT\\Mathlib\\Probability\\Distributions\\GaussianIntegrationByParts.olean"],
-  "SpinGlassAT.Defs":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlassAT\\Defs.olean"],
+ {"SpinGlass.AT.SKModel":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\SKModel.olean"],
+  "SpinGlass.AT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\Gaussian_IBP_Hilbert.olean"],
+  "SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\GaussianIntegrationByParts.olean"],
+  "SpinGlass.AT.Defs":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Defs.olean"],
   "Qq.Typ":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.ir",

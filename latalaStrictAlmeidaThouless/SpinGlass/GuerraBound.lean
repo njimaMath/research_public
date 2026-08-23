@@ -1,1 +1,1 @@
-import SpinGlassAT.GuerraBound
+import SpinGlass.AT.GuerraBound

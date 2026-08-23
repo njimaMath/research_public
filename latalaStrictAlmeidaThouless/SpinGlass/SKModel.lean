@@ -1,1 +1,1 @@
-import SpinGlassAT.SKModel
+import SpinGlass.AT.SKModel

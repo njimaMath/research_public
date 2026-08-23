@@ -1,4 +1,4 @@
-import SpinGlassAT.SKModel
+import SpinGlass.AT.SKModel
 import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 

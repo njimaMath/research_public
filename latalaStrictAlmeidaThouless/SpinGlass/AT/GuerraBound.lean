@@ -1,4 +1,4 @@
-import SpinGlassAT.Algebra
+import SpinGlass.AT.Algebra
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 

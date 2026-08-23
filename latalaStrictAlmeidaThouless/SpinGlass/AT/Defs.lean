@@ -1,4 +1,4 @@
-import SpinGlassAT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
+import SpinGlass.AT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Inv

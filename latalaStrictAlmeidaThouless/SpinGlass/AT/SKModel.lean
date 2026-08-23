@@ -1,5 +1,5 @@
-import SpinGlassAT.Defs
-import SpinGlassAT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
+import SpinGlass.AT.Defs
+import SpinGlass.AT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology
 open PhysLean.Probability.GaussianIBP

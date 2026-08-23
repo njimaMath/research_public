@@ -1,6 +1,8 @@
 import Lemmas.ATDefs
 import SpinGlass.Replicas
 import Lemmas.smart_path.IndependentGaussianAffineIBP
+import Lemmas.smart_path.IndependentEndpoint
+import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ProbabilityTheory NNReal
@@ -386,6 +388,68 @@ lemma simple_basis_covariance_sum
     real_inner_comm] at hcov
   simpa [mul_assoc, mul_left_comm, mul_comm] using hcov
 
+/-- Covariance of two continuous linear observations of a Gaussian Hilbert
+random variable, expressed in its finite independent-coordinate model. -/
+lemma gaussianHilbert_covariance_clm
+    {Ω H : Type*} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    {g : Ω → H} (hg : PhysLean.Probability.GaussianIBP.IsGaussianHilbert g)
+    (L₁ L₂ : H →L[ℝ] ℝ) :
+    covariance (fun ω => L₁ (g ω)) (fun ω => L₂ (g ω)) volume =
+      ∑ k : hg.ι, (hg.τ k : ℝ) * L₁ (hg.w k) * L₂ (hg.w k) := by
+  classical
+  have hcLaw (k : hg.ι) : HasGaussianLaw (hg.c k) volume :=
+    HasLaw.hasGaussianLaw
+      (HasLaw.mk (P := volume) (hg.c_meas k).aemeasurable (hg.c_gauss k))
+  have hcMem (k : hg.ι) : MemLp (hg.c k) 2 volume := (hcLaw k).memLp_two
+  have hcov (k l : hg.ι) :
+      covariance (hg.c k) (hg.c l) volume =
+        if k = l then (hg.τ k : ℝ) else 0 := by
+    by_cases hkl : k = l
+    · subst l
+      rw [if_pos rfl, covariance_self (hg.c_meas k).aemeasurable]
+      have hv := (HasLaw.mk (P := volume) (hg.c_meas k).aemeasurable
+        (hg.c_gauss k)).variance_eq
+      simpa [variance_id_gaussianReal] using hv
+    · rw [if_neg hkl]
+      exact (hg.c_indep.indepFun hkl).covariance_eq_zero (hcMem k) (hcMem l)
+  have hL₁ : (fun ω => L₁ (g ω)) =
+      fun ω => ∑ k : hg.ι, L₁ (hg.w k) * hg.c k ω := by
+    funext ω
+    rw [congrFun hg.repr ω]
+    simp [mul_comm]
+  have hL₂ : (fun ω => L₂ (g ω)) =
+      fun ω => ∑ k : hg.ι, L₂ (hg.w k) * hg.c k ω := by
+    funext ω
+    rw [congrFun hg.repr ω]
+    simp [mul_comm]
+  rw [hL₁, hL₂, covariance_fun_sum_fun_sum]
+  · simp_rw [covariance_const_mul_left, covariance_const_mul_right, hcov]
+    simp [mul_left_comm, mul_comm]
+  · intro k
+    exact (hcMem k).const_mul _
+  · intro k
+    exact (hcMem k).const_mul _
+
+/-- The abstract covariance operator of the simple disorder agrees with the
+probabilistic covariance of point evaluations. -/
+lemma simple_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β q : ℝ} (sim : SpinGlass.SimpleDisorder (Ω := Ω) N β q)
+    (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => sim.V ω σ) (fun ω => sim.V ω τ) volume =
+      SpinGlass.simple_cov_kernel N β (fun x => q * x) σ τ := by
+  have hpair := gaussianHilbert_covariance_clm sim.hV
+    (SpinGlass.evalCLM (N := N) σ) (SpinGlass.evalCLM (N := N) τ)
+  calc
+    covariance (fun ω => sim.V ω σ) (fun ω => sim.V ω τ) volume =
+        ∑ k : sim.hV.ι, (sim.hV.τ k : ℝ) *
+          sim.hV.w k σ * sim.hV.w k τ := by simpa using hpair
+    _ = SpinGlass.simple_cov_kernel N β (fun x => q * x) σ τ :=
+      simple_basis_covariance_sum sim σ τ
+
 lemma sk_siteOdd_basis_covariance_sum
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
@@ -425,6 +489,47 @@ lemma simple_siteOdd_basis_covariance_sum
   simp only [Finset.sum_add_distrib, Finset.sum_mul]
   ring
 
+/-- Covariance of two point evaluations of the odd SK component. -/
+lemma sk_siteOdd_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h : ℝ} (sk : SpinGlass.SKDisorder (Ω := Ω) N β h)
+    (i : Fin N) (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => siteOddCLM i (sk.U ω) σ)
+      (fun ω => siteOddCLM i (sk.U ω) τ) volume =
+        β ^ 2 * SpinGlass.spin N σ i * SpinGlass.spin N τ i *
+          configCavityOverlapAt i σ τ := by
+  have hpair := gaussianHilbert_covariance_clm sk.hU
+    ((SpinGlass.evalCLM (N := N) σ).comp (siteOddCLM i))
+    ((SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i))
+  calc
+    covariance (fun ω => siteOddCLM i (sk.U ω) σ)
+        (fun ω => siteOddCLM i (sk.U ω) τ) volume =
+      ∑ k : sk.hU.ι, (sk.hU.τ k : ℝ) *
+        siteOddCLM i (sk.hU.w k) σ * siteOddCLM i (sk.hU.w k) τ := by
+          simpa using hpair
+    _ = _ := sk_siteOdd_basis_covariance_sum sk i σ τ
+
+/-- Covariance of two point evaluations of the odd simple component. -/
+lemma simple_siteOdd_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β q : ℝ} (sim : SpinGlass.SimpleDisorder (Ω := Ω) N β q)
+    (i : Fin N) (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => siteOddCLM i (sim.V ω) σ)
+      (fun ω => siteOddCLM i (sim.V ω) τ) volume =
+        β ^ 2 * q * SpinGlass.spin N σ i * SpinGlass.spin N τ i := by
+  have hpair := gaussianHilbert_covariance_clm sim.hV
+    ((SpinGlass.evalCLM (N := N) σ).comp (siteOddCLM i))
+    ((SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i))
+  calc
+    covariance (fun ω => siteOddCLM i (sim.V ω) σ)
+        (fun ω => siteOddCLM i (sim.V ω) τ) volume =
+      ∑ k : sim.hV.ι, (sim.hV.τ k : ℝ) *
+        siteOddCLM i (sim.hV.w k) σ * siteOddCLM i (sim.hV.w k) τ := by
+          simpa using hpair
+    _ = _ := simple_siteOdd_basis_covariance_sum sim i σ τ
+
 lemma sk_siteEven_siteOdd_basis_covariance_sum
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
@@ -459,9 +564,793 @@ lemma simple_siteEven_siteOdd_basis_covariance_sum
   ring_nf
   simp only [Finset.sum_add_distrib, Finset.sum_mul]
 
+/-- Point evaluations of the even and odd parts of the simple disorder have
+zero cross covariance. -/
+lemma simple_siteEven_siteOdd_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β q : ℝ} (sim : SpinGlass.SimpleDisorder (Ω := Ω) N β q)
+    (i : Fin N) (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => siteEvenCLM i (sim.V ω) σ)
+      (fun ω => siteOddCLM i (sim.V ω) τ) volume = 0 := by
+  have hpair := gaussianHilbert_covariance_clm sim.hV
+    ((SpinGlass.evalCLM (N := N) σ).comp (siteEvenCLM i))
+    ((SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i))
+  calc
+    covariance (fun ω => siteEvenCLM i (sim.V ω) σ)
+        (fun ω => siteOddCLM i (sim.V ω) τ) volume =
+      ∑ k : sim.hV.ι, (sim.hV.τ k : ℝ) *
+        siteEvenCLM i (sim.hV.w k) σ *
+          siteOddCLM i (sim.hV.w k) τ := by simpa using hpair
+    _ = 0 := simple_siteEven_siteOdd_basis_covariance_sum sim i σ τ
+
+/-- A continuous linear observation of a Gaussian Hilbert random variable is
+square-integrable. -/
+lemma gaussianHilbert_clm_memLp_two
+    {Ω H : Type*} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+    [MeasurableSpace H] [BorelSpace H] [SecondCountableTopology H]
+    {g : Ω → H} (hg : PhysLean.Probability.GaussianIBP.IsGaussianHilbert g)
+    (L : H →L[ℝ] ℝ) :
+    MemLp (fun ω => L (g ω)) 2 volume :=
+  ((SpinGlass.GeneralizedLatala.gaussianHilbert_hasGaussianLaw hg).map_fun L).memLp_two
+
+/-- The even SK component and odd simple component have zero cross covariance;
+this is inherited from the independence already carried by the smart path. -/
+lemma skEven_simpleOdd_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => siteEvenCLM i (path.sk.U ω) σ)
+      (fun ω => siteOddCLM i (path.simple.V ω) τ) volume = 0 := by
+  let L₁ := (SpinGlass.evalCLM (N := N) σ).comp (siteEvenCLM i)
+  let L₂ := (SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i)
+  have hind : IndepFun (fun ω => L₁ (path.sk.U ω))
+      (fun ω => L₂ (path.simple.V ω)) volume :=
+    path.independent.comp (by fun_prop) (by fun_prop)
+  have h₁ : MemLp (fun ω => L₁ (path.sk.U ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.sk.hU L₁
+  have h₂ : MemLp (fun ω => L₂ (path.simple.V ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.simple.hV L₂
+  simpa [L₁, L₂] using hind.covariance_eq_zero h₁ h₂
+
+/-- The odd SK and odd simple point evaluations are independent, hence have
+zero covariance. -/
+lemma skOdd_simpleOdd_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => siteOddCLM i (path.sk.U ω) σ)
+      (fun ω => siteOddCLM i (path.simple.V ω) τ) volume = 0 := by
+  let L₁ := (SpinGlass.evalCLM (N := N) σ).comp (siteOddCLM i)
+  let L₂ := (SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i)
+  have hind : IndepFun (fun ω => L₁ (path.sk.U ω))
+      (fun ω => L₂ (path.simple.V ω)) volume :=
+    path.independent.comp (by fun_prop) (by fun_prop)
+  have h₁ : MemLp (fun ω => L₁ (path.sk.U ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.sk.hU L₁
+  have h₂ : MemLp (fun ω => L₂ (path.simple.V ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.simple.hV L₂
+  simpa [L₁, L₂] using hind.covariance_eq_zero h₁ h₂
+
+/-! ## Joint Gaussian endpoint packaging -/
+
+/-- The random bulk energy at the decoupled endpoint. -/
+noncomputable def lastSiteBulkRandom
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (ω : Ω) : SpinGlass.EnergySpace N :=
+  Real.sqrt s • siteEvenCLM i (path.sk.U ω) +
+    Real.sqrt (1 - s) • siteEvenCLM i (path.simple.V ω)
+
+/-- The odd simple-disorder component used as the last-site reference field. -/
+noncomputable def lastSiteOddRandom
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (ω : Ω) : SpinGlass.EnergySpace N :=
+  siteOddCLM i (path.simple.V ω)
+
+/-- The linear map sending the joint disorder `(U,V)` to the decoupled
+endpoint pair consisting of its even bulk and odd reference components. -/
+noncomputable def lastSiteEvenOddCLM {N : ℕ} (i : Fin N) (s : ℝ) :
+    WithLp 2 (SpinGlass.EnergySpace N × SpinGlass.EnergySpace N) →L[ℝ]
+      SpinGlass.EnergySpace N × SpinGlass.EnergySpace N :=
+  let unpack :=
+    (WithLp.prodContinuousLinearEquiv 2 ℝ
+      (SpinGlass.EnergySpace N) (SpinGlass.EnergySpace N)).toContinuousLinearMap
+  let first : WithLp 2 (SpinGlass.EnergySpace N × SpinGlass.EnergySpace N) →L[ℝ]
+      SpinGlass.EnergySpace N :=
+    (ContinuousLinearMap.fst ℝ (SpinGlass.EnergySpace N)
+      (SpinGlass.EnergySpace N)).comp unpack
+  let second : WithLp 2 (SpinGlass.EnergySpace N × SpinGlass.EnergySpace N) →L[ℝ]
+      SpinGlass.EnergySpace N :=
+    (ContinuousLinearMap.snd ℝ (SpinGlass.EnergySpace N)
+      (SpinGlass.EnergySpace N)).comp unpack
+  ((Real.sqrt s) • (siteEvenCLM i).comp first +
+      (Real.sqrt (1 - s)) • (siteEvenCLM i).comp second).prod
+    ((siteOddCLM i).comp second)
+
+@[simp] lemma lastSiteEvenOddCLM_apply {N : ℕ} (i : Fin N) (s : ℝ)
+    (U V : SpinGlass.EnergySpace N) :
+    lastSiteEvenOddCLM i s (WithLp.toLp 2 (U, V)) =
+      (Real.sqrt s • siteEvenCLM i U +
+        Real.sqrt (1 - s) • siteEvenCLM i V,
+        siteOddCLM i V) := by
+  rfl
+
+/-- The endpoint even/odd pair is jointly Gaussian. -/
+lemma lastSite_evenOdd_hasGaussianLaw
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) :
+    HasGaussianLaw
+      (fun ω => (lastSiteBulkRandom (s := s) path i ω,
+        lastSiteOddRandom path i ω)) (volume : Measure Ω) := by
+  have hUV := SpinGlass.isGaussianHilbert_UV
+    (N := N) (β := β) (h := h) (q := q)
+    path.sk path.simple path.independent
+  have hLaw :=
+    SpinGlass.GeneralizedLatala.gaussianHilbert_hasGaussianLaw hUV
+  have hmap := hLaw.map_fun (lastSiteEvenOddCLM i s)
+  simpa [SpinGlass.UV, lastSiteBulkRandom, lastSiteOddRandom] using hmap
+
+/-- Every point evaluation of the decoupled bulk has zero covariance with
+every point evaluation of the odd reference field. -/
+lemma lastSite_bulk_odd_point_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => lastSiteBulkRandom (s := s) path i ω σ)
+      (fun ω => lastSiteOddRandom path i ω τ) volume = 0 := by
+  let Lsk := (SpinGlass.evalCLM (N := N) σ).comp (siteEvenCLM i)
+  let LsimEven := (SpinGlass.evalCLM (N := N) σ).comp (siteEvenCLM i)
+  let LsimOdd := (SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i)
+  have hsk : MemLp (fun ω => Lsk (path.sk.U ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.sk.hU Lsk
+  have hsimEven : MemLp (fun ω => LsimEven (path.simple.V ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.simple.hV LsimEven
+  have hsimOdd : MemLp (fun ω => LsimOdd (path.simple.V ω)) 2 volume :=
+    gaussianHilbert_clm_memLp_two path.simple.hV LsimOdd
+  let X : Ω → ℝ := fun ω => Real.sqrt s * Lsk (path.sk.U ω)
+  let Y : Ω → ℝ := fun ω => Real.sqrt (1 - s) * LsimEven (path.simple.V ω)
+  let Z : Ω → ℝ := fun ω => LsimOdd (path.simple.V ω)
+  change covariance (X + Y) Z volume = 0
+  rw [covariance_add_left (hsk.const_mul _) (hsimEven.const_mul _) hsimOdd,
+    covariance_const_mul_left, covariance_const_mul_left]
+  have hcrossSk := skEven_simpleOdd_point_covariance path i σ τ
+  have hcrossSim :=
+    simple_siteEven_siteOdd_point_covariance path.simple i σ τ
+  change covariance (fun ω => Lsk (path.sk.U ω))
+      (fun ω => LsimOdd (path.simple.V ω)) volume = 0 at hcrossSk
+  change covariance (fun ω => LsimEven (path.simple.V ω))
+      (fun ω => LsimOdd (path.simple.V ω)) volume = 0 at hcrossSim
+  rw [hcrossSk, hcrossSim]
+  ring
+
+/-- Inner products in the finite energy space are finite sums of point
+evaluations. -/
+lemma energy_inner_eq_sum_apply {N : ℕ}
+    (x H : SpinGlass.EnergySpace N) :
+    inner ℝ x H = ∑ σ : SpinGlass.Config N, x σ * H σ := by
+  simp [PiLp.inner_apply, mul_comm]
+
+/-- At the decoupled endpoint the even bulk disorder and the odd reference
+field are independent.  The proof uses joint Gaussianity and the vanishing
+cross covariance proved above. -/
+lemma lastSite_bulk_indep_odd
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) :
+    IndepFun (lastSiteBulkRandom (s := s) path i)
+      (lastSiteOddRandom path i) volume := by
+  have hLaw := lastSite_evenOdd_hasGaussianLaw (s := s) path i
+  apply hLaw.indepFun_of_covariance_inner
+  intro x y
+  have hx : (fun ω => inner ℝ x (lastSiteBulkRandom (s := s) path i ω)) =
+      fun ω => ∑ σ : SpinGlass.Config N,
+        x σ * lastSiteBulkRandom (s := s) path i ω σ := by
+    funext ω
+    exact energy_inner_eq_sum_apply x _
+  have hy : (fun ω => inner ℝ y (lastSiteOddRandom path i ω)) =
+      fun ω => ∑ τ : SpinGlass.Config N,
+        y τ * lastSiteOddRandom path i ω τ := by
+    funext ω
+    exact energy_inner_eq_sum_apply y _
+  have hbulk (σ : SpinGlass.Config N) :
+      MemLp (fun ω => lastSiteBulkRandom (s := s) path i ω σ) 2 volume :=
+    (hLaw.fst.map_fun (SpinGlass.evalCLM (N := N) σ)).memLp_two
+  have hodd (τ : SpinGlass.Config N) :
+      MemLp (fun ω => lastSiteOddRandom path i ω τ) 2 volume :=
+    (hLaw.snd.map_fun (SpinGlass.evalCLM (N := N) τ)).memLp_two
+  rw [hx, hy, covariance_fun_sum_fun_sum]
+  · simp_rw [covariance_const_mul_left, covariance_const_mul_right,
+      lastSite_bulk_odd_point_covariance path i]
+    simp
+  · intro σ
+    exact (hbulk σ).const_mul _
+  · intro τ
+    exact (hodd τ).const_mul _
+
+/-! ## Explicit one-site form at the decoupled endpoint -/
+
+/-- Projecting the explicit reference field onto its odd part keeps exactly
+the coordinate at the selected site. -/
+lemma siteOdd_referenceField_apply {N : ℕ} (β q : ℝ) (i : Fin N)
+    (z : Fin N → ℝ) (σ : SpinGlass.Config N) :
+    siteOddCLM i (SpinGlass.GeneralizedLatala.referenceField N β q z) σ =
+      β * Real.sqrt q * z i * SpinGlass.spin N σ i := by
+  classical
+  rw [siteOddCLM_apply]
+  simp_rw [SpinGlass.GeneralizedLatala.referenceField_apply]
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i),
+    ← Finset.sum_erase_add (Finset.univ : Finset (Fin N))
+      (fun j => z j * SpinGlass.spin N (flipSite i σ) j) (Finset.mem_univ i)]
+  have hsum :
+      ∑ j ∈ Finset.univ.erase i, z j * SpinGlass.spin N (flipSite i σ) j =
+        ∑ j ∈ Finset.univ.erase i, z j * SpinGlass.spin N σ j := by
+    apply Finset.sum_congr rfl
+    intro j hj
+    rw [spin_flipSite_of_ne (Finset.ne_of_mem_erase hj)]
+  rw [hsum, spin_flipSite_same]
+  ring
+
+/-- The odd part of the deterministic magnetic energy is the selected
+one-site field. -/
+lemma siteOdd_magnetic_field_apply {N : ℕ} (h : ℝ) (i : Fin N)
+    (σ : SpinGlass.Config N) :
+    siteOddCLM i (SpinGlass.magnetic_field_vector N h) σ =
+      h * SpinGlass.spin N σ i := by
+  classical
+  rw [siteOddCLM_apply]
+  simp only [SpinGlass.magnetic_field_vector, SpinGlass.magnetization]
+  rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i),
+    ← Finset.sum_erase_add (Finset.univ : Finset (Fin N))
+      (fun j => SpinGlass.spin N (flipSite i σ) j) (Finset.mem_univ i)]
+  have hsum :
+      ∑ j ∈ Finset.univ.erase i, SpinGlass.spin N (flipSite i σ) j =
+        ∑ j ∈ Finset.univ.erase i, SpinGlass.spin N σ j := by
+    apply Finset.sum_congr rfl
+    intro j hj
+    rw [spin_flipSite_of_ne (Finset.ne_of_mem_erase hj)]
+  rw [hsum, spin_flipSite_same]
+  ring
+
+/-- The even part of any energy is invariant under the selected flip. -/
+lemma siteEven_invariant {N : ℕ} (i : Fin N) (H : SpinGlass.EnergySpace N) :
+    ∀ σ, siteEvenCLM i H (flipSite i σ) = siteEvenCLM i H σ := by
+  exact siteEven_flip i H
+
+/-- The odd simple component has the law of the selected coordinate of the
+explicit reference field. -/
+lemma lastSiteOddRandom_law_eq_reference
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (hN : 0 < N) (hq : 0 ≤ q) (i : Fin N) :
+    Measure.map (lastSiteOddRandom path i) volume =
+      Measure.map
+        (fun z : Fin N → ℝ =>
+          siteOddCLM i (SpinGlass.GeneralizedLatala.referenceField N β q z))
+        (SpinGlass.GeneralizedLatala.gaussianProduct N) := by
+  have hlaw := SpinGlass.GeneralizedLatala.simpleDisorder_law_eq_reference
+    N β q path.simple hN hq
+  calc
+    Measure.map (lastSiteOddRandom path i) volume =
+        Measure.map (siteOddCLM i) (Measure.map path.simple.V volume) := by
+      rw [Measure.map_map]
+      · rfl
+      · exact (siteOddCLM i).continuous.measurable
+      · exact path.simple.hV.repr_measurable
+    _ = Measure.map (siteOddCLM i)
+        (Measure.map (SpinGlass.GeneralizedLatala.referenceField N β q)
+          (SpinGlass.GeneralizedLatala.gaussianProduct N)) := by rw [hlaw]
+    _ = Measure.map
+        (fun z : Fin N → ℝ =>
+          siteOddCLM i (SpinGlass.GeneralizedLatala.referenceField N β q z))
+        (SpinGlass.GeneralizedLatala.gaussianProduct N) := by
+      rw [Measure.map_map]
+      · rfl
+      · exact (siteOddCLM i).continuous.measurable
+      · exact
+          (SpinGlass.GeneralizedLatala.referenceFieldCLM N β q).continuous.measurable
+
+/-- Configurations with the selected site fixed to `false`. -/
+abbrev SiteBaseConfig (N : ℕ) (i : Fin N) :=
+  {σ : SpinGlass.Config N // σ i = false}
+
+/-- Split a configuration into all spins except the selected one and its
+selected Boolean coordinate. -/
+def configSplitSiteEquiv {N : ℕ} (i : Fin N) :
+    SpinGlass.Config N ≃ SiteBaseConfig N i × Bool where
+  toFun σ := ⟨⟨Function.update σ i false, by simp⟩, σ i⟩
+  invFun p := Function.update p.1.1 i p.2
+  left_inv σ := by
+    funext j
+    by_cases hji : j = i
+    · subst j
+      simp
+    · simp [hji]
+  right_inv p := by
+    rcases p with ⟨⟨ρ, hρ⟩, b⟩
+    apply Prod.ext
+    · apply Subtype.ext
+      funext j
+      by_cases hji : j = i
+      · subst j
+        simp [hρ]
+      · simp [hji]
+    · simp
+
+@[simp] lemma configSplitSiteEquiv_symm_apply_same {N : ℕ} (i : Fin N)
+    (p : SiteBaseConfig N i × Bool) :
+    (configSplitSiteEquiv i).symm p i = p.2 := by
+  simp [configSplitSiteEquiv]
+
+@[simp] lemma configSplitSiteEquiv_symm_flip {N : ℕ} (i : Fin N)
+    (p : SiteBaseConfig N i × Bool) :
+    flipSite i ((configSplitSiteEquiv i).symm p) =
+      (configSplitSiteEquiv i).symm (p.1, !p.2) := by
+  funext j
+  by_cases hji : j = i
+  · subst j
+    simp [configSplitSiteEquiv, flipSite]
+  · simp [configSplitSiteEquiv, flipSite, hji]
+
+/-- A scalar energy supported at one site. -/
+noncomputable def oneSiteEnergy {N : ℕ} (i : Fin N) (x : ℝ) :
+    SpinGlass.EnergySpace N :=
+  WithLp.toLp 2 (fun σ => x * SpinGlass.spin N σ i)
+
+@[simp] lemma oneSiteEnergy_apply {N : ℕ} (i : Fin N) (x : ℝ)
+    (σ : SpinGlass.Config N) :
+    oneSiteEnergy i x σ = x * SpinGlass.spin N σ i := rfl
+
+/-- Partition-function factorization for an even bulk energy and one selected
+site field. -/
+lemma Z_even_add_oneSiteEnergy {N : ℕ} (i : Fin N)
+    (B : SpinGlass.EnergySpace N)
+    (hB : ∀ σ, B (flipSite i σ) = B σ) (x : ℝ) :
+    SpinGlass.Z N (B + oneSiteEnergy i x) =
+      (∑ ρ : SiteBaseConfig N i, Real.exp (-B ρ.1)) *
+        (∑ b : Bool, Real.exp (-(x * SpinGlass.GeneralizedLatala.boolSpin b))) := by
+  classical
+  rw [SpinGlass.Z]
+  rw [Fintype.sum_equiv (configSplitSiteEquiv i)
+    (fun σ : SpinGlass.Config N => Real.exp (-(B + oneSiteEnergy i x) σ))
+    (fun p : SiteBaseConfig N i × Bool =>
+      Real.exp (-B p.1.1) *
+        Real.exp (-(x * SpinGlass.GeneralizedLatala.boolSpin p.2))) (by
+      intro σ
+      have hbase : B (Function.update σ i false) = B σ := by
+        by_cases hi : σ i = false
+        · have hupd : Function.update σ i false = σ := by
+            funext j
+            by_cases hji : j = i
+            · subst j; simp [hi]
+            · simp [hji]
+          rw [hupd]
+        · have hit : σ i = true := Bool.eq_true_of_not_eq_false hi
+          have hflip : flipSite i σ = Function.update σ i false := by
+            funext j
+            by_cases hji : j = i
+            · subst j; simp [flipSite, hit]
+            · simp [flipSite, hji]
+          rw [← hflip, hB]
+      change Real.exp (-(B σ + x * SpinGlass.spin N σ i)) =
+        Real.exp (-B (Function.update σ i false)) *
+          Real.exp (-(x * SpinGlass.GeneralizedLatala.boolSpin (σ i)))
+      rw [hbase, SpinGlass.GeneralizedLatala.spin_eq_boolSpin, neg_add,
+        Real.exp_add])]
+  rw [Fintype.sum_prod_type, Finset.sum_mul]
+  apply Finset.sum_congr rfl
+  intro ρ _
+  rw [Finset.mul_sum]
+
+noncomputable def siteBaseWeight {N : ℕ} {i : Fin N}
+    (B : SpinGlass.EnergySpace N) (ρ : SiteBaseConfig N i) : ℝ :=
+  Real.exp (-B ρ.1) / ∑ τ : SiteBaseConfig N i, Real.exp (-B τ.1)
+
+lemma sum_siteBaseWeight {N : ℕ} {i : Fin N}
+    (B : SpinGlass.EnergySpace N) :
+    ∑ ρ : SiteBaseConfig N i, siteBaseWeight B ρ = 1 := by
+  unfold siteBaseWeight
+  have hpos : 0 < ∑ τ : SiteBaseConfig N i, Real.exp (-B τ.1) := by
+    refine Finset.sum_pos (fun τ _ => Real.exp_pos _) ?_
+    exact ⟨⟨fun _ => false, rfl⟩, Finset.mem_univ _⟩
+  rw [← Finset.sum_div]
+  exact div_self hpos.ne'
+
+noncomputable def oneSiteWeight (x : ℝ) (b : Bool) : ℝ :=
+  Real.exp (-(x * SpinGlass.GeneralizedLatala.boolSpin b)) /
+    ∑ c : Bool, Real.exp (-(x * SpinGlass.GeneralizedLatala.boolSpin c))
+
+/-- The Gibbs probability itself factors into the bulk and selected-site
+probabilities. -/
+lemma gibbs_pmf_even_add_oneSiteEnergy {N : ℕ} (i : Fin N)
+    (B : SpinGlass.EnergySpace N)
+    (hB : ∀ σ, B (flipSite i σ) = B σ) (x : ℝ)
+    (ρ : SiteBaseConfig N i) (b : Bool) :
+    SpinGlass.gibbs_pmf N (B + oneSiteEnergy i x)
+        ((configSplitSiteEquiv i).symm (ρ, b)) =
+      siteBaseWeight B ρ * oneSiteWeight x b := by
+  rw [SpinGlass.gibbs_pmf, Z_even_add_oneSiteEnergy i B hB x]
+  simp only [PiLp.add_apply, oneSiteEnergy_apply,
+    configSplitSiteEquiv_symm_apply_same,
+    SpinGlass.GeneralizedLatala.spin_eq_boolSpin, siteBaseWeight, oneSiteWeight]
+  have hbase : B ((configSplitSiteEquiv i).symm (ρ, b)) = B ρ.1 := by
+    change B (Function.update ρ.1 i b) = B ρ.1
+    cases b
+    · have hupd : Function.update ρ.1 i false = ρ.1 := by
+        funext j
+        by_cases hji : j = i
+        · subst j; simp [ρ.2]
+        · simp [hji]
+      rw [hupd]
+    · have hflip : flipSite i (Function.update ρ.1 i true) = ρ.1 := by
+        funext j
+        by_cases hji : j = i
+        · subst j; simp [flipSite, ρ.2]
+        · simp [flipSite, hji]
+      calc
+        B (Function.update ρ.1 i true) =
+            B (flipSite i (Function.update ρ.1 i true)) := (hB _).symm
+        _ = B ρ.1 := congrArg B hflip
+  rw [hbase, neg_add, Real.exp_add]
+  ring
+
+/-- Split every replica into its bulk configuration and its selected spin. -/
+def replicasSplitSiteEquiv {N n : ℕ} (i : Fin N) :
+    Replicas N n ≃ (Fin n → SiteBaseConfig N i) × (Fin n → Bool) where
+  toFun σs :=
+    (fun a => (configSplitSiteEquiv i (σs a)).1,
+      fun a => (configSplitSiteEquiv i (σs a)).2)
+  invFun p a := (configSplitSiteEquiv i).symm (p.1 a, p.2 a)
+  left_inv σs := by
+    funext a
+    exact (configSplitSiteEquiv i).left_inv (σs a)
+  right_inv p := by
+    apply Prod.ext <;> funext a
+    · exact congrArg Prod.fst ((configSplitSiteEquiv i).right_inv (p.1 a, p.2 a))
+    · exact congrArg Prod.snd ((configSplitSiteEquiv i).right_inv (p.1 a, p.2 a))
+
+/-- Fixed-disorder replica factorization at a decoupled selected site. -/
+lemma replicaGibbsAverage_even_oneSite_factor {N n : ℕ} (i : Fin N)
+    (B : SpinGlass.EnergySpace N)
+    (hB : ∀ σ, B (flipSite i σ) = B σ) (x : ℝ)
+    (F : (Fin n → SiteBaseConfig N i) → ℝ)
+    (G : (Fin n → Bool) → ℝ) :
+    replicaGibbsAverage (B + oneSiteEnergy i x)
+        (fun σs => F (replicasSplitSiteEquiv i σs).1 *
+          G (replicasSplitSiteEquiv i σs).2) =
+      (∑ ρs, (∏ a, siteBaseWeight B (ρs a)) * F ρs) *
+        (∑ bs, (∏ a, oneSiteWeight x (bs a)) * G bs) := by
+  classical
+  unfold replicaGibbsAverage
+  rw [Fintype.sum_equiv (replicasSplitSiteEquiv i)
+    (fun σs =>
+      (∏ a, SpinGlass.gibbs_pmf N (B + oneSiteEnergy i x) (σs a)) *
+        (F (replicasSplitSiteEquiv i σs).1 *
+          G (replicasSplitSiteEquiv i σs).2))
+    (fun p => ((∏ a, siteBaseWeight B (p.1 a)) * F p.1) *
+      ((∏ a, oneSiteWeight x (p.2 a)) * G p.2)) (by
+      intro σs
+      have hpmf (a : Fin n) :
+          SpinGlass.gibbs_pmf N (B + oneSiteEnergy i x) (σs a) =
+            siteBaseWeight B ((replicasSplitSiteEquiv i σs).1 a) *
+              oneSiteWeight x ((replicasSplitSiteEquiv i σs).2 a) := by
+        rw [show σs a = (configSplitSiteEquiv i).symm
+            ((replicasSplitSiteEquiv i σs).1 a,
+              (replicasSplitSiteEquiv i σs).2 a) by
+          exact (configSplitSiteEquiv i).left_inv (σs a) |>.symm]
+        exact gibbs_pmf_even_add_oneSiteEnergy i B hB x _ _
+      simp_rw [hpmf]
+      rw [Finset.prod_mul_distrib]
+      ring)]
+  rw [Fintype.sum_prod_type, Finset.sum_mul]
+  apply Finset.sum_congr rfl
+  intro ρs _
+  rw [Finset.mul_sum]
+
+lemma sum_oneSiteWeight (x : ℝ) : ∑ b : Bool, oneSiteWeight x b = 1 := by
+  unfold oneSiteWeight
+  have hpos : 0 < ∑ c : Bool,
+      Real.exp (-(x * SpinGlass.GeneralizedLatala.boolSpin c)) := by
+    positivity
+  rw [← Finset.sum_div]
+  exact div_self hpos.ne'
+
+lemma sum_oneSiteWeight_mul_boolSpin (x : ℝ) :
+    ∑ b : Bool, oneSiteWeight x b * SpinGlass.GeneralizedLatala.boolSpin b =
+      -Real.tanh x := by
+  simp [oneSiteWeight, SpinGlass.GeneralizedLatala.boolSpin]
+  rw [Real.tanh_eq]
+  field_simp
+  ring
+
+lemma sum_replica_siteBaseWeight {N n : ℕ} {i : Fin N}
+    (B : SpinGlass.EnergySpace N) :
+    ∑ ρs : Fin n → SiteBaseConfig N i,
+      ∏ a, siteBaseWeight B (ρs a) = 1 := by
+  classical
+  rw [← Fintype.prod_sum (R := ℝ)
+    (fun _a : Fin n => fun ρ : SiteBaseConfig N i => siteBaseWeight B ρ)]
+  simp [sum_siteBaseWeight]
+
+/-- Moments of distinct replicas at a single site are powers of the one-spin
+mean. -/
+lemma oneSiteReplicaMoment {n : ℕ} (x : ℝ) (S : Finset (Fin n)) :
+    ∑ bs : Fin n → Bool,
+        (∏ a, oneSiteWeight x (bs a)) *
+          (∏ a ∈ S, SpinGlass.GeneralizedLatala.boolSpin (bs a)) =
+      (-Real.tanh x) ^ S.card := by
+  classical
+  rw [show (∑ bs : Fin n → Bool,
+      (∏ a, oneSiteWeight x (bs a)) *
+        (∏ a ∈ S, SpinGlass.GeneralizedLatala.boolSpin (bs a))) =
+      ∑ bs : Fin n → Bool, ∏ a,
+        (oneSiteWeight x (bs a) *
+          if a ∈ S then SpinGlass.GeneralizedLatala.boolSpin (bs a) else 1) by
+      apply Finset.sum_congr rfl
+      intro bs _
+      rw [Finset.prod_mul_distrib]
+      simp]
+  change (∑ bs : Fin n → Bool, ∏ a,
+      (fun b => oneSiteWeight x b *
+        if a ∈ S then SpinGlass.GeneralizedLatala.boolSpin b else 1) (bs a)) = _
+  rw [← Fintype.prod_sum (R := ℝ) (fun a : Fin n => fun b : Bool =>
+    oneSiteWeight x b *
+      if a ∈ S then SpinGlass.GeneralizedLatala.boolSpin b else 1)]
+  have hlocal (a : Fin n) :
+      (∑ b : Bool, oneSiteWeight x b *
+        if a ∈ S then SpinGlass.GeneralizedLatala.boolSpin b else 1) =
+      if a ∈ S then -Real.tanh x else 1 := by
+    by_cases ha : a ∈ S
+    · simpa only [ha, if_true] using sum_oneSiteWeight_mul_boolSpin x
+    · simpa only [ha, if_false, mul_one] using sum_oneSiteWeight x
+  simp_rw [hlocal]
+  simp
+
+/-- The even endpoint bulk, including the even part of the deterministic
+magnetic field. -/
+noncomputable def lastSiteBulkEnergy
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (ω : Ω) : SpinGlass.EnergySpace N :=
+  lastSiteBulkRandom (s := s) path i ω +
+    siteEvenCLM i (SpinGlass.magnetic_field_vector N h)
+
+lemma lastSiteBulkEnergy_invariant
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (ω : Ω) (σ : SpinGlass.Config N) :
+    lastSiteBulkEnergy (s := s) path i ω (flipSite i σ) =
+      lastSiteBulkEnergy (s := s) path i ω σ := by
+  simp only [lastSiteBulkEnergy, lastSiteBulkRandom, PiLp.add_apply,
+    PiLp.smul_apply, smul_eq_mul, siteEvenCLM_apply, flipSite_involutive]
+  ring
+
+/-- After replacing the odd endpoint field by its explicit reference law,
+the selected site is a scalar one-site energy. -/
+lemma reference_endpoint_eq_even_oneSite
+    {N : ℕ} (β h q : ℝ) (i : Fin N)
+    (B : SpinGlass.EnergySpace N) (z : Fin N → ℝ) :
+    B + siteOddCLM i (SpinGlass.GeneralizedLatala.referenceField N β q z) +
+        siteOddCLM i (SpinGlass.magnetic_field_vector N h) =
+      B + oneSiteEnergy i (h + β * Real.sqrt q * z i) := by
+  ext σ
+  simp only [PiLp.add_apply, oneSiteEnergy_apply]
+  rw [siteOdd_referenceField_apply, siteOdd_magnetic_field_apply]
+  ring
+
+/-- Replica expectations are measurable as functions of the finite-volume
+energy. -/
+lemma measurable_replicaGibbsAverage {N n : ℕ} (F : ReplicaFun N n) :
+    Measurable (fun H : SpinGlass.EnergySpace N => replicaGibbsAverage H F) := by
+  unfold replicaGibbsAverage
+  apply Finset.measurable_sum
+  intro σs _
+  apply Measurable.mul
+  · apply Finset.measurable_prod
+    intro a _
+    exact (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs a)).continuous.measurable
+  · exact measurable_const
+
+/-- A crude finite bound used only to justify endpoint changes of variables. -/
+lemma abs_replicaGibbsAverage_le_sum_abs {N n : ℕ}
+    (H : SpinGlass.EnergySpace N) (F : ReplicaFun N n) :
+    |replicaGibbsAverage H F| ≤ ∑ σs, |F σs| := by
+  classical
+  unfold replicaGibbsAverage
+  calc
+    |∑ σs, (∏ a, SpinGlass.gibbs_pmf N H (σs a)) * F σs| ≤
+        ∑ σs, |(∏ a, SpinGlass.gibbs_pmf N H (σs a)) * F σs| :=
+      Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ σs, |F σs| := by
+      apply Finset.sum_le_sum
+      intro σs _
+      rw [abs_mul, abs_of_nonneg (Finset.prod_nonneg fun a _ =>
+        SpinGlass.gibbs_pmf_nonneg N H (σs a))]
+      have hp : ∏ a, SpinGlass.gibbs_pmf N H (σs a) ≤ 1 := by
+        exact Finset.prod_le_one (fun a _ => SpinGlass.gibbs_pmf_nonneg N H (σs a))
+          (fun a _ => SpinGlass.gibbs_pmf_le_one N H (σs a))
+      exact mul_le_of_le_one_left (abs_nonneg _) hp
+
+
+/-! ## Replica relabeling -/
+
+/-- Relabel a finite replica family by a permutation. -/
+def replicaRelabelEquiv {N n : ℕ} (e : Fin n ≃ Fin n) :
+    Replicas N n ≃ Replicas N n where
+  toFun σs a := σs (e a)
+  invFun σs a := σs (e.symm a)
+  left_inv σs := by
+    funext a
+    simp
+  right_inv σs := by
+    funext a
+    simp
+
+/-- Product Gibbs expectations are invariant under a permutation of replica
+labels. -/
+lemma replicaGibbsAverage_relabel {N n : ℕ}
+    (H : SpinGlass.EnergySpace N) (F : ReplicaFun N n)
+    (e : Fin n ≃ Fin n) :
+    replicaGibbsAverage H (fun σs => F (replicaRelabelEquiv e σs)) =
+      replicaGibbsAverage H F := by
+  unfold replicaGibbsAverage
+  let E := replicaRelabelEquiv (N := N) e
+  let g : Replicas N n → ℝ := fun σs =>
+    (∏ a, SpinGlass.gibbs_pmf N H (σs a)) * F σs
+  have hsum := E.sum_comp g
+  calc
+    (∑ σs, (∏ a, SpinGlass.gibbs_pmf N H (σs a)) *
+        F (replicaRelabelEquiv e σs)) =
+        ∑ σs, (∏ a, SpinGlass.gibbs_pmf N H
+          ((replicaRelabelEquiv e σs) a)) *
+            F (replicaRelabelEquiv e σs) := by
+      apply Finset.sum_congr rfl
+      intro σs _
+      congr 1
+      change (∏ a, SpinGlass.gibbs_pmf N H (σs a)) =
+        ∏ a, SpinGlass.gibbs_pmf N H (σs (e a))
+      exact (e.prod_comp fun a => SpinGlass.gibbs_pmf N H (σs a)).symm
+    _ = ∑ σs, (∏ a, SpinGlass.gibbs_pmf N H (σs a)) * F σs := by
+      simpa only [E, g, replicaRelabelEquiv, Equiv.coe_fn_mk] using hsum
+
+/-- Quenched replica expectations are invariant under a permutation of
+replica labels. -/
+lemma quenchedReplicaAverage_relabel
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} (H : Ω → SpinGlass.EnergySpace N) (F : ReplicaFun N n)
+    (e : Fin n ≃ Fin n) :
+    quenchedReplicaAverage H (fun σs => F (replicaRelabelEquiv e σs)) =
+      quenchedReplicaAverage H F := by
+  unfold quenchedReplicaAverage
+  congr 1
+  funext ω
+  exact replicaGibbsAverage_relabel (H ω) F e
+
 /-- The last-site interpolation.  At `u=1` it is the original smart path.
 At `u=0` the odd SK part is replaced by the odd part of the independent
 simple field, whose covariance is exactly the RS one-site covariance. -/
+noncomputable def lastSiteOddInterpolated
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (u : ℝ) (ω : Ω) : SpinGlass.EnergySpace N :=
+  Real.sqrt (s * u) • siteOddCLM i (path.sk.U ω) +
+    Real.sqrt (1 - s * u) • siteOddCLM i (path.simple.V ω)
+
+/-- The covariance of the interpolated odd field is affine in `u`. -/
+lemma lastSiteOddInterpolated_covariance
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s u : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (hu : s * u ∈ Set.Icc (0 : ℝ) 1)
+    (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => lastSiteOddInterpolated (s := s) path i u ω σ)
+      (fun ω => lastSiteOddInterpolated (s := s) path i u ω τ) volume =
+      s * u * (β ^ 2 * SpinGlass.spin N σ i * SpinGlass.spin N τ i *
+          configCavityOverlapAt i σ τ) +
+        (1 - s * u) *
+          (β ^ 2 * q * SpinGlass.spin N σ i * SpinGlass.spin N τ i) := by
+  let Xσ : Ω → ℝ := fun ω => siteOddCLM i (path.sk.U ω) σ
+  let Xτ : Ω → ℝ := fun ω => siteOddCLM i (path.sk.U ω) τ
+  let Yσ : Ω → ℝ := fun ω => siteOddCLM i (path.simple.V ω) σ
+  let Yτ : Ω → ℝ := fun ω => siteOddCLM i (path.simple.V ω) τ
+  have hXσ : MemLp Xσ 2 volume := gaussianHilbert_clm_memLp_two path.sk.hU
+    ((SpinGlass.evalCLM (N := N) σ).comp (siteOddCLM i))
+  have hXτ : MemLp Xτ 2 volume := gaussianHilbert_clm_memLp_two path.sk.hU
+    ((SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i))
+  have hYσ : MemLp Yσ 2 volume := gaussianHilbert_clm_memLp_two path.simple.hV
+    ((SpinGlass.evalCLM (N := N) σ).comp (siteOddCLM i))
+  have hYτ : MemLp Yτ 2 volume := gaussianHilbert_clm_memLp_two path.simple.hV
+    ((SpinGlass.evalCLM (N := N) τ).comp (siteOddCLM i))
+  change covariance
+    ((fun ω => Real.sqrt (s * u) * Xσ ω) +
+      (fun ω => Real.sqrt (1 - s * u) * Yσ ω))
+    ((fun ω => Real.sqrt (s * u) * Xτ ω) +
+      (fun ω => Real.sqrt (1 - s * u) * Yτ ω))
+      volume = _
+  rw [covariance_add_left (hXσ.const_mul _) (hYσ.const_mul _)
+      ((hXτ.const_mul _).add (hYτ.const_mul _)),
+    covariance_add_right (hXσ.const_mul _) (hXτ.const_mul _) (hYτ.const_mul _),
+    covariance_add_right (hYσ.const_mul _) (hXτ.const_mul _) (hYτ.const_mul _)]
+  simp_rw [covariance_const_mul_left, covariance_const_mul_right]
+  rw [
+    sk_siteOdd_point_covariance path.sk i σ τ,
+    simple_siteOdd_point_covariance path.simple i σ τ,
+    skOdd_simpleOdd_point_covariance path i σ τ]
+  have hcross : covariance Yσ Xτ volume = 0 := by
+    rw [covariance_comm]
+    exact skOdd_simpleOdd_point_covariance path i τ σ
+  rw [hcross]
+  simp only [mul_zero, add_zero, zero_add]
+  calc
+    Real.sqrt (s * u) *
+          (Real.sqrt (s * u) *
+            (β ^ 2 * SpinGlass.spin N σ i * SpinGlass.spin N τ i *
+              configCavityOverlapAt i σ τ)) +
+        Real.sqrt (1 - s * u) *
+          (Real.sqrt (1 - s * u) *
+            (β ^ 2 * q * SpinGlass.spin N σ i * SpinGlass.spin N τ i)) =
+      Real.sqrt (s * u) ^ 2 *
+          (β ^ 2 * SpinGlass.spin N σ i * SpinGlass.spin N τ i *
+            configCavityOverlapAt i σ τ) +
+        Real.sqrt (1 - s * u) ^ 2 *
+          (β ^ 2 * q * SpinGlass.spin N σ i * SpinGlass.spin N τ i) := by ring
+    _ = _ := by
+      rw [Real.sq_sqrt hu.1, Real.sq_sqrt (sub_nonneg.mpr hu.2)]
+
+/-- Exact covariance increment.  The coefficient of `u - v` is the cavity
+kernel used by normalized Gibbs differentiation. -/
+lemma lastSiteOddInterpolated_covariance_sub
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s u v : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (hu : s * u ∈ Set.Icc (0 : ℝ) 1)
+    (hv : s * v ∈ Set.Icc (0 : ℝ) 1)
+    (σ τ : SpinGlass.Config N) :
+    covariance (fun ω => lastSiteOddInterpolated (s := s) path i u ω σ)
+        (fun ω => lastSiteOddInterpolated (s := s) path i u ω τ) volume -
+      covariance (fun ω => lastSiteOddInterpolated (s := s) path i v ω σ)
+        (fun ω => lastSiteOddInterpolated (s := s) path i v ω τ) volume =
+      (u - v) * s * β ^ 2 * SpinGlass.spin N σ i * SpinGlass.spin N τ i *
+        (configCavityOverlapAt i σ τ - q) := by
+  rw [lastSiteOddInterpolated_covariance path i hu σ τ,
+    lastSiteOddInterpolated_covariance path i hv σ τ]
+  ring
+
+/-- Replica form of the covariance increment. -/
+lemma lastSiteOddInterpolated_covariance_sub_replica
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s u v : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (hu : s * u ∈ Set.Icc (0 : ℝ) 1)
+    (hv : s * v ∈ Set.Icc (0 : ℝ) 1)
+    (σs : Replicas N n) (a b : Fin n) :
+    covariance
+        (fun ω => lastSiteOddInterpolated (s := s) path i u ω (σs a))
+        (fun ω => lastSiteOddInterpolated (s := s) path i u ω (σs b)) volume -
+      covariance
+        (fun ω => lastSiteOddInterpolated (s := s) path i v ω (σs a))
+        (fun ω => lastSiteOddInterpolated (s := s) path i v ω (σs b)) volume =
+      (u - v) * s * β ^ 2 * SpinGlass.spin N (σs a) i *
+        SpinGlass.spin N (σs b) i * cavityOverlapAt q i σs a b := by
+  rw [lastSiteOddInterpolated_covariance_sub path i hu hv]
+  rw [cavityOverlapAt_eq_configCavityOverlapAt_sub]
+
 noncomputable def lastSiteHamiltonian
     {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
@@ -469,11 +1358,813 @@ noncomputable def lastSiteHamiltonian
     (i : Fin N) (u : ℝ) (ω : Ω) : SpinGlass.EnergySpace N :=
   Real.sqrt s • siteEvenCLM i (path.sk.U ω) +
     Real.sqrt (1 - s) • siteEvenCLM i (path.simple.V ω) +
-    Real.sqrt u •
-      (Real.sqrt s • siteOddCLM i (path.sk.U ω) +
-        Real.sqrt (1 - s) • siteOddCLM i (path.simple.V ω)) +
-    Real.sqrt (1 - u) • siteOddCLM i (path.simple.V ω) +
+    lastSiteOddInterpolated (s := s) path i u ω +
     SpinGlass.magnetic_field_vector N h
+
+lemma lastSiteHamiltonian_zero
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (ω : Ω) :
+    lastSiteHamiltonian (s := s) path i 0 ω =
+      lastSiteBulkRandom (s := s) path i ω +
+        lastSiteOddRandom path i ω + SpinGlass.magnetic_field_vector N h := by
+  simp [lastSiteHamiltonian, lastSiteOddInterpolated, lastSiteBulkRandom,
+    lastSiteOddRandom]
+
+/-- The decoupled Hamiltonian written as an even bulk plus an odd endpoint
+field. -/
+lemma lastSiteHamiltonian_zero_split
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (ω : Ω) :
+    lastSiteHamiltonian (s := s) path i 0 ω =
+      lastSiteBulkEnergy (s := s) path i ω +
+        lastSiteOddRandom path i ω +
+          siteOddCLM i (SpinGlass.magnetic_field_vector N h) := by
+  rw [lastSiteHamiltonian_zero]
+  unfold lastSiteBulkEnergy
+  let M := SpinGlass.magnetic_field_vector N h
+  have hM : siteEvenCLM i M + siteOddCLM i M = M := siteEven_add_siteOdd i M
+  calc
+    lastSiteBulkRandom (s := s) path i ω + lastSiteOddRandom path i ω + M =
+        lastSiteBulkRandom (s := s) path i ω + lastSiteOddRandom path i ω +
+          (siteEvenCLM i M + siteOddCLM i M) :=
+      congrArg (fun X => lastSiteBulkRandom (s := s) path i ω +
+        lastSiteOddRandom path i ω + X) hM.symm
+    _ = (lastSiteBulkRandom (s := s) path i ω + siteEvenCLM i M) +
+        lastSiteOddRandom path i ω + siteOddCLM i M := by abel
+
+/-- Quenched Gibbs expectation along the selected-site interpolation. -/
+noncomputable def lastSiteQuenchedAverage
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (u : ℝ) (F : ReplicaFun N n) : ℝ :=
+  quenchedReplicaAverage (lastSiteHamiltonian (s := s) path i u) F
+
+/-- Pointwise derivative of the selected-site Hamiltonian on the open
+interpolation interval. -/
+noncomputable def lastSiteHamiltonianDeriv
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (u : ℝ) (ω : Ω) : SpinGlass.EnergySpace N :=
+  (s / (2 * Real.sqrt (s * u))) • siteOddCLM i (path.sk.U ω) -
+    (s / (2 * Real.sqrt (1 - s * u))) • siteOddCLM i (path.simple.V ω)
+
+lemma hasDerivAt_lastSiteHamiltonian
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s u : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (hs : 0 ≤ s) (hu : u ∈ Set.Ioo (0 : ℝ) 1)
+    (hsu : s * u < 1) (ω : Ω) :
+    HasDerivAt (fun v => lastSiteHamiltonian (s := s) path i v ω)
+      (lastSiteHamiltonianDeriv (s := s) path i u ω) u := by
+  by_cases hs0 : s = 0
+  · subst s
+    have hfun : (fun v => lastSiteHamiltonian (s := 0) path i v ω) =
+        fun _ => lastSiteHamiltonian (s := 0) path i u ω := by
+      funext v
+      simp [lastSiteHamiltonian, lastSiteOddInterpolated]
+    rw [hfun]
+    simpa [lastSiteHamiltonianDeriv] using
+      (hasDerivAt_const (x := u)
+        (c := lastSiteHamiltonian (s := 0) path i u ω))
+  · have hspos : 0 < s := lt_of_le_of_ne hs (Ne.symm hs0)
+    have hsu0 : s * u ≠ 0 := mul_ne_zero hs0 (ne_of_gt hu.1)
+    have h1su0 : 1 - s * u ≠ 0 := ne_of_gt (sub_pos.mpr hsu)
+    have hmul : HasDerivAt (fun v : ℝ => s * v) s u := by
+      simpa using (hasDerivAt_id u).const_mul s
+    have hsub : HasDerivAt (fun v : ℝ => 1 - s * v) (-s) u := by
+      simpa using (HasDerivAt.const_sub (c := (1 : ℝ)) hmul)
+    have hodd :=
+      (((Real.hasDerivAt_sqrt hsu0).comp u hmul).smul_const
+        (siteOddCLM i (path.sk.U ω))).add
+      (((Real.hasDerivAt_sqrt h1su0).comp u hsub).smul_const
+        (siteOddCLM i (path.simple.V ω)))
+    have hcsk : 1 / (2 * Real.sqrt (s * u)) * s =
+        s / (2 * Real.sqrt (s * u)) := by ring
+    have hcsim : 1 / (2 * Real.sqrt (1 - s * u)) * (-s) =
+        -(s / (2 * Real.sqrt (1 - s * u))) := by ring
+    rw [hcsk, hcsim] at hodd
+    simpa [lastSiteHamiltonian, lastSiteOddInterpolated,
+      lastSiteHamiltonianDeriv, sub_eq_add_neg, neg_smul, neg_div] using
+      hodd.add_const
+        (Real.sqrt s • siteEvenCLM i (path.sk.U ω) +
+          Real.sqrt (1 - s) • siteEvenCLM i (path.simple.V ω) +
+          SpinGlass.magnetic_field_vector N h)
+
+lemma replicaGibbsAverage_eq_gibbs_average_n_det
+    {N n : ℕ} (H : SpinGlass.EnergySpace N) (F : ReplicaFun N n) :
+    replicaGibbsAverage H F =
+      SpinGlass.gibbs_average_n_det (N := N) (n := n) H F := by
+  unfold replicaGibbsAverage SpinGlass.gibbs_average_n_det
+  apply Finset.sum_congr rfl
+  intro σs _
+  ring
+
+lemma contDiff_gibbs_average_n_det
+    {N n : ℕ} (F : ReplicaFun N n) :
+    ContDiff ℝ (↑(⊤ : ℕ∞) : WithTop ℕ∞)
+      (fun H : SpinGlass.EnergySpace N =>
+        SpinGlass.gibbs_average_n_det (N := N) (n := n) H F) := by
+  classical
+  have hprod (T : Finset (Fin n)) (σs : Replicas N n) :
+      ContDiff ℝ (↑(⊤ : ℕ∞) : WithTop ℕ∞)
+        (fun H : SpinGlass.EnergySpace N =>
+          ∏ a ∈ T, SpinGlass.gibbs_pmf N H (σs a)) := by
+    induction T using Finset.induction_on with
+    | empty => simpa using
+        (contDiff_const : ContDiff ℝ (↑(⊤ : ℕ∞) : WithTop ℕ∞)
+          (fun _ : SpinGlass.EnergySpace N => (1 : ℝ)))
+    | @insert a T ha ih =>
+        simpa [Finset.prod_insert ha] using
+          (SpinGlass.contDiff_gibbs_pmf (N := N) (σ := σs a)).mul ih
+  unfold SpinGlass.gibbs_average_n_det
+  simpa using
+    (ContDiff.sum (s := (Finset.univ : Finset (Replicas N n)))
+      (f := fun σs H => F σs * ∏ a, SpinGlass.gibbs_pmf N H (σs a))
+      (fun σs _ => contDiff_const.mul (by
+        simpa using hprod Finset.univ σs)))
+
+/-- Gibbs expectation of an energy direction. -/
+noncomputable def gibbsEnergyMean {N : ℕ}
+    (H v : SpinGlass.EnergySpace N) : ℝ :=
+  ∑ σ : SpinGlass.Config N, SpinGlass.gibbs_pmf N H σ * v σ
+
+noncomputable def energyPointwiseMul {N : ℕ}
+    (u v : SpinGlass.EnergySpace N) : SpinGlass.EnergySpace N :=
+  WithLp.toLp 2 (fun σ => u σ * v σ)
+
+@[simp] lemma energyPointwiseMul_apply {N : ℕ}
+    (u v : SpinGlass.EnergySpace N) (σ : SpinGlass.Config N) :
+    energyPointwiseMul u v σ = u σ * v σ := rfl
+
+/-- Log-density variation of an `n`-replica product Gibbs weight. -/
+noncomputable def replicaEnergyScore {N n : ℕ}
+    (H v : SpinGlass.EnergySpace N) (σs : Replicas N n) : ℝ :=
+  ∑ a : Fin n, (gibbsEnergyMean H v - v (σs a))
+
+lemma fderiv_gibbsEnergyMean_apply {N : ℕ}
+    (H u v : SpinGlass.EnergySpace N) :
+    fderiv ℝ (fun K => gibbsEnergyMean K u) H v =
+      gibbsEnergyMean H u * gibbsEnergyMean H v -
+        gibbsEnergyMean H (energyPointwiseMul u v) := by
+  classical
+  unfold gibbsEnergyMean
+  have hdiff : ∀ σ : SpinGlass.Config N,
+      DifferentiableAt ℝ (fun K : SpinGlass.EnergySpace N =>
+        SpinGlass.gibbs_pmf N K σ * u σ) H := by
+    intro σ
+    exact (SpinGlass.differentiableAt_gibbs_pmf
+      (N := N) (H := H) σ).mul_const (u σ)
+  rw [fderiv_fun_sum (u := (Finset.univ : Finset (SpinGlass.Config N)))
+    (A := fun σ K => SpinGlass.gibbs_pmf N K σ * u σ)
+    (x := H) (fun σ _ => hdiff σ)]
+  simp only [ContinuousLinearMap.sum_apply]
+  have hterm (σ : SpinGlass.Config N) :
+      (fderiv ℝ (fun K : SpinGlass.EnergySpace N =>
+        SpinGlass.gibbs_pmf N K σ * u σ) H) v =
+        SpinGlass.gibbs_pmf N H σ *
+          (gibbsEnergyMean H v - v σ) * u σ := by
+    have hd := ((SpinGlass.differentiableAt_gibbs_pmf
+      (N := N) (H := H) σ).hasFDerivAt.mul_const (u σ)).fderiv
+    have happ := congrArg (fun L : SpinGlass.EnergySpace N →L[ℝ] ℝ => L v) hd
+    simpa [SpinGlass.fderiv_gibbs_pmf_apply, gibbsEnergyMean,
+      ContinuousLinearMap.mul_apply, mul_comm, mul_left_comm, mul_assoc] using happ
+  simp_rw [hterm]
+  simp_rw [mul_sub, sub_mul]
+  rw [Finset.sum_sub_distrib]
+  simp_rw [mul_assoc]
+  apply congrArg₂ (fun x y : ℝ => x - y)
+  · calc
+      (∑ σ, SpinGlass.gibbs_pmf N H σ *
+          (gibbsEnergyMean H v * u σ)) =
+          ∑ σ, (SpinGlass.gibbs_pmf N H σ * u σ) *
+            gibbsEnergyMean H v := by
+              apply Finset.sum_congr rfl
+              intro σ _
+              ring
+      _ = (∑ σ, SpinGlass.gibbs_pmf N H σ * u σ) *
+          gibbsEnergyMean H v := by rw [Finset.sum_mul]
+      _ = _ := rfl
+  · apply Finset.sum_congr rfl
+    intro σ _
+    rw [energyPointwiseMul_apply]
+    ring
+
+lemma fderiv_gibbs_average_n_det_score {N n : ℕ}
+    (H v : SpinGlass.EnergySpace N) (F : ReplicaFun N n) :
+    fderiv ℝ
+        (fun K => SpinGlass.gibbs_average_n_det (N := N) (n := n) K F) H v =
+      replicaGibbsAverage H
+        (fun σs => F σs * replicaEnergyScore H v σs) := by
+  rw [SpinGlass.fderiv_gibbs_average_n_det_apply]
+  unfold replicaGibbsAverage replicaEnergyScore gibbsEnergyMean
+  apply Finset.sum_congr rfl
+  intro σs _
+  ring
+
+lemma fderiv_replicaEnergyScore_apply {N n : ℕ}
+    (H u v : SpinGlass.EnergySpace N) (σs : Replicas N n) :
+    fderiv ℝ (fun K => replicaEnergyScore K u σs) H v =
+      (n : ℝ) *
+        (gibbsEnergyMean H u * gibbsEnergyMean H v -
+          gibbsEnergyMean H (energyPointwiseMul u v)) := by
+  classical
+  unfold replicaEnergyScore
+  have hdiff : ∀ a : Fin n, DifferentiableAt ℝ
+      (fun K : SpinGlass.EnergySpace N => gibbsEnergyMean K u - u (σs a)) H := by
+    intro a
+    have hm : DifferentiableAt ℝ (fun K : SpinGlass.EnergySpace N =>
+        gibbsEnergyMean K u) H := by
+      unfold gibbsEnergyMean
+      apply DifferentiableAt.fun_sum
+      intro σ _
+      exact (SpinGlass.differentiableAt_gibbs_pmf
+        (N := N) (H := H) σ).mul_const (u σ)
+    exact hm.sub_const _
+  rw [fderiv_fun_sum (u := (Finset.univ : Finset (Fin n)))
+    (A := fun a K => gibbsEnergyMean K u - u (σs a))
+    (x := H) (fun a _ => hdiff a)]
+  simp only [ContinuousLinearMap.sum_apply]
+  have hterm (a : Fin n) :
+      (fderiv ℝ (fun K : SpinGlass.EnergySpace N =>
+        gibbsEnergyMean K u - u (σs a)) H) v =
+        gibbsEnergyMean H u * gibbsEnergyMean H v -
+          gibbsEnergyMean H (energyPointwiseMul u v) := by
+    have hm : DifferentiableAt ℝ (fun K : SpinGlass.EnergySpace N =>
+        gibbsEnergyMean K u) H := by
+      unfold gibbsEnergyMean
+      apply DifferentiableAt.fun_sum
+      intro σ _
+      exact (SpinGlass.differentiableAt_gibbs_pmf
+        (N := N) (H := H) σ).mul_const (u σ)
+    have hd := (hm.hasFDerivAt.sub_const (u (σs a))).fderiv
+    have happ := congrArg (fun L : SpinGlass.EnergySpace N →L[ℝ] ℝ => L v) hd
+    rw [happ]
+    exact fderiv_gibbsEnergyMean_apply H u v
+  simp_rw [hterm]
+  simp
+  ring
+
+lemma differentiableAt_replicaEnergyScore {N n : ℕ}
+    (H u : SpinGlass.EnergySpace N) (σs : Replicas N n) :
+    DifferentiableAt ℝ
+      (fun K : SpinGlass.EnergySpace N => replicaEnergyScore K u σs) H := by
+  unfold replicaEnergyScore
+  apply DifferentiableAt.fun_sum
+  intro a _
+  apply DifferentiableAt.sub_const
+  unfold gibbsEnergyMean
+  apply DifferentiableAt.fun_sum
+  intro σ _
+  exact (SpinGlass.differentiableAt_gibbs_pmf
+    (N := N) (H := H) σ).mul_const (u σ)
+
+/-- Explicit second Hamiltonian variation of a normalized replicated Gibbs
+average. -/
+noncomputable def gibbsReplicaSecondVariation {N n : ℕ}
+    (H u v : SpinGlass.EnergySpace N) (F : ReplicaFun N n) : ℝ :=
+  replicaGibbsAverage H (fun σs =>
+    F σs *
+      (replicaEnergyScore H u σs * replicaEnergyScore H v σs +
+        (n : ℝ) *
+          (gibbsEnergyMean H u * gibbsEnergyMean H v -
+            gibbsEnergyMean H (energyPointwiseMul u v))))
+
+lemma fderiv_gibbs_firstVariation_apply {N n : ℕ}
+    (H u v : SpinGlass.EnergySpace N) (F : ReplicaFun N n) :
+    fderiv ℝ
+        (fun K => fderiv ℝ
+          (fun L => SpinGlass.gibbs_average_n_det (N := N) (n := n) L F) K u)
+        H v = gibbsReplicaSecondVariation H u v F := by
+  classical
+  let Φ : SpinGlass.EnergySpace N → ℝ := fun K =>
+    SpinGlass.gibbs_average_n_det (N := N) (n := n) K F
+  have hfun : (fun K => fderiv ℝ Φ K u) = fun K =>
+      ∑ σs : Replicas N n,
+        F σs * (∏ a, SpinGlass.gibbs_pmf N K (σs a)) *
+          replicaEnergyScore K u σs := by
+    funext K
+    rw [show fderiv ℝ Φ K u =
+        replicaGibbsAverage K
+          (fun σs => F σs * replicaEnergyScore K u σs) by
+      exact fderiv_gibbs_average_n_det_score K u F]
+    unfold replicaGibbsAverage
+    apply Finset.sum_congr rfl
+    intro σs _
+    ring
+  change fderiv ℝ (fun K => fderiv ℝ Φ K u) H v = _
+  rw [hfun]
+  have hdiff (σs : Replicas N n) : DifferentiableAt ℝ
+      (fun K : SpinGlass.EnergySpace N =>
+        F σs * (∏ a, SpinGlass.gibbs_pmf N K (σs a)) *
+          replicaEnergyScore K u σs) H := by
+    have hw := SpinGlass.differentiableAt_prod_gibbs_pmf
+      (N := N) (n := n) H σs
+    have hs := differentiableAt_replicaEnergyScore H u σs
+    exact (hw.const_mul (F σs)).mul hs
+  rw [fderiv_fun_sum (u := (Finset.univ : Finset (Replicas N n)))
+    (A := fun σs K => F σs *
+      (∏ a, SpinGlass.gibbs_pmf N K (σs a)) * replicaEnergyScore K u σs)
+    (x := H) (fun σs _ => hdiff σs)]
+  simp only [ContinuousLinearMap.sum_apply]
+  have hterm (σs : Replicas N n) :
+      (fderiv ℝ (fun K : SpinGlass.EnergySpace N =>
+        F σs * (∏ a, SpinGlass.gibbs_pmf N K (σs a)) *
+          replicaEnergyScore K u σs) H) v =
+        F σs * (∏ a, SpinGlass.gibbs_pmf N H (σs a)) *
+          (replicaEnergyScore H v σs * replicaEnergyScore H u σs +
+            (n : ℝ) *
+              (gibbsEnergyMean H u * gibbsEnergyMean H v -
+                gibbsEnergyMean H (energyPointwiseMul u v))) := by
+    have hw := SpinGlass.differentiableAt_prod_gibbs_pmf
+      (N := N) (n := n) H σs
+    have hs := differentiableAt_replicaEnergyScore H u σs
+    have hd := ((hw.const_mul (F σs)).hasFDerivAt.mul hs.hasFDerivAt).fderiv
+    have happ := congrArg (fun L : SpinGlass.EnergySpace N →L[ℝ] ℝ => L v) hd
+    have hwapp := SpinGlass.fderiv_prod_gibbs_pmf_apply
+      (N := N) (n := n) H v σs
+    have hsapp := fderiv_replicaEnergyScore_apply H u v σs
+    have hFw := congrArg (fun L : SpinGlass.EnergySpace N →L[ℝ] ℝ => L v)
+      ((hw.hasFDerivAt.const_mul (F σs)).fderiv)
+    simp only [ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply,
+      smul_eq_mul] at happ hFw
+    rw [hFw, hwapp, hsapp] at happ
+    unfold replicaEnergyScore gibbsEnergyMean at happ ⊢
+    simp only [energyPointwiseMul_apply] at happ ⊢
+    convert happ using 1
+    · congr 1
+    · ring
+  simp_rw [hterm]
+  unfold gibbsReplicaSecondVariation replicaGibbsAverage
+  apply Finset.sum_congr rfl
+  intro σs _
+  ring
+
+lemma abs_gibbsEnergyMean_le {N : ℕ}
+    (H v : SpinGlass.EnergySpace N) :
+    |gibbsEnergyMean H v| ≤ ‖v‖ := by
+  classical
+  unfold gibbsEnergyMean
+  calc
+    |∑ σ : SpinGlass.Config N, SpinGlass.gibbs_pmf N H σ * v σ| ≤
+        ∑ σ : SpinGlass.Config N,
+          |SpinGlass.gibbs_pmf N H σ * v σ| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ σ : SpinGlass.Config N,
+          SpinGlass.gibbs_pmf N H σ * ‖v‖ := by
+      apply Finset.sum_le_sum
+      intro σ _
+      rw [abs_mul, abs_of_nonneg (SpinGlass.gibbs_pmf_nonneg N H σ)]
+      exact mul_le_mul_of_nonneg_left (SpinGlass.abs_apply_le_norm N v σ)
+        (SpinGlass.gibbs_pmf_nonneg N H σ)
+    _ = ‖v‖ := by
+      rw [← Finset.sum_mul, SpinGlass.sum_gibbs_pmf, one_mul]
+
+lemma abs_gibbsEnergyMean_mul_le {N : ℕ}
+    (H u v : SpinGlass.EnergySpace N) :
+    |gibbsEnergyMean H (energyPointwiseMul u v)| ≤ ‖u‖ * ‖v‖ := by
+  classical
+  unfold gibbsEnergyMean
+  calc
+    |∑ σ : SpinGlass.Config N,
+        SpinGlass.gibbs_pmf N H σ * energyPointwiseMul u v σ| ≤
+        ∑ σ : SpinGlass.Config N,
+          |SpinGlass.gibbs_pmf N H σ * energyPointwiseMul u v σ| :=
+      Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ σ : SpinGlass.Config N,
+          SpinGlass.gibbs_pmf N H σ * (‖u‖ * ‖v‖) := by
+      apply Finset.sum_le_sum
+      intro σ _
+      rw [energyPointwiseMul_apply, abs_mul, abs_mul,
+        abs_of_nonneg (SpinGlass.gibbs_pmf_nonneg N H σ)]
+      exact mul_le_mul_of_nonneg_left
+        (mul_le_mul (SpinGlass.abs_apply_le_norm N u σ)
+          (SpinGlass.abs_apply_le_norm N v σ) (abs_nonneg _) (norm_nonneg _))
+        (SpinGlass.gibbs_pmf_nonneg N H σ)
+    _ = ‖u‖ * ‖v‖ := by
+      rw [← Finset.sum_mul, SpinGlass.sum_gibbs_pmf, one_mul]
+
+lemma abs_replicaEnergyScore_le {N n : ℕ}
+    (H v : SpinGlass.EnergySpace N) (σs : Replicas N n) :
+    |replicaEnergyScore H v σs| ≤ 2 * (n : ℝ) * ‖v‖ := by
+  classical
+  unfold replicaEnergyScore
+  calc
+    |∑ a : Fin n, (gibbsEnergyMean H v - v (σs a))| ≤
+        ∑ a : Fin n, |gibbsEnergyMean H v - v (σs a)| :=
+      Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _a : Fin n, (2 * ‖v‖) := by
+      apply Finset.sum_le_sum
+      intro a _
+      calc
+        |gibbsEnergyMean H v - v (σs a)| ≤
+            |gibbsEnergyMean H v| + |v (σs a)| := abs_sub _ _
+        _ ≤ ‖v‖ + ‖v‖ := add_le_add (abs_gibbsEnergyMean_le H v)
+          (SpinGlass.abs_apply_le_norm N v (σs a))
+        _ = 2 * ‖v‖ := by ring
+    _ = 2 * (n : ℝ) * ‖v‖ := by simp; ring
+
+lemma abs_gibbsReplicaSecondVariation_le {N n : ℕ}
+    (H u v : SpinGlass.EnergySpace N) (F : ReplicaFun N n) :
+    |gibbsReplicaSecondVariation H u v F| ≤
+      (4 * (n : ℝ) ^ 2 + 2 * (n : ℝ)) *
+        (∑ σs : Replicas N n, |F σs|) * ‖u‖ * ‖v‖ := by
+  classical
+  let C : ℝ := 4 * (n : ℝ) ^ 2 + 2 * (n : ℝ)
+  have hC : 0 ≤ C := by dsimp [C]; positivity
+  have hpoint (σs : Replicas N n) :
+      |F σs *
+        (replicaEnergyScore H u σs * replicaEnergyScore H v σs +
+          (n : ℝ) * (gibbsEnergyMean H u * gibbsEnergyMean H v -
+            gibbsEnergyMean H (energyPointwiseMul u v)))| ≤
+        |F σs| * (C * ‖u‖ * ‖v‖) := by
+    rw [abs_mul]
+    apply mul_le_mul_of_nonneg_left _ (abs_nonneg _)
+    have hscoreU := abs_replicaEnergyScore_le H u σs
+    have hscoreV := abs_replicaEnergyScore_le H v σs
+    have hscoreProd :
+        |replicaEnergyScore H u σs| * |replicaEnergyScore H v σs| ≤
+          (2 * (n : ℝ) * ‖u‖) * (2 * (n : ℝ) * ‖v‖) :=
+      mul_le_mul hscoreU hscoreV (abs_nonneg _) (by positivity)
+    have hcov :
+        |gibbsEnergyMean H u * gibbsEnergyMean H v -
+          gibbsEnergyMean H (energyPointwiseMul u v)| ≤
+            2 * (‖u‖ * ‖v‖) := by
+      calc
+        |gibbsEnergyMean H u * gibbsEnergyMean H v -
+            gibbsEnergyMean H (energyPointwiseMul u v)| ≤
+            |gibbsEnergyMean H u| * |gibbsEnergyMean H v| +
+              |gibbsEnergyMean H (energyPointwiseMul u v)| := by
+          simpa only [abs_mul] using
+            (abs_sub (gibbsEnergyMean H u * gibbsEnergyMean H v)
+              (gibbsEnergyMean H (energyPointwiseMul u v)))
+        _ ≤ ‖u‖ * ‖v‖ + ‖u‖ * ‖v‖ :=
+          add_le_add
+            (mul_le_mul (abs_gibbsEnergyMean_le H u)
+              (abs_gibbsEnergyMean_le H v) (abs_nonneg _) (norm_nonneg _))
+            (abs_gibbsEnergyMean_mul_le H u v)
+        _ = 2 * (‖u‖ * ‖v‖) := by ring
+    calc
+      |replicaEnergyScore H u σs * replicaEnergyScore H v σs +
+          (n : ℝ) * (gibbsEnergyMean H u * gibbsEnergyMean H v -
+            gibbsEnergyMean H (energyPointwiseMul u v))| ≤
+          |replicaEnergyScore H u σs| * |replicaEnergyScore H v σs| +
+            (n : ℝ) *
+              |gibbsEnergyMean H u * gibbsEnergyMean H v -
+                gibbsEnergyMean H (energyPointwiseMul u v)| := by
+        calc
+          |_ + _| ≤ |replicaEnergyScore H u σs *
+              replicaEnergyScore H v σs| +
+              |(n : ℝ) * (gibbsEnergyMean H u * gibbsEnergyMean H v -
+                gibbsEnergyMean H (energyPointwiseMul u v))| := abs_add_le _ _
+          _ = _ := by
+            have hnabs : |(n : ℝ)| = (n : ℝ) :=
+              abs_of_nonneg (Nat.cast_nonneg n)
+            simp only [abs_mul, hnabs]
+      _ ≤ (2 * (n : ℝ) * ‖u‖) * (2 * (n : ℝ) * ‖v‖) +
+          (n : ℝ) * (2 * (‖u‖ * ‖v‖)) := by
+        exact add_le_add hscoreProd
+          (mul_le_mul_of_nonneg_left hcov (Nat.cast_nonneg n))
+      _ = C * ‖u‖ * ‖v‖ := by dsimp [C]; ring
+  unfold gibbsReplicaSecondVariation
+  calc
+    |replicaGibbsAverage H (fun σs => F σs *
+        (replicaEnergyScore H u σs * replicaEnergyScore H v σs +
+          (n : ℝ) * (gibbsEnergyMean H u * gibbsEnergyMean H v -
+            gibbsEnergyMean H (energyPointwiseMul u v))))| ≤
+        ∑ σs : Replicas N n, |F σs *
+          (replicaEnergyScore H u σs * replicaEnergyScore H v σs +
+            (n : ℝ) * (gibbsEnergyMean H u * gibbsEnergyMean H v -
+              gibbsEnergyMean H (energyPointwiseMul u v)))| :=
+      abs_replicaGibbsAverage_le_sum_abs _ _
+    _ ≤ ∑ σs : Replicas N n, |F σs| * (C * ‖u‖ * ‖v‖) :=
+      Finset.sum_le_sum (fun σs _ => hpoint σs)
+    _ = (∑ σs : Replicas N n, |F σs|) * (C * ‖u‖ * ‖v‖) := by
+      rw [Finset.sum_mul]
+    _ = C * (∑ σs : Replicas N n, |F σs|) * ‖u‖ * ‖v‖ := by ring
+    _ = _ := by rfl
+
+/-- Linear image of the joint disorder giving the random part of the
+selected-site Hamiltonian. -/
+noncomputable def lastSiteIBPPathCLM {N : ℕ} (i : Fin N) (s u : ℝ) :
+    WithLp 2 (SpinGlass.EnergySpace N × SpinGlass.EnergySpace N) →L[ℝ]
+      SpinGlass.EnergySpace N :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun p =>
+        Real.sqrt s • siteEvenCLM i (WithLp.ofLp p).1 +
+          Real.sqrt (1 - s) • siteEvenCLM i (WithLp.ofLp p).2 +
+          Real.sqrt (s * u) • siteOddCLM i (WithLp.ofLp p).1 +
+          Real.sqrt (1 - s * u) • siteOddCLM i (WithLp.ofLp p).2
+      map_add' := by
+        intro x y
+        simp only [WithLp.ofLp_add, Prod.fst_add, Prod.snd_add, map_add, smul_add]
+        abel
+      map_smul' := by
+        intro c x
+        simp [smul_add, smul_smul, mul_comm] }
+
+/-- Linear image of the joint disorder giving the time derivative. -/
+noncomputable def lastSiteIBPDerivCLM {N : ℕ} (i : Fin N) (s u : ℝ) :
+    WithLp 2 (SpinGlass.EnergySpace N × SpinGlass.EnergySpace N) →L[ℝ]
+      SpinGlass.EnergySpace N :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun p =>
+        (s / (2 * Real.sqrt (s * u))) • siteOddCLM i (WithLp.ofLp p).1 -
+          (s / (2 * Real.sqrt (1 - s * u))) • siteOddCLM i (WithLp.ofLp p).2
+      map_add' := by
+        intro x y
+        simp only [WithLp.ofLp_add, Prod.fst_add, Prod.snd_add, map_add, smul_add,
+          sub_eq_add_neg, neg_add_rev]
+        abel
+      map_smul' := by
+        intro c x
+        simp [smul_sub, smul_smul, mul_comm] }
+
+@[simp] lemma lastSiteIBPPathCLM_UV
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (u : ℝ) (ω : Ω) :
+    lastSiteIBPPathCLM i s u
+        (SpinGlass.UV (N := N) (β := β) (h := h) (q := q)
+          (sk := path.sk) (sim := path.simple) ω) +
+        SpinGlass.magnetic_field_vector N h =
+      lastSiteHamiltonian (s := s) path i u ω := by
+  simp [lastSiteIBPPathCLM, SpinGlass.UV, lastSiteHamiltonian,
+    lastSiteOddInterpolated]
+  abel
+
+@[simp] lemma lastSiteIBPDerivCLM_UV
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (u : ℝ) (ω : Ω) :
+    lastSiteIBPDerivCLM i s u
+        (SpinGlass.UV (N := N) (β := β) (h := h) (q := q)
+          (sk := path.sk) (sim := path.simple) ω) =
+      lastSiteHamiltonianDeriv (s := s) path i u ω := by
+  rfl
+
+/-- The fixed-disorder derivative before Gaussian integration by parts. -/
+noncomputable def lastSiteGibbsDerivative
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (u : ℝ) (F : ReplicaFun N n) (ω : Ω) : ℝ :=
+  fderiv ℝ (fun H => SpinGlass.gibbs_average_n_det (N := N) (n := n) H F)
+    (lastSiteHamiltonian (s := s) path i u ω)
+    (lastSiteHamiltonianDeriv (s := s) path i u ω)
+
+lemma hasDerivAt_lastSiteReplicaGibbsAverage
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s u : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (i : Fin N) (hs : 0 ≤ s) (hu : u ∈ Set.Ioo (0 : ℝ) 1)
+    (hsu : s * u < 1) (F : ReplicaFun N n) (ω : Ω) :
+    HasDerivAt
+      (fun v => SpinGlass.gibbs_average_n_det (N := N) (n := n)
+        (lastSiteHamiltonian (s := s) path i v ω) F)
+      (lastSiteGibbsDerivative (s := s) path i u F ω) u := by
+  let Φ : SpinGlass.EnergySpace N → ℝ := fun H =>
+    SpinGlass.gibbs_average_n_det (N := N) (n := n) H F
+  have hΦ : DifferentiableAt ℝ Φ
+      (lastSiteHamiltonian (s := s) path i u ω) := by
+    dsimp only [Φ]
+    unfold SpinGlass.gibbs_average_n_det
+    apply DifferentiableAt.fun_sum
+    intro σs _
+    exact (SpinGlass.differentiableAt_prod_gibbs_pmf
+      (N := N) (n := n) (lastSiteHamiltonian (s := s) path i u ω) σs).const_mul
+        (F σs)
+  have hcomp := hΦ.hasFDerivAt.comp_hasDerivAt u
+    (hasDerivAt_lastSiteHamiltonian path i hs hu hsu ω)
+  change HasDerivAt (Φ ∘ fun v => lastSiteHamiltonian (s := s) path i v ω)
+    (lastSiteGibbsDerivative (s := s) path i u F ω) u
+  simpa only [lastSiteGibbsDerivative, Φ] using hcomp
+
+set_option maxHeartbeats 2000000 in
+/-- Endpoint factorization before evaluating the remaining one-dimensional
+Gaussian moment. -/
+lemma lastSiteQuenchedAverage_zero_factor
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (hN : 0 < N) (hq : 0 ≤ q) (i : Fin N)
+    (F : (Fin n → SiteBaseConfig N i) → ℝ) (S : Finset (Fin n)) :
+    lastSiteQuenchedAverage (s := s) path i 0
+        (fun σs => F (replicasSplitSiteEquiv i σs).1 *
+          ∏ a ∈ S, SpinGlass.spin N (σs a) i) =
+      (∫ ω, ∑ ρs, (∏ a, siteBaseWeight
+          (lastSiteBulkEnergy (s := s) path i ω) (ρs a)) * F ρs ∂volume) *
+        standardGaussianExpectation (fun z =>
+          (-Real.tanh (h + β * Real.sqrt q * z)) ^ S.card) := by
+  classical
+  let Y : Ω → SpinGlass.EnergySpace N := lastSiteBulkEnergy (s := s) path i
+  let X : Ω → SpinGlass.EnergySpace N := lastSiteOddRandom path i
+  let obs : ReplicaFun N n := fun σs =>
+    F (replicasSplitSiteEquiv i σs).1 *
+      ∏ a ∈ S, SpinGlass.spin N (σs a) i
+  let φ : SpinGlass.EnergySpace N → SpinGlass.EnergySpace N → ℝ :=
+    fun B O => replicaGibbsAverage
+      (B + O + siteOddCLM i (SpinGlass.magnetic_field_vector N h)) obs
+  have hY : Measurable Y := by
+    dsimp [Y, lastSiteBulkEnergy, lastSiteBulkRandom]
+    have hsk : Measurable (fun ω => siteEvenCLM i (path.sk.U ω)) :=
+      (siteEvenCLM i).continuous.measurable.comp path.sk.hU.repr_measurable
+    have hsim : Measurable (fun ω => siteEvenCLM i (path.simple.V ω)) :=
+      (siteEvenCLM i).continuous.measurable.comp path.simple.hV.repr_measurable
+    exact ((hsk.const_smul (Real.sqrt s)).add
+      (hsim.const_smul (Real.sqrt (1 - s)))).add measurable_const
+  have hX : Measurable X := by
+    dsimp [X, lastSiteOddRandom]
+    exact (siteOddCLM i).continuous.measurable.comp path.simple.hV.repr_measurable
+  have hIndep : IndepFun Y X volume := by
+    have hi := lastSite_bulk_indep_odd (s := s) path i
+    exact hi.comp (continuous_id.add continuous_const).measurable measurable_id
+  have hφ : Measurable (fun p : SpinGlass.EnergySpace N × SpinGlass.EnergySpace N =>
+      φ p.1 p.2) := by
+    apply (measurable_replicaGibbsAverage obs).comp
+    fun_prop
+  have hInt : Integrable (fun ω => φ (Y ω) (X ω)) volume := by
+    apply Integrable.of_bound
+      ((hφ.comp (hY.prodMk hX)).aestronglyMeasurable)
+      (∑ σs, |obs σs|)
+    filter_upwards [] with ω
+    simpa [Real.norm_eq_abs] using
+      abs_replicaGibbsAverage_le_sum_abs
+        (Y ω + X ω + siteOddCLM i (SpinGlass.magnetic_field_vector N h)) obs
+  have hprod := PhysLean.Probability.GaussianIBP.integral_pair_via_prod
+    Y X hY hX hIndep hφ hInt
+  rw [lastSiteQuenchedAverage, quenchedReplicaAverage]
+  simp_rw [lastSiteHamiltonian_zero_split]
+  change (∫ ω, φ (Y ω) (X ω) ∂volume) = _
+  rw [hprod]
+  rw [lastSiteOddRandom_law_eq_reference path hN hq i]
+  let oddRef : (Fin N → ℝ) → SpinGlass.EnergySpace N := fun z =>
+    siteOddCLM i (SpinGlass.GeneralizedLatala.referenceField N β q z)
+  let BF : SpinGlass.EnergySpace N → ℝ := fun B =>
+    ∑ ρs, (∏ a, siteBaseWeight B (ρs a)) * F ρs
+  let g : ℝ → ℝ := fun z =>
+    (-Real.tanh (h + β * Real.sqrt q * z)) ^ S.card
+  have hOddRef : Measurable oddRef := by
+    exact (siteOddCLM i).continuous.measurable.comp
+      (SpinGlass.GeneralizedLatala.referenceFieldCLM N β q).continuous.measurable
+  have hBF : Measurable BF := by
+    dsimp [BF, siteBaseWeight]
+    apply Finset.measurable_sum
+    intro ρs _
+    apply Measurable.mul
+    · apply Finset.measurable_prod
+      intro a _
+      apply Measurable.div
+      · exact Real.measurable_exp.comp
+          ((SpinGlass.evalCLM (N := N) (ρs a).1).continuous.measurable.neg)
+      · apply Finset.measurable_sum
+        intro τ _
+        exact Real.measurable_exp.comp
+          ((SpinGlass.evalCLM (N := N) τ.1).continuous.measurable.neg)
+    · exact measurable_const
+  have hgCont : Continuous g := by
+    dsimp [g]
+    have htanh : Continuous Real.tanh := by
+      rw [show Real.tanh = fun x : ℝ => Real.sinh x / Real.cosh x by
+        funext x
+        exact Real.tanh_eq_sinh_div_cosh x]
+      exact Real.continuous_sinh.div Real.continuous_cosh
+        (fun x => (Real.cosh_pos x).ne')
+    exact (htanh.comp (by fun_prop)).neg.pow _
+  have hgInt : Integrable g (gaussianReal 0 1) := by
+    apply Integrable.of_bound hgCont.aestronglyMeasurable 1
+    filter_upwards [] with z
+    rw [Real.norm_eq_abs, abs_pow]
+    exact pow_le_one₀ (abs_nonneg _) (by
+      simpa only [abs_neg] using (Real.abs_tanh_lt_one (h + β * Real.sqrt q * z)).le)
+  have hEven : ∀ᵐ B ∂Measure.map Y volume,
+      ∀ σ, B (flipSite i σ) = B σ := by
+    have hset : MeasurableSet
+        {B : SpinGlass.EnergySpace N | ∀ σ, B (flipSite i σ) = B σ} := by
+      rw [show {B : SpinGlass.EnergySpace N |
+          ∀ σ, B (flipSite i σ) = B σ} =
+          ⋂ σ : SpinGlass.Config N,
+            {B : SpinGlass.EnergySpace N | B (flipSite i σ) = B σ} by
+        ext B
+        simp]
+      exact MeasurableSet.iInter fun σ => measurableSet_eq_fun
+        (SpinGlass.evalCLM (N := N) (flipSite i σ)).continuous.measurable
+        (SpinGlass.evalCLM (N := N) σ).continuous.measurable
+    rw [ae_map_iff hY.aemeasurable hset]
+    exact Filter.Eventually.of_forall fun ω => lastSiteBulkEnergy_invariant path i ω
+  have hinner : ∀ᵐ B ∂Measure.map Y volume,
+      (∫ O, φ B O ∂Measure.map oddRef
+        (SpinGlass.GeneralizedLatala.gaussianProduct N)) =
+        BF B * standardGaussianExpectation g := by
+    filter_upwards [hEven] with B hB
+    rw [MeasureTheory.integral_map hOddRef.aemeasurable]
+    · rw [show (fun z => φ B (oddRef z)) = fun z => BF B * g (z i) by
+        funext z
+        dsimp [φ, oddRef]
+        rw [reference_endpoint_eq_even_oneSite]
+        have hobs : obs = fun σs =>
+            F (replicasSplitSiteEquiv i σs).1 *
+              (fun bs => ∏ a ∈ S,
+                SpinGlass.GeneralizedLatala.boolSpin (bs a))
+                (replicasSplitSiteEquiv i σs).2 := by
+          funext σs
+          dsimp [obs, replicasSplitSiteEquiv]
+          simp [SpinGlass.GeneralizedLatala.spin_eq_boolSpin,
+            configSplitSiteEquiv]
+        rw [hobs]
+        have hfac := replicaGibbsAverage_even_oneSite_factor i B hB
+          (h + β * Real.sqrt q * z i) F
+          (fun bs => ∏ a ∈ S, SpinGlass.GeneralizedLatala.boolSpin (bs a))
+        rw [oneSiteReplicaMoment] at hfac
+        simpa [BF, g] using hfac]
+      rw [integral_const_mul]
+      have hcoord :
+          (∫ a : Fin N → ℝ, g (a i)
+              ∂SpinGlass.GeneralizedLatala.gaussianProduct N) =
+            ∫ z, g z ∂gaussianReal 0 1 := by
+        unfold SpinGlass.GeneralizedLatala.gaussianProduct
+        exact MeasureTheory.integral_comp_eval hgInt.aestronglyMeasurable
+      rw [hcoord]
+      unfold standardGaussianExpectation
+      rfl
+    · have hφB : Measurable (φ B) := by
+        simpa [Function.comp_def] using
+          hφ.comp (measurable_const.prodMk measurable_id)
+      exact hφB.aestronglyMeasurable
+  rw [integral_congr_ae hinner]
+  rw [integral_mul_const]
+  rw [MeasureTheory.integral_map hY.aemeasurable hBF.aestronglyMeasurable]
+
+/-- Every product of two distinct selected-site replica spins has endpoint
+expectation `q`.  Cardinality records distinctness without fixing labels. -/
+lemma lastSite_spinMoment_two
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (hN : 0 < N) (hh : 0 < h) (hq : q = rsQ β h) (i : Fin N)
+    (S : Finset (Fin n)) (hS : S.card = 2) :
+    lastSiteQuenchedAverage (s := s) path i 0
+      (fun σs => ∏ a ∈ S, SpinGlass.spin N (σs a) i) = q := by
+  subst q
+  have hfac := lastSiteQuenchedAverage_zero_factor (s := s) path hN
+    (rsQ_mem_Icc β h).1 i (fun _ => 1) S
+  have hbulk :
+      (∫ ω, ∑ ρs : Fin n → SiteBaseConfig N i, (∏ a, siteBaseWeight
+          (lastSiteBulkEnergy (s := s) path i ω) (ρs a)) * (1 : ℝ) ∂volume) = 1 := by
+    simp_rw [mul_one, sum_replica_siteBaseWeight]
+    simp
+  rw [hbulk, one_mul, hS] at hfac
+  calc
+    lastSiteQuenchedAverage (s := s) path i 0
+        (fun σs => ∏ a ∈ S, SpinGlass.spin N (σs a) i) =
+      standardGaussianExpectation (fun z =>
+        (-Real.tanh (h + β * Real.sqrt (rsQ β h) * z)) ^ 2) := by
+          simpa only [one_mul] using hfac
+    _ = standardGaussianExpectation (fun z =>
+        Real.tanh (h + β * Real.sqrt (rsQ β h) * z) ^ 2) := by
+      congr 1
+      funext z
+      ring
+    _ = rsQ β h := (rsQ_eq_gaussian_tanh_sq hh).symm
+
+/-- Every product of four distinct selected-site replica spins has endpoint
+expectation `r`. -/
+lemma lastSite_spinMoment_four
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N n : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
+    (hN : 0 < N) (hq : q = rsQ β h) (i : Fin N)
+    (S : Finset (Fin n)) (hS : S.card = 4) :
+    lastSiteQuenchedAverage (s := s) path i 0
+      (fun σs => ∏ a ∈ S, SpinGlass.spin N (σs a) i) = rsR β h := by
+  subst q
+  have hfac := lastSiteQuenchedAverage_zero_factor (s := s) path hN
+    (rsQ_mem_Icc β h).1 i (fun _ => 1) S
+  have hbulk :
+      (∫ ω, ∑ ρs : Fin n → SiteBaseConfig N i, (∏ a, siteBaseWeight
+          (lastSiteBulkEnergy (s := s) path i ω) (ρs a)) * (1 : ℝ) ∂volume) = 1 := by
+    simp_rw [mul_one, sum_replica_siteBaseWeight]
+    simp
+  rw [hbulk, one_mul, hS] at hfac
+  calc
+    lastSiteQuenchedAverage (s := s) path i 0
+        (fun σs => ∏ a ∈ S, SpinGlass.spin N (σs a) i) =
+      standardGaussianExpectation (fun z =>
+        (-Real.tanh (h + β * Real.sqrt (rsQ β h) * z)) ^ 4) := by
+          simpa only [one_mul] using hfac
+    _ = standardGaussianExpectation (fun z =>
+        Real.tanh (h + β * Real.sqrt (rsQ β h) * z) ^ 4) := by
+      congr 1
+      funext z
+      ring
+    _ = rsR β h := by
+      rw [rsR_eq_gaussian_tanh_fourth]
 
 lemma lastSiteHamiltonian_one
     {Ω : Type u} [MeasureSpace Ω]
@@ -481,9 +2172,8 @@ lemma lastSiteHamiltonian_one
     {N : ℕ} {β h q s : ℝ} (path : RSSmartPathDisorder Ω N β h q)
     (i : Fin N) (ω : Ω) :
     lastSiteHamiltonian (s := s) path i 1 ω = fullPathHamiltonian path s ω := by
-  rw [lastSiteHamiltonian, fullPathHamiltonian]
-  simp only [Real.sqrt_one, one_smul, sub_self, Real.sqrt_zero, zero_smul,
-    add_zero]
+  rw [lastSiteHamiltonian, lastSiteOddInterpolated, fullPathHamiltonian]
+  simp only [mul_one]
   calc
     Real.sqrt s • siteEvenCLM i (path.sk.U ω) +
           Real.sqrt (1 - s) • siteEvenCLM i (path.simple.V ω) +

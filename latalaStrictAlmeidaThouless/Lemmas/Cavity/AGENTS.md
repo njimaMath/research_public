@@ -1,8 +1,40 @@
-# Codex Agent Instructions: complete the last-spin cavity proof
+# Codex instructions for the last-spin cavity theorem
 
-## Scope of this task
+## Location and scope
 
-Your task is to complete the Lean proof of the analytic last-spin cavity theorem
+Place this file at
+
+```text
+C:\Users\Public\Github\Lean\research_public\
+latalaStrictAlmeidaThouless\Lemmas\Cavity\AGENTS.md
+```
+
+These instructions apply to the cavity formalization in this directory.
+
+The final target is fixed. Intermediate lemmas may be changed, replaced,
+strengthened, split, renamed, or reorganized if that helps complete the proof.
+
+---
+
+## Final goal
+
+The public predicate to preserve is
+
+```lean
+def HasCavityModeRemainderBound
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {K : Set (ℝ × ℝ)}
+    (_data : UniformATData K) (C : ℝ) : Prop :=
+  0 < C ∧
+    ∀ {N : ℕ}, 0 < N → ∀ {β h q s : ℝ},
+      (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
+      ∀ path : RSSmartPathDisorder Ω N β h q,
+        ‖cavityChangeMatrix.mulVec (cavityRemainder path s)‖ ≤
+          C * cavityErrorScale path s
+```
+
+The theorem to prove is
 
 ```lean
 theorem cavityModeRemainder_bound_from_lastSpin
@@ -11,111 +43,271 @@ theorem cavityModeRemainder_bound_from_lastSpin
     {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ C : ℝ, HasCavityModeRemainderBound (Ω := Ω) data C := by
-  sorry
+  ...
 ```
 
-in
+This theorem is the non-negotiable endpoint.
+
+You may change intermediate lemmas if needed.
+
+You may in particular:
 
 ```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\Cavity\Talagrand_Cavity.lean
+split difficult lemmas into smaller ones;
+replace an awkward intermediate statement by a stronger or better one;
+move cavity-analytic helpers into cavity_interpolation.lean;
+add replica-relabeling lemmas;
+add Gaussian differentiation lemmas;
+change internal interpolation helper definitions;
+replace a proof route by a mathematically equivalent route.
 ```
 
-The goal is not to replace this theorem by a stronger assumption, an axiom, an
-opaque wrapper, or another `sorry`.  The goal is to formalize the analytic
-argument.
+You must not weaken the final predicate or theorem.
 
-Complete every auxiliary proof that you introduce for this theorem.  When you
-finish, there must be no `sorry`, `admit`, new `axiom`, or equivalent proof
-placeholder in the dependency chain that you added for this theorem.
+Preserve the mathematical meaning of the public objects appearing in the final
+statement:
 
-Do not change the public mathematical statement merely to make the proof easier.
+```text
+UniformATData
+RSSmartPathDisorder
+cavityChangeMatrix
+cavityRemainder
+cavityErrorScale
+HasCavityModeRemainderBound.
+```
 
 ---
 
-## Mandatory first read: the mathematical blueprint
+## Mandatory blueprint
 
-Before editing Lean code, read this file in full:
+Before editing Lean code, read in full
 
 ```text
 C:\Users\Public\Github\Lean\research_public\
 latalaStrictAlmeidaThouless\Lemmas\Cavity\blueprint.tex
 ```
 
-This is the primary mathematical blueprint for the proof.
-
-If the current working directory is
+Because `AGENTS.md` and `blueprint.tex` are siblings, you may also refer to it as
 
 ```text
-C:\Users\Public\Github\Lean\research_public\latalaStrictAlmeidaThouless
+blueprint.tex
 ```
 
-the same file is
-
-```text
-Lemmas\Cavity\blueprint.tex
-```
-
-or, using repository-style separators,
+or from the package root as
 
 ```text
 Lemmas/Cavity/blueprint.tex
 ```
 
-Do not skip the blueprint because GitHub code search does not find it.  It may
-exist only in the local working tree.  Read the local file directly.
+The blueprint gives the intended mathematical proof:
 
-The blueprint determines the intended mathematical proof, in particular:
+```text
+Q = Q⁻ + ε₁ε₂/N
+        ↓
+construct ν_{s,u}
+        ↓
+prove Gaussian Gibbs derivative
+        ↓
+prove cubic moment bound
+        ↓
+replace quadratic endpoints
+        ↓
+differentiate G_A,G_B,G_C twice
+        ↓
+use the three-valued edge rule at u = 0
+        ↓
+control E_A,E_B,E_C
+        ↓
+assemble the mode remainder bound
+```
 
-- the last-spin interpolation;
-- the decomposition `Q = Q⁻ + ε₁ ε₂ / N`;
-- the Gaussian derivative identity;
-- the backward Gronwall estimate for the cubic cavity moment;
-- endpoint replacement of quadratic overlap products;
-- the Taylor expansion of the `G_A,G_B,G_C` terms;
-- the three-valued replica-edge rule at `u = 0`;
-- the explicit coefficient calculation;
-- the diagonal `E_A,E_B,E_C` terms;
-- the final uniform remainder estimate.
-
-If the blueprint and an existing Lean definition appear inconsistent, do not
-silently modify either one.  First identify whether the mismatch is notation,
-replica ordering, normalization, or a genuine mathematical discrepancy.
+Use the blueprint as the mathematical guide, with the correction below.
 
 ---
 
-## Repository files that must be inspected
+## Important correction: do not add a fresh Gaussian to Ω
 
-Read the following files before designing the implementation.
+The informal blueprint introduces an independent Gaussian `\widehat z`.
 
-### 1. Existing local agent instructions
+Do not implement that literally.
+
+The theorem is quantified over an arbitrary fixed probability space
+
+```lean
+{Ω : Type u} [MeasureSpace Ω]
+[IsProbabilityMeasure (volume : Measure Ω)]
+```
+
+and there is no assumption that `Ω` supports another independent Gaussian.
+
+Therefore do not:
+
+```text
+add a new independent Gaussian variable to Ω;
+add an assumption that such a variable exists;
+replace Ω by Ω × Ω';
+strengthen RSSmartPathDisorder merely to obtain extra randomness.
+```
+
+Instead, use the even/odd construction in the local file
 
 ```text
 C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\AGENTS.md
+latalaStrictAlmeidaThouless\Lemmas\Cavity\cavity_interpolation.lean
 ```
 
-Respect all general repository conventions in that file.
+The intended formal replacement for `\widehat z` is the odd component of the
+existing simple disorder.
 
-For this task, however, the explicit local goal in this file takes precedence
-over any older statement saying that `Talagrand_Cavity.lean` may be treated as
-an established result.  Here we are deliberately proving its analytic cavity
-theorem.
+The odd component should have the required covariance
 
-### 2. Exact definitions
+```text
+β^2 q * ε ε'
+```
+
+with the normalization dictated by the existing model definitions.
+
+Its cross-covariance with the even bulk component should vanish.
+
+The route to independence is
+
+```text
+joint Gaussianity
++
+zero cross covariance
+⇒
+independence.
+```
+
+This must be proved, not assumed.
+
+---
+
+## Current assessment
+
+There is a serious formalization gap, but there is presently no clear fatal
+mathematical gap.
+
+The major missing Lean components are:
+
+```text
+normalized Gaussian Gibbs derivative;
+u = 0 even/odd independence;
+u = 0 Gibbs factorization;
+replica relabeling;
+last-site overlap decomposition;
+cubic-moment Gronwall;
+quadratic endpoint replacement;
+second derivative bound;
+finite edge count;
+uniform constant bookkeeping;
+final assembly.
+```
+
+Two items are especially important and should be completed first:
+
+```text
+A. u = 0 factorization;
+B. exact normalized Gaussian derivative.
+```
+
+Do not invest heavily in downstream estimates until these two points compile.
+
+---
+
+## Local working tree is authoritative
+
+Before editing, run
+
+```powershell
+git status --short
+```
+
+Read the current local versions of
+
+```text
+Lemmas/Cavity/blueprint.tex
+Lemmas/Cavity/cavity_interpolation.lean
+Lemmas/Cavity/Talagrand_Cavity.lean
+Lemmas/ATDefs.lean
+Lemmas/AGENTS.md
+```
+
+Do not assume GitHub `main` contains the latest cavity work.
+
+Do not overwrite useful local uncommitted changes.
+
+Do not use destructive git commands on user work.
+
+---
+
+## Primary implementation file: cavity_interpolation.lean
 
 Read
 
 ```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\ATDefs.lean
+Lemmas/Cavity/cavity_interpolation.lean
 ```
 
-Search for at least:
+in full before making major changes to `Talagrand_Cavity.lean`.
+
+This file should contain, or may be reorganized to contain, the reusable
+analytic last-spin interpolation infrastructure.
+
+The intended components are:
+
+```text
+last-site / bulk decomposition;
+even component of simple disorder;
+odd component of simple disorder;
+covariance formulas;
+zero even/odd cross covariance;
+joint Gaussianity;
+even/odd independence;
+interpolated Hamiltonian;
+endpoint u = 0 splitting;
+endpoint Gibbs factorization;
+Gaussian Gibbs derivative;
+moment estimates.
+```
+
+You may change existing intermediate lemmas in this file if necessary.
+
+If a current helper statement is badly shaped for the final theorem, replace it
+with a better one rather than preserving it artificially.
+
+---
+
+## Existing parent instructions
+
+Also read
+
+```text
+Lemmas/AGENTS.md
+```
+
+and respect its general repository conventions.
+
+If that parent file says that `Talagrand_Cavity.lean` may be treated as already
+established, that instruction does not apply to this task. Here the explicit
+goal is to fill its analytic last-spin theorem.
+
+---
+
+## Exact definitions and consistency checks
+
+Read
+
+```text
+Lemmas/ATDefs.lean
+```
+
+Search for:
 
 ```text
 Replicas
 ReplicaFun
+replicaGibbsAverage
 quenchedReplicaAverage
 replicaOverlap
 centeredOverlap
@@ -146,33 +338,36 @@ cavityErrorScale
 HasCavityRemainderBound
 ```
 
-These definitions are authoritative.  Reuse them whenever possible instead of
-creating mathematically duplicate notions.
+Reuse these definitions whenever possible.
 
-In particular, the source vector is
+The source vector is
 
 ```lean
 theta q r = ![1 - q ^ 2, q - q ^ 2, r - q ^ 2]
 ```
 
-and the coefficient matrix in `(A,B,C)` coordinates is already defined as
-`cavityMatrix`.
+and the `(A,B,C)` coefficient matrix is already encoded in
 
-Use these as exact checks on the replica combinatorics.
-
-### 3. Target file
-
-Read the complete file
-
-```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\Cavity\Talagrand_Cavity.lean
+```lean
+cavityMatrix β q r.
 ```
 
-Do not inspect only the target theorem.
+These are exact consistency checks on the combinatorics.
 
-In particular understand and preserve the already proved deterministic
-statements around it, including:
+If a derived coefficient disagrees with `cavityMatrix`, stop and debug the
+edge count.
+
+---
+
+## Target file and existing deterministic algebra
+
+Read all of
+
+```text
+Lemmas/Cavity/Talagrand_Cavity.lean
+```
+
+Important existing deterministic lemmas include:
 
 ```text
 cavityChangeMatrix_mul_cavityMatrix
@@ -187,20 +382,22 @@ cavityRemainder_eq_inverseModeRemainder
 exists_hasCavityRemainderBound
 ```
 
-The target theorem is the analytic input.  Do not prove it by invoking
-`exists_hasCavityRemainderBound` or another downstream theorem that already
-depends on it.
+Reuse these where helpful.
 
-### 4. RS fixed-point facts
+Do not prove the analytic target by invoking a downstream theorem that depends
+on it.
+
+---
+
+## Fixed-point facts
 
 Read
 
 ```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\fixed_point.lean
+Lemmas/fixed_point.lean
 ```
 
-Search for facts about
+Reuse existing facts for:
 
 ```text
 rsQ
@@ -213,20 +410,19 @@ atParameter
 atParameter_eq_beta_sq_mul_one_sub_two_q_add_r
 ```
 
-Reuse existing fixed-point and Gaussian-moment lemmas.  Do not reprove them
-inside the cavity file unless a tiny local bridge lemma is genuinely needed.
+Do not rebuild fixed-point theory in the cavity proof.
 
-### 5. Mathematical paper source
+---
 
-Read the cavity proposition and its appendix proof in
+## Paper source
+
+Read
 
 ```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\refs\
-latalaArgumentsStrictAlmeidaThoulessCondition.tex
+refs/latalaArgumentsStrictAlmeidaThoulessCondition.tex
 ```
 
-Search for
+Search for:
 
 ```text
 prop:cavity
@@ -245,250 +441,138 @@ eq:scalar-diagonal-terms
 eq:scalar-diagonal-remainders
 ```
 
-The paper and `blueprint.tex` give the mathematical organization.  Lean files
-give the exact formal API.
+Use the paper and `blueprint.tex` for the mathematics and the Lean files for
+the exact formal normalization.
 
-### 6. Gaussian integration by parts infrastructure
+---
 
-Search the repository before proving Gaussian integration by parts from
-scratch.  In particular inspect
-
-```text
-C:\Users\Public\Github\Lean\research_public\
-generalizedLatala\SpinGlass\Mathlib\Probability\Distributions\
-GaussianIntegrationByParts.lean
-```
-
-and related Gaussian/Hilbert-space files imported by the project.
-
-Search for declarations containing terms such as
-
-```text
-gaussian_integration_by_parts
-gaussianRV_integration_by_parts
-stein
-HasGaussianLaw
-Gaussian
-covariance
-derivative
-```
-
-Prefer an existing general Gaussian differentiation theorem if it fits the
-finite-dimensional disorder interpolation.
-
-Do not introduce a mathematically weaker fake Gaussian structure merely to
-avoid using the actual smart-path disorder.
-
-### 7. Empty cavity helper file
+## Do not force the existing Price theorem
 
 Inspect
 
 ```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\Cavity\cavity_interpolation.lean
+Lemmas/Price/Deriv.lean
 ```
 
-At the time these instructions were written, this file was empty.
+The available covariance-path derivative theorem there assumes constant
+covariance trace.
 
-It is the preferred location for a substantial reusable last-spin
-interpolation API if putting all auxiliary lemmas directly into
-`Talagrand_Cavity.lean` would make that file unmanageable.
+The last-spin interpolation does not directly satisfy that hypothesis in the
+needed form.
 
-If you use this file:
+Therefore do not simply apply that theorem.
 
-- add the necessary imports;
-- import it from `Talagrand_Cavity.lean`;
-- keep dependency direction acyclic;
-- give helper lemmas descriptive mathematical names;
-- compile the helper file independently before returning to the main theorem.
-
-Do not move already stable deterministic cavity algebra out of
-`Talagrand_Cavity.lean` unless there is a compelling reason.
+Do not alter the interpolation solely to make that theorem applicable unless
+you separately prove the altered interpolation has the same endpoints and the
+same required derivative.
 
 ---
 
-## Exact target statement and scale
+## Preferred Gaussian integration-by-parts route
 
-The target predicate is
+Inspect
 
-```lean
-HasCavityModeRemainderBound
+```text
+Lemmas/smart_path/IndependentGaussianAffineIBP.lean
 ```
 
-and the desired scale is
+and
 
-```lean
-cavityErrorScale path s
+```text
+generalizedLatala/SpinGlass/Mathlib/Probability/Distributions/
+Gaussian_IBP_Hilbert.lean
 ```
 
-which is
+Search for:
 
-```lean
-(N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s.
+```text
+independent_gaussian_affine_ibp
+HasGaussianLaw
+Gaussian integration by parts
+covariance
+affine
+fderiv
 ```
 
-The theorem must be uniform over:
+The preferred architecture is:
 
-```lean
-N > 0,
-(β,h) ∈ K,
-q = rsQ β h,
-s ∈ [0,1],
-path : RSSmartPathDisorder Ω N β h q.
+```text
+existing affine Gaussian IBP
+        ↓
+differentiate unnormalized replicated numerator
+        ↓
+differentiate normalization
+        ↓
+rewrite normalization terms using extra replicas
+        ↓
+collect coefficients
+        ↓
+normalized Gaussian Gibbs derivative.
 ```
 
-The constant may depend on `data : UniformATData K`, but must not depend on
-`N`, `β`, `h`, `q`, `s`, or `path`.
-
-Do not replace the error by a later concentration estimate.  The cavity theorem
-is used before the final absorption argument.
+A specialized cavity derivative theorem is acceptable and likely preferable to
+proving a new general Price theorem.
 
 ---
 
-## Mathematical decomposition to formalize
+## Gate A: u = 0 factorization
 
-Organize the proof into small lemmas corresponding to the following blocks.
+Prove the actual even/odd factorization before continuing.
 
-Do not try to prove the entire theorem in one tactic block.
-
-### Last-site notation
-
-Formalize the analogues of
+Required ingredients:
 
 ```text
-ε_a = σ_N^a
-Q⁻_{ab} = (1/N) sum_{i<N} σ_i^a σ_i^b - q
-Q_{ab} = Q⁻_{ab} + ε_a ε_b/N.
+odd component is centered Gaussian;
+even and odd components are jointly Gaussian;
+their cross covariance is zero;
+therefore they are independent;
+at u = 0 the Hamiltonian splits into bulk plus odd last-spin field.
 ```
 
-Be extremely careful with `Fin N`.
+Then prove the Gibbs factorization statements actually used later.
 
-For `N > 0`, use a canonical last index such as `Fin.last (N-1)` only after
-choosing a representation that makes the first `N-1` coordinates precise.
-
-Before committing to a representation, search the repository and Mathlib for
-existing APIs for:
+The last-spin field must have the RS scalar Gaussian law corresponding to
 
 ```text
-Fin.last
-Fin.castSucc
-Fin.init
-Fin.sum_univ_succ
-Finset.univ
+h + β * sqrt(q) * Z.
 ```
 
-A good formalization should make the decomposition of the overlap a simple
-finite-sum identity, not a recurring source of index coercion problems.
+Do not introduce `Z` as a new random variable on `Ω`.
 
-If it is substantially easier, introduce a carefully proved equivalence
-between `Fin N` and `Option (Fin (N-1))` or use a sum decomposition theorem
-already in Mathlib.  Do not alter `SpinGlass.Config N` globally.
+Use equality of law or the Gaussian characterization already present in the
+repository.
 
-### Site exchangeability
-
-Prove the formal versions of
+Derive:
 
 ```text
-A_s = ν_s[Q_12 (ε_1 ε_2 - q)]
-B_s = ν_s[Q_12 (ε_1 ε_3 - q)]
-C_s = ν_s[Q_12 (ε_3 ε_4 - q)].
-```
-
-Do not assume site exchangeability as an axiom.
-
-First search the existing SK model and disorder API for permutation invariance.
-If a suitable theorem does not exist, isolate and prove the precise finite
-permutation lemma needed here.
-
-Because the disorder is averaged, the required statement is exchangeability
-of the quenched law, not pointwise equality for a fixed disorder realization.
-
-If proving general site exchangeability is disproportionately expensive, it
-is acceptable to prove only the exact averaged identities needed for the
-three observables, provided they follow from the actual Gaussian disorder law.
-
-### Last-spin interpolation object
-
-Construct a genuine interpolation `u ∈ [0,1]` between:
-
-```text
-u = 1: the original last-spin interaction,
-u = 0: an independent scalar Gaussian field of variance s β² q.
-```
-
-The first `N-1` spin Hamiltonian must remain unchanged.
-
-The mathematical covariance derivative must be the formal analogue of
-
-```text
-s * β^2 * ε * ε' * Q⁻(ρ,ρ').
-```
-
-Its diagonal value must be configuration independent so that it cancels in
-the normalized Gibbs derivative.
-
-Do not define an interpolation merely by postulating its covariance unless
-the repository's Gaussian-law abstraction explicitly supports constructing
-such a process from that covariance.
-
-Prefer building it from independent Gaussian components already present in
-the model or from an existing finite-dimensional Gaussian constructor.
-
-### Decoupled endpoint
-
-At `u = 0`, prove that the last spin is independent of the first `N-1` spins
-and sees the field with distribution
-
-```text
-h + β * sqrt q * Z.
-```
-
-Derive the exact last-spin moments needed by the proof:
-
-```text
-E[ε_a ε_b] = q
-E[ε_a ε_b ε_c ε_d] = r
+E₀[ε_a ε_b] = q
+E₀[ε_a ε_b ε_c ε_d] = r
 ```
 
 for distinct replica indices.
 
-Also prove the three-valued edge coefficient rule:
+Also prove factorization when the other factor depends only on the bulk spins.
 
-```text
-equal edge       -> 1 - q^2
-shares one index -> q - q^2
-disjoint edge    -> r - q^2
-```
+---
 
-Reuse the existing definitions
+## Gate B: normalized Gaussian Gibbs derivative
 
-```lean
-EdgeRelation
-edgeRelation
-decoupledSpinCoefficient
-```
+Prove a reusable derivative identity for a bounded observable `F` of `n`
+replicas.
 
-from `ATDefs.lean` when convenient.
-
-The formal rule should be general enough to drive the coefficient calculation
-without manually expanding dozens of spin products.
-
-### Gaussian derivative identity
-
-Prove a reusable derivative lemma for a bounded function `F` of finitely many
-replicas, corresponding to
+The target is the formal analogue of
 
 ```text
 d/du ν_{s,u}[F]
  =
  s β² {
-   sum_{a<b≤n} ν[F ε_a ε_b Q⁻_{ab}]
-   - n sum_{a≤n} ν[F ε_a ε_{n+1} Q⁻_{a,n+1}]
+   Σ_{1≤a<b≤n} ν[F ε_a ε_b Q⁻_{ab}]
+   - n Σ_{a=1}^n ν[F ε_a ε_{n+1} Q⁻_{a,n+1}]
    + n(n+1)/2 ν[F ε_{n+1} ε_{n+2} Q⁻_{n+1,n+2}]
  }.
 ```
 
-The coefficients
+The coefficients must be exactly
 
 ```text
 1
@@ -496,121 +580,200 @@ The coefficients
 n(n+1)/2
 ```
 
-must be derived, not hard-coded into separate special cases without proof.
+and the global factor must be exactly
 
-It is acceptable to first prove a general normalized Gaussian Gibbs
-differentiation theorem and then specialize it.
+```text
+s * β^2.
+```
 
-This derivative identity is the central analytic lemma.  Give it a stable,
-reusable name.
+Derive these coefficients from normalized Gibbs differentiation.
 
-### Uniform bound on cavity overlaps
+Do not insert them as unexplained constants.
 
-Prove a deterministic pointwise bound such as
+A good proof plan is:
+
+```text
+differentiate the n-replica numerator;
+differentiate the normalization Z^{-n};
+rewrite normalization derivatives with replicas n+1 and n+2;
+collect all pair terms.
+```
+
+Check the diagonal covariance contribution carefully.
+
+In the mathematical proof it cancels because the diagonal covariance
+derivative is configuration independent.
+
+The Lean proof must reproduce this cancellation or invoke a theorem where that
+cancellation is explicit.
+
+Only after Gate A and Gate B compile should you proceed.
+
+---
+
+## Last-site overlap decomposition
+
+Formalize stable definitions or local abbreviations for
+
+```text
+ε_a
+Q⁻_{ab}
+```
+
+and prove
+
+```text
+Q_{ab} = Q⁻_{ab} + ε_a ε_b / N.
+```
+
+Be careful with `N > 0` and `Fin N`.
+
+Search Mathlib first for:
+
+```text
+Fin.last
+Fin.castSucc
+Fin.init
+Fin.sum_univ_succ
+```
+
+Prefer a reusable rewrite lemma.
+
+Also prove a uniform pointwise bound such as
 
 ```text
 |Q⁻_{ab}| ≤ 2.
 ```
 
-Use existing overlap bounds if available.
+No sharper bound is needed.
 
-This bound is what allows differentiation of the cubic moment without needing
-a fourth-moment estimate.
+---
 
-### Cubic moment and backward Gronwall
+## Replica relabeling
 
-Define the interpolated cubic quantity corresponding to
+Prove a reusable symmetry theorem for replicated Gibbs averages under finite
+permutations of replica labels.
+
+Use it to identify quantities depending only on the intersection type of two
+replica edges.
+
+The relevant classes are:
+
+```text
+equal edge;
+shares one endpoint;
+disjoint edges.
+```
+
+Avoid proving many relabeling equalities separately.
+
+---
+
+## Cubic moment estimate
+
+Define the interpolated quantity corresponding to
 
 ```text
 M3(u) = ν_{s,u}[|Q⁻_12|^3].
 ```
 
-Prove
+Apply the normalized derivative identity.
+
+Use
 
 ```text
-|M3'(u)| ≤ C * M3(u)
+|Q⁻| ≤ 2
 ```
 
-with a constant controlled only by `UniformATData`.
-
-Prove the endpoint comparison at `u = 1` using
+to obtain
 
 ```text
-Q = Q⁻ + εε/N
+|M3'(u)| ≤ C * M3(u).
 ```
 
-and then obtain a uniform-in-`u` bound of the form
+The constant must be uniform over all quantifiers in the final theorem.
+
+Compare the `u = 1` endpoint with `thirdMoment path s`.
+
+Then prove
 
 ```text
-M3(u) ≤ C * ((N : ℝ)^(-3/2) + thirdMoment path s).
+sup_{u ∈ [0,1]} M3(u)
+≤ C * cavityErrorScale path s.
 ```
 
-Use an existing Gronwall lemma from Mathlib if practical.  Search before
-proving Gronwall from scratch.
+Recall
 
-If Mathlib's Gronwall API is awkward for this one-dimensional bounded interval,
-a short direct proof using an exponential integrating factor is acceptable.
+```lean
+cavityErrorScale path s
+=
+(N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s.
+```
 
-Do not accidentally introduce dependence on `N` into the constant.
+Use an existing Gronwall theorem if convenient.
 
-### Quadratic endpoint replacement
+Otherwise prove the elementary backward exponential estimate directly.
 
-For the three products
+Do not weaken the scale from `N^{-3/2}` to `N^{-1}`.
+
+---
+
+## Quadratic endpoint replacement
+
+Treat exactly:
 
 ```text
 (Q⁻_12)^2
 Q⁻_12 Q⁻_13
-Q⁻_12 Q⁻_34
+Q⁻_12 Q⁻_34.
 ```
 
-differentiate along `u`.
+Differentiate their interpolated expectations.
 
-Every derivative term is a product of three cavity overlaps times a bounded
-spin factor.
+Every derivative term contains three cavity overlaps times a bounded spin
+factor.
 
-Use Hölder to reduce those terms to the cubic moment.
+Use Hölder and replica relabeling to reduce all such terms to the cubic moment.
 
-Then compare `Q⁻Q⁻` at `u=1` with `QQ`.
+Then compare `Q⁻Q⁻` at `u = 1` with `QQ`.
 
-Formalize the scalar inequality corresponding to
+Any universal Young-type inequality is acceptable if it gives the final scale
 
 ```text
-|x| / N ≤ |x|^3 / 3 + 2 / (3 N^(3/2)).
+N^{-3/2} + thirdMoment.
 ```
 
-You may use a slightly different universal numerical constant if it leads to a
-much simpler Lean proof, as long as the final scale remains
+The precise paper constants are not important.
+
+---
+
+## Endpoint modes
+
+Define or locally abbreviate:
 
 ```text
-C * ((N : ℝ)^(-3/2) + thirdMoment path s).
+A⁻
+B⁻
+C⁻
+U⁻
+V⁻
+D⁻.
 ```
 
-Do not weaken the scale to `N^(-1)`.
-
-### Cavity modes at `u = 0`
-
-Define or locally abbreviate the cavity endpoint moments
+Prove
 
 ```text
-A⁻, B⁻, C⁻
+|U⁻ - U| + |V⁻ - V| + |D⁻ - D|
+≤ C * cavityErrorScale path s.
 ```
 
-and the corresponding modes
+Use `cavityChangeMatrix` when convenient.
 
-```text
-U⁻ = A⁻ - 4 B⁻ + 3 C⁻
-V⁻ = 2 B⁻ - 3 C⁻
-D⁻ = A⁻ - 2 B⁻ + C⁻.
-```
+---
 
-Prove that they differ from the original modes by at most the cavity error
-scale.
+## Off-diagonal observables
 
-Reuse the fixed change-of-basis matrix when this simplifies the proof.
-
-### Off-diagonal terms `G_A,G_B,G_C`
-
-Formalize the analogues of
+Formalize:
 
 ```text
 G_A = Q⁻_12 (ε_1 ε_2 - q)
@@ -618,87 +781,123 @@ G_B = Q⁻_12 (ε_1 ε_3 - q)
 G_C = Q⁻_12 (ε_3 ε_4 - q).
 ```
 
-At `u = 0`, prove their expectations vanish.
-
-Apply the Gaussian derivative identity twice.
-
-Prove a uniform second derivative bound by the cubic cavity moment.
-
-Then prove the Taylor estimate
+At `u = 0`, use endpoint factorization to prove
 
 ```text
-g_X(1) = g_X'(0) + O(errorScale)
+g_A(0) = g_B(0) = g_C(0) = 0.
 ```
 
-for the three transformed modes.
+Differentiate twice.
 
-Do not leave the phrase "apply the derivative identity twice" unformalized.
-The formal proof must account for the enlarged replica family and the Hölder
-bound for each resulting cubic overlap product.
+Each second derivative term should be controlled by a product of three cavity
+overlaps.
 
-If a general Taylor theorem creates unnecessary differentiability overhead, it
-is acceptable to prove the needed identity by integrating the derivative
-twice, provided all integrability/continuity hypotheses are discharged.
-
-### First derivative coefficient calculation
-
-This calculation must match `cavityMatrix`.
-
-A safe route is:
-
-1. Prove the derivative vector in `(A,B,C)` coordinates is
+Use Hölder and the cubic estimate to prove the analogue of
 
 ```text
-s • (cavityMatrix β q r).mulVec ![A⁻,B⁻,C⁻].
+g_X(1) = g_X'(0) + O(cavityErrorScale).
 ```
 
-2. Then reuse the already proved matrix identity
+A double-integral proof is acceptable if it is easier than using a general
+Taylor theorem.
+
+---
+
+## Three-valued edge rule
+
+Reuse:
+
+```lean
+ReplicaEdge
+EdgeRelation
+edgeRelation
+decoupledSpinCoefficient
+```
+
+At `u = 0`, prove:
+
+```text
+equal edge:
+    1 - q^2
+
+shares one endpoint:
+    q - q^2
+
+disjoint:
+    r - q^2.
+```
+
+This should be a reusable lemma driven by endpoint factorization and the
+two- and four-spin moments.
+
+---
+
+## Finite edge count and cavityMatrix
+
+Prefer to prove directly that the first derivative vector in `(A,B,C)`
+coordinates is
+
+```text
+s • (cavityMatrix β q r).mulVec ![A⁻, B⁻, C⁻].
+```
+
+For the `n = 4` application, the normalized derivative contains:
+
+```text
+edges among {1,2,3,4} with coefficient +1;
+edges {a,5} with coefficient -4;
+edge {5,6} with coefficient +10.
+```
+
+Classify each derivative edge relative to:
+
+```text
+the overlap edge {1,2};
+the centered spin edge appearing in G_A, G_B, or G_C.
+```
+
+Finite enumeration is encouraged after the general probabilistic edge rule has
+been proved.
+
+Useful tactics may include:
+
+```text
+fin_cases
+simp
+norm_num
+native_decide
+ring
+```
+
+The resulting matrix must agree exactly with `cavityMatrix`.
+
+After that, use the existing theorem
 
 ```lean
 cavityChangeMatrix_mul_cavityMatrix
 ```
 
-to obtain the transformed coefficients.
+instead of redoing transformed algebra.
 
-This is strongly preferred over reproving the transformed coefficients by
-large ring calculations.
-
-The three rows in `(A,B,C)` coordinates must reduce to:
-
-```text
-(1-q^2, -4(q-q^2), 3(r-q^2))
-
-(q-q^2,
- (1-q^2)-2(q-q^2)-3(r-q^2),
- 6(r-q^2)-3(q-q^2))
-
-(r-q^2,
- 4(q-q^2)-8(r-q^2),
- (1-q^2)-8(q-q^2)+10(r-q^2)).
-```
-
-If your combinatorics gives anything else, stop and debug the replica-edge
-counting.
-
-After the change of basis, remember the Lean matrix row order is
+Remember that the Lean row order is
 
 ```text
 (V,U,D)
 ```
 
-not `(U,V,D)`.
-
-The expected transformed system is
+and the expected transformed system is
 
 ```text
-V -> β² (ζ U + κ V)
+V -> β²(ζ U + κ V)
 U -> β² κ U
-D -> β² (1 - 2q + r) D.
+D -> β²(1 - 2q + r) D.
 ```
 
-### Diagonal terms `E_A,E_B,E_C`
+---
 
-Formalize
+## Diagonal observables
+
+Formalize:
 
 ```text
 E_A = ε_1 ε_2 (ε_1 ε_2 - q)
@@ -706,94 +905,94 @@ E_B = ε_1 ε_2 (ε_1 ε_3 - q)
 E_C = ε_1 ε_2 (ε_3 ε_4 - q).
 ```
 
-At `u=0`, prove their expectation vector is exactly
+At `u = 0`, prove that their expectation vector is
 
 ```text
-theta q r
+theta q r.
 ```
 
-and therefore, after applying `cavityChangeMatrix`, the source is
-
-```text
-(V source, U source, D source)
-=
-(ζ, κ, 1-2q+r).
-```
-
-Reuse
+Then use
 
 ```lean
 cavityChangeMatrix_mulVec_theta
 ```
 
-rather than duplicating the final linear algebra.
+for the transformed source.
 
-For the difference between `u=1` and `u=0`, differentiate once.  Every term
-contains only one cavity overlap, so after multiplying by `1/N` use the same
-Young/cubic-moment estimate to put the error on `cavityErrorScale`.
+To compare `u = 1` and `u = 0`, differentiate once.
 
-### Final assembly
+Every derivative term contains one cavity overlap.
 
-The cleanest target is to prove directly that every coordinate of
+After multiplying by `1/N`, use Young plus the cubic estimate to put the error
+on `cavityErrorScale`.
+
+---
+
+## Final assembly
+
+The final theorem only requires
+
+```lean
+‖cavityChangeMatrix.mulVec (cavityRemainder path s)‖ ≤
+  C * cavityErrorScale path s.
+```
+
+A clean strategy is to prove coordinate bounds for
 
 ```lean
 cavityChangeMatrix.mulVec (cavityRemainder path s)
 ```
 
-has absolute value at most
+and then bound the finite-dimensional norm.
 
-```text
-C * cavityErrorScale path s.
-```
-
-Then deduce the norm bound required by `HasCavityModeRemainderBound`.
-
-Use the explicit theorem
+Use
 
 ```lean
 cavityChangeMatrix_mulVec_cavityRemainder
 ```
 
-to check that these coordinates are exactly the scalar mode remainders.
+to identify the coordinates with the scalar mode remainders.
 
-At the RS fixed point, replace
-
-```text
-β^2 * (1 - 2*q + rsR β h)
-```
-
-by
-
-```text
-atParameter β h
-```
-
-only through the existing bridge theorem if needed.
+Reuse existing deterministic mode algebra whenever possible.
 
 ---
 
-## Uniform-constant discipline
+## Freedom to modify intermediate lemmas
 
-Every analytic helper lemma must make clear which quantities control the
-constant.
+You are explicitly allowed to change intermediate lemmas.
 
-From `UniformATData`, derive rather than assume:
+This applies especially to helper lemmas in:
 
 ```text
-0 < β
-0 < h
-β ≤ data.βmax
-q = rsQ β h
-0 < q
-q < 1
-s ∈ [0,1].
+Lemmas/Cavity/cavity_interpolation.lean
+Lemmas/Cavity/Talagrand_Cavity.lean
 ```
 
-Use boundedness of spin variables and overlaps aggressively.
+You may alter intermediate statements if:
 
-It is acceptable for the final constant to be very nonoptimal.
+```text
+the final theorem statement remains unchanged;
+the mathematical content is not weakened;
+downstream public APIs remain compatible or receive equivalent replacements;
+dependencies remain acyclic;
+every helper used in the final proof is genuinely proved.
+```
 
-It is not acceptable for the final constant to depend on:
+Do not preserve a bad intermediate API simply because it already exists.
+
+---
+
+## Uniform constants
+
+The final constant may depend on
+
+```text
+data : UniformATData K
+```
+
+and universal numerical constants.
+
+It must not depend on
 
 ```text
 N
@@ -804,147 +1003,94 @@ s
 path.
 ```
 
-When a local estimate introduces a constant, either:
+Derive local bounds from `data`.
 
-- give it an explicit formula in terms of `data.βmax` and universal numbers; or
-- package the estimate in a way that makes the uniform dependence immediate.
+In particular derive rather than assume:
 
-Avoid existential constants nested inside the proof unless their dependencies
-are transparent.
+```text
+0 < β
+0 < h
+β ≤ data.βmax
+q = rsQ β h
+0 < q
+q < 1
+0 ≤ s
+s ≤ 1.
+```
+
+Nonoptimal constants are fine.
 
 ---
 
-## Formalization strategy
+## Forbidden shortcuts
 
-### Prefer finite combinatorics over abstract machinery where appropriate
-
-The replica number used in this proof is small and fixed in the final
-applications.
-
-For the coefficient computation, it is often safer to formalize edge
-classification over finite types and use `fin_cases`, `native_decide`,
-`norm_num`, `ring`, or finite enumeration after the general probabilistic
-lemma is established.
-
-Do not use brute-force enumeration as a substitute for the Gaussian
-differentiation argument itself.
-
-### Separate analytic and algebraic layers
-
-A good architecture is:
+Do not:
 
 ```text
-last-spin indexing and overlap decomposition
-    ↓
-interpolated disorder / Hamiltonian
-    ↓
-endpoint decoupling lemmas
-    ↓
-Gaussian differentiation
-    ↓
-moment estimates
-    ↓
-edge coefficient lemma
-    ↓
-(A,B,C) derivative vector
-    ↓
-existing matrix algebra
-    ↓
-final mode remainder bound
+add a fresh Gaussian on Ω;
+replace Ω by a product space;
+strengthen the theorem with extra randomness assumptions;
+misapply the constant-trace Price theorem;
+assume the normalized Gibbs derivative;
+assume u = 0 factorization;
+assume replica relabeling without proof;
+weaken cavityErrorScale;
+weaken HasCavityModeRemainderBound;
+use the final overlap concentration theorem;
+use a downstream cavity theorem circularly;
+add an axiom;
+add a hidden assumption;
+leave a new sorry;
+use admit;
+discard local uncommitted work.
 ```
 
-Keep matrix/ring algebra out of measure-theoretic proofs whenever possible.
-
-### Reuse existing project abstractions
-
-Before defining a new concept, search the repository for an existing one.
-
-In particular, do not create duplicates of:
-
-```text
-quenchedReplicaAverage
-centeredOverlap
-thirdMoment
-cavityMatrix
-theta
-EdgeRelation
-decoupledSpinCoefficient.
-```
-
-### Small bridge lemmas are encouraged
-
-If an existing general theorem almost fits, prove a local bridge lemma with a
-clear name rather than unfolding many layers repeatedly.
-
-Examples of useful helper themes:
-
-```text
-replica average invariant under replica relabeling
-last-site overlap decomposition
-bounded centered cavity overlap
-decoupled last-spin two-replica moment
-decoupled last-spin four-replica moment
-decoupled edge coefficient
-interpolated Gibbs derivative
-cubic cavity moment derivative bound
-cubic cavity moment uniform bound
-quadratic cavity endpoint replacement
-offDiagonal second derivative bound
-diagonal endpoint replacement
-```
-
-Exact names may differ.
+Zero covariance implies independence only after joint Gaussianity has been
+proved.
 
 ---
 
-## Things you must not do
+## Recommended implementation order
 
-Do not solve the target theorem by:
+Use this order unless existing local work justifies a small reordering:
 
-- adding an `axiom`;
-- leaving `sorry`;
-- using `admit`;
-- adding a typeclass assumption that contains the desired estimate;
-- changing `HasCavityModeRemainderBound` to a weaker predicate;
-- redefining `cavityErrorScale` to make the theorem trivial;
-- assuming the last-spin derivative formula;
-- assuming the cubic-moment estimate;
-- invoking the target theorem through a circular alias;
-- importing a file that already assumes this theorem;
-- invoking a downstream theorem whose proof depends on this theorem;
-- replacing the actual SK smart path by an unrelated toy model;
-- silently assuming site exchangeability pointwise in the disorder;
-- using the final overlap concentration theorem to prove the cavity theorem.
+```text
+A. inspect git status and local cavity files
 
-Do not delete already proved deterministic lemmas merely because a different
-architecture feels easier.
+B. compile current cavity_interpolation.lean
 
-Do not modify unrelated GT, concentration, or free-energy files unless a
-genuinely reusable prerequisite is missing.  If such a modification is
-necessary, keep it minimal and document why.
+C. finish even/odd covariance and joint Gaussianity
 
----
+D. prove even/odd independence
 
-## Handling mathematical or API obstacles
+E. prove u = 0 Gibbs factorization and last-spin moments
 
-If the exact blueprint proof cannot be formalized with the current project
-abstractions, do not immediately weaken the theorem.
+F. prove replica relabeling
 
-First determine precisely what infrastructure is missing.
+G. prove last-site overlap decomposition and |Q⁻| ≤ 2
 
-Typical legitimate missing infrastructure could be:
+H. prove specialized normalized Gaussian Gibbs derivative
 
-- construction of the last-spin Gaussian interpolation;
-- covariance computation for that interpolation;
-- normalized Gibbs differentiation under a finite-dimensional Gaussian law;
-- a site-permutation invariance theorem;
-- a finite-replica relabeling theorem.
+I. verify coefficients 1, -n, n(n+1)/2 and prefactor s β²
 
-Implement the missing reusable lemma at the lowest sensible layer.
+J. prove cubic differential inequality and backward Gronwall
 
-If a general theorem would take much more work than the cavity application,
-prove the exact specialized statement needed here, but make it mathematically
-honest and reusable enough to inspect.
+K. prove quadratic endpoint replacement
+
+L. prove G_X second derivative and Taylor remainder
+
+M. prove three-valued edge rule
+
+N. perform finite edge count and identify cavityMatrix
+
+O. prove diagonal source and endpoint error
+
+P. assemble HasCavityModeRemainderBound
+
+Q. compile Talagrand_Cavity.lean
+
+R. build LatalaMeetsAT
+```
 
 ---
 
@@ -956,41 +1102,61 @@ Work from
 C:\Users\Public\Github\Lean\research_public\latalaStrictAlmeidaThouless
 ```
 
-The package is `LatalaMeetsAT`.
-
-After every small group of lemmas, compile the narrowest relevant target.
-
-Typical commands to try are of the form
+Compile frequently:
 
 ```powershell
 lake env lean Lemmas\Cavity\cavity_interpolation.lean
 ```
 
-and
+then:
 
 ```powershell
 lake env lean Lemmas\Cavity\Talagrand_Cavity.lean
 ```
 
-Then build the project target:
+then:
 
 ```powershell
 lake build LatalaMeetsAT
 ```
 
-Use the actual commands supported by the local Lake setup if these need minor
-adjustment.
-
-Do not wait until the end to compile.
-
-When Lean reports a large error downstream, reduce it to the smallest new
-lemma and debug there.
+Use the exact equivalent commands supported by the local Lake setup if needed.
 
 ---
 
-## Axiom and placeholder audit
+## Handling a genuine obstruction
 
-After the theorem compiles, search the files you edited for
+If a proof step cannot be completed because the project lacks infrastructure,
+identify the exact missing theorem.
+
+Likely examples include:
+
+```text
+joint Gaussianity of the even/odd decomposition;
+zero cross covariance implies independence for the relevant Gaussian objects;
+normalized replicated Gibbs differentiation from affine Gaussian IBP;
+replica relabeling for quenchedReplicaAverage;
+finite-product factorization under independence.
+```
+
+Implement the smallest mathematically correct reusable theorem.
+
+Do not weaken the final goal.
+
+If you discover an actual theorem-level mismatch, report:
+
+```text
+the exact conflicting formulas;
+the exact Lean definitions involved;
+whether the issue is covariance, normalization, endpoint law, or indexing;
+the smallest failed identity or counterexample available.
+```
+
+---
+
+## Placeholder and dependency audit
+
+After the theorem compiles, inspect every edited file for:
 
 ```text
 sorry
@@ -998,67 +1164,117 @@ admit
 axiom
 ```
 
-and inspect the theorem's dependency chain.
+The target theorem must not depend on any new project-specific placeholder.
 
-The target theorem must not depend on a new project-specific axiom or proof
-placeholder introduced during this task.
+If an existing prerequisite in the actual dependency chain is still a `sorry`,
+do not claim full completion.
 
-Existing unrelated `sorry`s elsewhere in the repository are not part of this
-task unless your proof depends on them.
-
-If an existing prerequisite you need is itself a `sorry`, do not silently use
-it as if the analytic proof were complete.  Record the dependency and, when it
-is part of the last-spin proof chain, fill it as well.
+Fill it if it is part of this cavity proof, or report it explicitly.
 
 ---
 
-## Final verification against the mathematics
+## Final mathematical audit
 
-Before declaring success, compare the Lean result line by line with
+Before declaring success, verify:
 
 ```text
-C:\Users\Public\Github\Lean\research_public\
-latalaStrictAlmeidaThouless\Lemmas\Cavity\blueprint.tex
+[ ] no fresh Gaussian was added to Ω
+
+[ ] even/odd construction realizes the desired reference field
+
+[ ] even/odd cross covariance is zero
+
+[ ] joint Gaussianity is proved
+
+[ ] u = 0 independence is proved
+
+[ ] u = 0 Gibbs factorization is proved
+
+[ ] E₀[ε_a ε_b] = q is proved
+
+[ ] E₀[ε_a ε_b ε_c ε_d] = r is proved
+
+[ ] replica relabeling is proved
+
+[ ] Q = Q⁻ + ε_a ε_b/N has the exact normalization
+
+[ ] |Q⁻| ≤ 2 or an equivalent bound is proved
+
+[ ] normalized derivative coefficients are exactly
+    1, -n, n(n+1)/2
+
+[ ] global derivative prefactor is exactly s β²
+
+[ ] constant-trace Price theorem was not misapplied
+
+[ ] cubic Gronwall estimate is uniform in u
+
+[ ] quadratic endpoint replacement has scale
+    N^(-3/2) + thirdMoment
+
+[ ] second derivative bound is reduced to cubic moments
+
+[ ] edge rule gives exactly
+    1-q², q-q², r-q²
+
+[ ] finite edge count agrees exactly with cavityMatrix
+
+[ ] diagonal source agrees exactly with theta
+
+[ ] transformed coefficients agree with cavityChangeMatrix algebra
+
+[ ] final constant is uniform in N, β, h, q, s, path
+
+[ ] no later concentration theorem was used
 ```
 
-Verify all of the following.
+The two most important checks remain:
 
-- The last-spin interpolation has the intended endpoints.
-- Its covariance derivative has the correct normalization.
-- The normalized derivative identity has coefficients
-  `1`, `-n`, `n(n+1)/2`.
-- The cubic estimate uses the boundedness of `Q⁻`.
-- The endpoint replacement has scale `N^(-3/2) + thirdMoment`.
-- The second derivative of each off-diagonal term is bounded by the cubic
-  cavity moment.
-- The edge rule has exactly the three coefficients
-  `1-q^2`, `q-q^2`, `r-q^2`.
-- The `(A,B,C)` coefficient vector matches `cavityMatrix`.
-- The source vector matches `theta`.
-- The transformed system agrees with the existing deterministic mode algebra.
-- The `D` coefficient is `β²(1-2q+r)`.
-- The final norm estimate is exactly a uniform
-  `HasCavityModeRemainderBound`.
-- No later concentration result was used.
-
-Only after these checks should the target `sorry` be considered resolved.
+```text
+u = 0 factorization;
+normalized Gaussian derivative.
+```
 
 ---
 
 ## Definition of done
 
-This task is complete only when:
+The task is complete only when:
 
-1. `cavityModeRemainder_bound_from_lastSpin` has a genuine Lean proof.
-2. Every helper theorem added for it also has a genuine proof.
-3. The relevant Lean files compile.
-4. `lake build LatalaMeetsAT` succeeds, except for a clearly pre-existing,
-   unrelated repository failure that you can identify precisely.
-5. No theorem statement was weakened.
-6. No new axiom, `sorry`, `admit`, or circular assumption was introduced.
-7. The proof follows the mathematics in `Lemmas/Cavity/blueprint.tex`.
-8. The coefficient calculation agrees exactly with `ATDefs.cavityMatrix`,
-   `theta`, and the existing cavity change-of-basis lemmas.
-9. The final response reports which files were changed, what analytic helper
-   lemmas were added, what commands were run, and whether any pre-existing
-   unrelated build failures remain.
+```text
+1. cavityModeRemainder_bound_from_lastSpin has a genuine Lean proof.
+
+2. Its conclusion is exactly
+   ∃ C : ℝ, HasCavityModeRemainderBound (Ω := Ω) data C.
+
+3. The even/odd construction is used without assuming extra randomness on Ω.
+
+4. u = 0 independence and Gibbs factorization are proved.
+
+5. The normalized Gaussian Gibbs derivative is proved with exact coefficients
+   1, -n, n(n+1)/2.
+
+6. Cubic Gronwall, endpoint replacement, second derivative bound, edge rule,
+   finite edge count, and diagonal estimates are proved.
+
+7. Intermediate lemmas may have changed, but every helper used in the final
+   theorem has a genuine proof.
+
+8. The edited cavity files compile.
+
+9. lake build LatalaMeetsAT succeeds, except for a precisely identified
+   pre-existing unrelated failure.
+
+10. No public final theorem was weakened.
+
+11. No new axiom, sorry, admit, hidden assumption, or circular dependency was
+    introduced.
+
+12. The final response reports:
+    files changed;
+    important intermediate lemmas changed or added;
+    how u = 0 factorization was proved;
+    how the normalized Gaussian derivative was proved;
+    compile commands run;
+    any remaining unrelated build failure.
+```

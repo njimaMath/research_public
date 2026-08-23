@@ -1,5 +1,5 @@
-import SpinGlassAT.SKModel
-import SpinGlassAT.Calculus
+import SpinGlass.AT.SKModel
+import SpinGlass.AT.Calculus
 import SpinGlass.Replicas
 
 open MeasureTheory ProbabilityTheory Real BigOperators

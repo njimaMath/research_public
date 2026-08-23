@@ -1,0 +1,2093 @@
+Blueprint for formalizing `twoReplica_GT_bound`
+================================================
+
+Purpose
+-------
+
+Formalize the finite-volume two-replica Guerra-Talagrand interpolation proving a bound of the form
+
+```lean
+expectedConstrainedFreeEnergy path s v ≤
+  gtFunctional β h q s lam v
+```
+
+for every real Lagrange multiplier `lam`, with `N > 0`, `s ∈ [0,1]`, and attainable overlap `v`.
+
+For this task it is permitted to assume the strict-AT data
+
+```lean
+{K : Set (ℝ × ℝ)}
+(data : UniformATData K)
+(hp : (β, h) ∈ K)
+```
+
+and the RS identification
+
+```lean
+hq : q = rsQ β h
+```
+
+when needed. This is the recommended setting because the supplied paper proof fixes `β > 0` and `q ∈ (0,1)`, while the current Lean theorem has no assumptions that make the covariance increments valid outside that range.
+
+The intended proof is not an asymptotic argument. It is a finite `N` Gaussian interpolation with an exact nonpositive derivative.
+
+Mathematical source translated into repository notation
+-------------------------------------------------------
+
+The paper uses
+
+```text
+xi_s(r) = β^2 (1-s) q r + s β^2 r^2 / 2.
+```
+
+This is already
+
+```lean
+gtCovarianceFunction β q s r
+```
+
+in `ATDefs.lean`.
+
+The paper uses a signed matrix path `Q^v(u)`. This is already
+
+```lean
+signedMatrixPath v u
+```
+
+and the corresponding vector covariance is
+
+```lean
+gtCovarianceMatrix β q s v u
+```
+
+which is
+
+```text
+β^2(1-s)q J + sβ^2 Q^v(u).
+```
+
+The mass profile is already
+
+```lean
+gtMassParameter q v u
+```
+
+and the scalar variance/correction data are already represented by
+
+```lean
+gtScalarVariance β s v u
+gtCorrection β q s
+```
+
+The local terminal function is already
+
+```lean
+gtTerminal lam x₁ x₂
+```
+
+and the finite recursion is already
+
+```lean
+gtSemigroupSolution β q s lam v u x₁ x₂.
+```
+
+Therefore the formal proof should prove that the existing definitions have the Guerra-Talagrand variational meaning. Do not define a second GT functional.
+
+Recommended theorem interface
+-----------------------------
+
+If the current theorem statement is too general, use the following version and update its unique caller in `weak_concentration.lean`:
+
+```lean
+theorem twoReplica_GT_bound
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K)
+    {N : ℕ} {β h q s v : ℝ}
+    (hp : (β, h) ∈ K)
+    (hq : q = rsQ β h)
+    (path : RSSmartPathDisorder Ω N β h q)
+    (lam : ℝ)
+    (hN : 0 < N)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hv : v ∈ attainableOverlaps N) :
+    expectedConstrainedFreeEnergy path s v ≤
+      gtFunctional β h q s lam v := by
+  ...
+```
+
+Immediately derive the range facts:
+
+```lean
+have hβ : 0 < β := data.β_pos (β, h) hp
+have hqRS : q = rsQ β h := hq
+have hqIcc : q ∈ Set.Icc (0 : ℝ) 1 := by
+  rw [hq]
+  exact rsQ_mem_Icc β h
+```
+
+If the repository has strict `rsQ_pos` and `rsQ_lt_one` lemmas, also record
+
+```lean
+have hq0 : 0 ≤ q := hqIcc.1
+have hq1 : q ≤ 1 := hqIcc.2
+```
+
+and, if useful,
+
+```lean
+have hqpos : 0 < q := ...
+have hqlt : q < 1 := ...
+```
+
+Do not derive strict positivity from `hqIcc` alone.
+
+Also derive
+
+```lean
+have hNr : 0 < (N : ℝ) := by exact_mod_cast hN
+have hN0 : (N : ℝ) ≠ 0 := ne_of_gt hNr
+have hs0 : 0 ≤ s := hs.1
+have hs1 : s ≤ 1 := hs.2
+have h1s0 : 0 ≤ 1 - s := sub_nonneg.mpr hs1
+```
+
+and from attainability
+
+```lean
+have hvIcc : v ∈ Set.Icc (-1 : ℝ) 1 := attainableOverlap_mem_Icc hN hv
+have habsv : |v| ≤ 1 := by simpa [abs_le] using hvIcc
+have habsv0 : 0 ≤ |v| := abs_nonneg v
+```
+
+If `attainableOverlap_mem_Icc` is still private in `weak_concentration.lean`, move or reprove it in `GTbound/Basic.lean` as a public theorem.
+
+Preferred architecture
+----------------------
+
+Use four logical layers.
+
+`Basic.lean`:
+
+```text
+constrained pair subtype and positivity
+spin-sum/overlap identities
+four-spin terminal identity
+signed matrix entry formulas
+covariance and square-completion identities
+small Gaussian expectation and tensorization facts
+```
+
+`FiniteStep.lean`:
+
+```text
+finite-state hierarchical log-partition recursion
+first derivative of a tilted Gaussian expectation
+second derivative / Gibbs covariance formula
+Gaussian IBP at one hierarchy level
+telescoping of Hessian contributions
+finite-step interpolation derivative formula
+```
+
+`Interpolation.lean`:
+
+```text
+specialized GT breakpoints and masses
+construction of the two-replica interpolation
+endpoint t=0
+endpoint t=1
+specialized covariance derivative
+nonpositive derivative
+canonical-coordinate GT bound
+```
+
+`GTBound.lean`:
+
+```text
+transport arbitrary path to canonical Gaussian coordinates
+invoke canonical-coordinate GT bound
+normalize and unfold gtFunctional
+```
+
+A smaller layout is fine, but retain the same logical separation.
+
+Basic finite constrained-pair API
+---------------------------------
+
+Define a subtype or finset for constrained pairs. A subtype is convenient for log-sum-exp and nonemptiness:
+
+```lean
+abbrev ConstrainedPair (N : ℕ) (v : ℝ) :=
+  {p : SpinGlass.Config N × SpinGlass.Config N //
+    SpinGlass.overlap N p.1 p.2 = v}
+```
+
+From
+
+```lean
+hv : v ∈ attainableOverlaps N
+```
+
+prove
+
+```lean
+lemma constrainedPair_nonempty (hv : v ∈ attainableOverlaps N) :
+    Nonempty (ConstrainedPair N v)
+```
+
+by unfolding `attainableOverlaps`, using `Finset.mem_image`, and taking the witness pair.
+
+Prove the filter/subtype rewrite
+
+```lean
+lemma constrainedPartition_eq_sum_subtype
+    (H : SpinGlass.EnergySpace N)
+    (hv : v ∈ attainableOverlaps N) :
+    constrainedPartition H v =
+      ∑ p : ConstrainedPair N v,
+        Real.exp (-(H p.1.1 + H p.1.2))
+```
+
+The `hv` hypothesis is not mathematically needed for equality, but including it may simplify obtaining the `Nonempty` instance. If possible, state the equality without `hv` and use `hv` only when positivity is needed.
+
+Prove
+
+```lean
+lemma constrainedPartition_pos_of_attainable
+    (H : SpinGlass.EnergySpace N)
+    (hv : v ∈ attainableOverlaps N) :
+    0 < constrainedPartition H v
+```
+
+The proof already exists privately in `weak_concentration.lean`. Promote it or reproduce its short finite-sum proof.
+
+This gives
+
+```lean
+Real.log (constrainedPartition H v)
+```
+
+without zero-pathologies.
+
+Overlap to spin-sum identity
+----------------------------
+
+The definition is
+
+```lean
+SpinGlass.overlap N σ τ =
+  (1 / (N : ℝ)) *
+    ∑ i, SpinGlass.spin N σ i * SpinGlass.spin N τ i.
+```
+
+Prove
+
+```lean
+lemma spin_sum_eq_mul_overlap
+    (hN : 0 < N) (σ τ : SpinGlass.Config N) :
+    (∑ i : Fin N,
+      SpinGlass.spin N σ i * SpinGlass.spin N τ i) =
+      (N : ℝ) * SpinGlass.overlap N σ τ := by
+  have hN0 : (N : ℝ) ≠ 0 := by
+    exact_mod_cast (Nat.ne_of_gt hN)
+  unfold SpinGlass.overlap
+  field_simp [hN0]
+```
+
+Check the exact normal form produced by `field_simp`; `ring` after unfolding may be cleaner.
+
+For a constrained pair prove
+
+```lean
+lemma spin_sum_eq_mul_constrained_overlap
+    (hN : 0 < N) (p : ConstrainedPair N v) :
+    (∑ i : Fin N,
+      SpinGlass.spin N p.1.1 i * SpinGlass.spin N p.1.2 i) =
+      (N : ℝ) * v := by
+  rw [spin_sum_eq_mul_overlap hN, p.2]
+```
+
+This is used to insert the Lagrange multiplier without changing constrained terms.
+
+Lagrange relaxation
+-------------------
+
+At a fixed energy field `H`, define the unconstrained two-replica tilted sum
+
+```lean
+noncomputable def lagrangePairPartition
+    (H : SpinGlass.EnergySpace N) (lam : ℝ) : ℝ :=
+  ∑ p : SpinGlass.Config N × SpinGlass.Config N,
+    Real.exp (-(H p.1 + H p.2) +
+      lam * ∑ i : Fin N,
+        SpinGlass.spin N p.1 i * SpinGlass.spin N p.2 i)
+```
+
+The exact helper definition is optional. The useful inequality is
+
+```lean
+lemma constrainedPartition_le_lagrangePartition
+    (hN : 0 < N) (hv : v ∈ attainableOverlaps N)
+    (H : SpinGlass.EnergySpace N) (lam : ℝ) :
+    constrainedPartition H v ≤
+      Real.exp (-lam * (N : ℝ) * v) *
+      lagrangePairPartition H lam
+```
+
+or, equivalently after taking logs,
+
+```lean
+lemma log_constrained_le_log_lagrange
+    ... :
+    Real.log (constrainedPartition H v) ≤
+      Real.log (lagrangePairPartition H lam) -
+        lam * (N : ℝ) * v
+```
+
+The proof is termwise on the constrained subtype and uses
+
+```text
+lam * spinSum = lam * N * v.
+```
+
+For the interpolation proof it is often cleaner not to take this inequality pointwise at `t=1`, because the paper only relaxes the constraint at the `t=0` endpoint. Mirror the paper: define the finite-state interpolation over the constrained set, then at `t=0` enlarge the constrained set to all pairs. This avoids altering the physical endpoint.
+
+Terminal two-spin identity
+--------------------------
+
+Prove a local lemma enumerating the four Boolean spin choices.
+
+A useful exact statement is
+
+```lean
+lemma sum_two_spins_exp_eq
+    (x₁ x₂ lam : ℝ) :
+    (∑ ε₁ : Bool, ∑ ε₂ : Bool,
+      Real.exp (
+        x₁ * (if ε₁ then 1 else -1) +
+        x₂ * (if ε₂ then 1 else -1) +
+        lam * (if ε₁ then 1 else -1) *
+              (if ε₂ then 1 else -1))) =
+      4 * Real.exp (gtTerminal lam x₁ x₂) := by
+  simp [gtTerminal]
+  ...
+```
+
+Because `gtTerminal` is a logarithm of a positive quantity divided by `4`, the proof will need
+
+```lean
+Real.exp_log
+```
+
+with positivity of the four-exponential sum divided by `4`.
+
+It may be easier to prove the logarithmic form directly:
+
+```lean
+lemma log_sum_two_spins_eq
+    (x₁ x₂ lam : ℝ) :
+    Real.log (∑ ε₁ : Bool, ∑ ε₂ : Bool, Real.exp (...)) =
+      2 * Real.log 2 + gtTerminal lam x₁ x₂
+```
+
+Use
+
+```lean
+show (4 : ℝ) = 2 ^ 2 by norm_num
+rw [Real.log_mul, Real.log_pow]
+```
+
+with nonzero/positive side conditions.
+
+Check whether the finite configuration uses `Bool` directly or `SpinGlass.spin`. Keep the local lemma independent of `N` if possible.
+
+Signed path elementary identities
+---------------------------------
+
+Let
+
+```lean
+r := |v|
+sign := gtPathSign v
+Q u := signedMatrixPath v u
+```
+
+Prove the sign facts
+
+```lean
+lemma gtPathSign_sq (v : ℝ) : gtPathSign v ^ 2 = 1
+lemma gtPathSign_mul_abs (v : ℝ) : gtPathSign v * |v| = v
+```
+
+The second lemma splits on `0 ≤ v` and uses `abs_of_nonneg` or `abs_of_neg`.
+
+For matrices, prove entry formulas by `fin_cases`:
+
+```lean
+lemma signedMatrixPath_diag (v u : ℝ) (a : Fin 2) :
+    signedMatrixPath v u a a = u
+```
+
+```lean
+lemma signedMatrixPath_offdiag
+    (v u : ℝ) :
+    signedMatrixPath v u 0 1 = gtPathSign v * min u |v|
+```
+
+and symmetry for `(1,0)`.
+
+At the terminal overlap `u = 1`, using `|v| ≤ 1`, prove
+
+```lean
+lemma signedMatrixPath_one_eq_target
+    (hv : v ∈ Set.Icc (-1 : ℝ) 1) :
+    signedMatrixPath v 1 =
+      !![(1 : ℝ), v; v, 1]
+```
+
+This is the matrix equality corresponding to the self-overlap matrix of a constrained pair.
+
+For a constrained pair `p = (σ¹,σ²)`, define the empirical `2 x 2` overlap matrix against another pair `p'`:
+
+```lean
+noncomputable def pairOverlapMatrix
+    (p p' : SpinGlass.Config N × SpinGlass.Config N) :
+    Matrix (Fin 2) (Fin 2) ℝ :=
+  fun a b =>
+    match a, b with
+    | 0, 0 => SpinGlass.overlap N p.1 p'.1
+    | 0, 1 => SpinGlass.overlap N p.1 p'.2
+    | 1, 0 => SpinGlass.overlap N p.2 p'.1
+    | 1, 1 => SpinGlass.overlap N p.2 p'.2
+```
+
+A cleaner implementation is to define
+
+```lean
+pairConfig (p : Config N × Config N) : Fin 2 → Config N
+```
+
+then
+
+```lean
+pairOverlapMatrix p p' a b :=
+  SpinGlass.overlap N (pairConfig p a) (pairConfig p' b)
+```
+
+This makes the square formula concise.
+
+Prove for constrained `p`
+
+```lean
+pairOverlapMatrix p p = signedMatrixPath v 1
+```
+
+using self-overlap `R(σ,σ)=1` and the constraint for the off-diagonal entries.
+
+You may need a helper
+
+```lean
+lemma overlap_self (hN : 0 < N) (σ : SpinGlass.Config N) :
+    SpinGlass.overlap N σ σ = 1
+```
+
+which follows because every spin square is `1`.
+
+Covariance algebra
+------------------
+
+The central scalar identity is
+
+```text
+xi_s(x) - xi_s(y) - xi_s'(y)(x-y)
+  = s β^2 / 2 * (x-y)^2.
+```
+
+The derivative of `gtCovarianceFunction` with respect to the overlap variable is
+
+```text
+xi_s'(y) = β^2(1-s)q + sβ^2 y.
+```
+
+This is exactly the scalar entry of `gtCovarianceMatrix` evaluated at the path matrix.
+
+Prove a pure ring lemma:
+
+```lean
+lemma gtCovariance_remainder
+    (β q s x y : ℝ) :
+    gtCovarianceFunction β q s x -
+      gtCovarianceFunction β q s y -
+      (β ^ 2 * (1 - s) * q + s * β ^ 2 * y) * (x - y) =
+      s * β ^ 2 / 2 * (x - y) ^ 2 := by
+  unfold gtCovarianceFunction
+  ring
+```
+
+An equivalent rearranged identity useful in the covariance computation is
+
+```lean
+gtCovarianceFunction β q s x =
+  (β^2(1-s)q + sβ^2 y) * x +
+  sβ^2/2 * (x-y)^2 -
+  sβ^2/2 * y^2.
+```
+
+Prove both forms if it reduces later `ring` work.
+
+Finite-step nodes and masses
+----------------------------
+
+Do not force an arbitrary-length hierarchy unless it is easy.
+
+Use the three covariance increments already encoded by `gtSemigroupSolution`.
+
+Set
+
+```text
+r = |v|.
+```
+
+Branch `q ≤ r`:
+
+```text
+u0 = 0
+u1 = q
+u2 = r
+u3 = 1
+```
+
+The vector increments are:
+
+```text
+0 -> q : rank-one, sign = gtPathSign v
+q -> r : rank-one, sign = gtPathSign v
+r -> 1 : diagonal
+```
+
+The masses attached to these increments are:
+
+```text
+m1 = 0
+m2 = 1/2
+m3 = 1
+```
+
+This matches
+
+```lean
+let atR := upper r
+let atQ := gtRankOneStep (1/2) ... atR
+...
+```
+
+in `gtSemigroupSolution`.
+
+Branch `r < q`:
+
+```text
+u0 = 0
+u1 = r
+u2 = q
+u3 = 1
+```
+
+The vector increments are:
+
+```text
+0 -> r : rank-one, sign = gtPathSign v
+r -> q : diagonal
+q -> 1 : diagonal
+```
+
+with masses
+
+```text
+m1 = 0
+m2 = 0
+m3 = 1.
+```
+
+This matches the second branch of `gtSemigroupSolution`.
+
+The upper endpoint interval with mass `1` is not optional. It contributes to the endpoint recursion and scalar correction even though the final derivative weight `m4 - m3`, with `m4 = 1`, is zero.
+
+Increment variances
+-------------------
+
+For a rank-one interval `[a,b]`, the standard deviation is
+
+```lean
+gtIncrementScale β s a b
+```
+
+and its squared scale should simplify to
+
+```text
+s * β^2 * (b-a)
+```
+
+under `0 ≤ s` and `a ≤ b`.
+
+Prove
+
+```lean
+lemma gtIncrementScale_sq
+    (hβ : 0 ≤ β) (hs : 0 ≤ s) (hab : a ≤ b) :
+    gtIncrementScale β s a b ^ 2 =
+      β ^ 2 * s * (b - a)
+```
+
+If `β` is not assumed nonnegative, the same identity still holds because `β` is squared, so no sign assumption on `β` is actually needed. The proof is
+
+```lean
+unfold gtIncrementScale
+rw [mul_pow, mul_pow, Real.sq_sqrt hs,
+    Real.sq_sqrt (sub_nonneg.mpr hab)]
+ring
+```
+
+with association adjusted to the actual term.
+
+For a rank-one increment with scalar Gaussian `z`, the covariance between replicas `a,b` is
+
+```text
+scale^2 * c_a * c_b
+```
+
+where `c = (1, sign)`. Prove this is exactly the increment of `gtCovarianceMatrix` on a path segment below `|v|`.
+
+For a diagonal increment with independent `z₁,z₂`, the covariance matrix is
+
+```text
+scale^2 * I.
+```
+
+Prove this is exactly the increment after the signed off-diagonal coordinate has stopped moving.
+
+These are small `Matrix.ext` plus `fin_cases` proofs and should be isolated from the analytic interpolation.
+
+Scalar compensation
+-------------------
+
+The paper introduces scalar Gaussians `y_j` with variance increments
+
+```text
+d_j - d_{j-1}.
+```
+
+The repository has
+
+```lean
+gtScalarVariance β s v u
+```
+
+for the scalar function `d(u)`.
+
+There are two implementation choices.
+
+Preferred choice: deterministic compensation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Do not introduce scalar Gaussian variables. Define the normalized interpolation as
+
+```text
+phi(t) = vectorHierarchyPressure(t) / N + t * gtCorrection β q s.
+```
+
+Prove separately that the total scalar contribution in the paper is exactly
+
+```lean
+gtCorrection β q s.
+```
+
+This leaves only the vector Gaussian fields in the interpolation.
+
+The proof of the correction identity should be a finite calculation in the two branches `q ≤ r` and `r < q`.
+
+For `q ≤ r`, check
+
+```text
+(1/2) * [
+  0 * (d(q)-d(0))
+  + (1/2) * (d(r)-d(q))
+  + 1 * (d(1)-d(r))
+]
+= gtCorrection β q s.
+```
+
+Remember the paper endpoint formula has
+
+```text
+(1/2) sum_j m_j (d_j-d_{j-1}).
+```
+
+For `r < q`, check
+
+```text
+(1/2) * [
+  0 * (d(r)-d(0))
+  + 0 * (d(q)-d(r))
+  + 1 * (d(1)-d(q))
+]
+= gtCorrection β q s.
+```
+
+Because `gtCorrection β q s = s * β^2 / 2 * (1-q^2)`, the second branch is immediate from the `u > |v|` formula for `gtScalarVariance`.
+
+In the first branch, the `v`-dependent terms cancel. Do this calculation explicitly with `simp [gtScalarVariance, abs_of_nonneg ...]` followed by `ring`.
+
+Alternative choice: retain scalar Gaussians
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If the finite-step hierarchy is already built on explicit Gaussian random variables, include a scalar standard Gaussian at every positive-variance level and prove
+
+```text
+T_m (x + sqrt(N * variance) * Z)
+  = x + N*m*variance/2
+```
+
+for `m > 0`, and expectation equals `x` for `m = 0`.
+
+Use the Gaussian mgf theorem already present in the project. Do not reprove the normal mgf from first principles.
+
+Canonical law transport
+-----------------------
+
+Prefer reducing the arbitrary smart-path disorder to `coupledCoordinateHamiltonian` before building the GT interpolation.
+
+The existing theorem
+
+```lean
+coupled_constrained_log_partition_vector_law
+```
+
+states that the vector of constrained log-partitions under the abstract path has the same law as the canonical coordinate vector.
+
+Create a public scalar corollary specialized to the fixed overlap `v`:
+
+```lean
+theorem constrained_log_partition_integral_eq_canonical
+    (path : RSSmartPathDisorder Ω N β h q)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hq0 : 0 ≤ q)
+    (hv : v ∈ attainableOverlaps N) :
+    (∫ ω,
+      Real.log (constrainedPartition
+        (fullPathHamiltonian path s ω) v) ∂volume) =
+    ∫ x,
+      coupledConstrainedLogPartition N β h q s v x
+      ∂SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N) := by
+  ...
+```
+
+Exact namespace names may differ. Reuse `Measure.map` equality plus `integral_map`.
+
+The function evaluation map from a vector indexed by attainable overlaps to its `v` coordinate is measurable. If the vector-law theorem is stated on a subtype index, use `congrArg` on measures after mapping by evaluation, or use equality of integrals of a coordinate projection.
+
+Integrability of the log-partition is already proved privately in `weak_concentration.lean`; promote the lemma if needed.
+
+Sign convention check for canonical coordinates
+-----------------------------------------------
+
+`coupledCoordinateHamiltonian` is defined with a leading minus:
+
+```lean
+H_x(σ) = -( <c(σ),x> + h sum_i spin_i ).
+```
+
+Therefore
+
+```text
+exp (-(H_x(σ1)+H_x(σ2)))
+```
+
+becomes
+
+```text
+exp(
+  <c(σ1)+c(σ2),x>
+  + h sum_i (spin σ1 i + spin σ2 i)).
+```
+
+This is already in the sign convention of the paper's endpoint factorization.
+
+Use this fact. Do not insert another minus sign when defining the interpolation terminal energy.
+
+Finite-state hierarchy setup
+----------------------------
+
+Let
+
+```lean
+S := ConstrainedPair N v.
+```
+
+At every interpolation time, the terminal log-partition has the form
+
+```text
+X3(t,z0,z1,z2,z3,x) =
+  log sum_{p : S}
+    exp( originalPart_t(x,p)
+       + auxiliaryPart_t(z0,z1,z2,z3,p)
+       + magneticField(p)
+       + lam * spinProductSum(p)
+       - lam*N*v )
+```
+
+On `S`, the last two Lagrange terms cancel exactly. Keep them anyway because at `t=0` they permit extending the sum to all pairs.
+
+A cleaner definition is to write the terminal deterministic term as
+
+```text
+V_lam(p) =
+  h * sum_i (σ_i^1 + σ_i^2)
+  + lam * sum_i σ_i^1 σ_i^2
+  - lam * N * v.
+```
+
+Then
+
+```text
+V_lam(p) = h * ...
+```
+
+for constrained `p`.
+
+Original centered field
+-----------------------
+
+The canonical smart-path centered Hamiltonian for a configuration has covariance
+
+```text
+N * gtCovarianceFunction β q s (overlap σ τ).
+```
+
+Prove this as a reusable lemma from `coefficient_inner` or the public covariance theorem in the transport file.
+
+For pair states `p=(σ¹,σ²)` and `p'=(τ¹,τ²)`, the sum of the two centered Hamiltonians has covariance
+
+```text
+N * sum_{a,b : Fin 2}
+  gtCovarianceFunction β q s
+    (SpinGlass.overlap N (pairConfig p a) (pairConfig p' b)).
+```
+
+Call this
+
+```lean
+pairOriginalCovariance β q s p p'.
+```
+
+This exact formula is the `t=1` covariance in the interpolation.
+
+Auxiliary base field
+--------------------
+
+At `u=0`, `gtCovarianceMatrix` is
+
+```text
+β^2(1-s)q * J.
+```
+
+The corresponding site field is common to both replicas:
+
+```text
+β * sqrt((1-s)q) * z_i * (σ_i^1 + σ_i^2).
+```
+
+This is the Lean version of `Y_{i,0}-h` in the paper.
+
+For the auxiliary covariance up to path node `u_j`, prove
+
+```text
+N * sum_{a,b : Fin 2}
+  (gtCovarianceMatrix β q s v u_j a b) *
+  R(σ^a,τ^b).
+```
+
+where `R` is `SpinGlass.overlap`.
+
+Do not expand all site sums every time. Prove a general lemma:
+
+```lean
+lemma site_linear_field_covariance
+    (M : Matrix (Fin 2) (Fin 2) ℝ)
+    ... :
+    covariance of site Gaussian field =
+      N * ∑ a, ∑ b, M a b * overlap ...
+```
+
+and instantiate it for the rank-one/diagonal increments.
+
+Interpolation parameter
+-----------------------
+
+The paper uses
+
+```text
+sqrt(t) * original + sqrt(1-t) * auxiliary.
+```
+
+Define the vector field at hierarchy node `j` so its cumulative covariance is
+
+```text
+C_t^j(p,p') =
+  t * pairOriginalCovariance(p,p')
+  + (1-t) * pairAuxiliaryCovariance_j(p,p')
+  + optional scalar compensation.
+```
+
+If using deterministic compensation, the Gaussian covariance contains only the vector parts and the correction is added to `phi(t)` separately.
+
+The point of defining cumulative covariance first is that the derivative formula should depend only on
+
+```text
+d/dt C_t^j.
+```
+
+not on the particular coordinate realization.
+
+Finite-step derivative theorem
+------------------------------
+
+The supplied paper proves the following generic fact.
+
+Let `S` be finite and nonempty. Let `m_0=0 ≤ ... ≤ m_M ≤ m_{M+1}=1`. Let independent Gaussian level fields have cumulative covariance `C_t^j`.
+
+At the terminal level:
+
+```text
+X_M(t) = log sum_{ξ : S} exp(G_t(ξ)+V(ξ)).
+```
+
+Recursively for `j=M,...,1`:
+
+```text
+X_{j-1}(t) =
+  if m_j = 0 then E_j[X_j(t)]
+  else (1/m_j) * log(E_j[exp(m_j * X_j(t))]).
+```
+
+Then
+
+```text
+d/dt E_0[X_0(t)]
+ = 1/2 E< dot C_t^M(ξ,ξ) >
+   - 1/2 sum_{j=0}^M (m_{j+1}-m_j)
+       E< dot C_t^j(ξ,η) >_{j,t}.
+```
+
+There are two reasonable Lean strategies.
+
+Generic strategy
+~~~~~~~~~~~~~~~~
+
+Formalize the theorem for a finite state type and a short vector/list of Gaussian levels. This yields a reusable theorem and closely follows the paper.
+
+Specialized strategy
+~~~~~~~~~~~~~~~~~~~~
+
+Prove only the three-level version needed by `gtSemigroupSolution`. This avoids list indexing and proofs about arbitrary monotone mass arrays.
+
+Recommended choice: start specialized. Generalize only after the specialized theorem compiles.
+
+Core calculus identities inside the finite-step proof
+-----------------------------------------------------
+
+For a hierarchy transform
+
+```text
+I_m[A] = E[A exp(mX)] / E[exp(mX)]
+```
+
+prove the quotient differentiation identity
+
+```text
+∂ I_m[A]
+ = I_m[∂A]
+   + m I_m[A ∂X]
+   - m I_m[A] I_m[∂X].
+```
+
+In Lean, do not introduce this with an unsafe denominator. First prove
+
+```text
+0 < E[exp(mX)]
+```
+
+because the integrand is strictly positive and the Gaussian measure is a probability measure.
+
+For `m=0`, define the hierarchy transform separately as ordinary expectation, exactly as `gtDiagonalStep` and `gtRankOneStep` do.
+
+First-chain rule
+~~~~~~~~~~~~~~~~
+
+For a Gaussian coordinate `x` not yet integrated out:
+
+```text
+∂_x X_{j-1} = I_j[∂_x X_j].
+```
+
+At the terminal log-sum-exp:
+
+```text
+∂_{G(ξ)} X_M = p_t(ξ)
+```
+
+where
+
+```text
+p_t(ξ) = exp(weight ξ) / sum_η exp(weight η).
+```
+
+After integrating higher levels:
+
+```text
+u_j^ξ := ∂_{H_j(ξ)} X_j
+       = I_{j+1} ... I_M[p_t(ξ)].
+```
+
+Second-chain rule
+~~~~~~~~~~~~~~~~~
+
+Prove
+
+```text
+∂_{xy} X_{j-1}
+ = I_j[∂_{xy} X_j]
+   + m_j (
+       I_j[(∂_x X_j)(∂_y X_j)]
+       - I_j[∂_x X_j] I_j[∂_y X_j]).
+```
+
+At terminal level
+
+```text
+h_M^{ξη}
+ = 1_{ξ=η} p_t(ξ) - p_t(ξ)p_t(η).
+```
+
+Define
+
+```text
+Q_j^{ξη} := h_j^{ξη} + m_j u_j^ξ u_j^η.
+```
+
+Then prove the backward recursion
+
+```text
+Q_{j-1}^{ξη}
+ = I_j[Q_j^{ξη}]
+   - (m_j-m_{j-1}) u_{j-1}^ξ u_{j-1}^η.
+```
+
+At the terminal level use `m_{M+1}=1` to rewrite
+
+```text
+Q_M^{ξη}
+ = 1_{ξ=η} p_t(ξ)
+   - (m_{M+1}-m_M) u_M^ξ u_M^η.
+```
+
+Telescoping gives
+
+```text
+P_k Q_k^{ξη}
+ = P_M[1_{ξ=η} p_t(ξ)]
+   - sum_{j=k}^M (m_{j+1}-m_j)
+       P_j[u_j^ξ u_j^η].
+```
+
+This is the exact algebra that converts levelwise Gaussian IBP into the derivative formula.
+
+Lean implementation advice for this block
+-----------------------------------------
+
+Use a finite type `S`, not a `Finset S` plus membership proofs, once the constrained subtype has been created.
+
+Define the terminal Gibbs probability as a function
+
+```lean
+p : S → ℝ
+```
+
+and prove
+
+```lean
+p_nonneg
+sum_p_eq_one
+```
+
+immediately.
+
+For Fréchet derivatives of finite log-sum-exp with respect to an `S → ℝ` vector, consider using `EuclideanSpace ℝ S` so the existing Hilbert-space Gaussian IBP applies directly.
+
+The terminal field can be viewed as
+
+```lean
+H : EuclideanSpace ℝ S
+```
+
+and
+
+```lean
+logPartition V H :=
+  Real.log (∑ ξ : S, Real.exp (H ξ + V ξ)).
+```
+
+Prove its gradient and Hessian once. The gradient is the Gibbs vector. The Hessian is the covariance matrix of coordinate indicators.
+
+This may be substantially easier than differentiating every scalar coordinate through nested definitions by hand.
+
+Search the repository for existing `log_sum_exp` derivative lemmas before writing them.
+
+Gaussian IBP contribution
+-------------------------
+
+For one level field `G_k`, the paper obtains
+
+```text
+1/2 sum_{ξ,η} dot K_k(ξ,η) P_k Q_k^{ξη}.
+```
+
+If using Hilbert-space Gaussian IBP, this should appear as a trace pairing between the covariance derivative operator and the Hessian of the hierarchy pressure.
+
+If the covariance-operator API makes the trace conversion difficult, coordinatewise IBP over a finite ONB is acceptable. The project already contains examples of summing covariance-operator contributions in `IndependentGaussianAffineIBP.lean`.
+
+Do not assume a Gaussian differentiation formula without proving its regularity hypotheses. For finite log-sum-exp, moderate growth is easy because gradients are bounded probabilities and Hessian entries are bounded. Package these bounds as lemmas rather than solving them repeatedly.
+
+Specialized covariance derivative
+---------------------------------
+
+For hierarchy node `u_j`, after the covariance calculation, obtain
+
+```text
+C_t^j(p,p') =
+  N * sum_{a,b : Fin 2}
+    [ xi_s'(Q_j[a,b]) * R_{ab}(p,p') ]
+  + t * (s * β^2 * N / 2) *
+      sum_{a,b : Fin 2}
+        (R_{ab}(p,p') - Q_j[a,b])^2
+  + term independent of p,p'.
+```
+
+If scalar compensation is handled separately, the configuration-independent term is accounted for by `gtCorrection` rather than included in the covariance.
+
+The paper's identity is
+
+```text
+C_t^j
+ = N sum xi_s'(Q_j) R
+   + t * sβ^2N/2 * sum (R-Q_j)^2.
+```
+
+Derive it entrywise using `gtCovariance_remainder`, then sum over `Fin 2 × Fin 2`.
+
+Therefore
+
+```text
+dot C_t^j(p,p') =
+  s * β^2 * N / 2 *
+    sum_{a,b : Fin 2}
+      (R_{ab}(p,p') - Q_j[a,b])^2.
+```
+
+This is independent of `t`.
+
+Diagonal cancellation
+---------------------
+
+At the top hierarchy node, `Q_M = Q^v(1)`.
+
+For any constrained pair `p`, prove
+
+```text
+R_{ab}(p,p) = Q_M[a,b].
+```
+
+Hence
+
+```text
+dot C_t^M(p,p) = 0.
+```
+
+This kills the first term in the finite-step derivative formula.
+
+The remaining derivative is
+
+```text
+phi'(t) =
+  -s * β^2 / 4 *
+    sum_j (m_{j+1}-m_j) *
+      E_j <
+        sum_{a,b : Fin 2}
+          (R_{ab}-Q_j[a,b])^2
+      >.
+```
+
+The factor check is:
+
+```text
+1/N from normalized pressure
+× (-1/2) from finite-step derivative
+× (sβ^2N/2) from dot C
+= -sβ^2/4.
+```
+
+Record this factor computation in a small `ring` block. Do not allow simplification to hide it.
+
+Nonpositivity of derivative
+---------------------------
+
+Prove every term in the hierarchy expectation is nonnegative.
+
+The inner sum is a finite sum of squares.
+
+The hierarchy expectations preserve nonnegativity because they are ordinary or tilted expectations with positive weights.
+
+The mass differences are nonnegative. In the specialized branches this can be discharged by `norm_num` after unfolding the masses:
+
+Branch `q ≤ r`:
+
+```text
+0 ≤ 1/2 - 0
+0 ≤ 1 - 1/2
+0 ≤ 1 - 1
+```
+
+Branch `r < q`:
+
+```text
+0 ≤ 0 - 0
+0 ≤ 1 - 0
+0 ≤ 1 - 1.
+```
+
+Together with `s ≥ 0` and `β^2 ≥ 0`, conclude
+
+```lean
+phi' t ≤ 0.
+```
+
+Do not use `linarith` until the nonnegativity of the large expected-square expression is already named.
+
+Monotonicity on [0,1]
+---------------------
+
+Because square-root coefficients are not differentiable at both endpoints, prove:
+
+```text
+ContinuousOn phi (Set.Icc 0 1)
+```
+
+and
+
+```text
+∀ t ∈ Set.Ioo 0 1, HasDerivAt phi (phiPrime t) t
+```
+
+with `phiPrime t ≤ 0`.
+
+Then use a Mathlib monotonicity theorem based on derivative sign on the interior. Search for declarations around:
+
+```text
+Convex.monotoneOn_of_deriv_nonneg
+antitoneOn_of_deriv_nonpos
+MonotoneOn
+```
+
+If no direct theorem fits, for arbitrary `0 < a < b < 1` apply the mean value theorem to get `phi b ≤ phi a`, then send `a -> 0` and `b -> 1` using continuity.
+
+A practical epsilon proof is acceptable:
+
+```text
+for n large, let a_n = 1/(n+2), b_n = 1-a_n;
+phi(b_n) ≤ phi(a_n);
+use tendsto and continuity at 0 and 1.
+```
+
+An angle reparameterization is also allowed if it shortens this part.
+
+Endpoint t = 1
+--------------
+
+At `t=1`, every auxiliary vector coefficient is multiplied by `sqrt(1-t)=0`.
+
+Prove the hierarchy steps with zero scale collapse:
+
+```lean
+lemma gtDiagonalStep_zero_scale
+    (m : ℝ) (F : GTTwoField) :
+    gtDiagonalStep m 0 F = F
+```
+
+```lean
+lemma gtRankOneStep_zero_scale
+    (m sign : ℝ) (F : GTTwoField) :
+    gtRankOneStep m 0 sign F = F
+```
+
+These require the standard Gaussian measure to have total mass `1` and, for `m ≠ 0`,
+
+```text
+(1/m) log(exp(m*F)) = F.
+```
+
+Use `Real.log_exp` and field algebra.
+
+For the N-site hierarchy, the same collapse gives
+
+```text
+vectorHierarchyPressure(1)
+ = E_original[
+     log Z_constrained(original)
+   ].
+```
+
+With deterministic scalar compensation,
+
+```text
+phi(1)
+ = expectedConstrainedFreeEnergy path s v
+   + gtCorrection β q s.
+```
+
+More precisely, before law transport and normalization:
+
+```text
+Phi_N(1)
+ = (1/N) E log Z_constrained
+   + gtCorrection β q s.
+```
+
+Prove this as an exact equality, not only an inequality.
+
+Endpoint t = 0: first reduction
+--------------------------------
+
+At `t=0`, the original centered Hamiltonian vanishes and only sitewise auxiliary Gaussian fields remain.
+
+The terminal constrained sum is
+
+```text
+sum_{p : constrained pairs}
+ exp(
+   sum_i localField_i(σ_i^1,σ_i^2)
+   + lam * sum_i σ_i^1 σ_i^2
+   - lam * N * v).
+```
+
+On the constrained set the `lam` term cancels, but do not cancel it before relaxation.
+
+Use positivity to enlarge the constrained sum to all pairs:
+
+```text
+sum_{constrained p} exp(...) ≤
+sum_{all p} exp(...).
+```
+
+Then use `Real.log_le_log` with strict positivity of both sums.
+
+The hierarchy maps are monotone, so this terminal inequality propagates backwards through every level.
+
+Prove monotonicity of the elementary hierarchy operators:
+
+```lean
+lemma gtDiagonalStep_mono
+    {F G : GTTwoField}
+    (hFG : ∀ x₁ x₂, F x₁ x₂ ≤ G x₁ x₂) :
+    ∀ x₁ x₂,
+      gtDiagonalStep m scale F x₁ x₂ ≤
+      gtDiagonalStep m scale G x₁ x₂
+```
+
+and similarly
+
+```lean
+gtRankOneStep_mono.
+```
+
+For `m=0`, this is integral monotonicity.
+
+For `m>0`, be careful: monotonicity of
+
+```text
+(1/m) log E exp(mF)
+```
+
+requires `m > 0`, not merely `m ≠ 0`. In this proof positive masses are `1/2` and `1`, so prove specialized positive-mass versions or include `0 < m` in the general lemma.
+
+Do not state a false monotonicity lemma for negative `m`.
+
+Endpoint t = 0: site factorization
+----------------------------------
+
+After relaxing the constraint, the terminal all-pair sum factors by site:
+
+```text
+product_i
+  sum_{ε₁,ε₂=±1}
+    exp(
+      x_{i,1} ε₁ + x_{i,2} ε₂
+      + lam ε₁ ε₂)
+```
+
+and therefore
+
+```text
+log Z =
+  2*N*log 2
+  + sum_i gtTerminal lam x_{i,1} x_{i,2}
+  - lam*N*v.
+```
+
+Prove the product factorization using `Fintype` equivalences between
+
+```text
+Config N × Config N
+```
+
+and
+
+```text
+Fin N → (Bool × Bool).
+```
+
+A direct `Finset.prod_sum` style proof may be possible after rewriting each configuration as a function. Search Mathlib for
+
+```text
+Fintype.piFinset
+Finset.sum_pi
+Finset.prod_sum
+Fintype.sum_prod_type
+```
+
+before implementing a custom induction on `N`.
+
+If the direct factorization becomes awkward, prove a generic finite-product identity by induction on `N` using `Fin.sum_univ_succ` and the equivalence
+
+```text
+(Fin (N+1) → Bool) ≃ (Fin N → Bool) × Bool.
+```
+
+Do not let this combinatorial lemma dominate the analytic proof; isolate it in `Basic.lean`.
+
+Endpoint t = 0: hierarchy tensorization
+---------------------------------------
+
+The auxiliary Gaussian vectors are independent across sites. Therefore a hierarchy transform of a sum of site functions becomes a sum of the one-site transforms.
+
+For a zero-mass rank-one step:
+
+```text
+E_z [ sum_i F_i(z_i) ] = sum_i E_z[F_i(z_i)].
+```
+
+For a positive-mass rank-one step:
+
+```text
+(1/m) log E_z exp(m * sum_i F_i(z_i))
+ = sum_i (1/m) log E_{z_i} exp(m * F_i(z_i)).
+```
+
+The diagonal step is the same with two independent coordinates per site.
+
+The result after all hierarchy levels is
+
+```text
+2*N*log 2
++ sum_i gtSemigroupSolution β q s lam v 0 Y_i Y_i
+- lam*N*v
+```
+
+where
+
+```text
+Y_i = h + β * sqrt((1-s)*q) * Z_i.
+```
+
+The common initial field for the two replicas is why both arguments of `gtSemigroupSolution` are equal.
+
+Endpoint t = 0: expectation over sites
+--------------------------------------
+
+The `Y_i` are iid, so after outer expectation
+
+```text
+(1/N) E sum_i gtSemigroupSolution ... Y_i Y_i
+ = standardGaussianExpectation
+    (fun z =>
+      gtSemigroupSolution β q s lam v 0
+        (h + β * sqrt((1-s)*q) * z)
+        (h + β * sqrt((1-s)*q) * z)).
+```
+
+Prove the finite-sum/integral interchange with `integral_finset_sum` and integrability of the one-site function.
+
+Integrability should follow from log-sum-exp growth bounds. Because the terminal two-spin system is finite and every hierarchy increment is Gaussian, a linear/quadratic domination is enough. Reuse existing Gaussian integrability lemmas rather than proving tail estimates.
+
+Thus obtain exactly
+
+```text
+phi(0) ≤
+  2 * Real.log 2
+  + standardGaussianExpectation (fun z =>
+      gtSemigroupSolution β q s lam v 0
+        (h + β * Real.sqrt ((1-s)*q) * z)
+        (h + β * Real.sqrt ((1-s)*q) * z))
+  - lam * v.
+```
+
+By definition the right side is
+
+```text
+gtFunctional β h q s lam v + gtCorrection β q s.
+```
+
+since `gtFunctional` subtracts the correction.
+
+Final interpolation algebra
+---------------------------
+
+Monotonicity gives
+
+```text
+phi(1) ≤ phi(0).
+```
+
+The endpoint identities give
+
+```text
+expectedConstrainedFreeEnergy path s v
+  + gtCorrection β q s
+≤
+2 * log 2
+  + E[gtSemigroupSolution at initial field]
+  - lam * v.
+```
+
+Subtract `gtCorrection β q s` from both sides:
+
+```text
+expectedConstrainedFreeEnergy path s v
+≤
+2 * log 2
+  + E[gtSemigroupSolution ...]
+  - lam*v
+  - gtCorrection β q s.
+```
+
+Then
+
+```lean
+simpa [gtFunctional]
+```
+
+should close, possibly after `ring_nf` for the subtraction association.
+
+Do not take an infimum over `lam` in `twoReplica_GT_bound`; the theorem is for each fixed `lam`. The paper takes an infimum only after proving this stronger fixed-`lam` inequality.
+
+Detailed branch matching with `gtSemigroupSolution`
+----------------------------------------------------
+
+At the endpoint, do not prove a mathematically equivalent recursion and then hope `simp` identifies it. Prove explicit bridge lemmas matching the existing definition.
+
+For `q ≤ |v|`, prove a theorem of the form
+
+```lean
+lemma hierarchy_one_site_eq_gtSemigroup_of_q_le_abs
+    (hqr : q ≤ |v|)
+    (hq0 : 0 ≤ q) (hr1 : |v| ≤ 1) :
+    oneSiteHierarchy_q_le_r β q s lam v x₁ x₂ =
+      gtSemigroupSolution β q s lam v 0 x₁ x₂ := by
+  simp [gtSemigroupSolution, hqr, ...]
+```
+
+The expected unfolded expression is
+
+```text
+gtRankOneStep 0 (scale 0 q) sign
+  (gtRankOneStep (1/2) (scale q r) sign
+    (gtDiagonalStep 1 (scale r 1) terminal)).
+```
+
+For `|v| < q`, prove
+
+```lean
+lemma hierarchy_one_site_eq_gtSemigroup_of_abs_lt_q ...
+```
+
+with unfolded expression
+
+```text
+gtRankOneStep 0 (scale 0 r) sign
+  (gtDiagonalStep 0 (scale r q)
+    (gtDiagonalStep 1 (scale q 1) terminal)).
+```
+
+These bridge lemmas keep all later endpoint proofs readable.
+
+Expected Lean pain points and planned remedies
+----------------------------------------------
+
+Square-root simplification
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Never run `ring` while terms such as
+
+```lean
+Real.sqrt s ^ 2
+Real.sqrt (b-a) ^ 2
+```
+
+remain.
+
+First prove
+
+```lean
+have hsqrt_s : Real.sqrt s ^ 2 = s :=
+  Real.sq_sqrt hs0
+```
+
+and similarly for every increment.
+
+For
+
+```text
+sqrt((1-s)*q)
+```
+
+prove
+
+```lean
+have harg : 0 ≤ (1-s)*q := mul_nonneg h1s0 hq0
+have hsqrt_arg : Real.sqrt ((1-s)*q)^2 = (1-s)*q :=
+  Real.sq_sqrt harg
+```
+
+then rewrite.
+
+Natural-number casts
+~~~~~~~~~~~~~~~~~~~~
+
+Create once:
+
+```lean
+have hNr : 0 < (N : ℝ) := by exact_mod_cast hN
+have hN0 : (N : ℝ) ≠ 0 := ne_of_gt hNr
+```
+
+Use these in every `field_simp`.
+
+Do not repeatedly ask `positivity` to infer cast positivity through large goals.
+
+Matrix extensionality
+~~~~~~~~~~~~~~~~~~~~~
+
+For `Matrix (Fin 2) (Fin 2) ℝ` equalities:
+
+```lean
+ext a b
+fin_cases a <;> fin_cases b
+simp [signedMatrixPath, gtPathSign, ...]
+```
+
+Then solve scalar cases with the sign/absolute-value lemmas.
+
+Finite spin enumeration
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For one-site identities:
+
+```lean
+cases ε₁ <;> cases ε₂ <;> simp [SpinGlass.spin]
+```
+
+If the configuration is a `Bool`, it may be simpler to define
+
+```lean
+boolSpin : Bool → ℝ := fun b => if b then 1 else -1
+```
+
+and prove its relation to `SpinGlass.spin` at a coordinate.
+
+Log positivity
+~~~~~~~~~~~~~~
+
+Before every use of `Real.log_le_log`, name both positivity facts.
+
+For finite exponential sums, use `Finset.sum_pos` or `Finset.sum_pos'` with `Real.exp_pos`.
+
+For tilted Gaussian expectations, use positivity of the integrand and the fact that Gaussian probability measures are nonzero. Search for an existing `integral_pos_iff_support_of_nonneg_ae` lemma if Lean cannot prove strict positivity directly. Since the integrand is everywhere strictly positive, a simple theorem for integrals of positive continuous functions against a probability measure may apply.
+
+If strict positivity of the integral becomes difficult, note that for positive mass transforms the integrand often has an explicit positive lower bound on a positive-measure compact interval. Do not use an unproved assertion.
+
+Measurability/integrability
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Package the standard hierarchy regularity as named lemmas:
+
+```lean
+continuous_gtTerminal
+measurable_gtTerminal
+integrable_gtTerminal_gaussian_shift
+integrable_exp_mass_gtTerminal_gaussian_shift
+```
+
+Then propagate through `gtDiagonalStep` and `gtRankOneStep` only as much as needed.
+
+Because every endpoint object is finite-dimensional and built from `exp`, `log`, affine functions, and Gaussian integration, broad continuity and growth lemmas should be reusable.
+
+Derivative under integral
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Do not call `deriv_integral` with an enormous generated domination goal.
+
+First prove a uniform bound on the derivative of the finite-state log-sum-exp with respect to Gaussian coordinates. Gibbs probabilities sum to `1`, so the gradient is a convex combination of finitely many coefficient vectors. Its norm is bounded by the maximum coefficient norm.
+
+For second derivatives, use a covariance bound. In a finite state space, Hessian operator norm is bounded by a constant depending on the finite coefficient family.
+
+This gives a polynomial, often constant, dominating function for Gaussian integration.
+
+Use the existing moderate-growth infrastructure if it is more convenient.
+
+Avoid circular dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`weak_concentration.lean` depends on `GTBound.lean`, so `GTBound.lean` must not import `weak_concentration.lean` merely to access its private helper lemmas.
+
+Move shared helper lemmas downward into `GTbound/Basic.lean` or another independent file.
+
+`GTBound.lean` may import `Concentration_Coupled_Transport.lean`, because that file does not depend on `GTBound.lean` in the current tree. Verify the import graph before committing this change.
+
+If importing the transport file creates a cycle after other edits, extract the law-transport core into a lower-level file rather than duplicating it.
+
+Suggested exact helper theorem list
+-----------------------------------
+
+The names can change, but a proof of this size should have roughly the following API.
+
+Basic constrained-set lemmas:
+
+```lean
+constrainedPair_nonempty
+constrainedPartition_eq_sum_constrainedPair
+constrainedPartition_pos_of_attainable
+attainableOverlap_mem_Icc
+spin_sum_eq_mul_overlap
+overlap_self
+```
+
+GT path algebra:
+
+```lean
+gtPathSign_sq
+gtPathSign_mul_abs
+signedMatrixPath_one
+signedMatrixPath_increment_rankOne
+signedMatrixPath_increment_diagonal
+gtCovariance_remainder
+gtIncrementScale_sq
+gtScalarCorrection_eq_finiteSum
+```
+
+Terminal/factorization:
+
+```lean
+log_sum_two_spins_eq_gtTerminal
+unconstrained_pair_partition_factorizes
+gtDiagonalStep_mono
+gtRankOneStep_mono
+gtDiagonalStep_zero_scale
+gtRankOneStep_zero_scale
+gtDiagonalStep_tensorize
+gtRankOneStep_tensorize
+```
+
+Generic/specialized hierarchy calculus:
+
+```lean
+hierarchyTilt_denominator_pos
+hierarchyTilt_deriv
+finiteLogSumExp_gradient
+finiteLogSumExp_hessian
+finiteStep_firstChain
+finiteStep_secondChain
+finiteStep_Q_recursion
+finiteStep_Q_telescoping
+finiteStep_interpolation_derivative
+```
+
+Specialized interpolation:
+
+```lean
+pairOverlapMatrix
+pairOverlapMatrix_self_eq_signedPath_one
+pairSmartCovariance
+pairAuxCovariance
+pairCovarianceDerivative_square
+specialGT_derivative_q_le_abs
+specialGT_derivative_abs_lt_q
+specialGT_antitone
+specialGT_endpoint_one
+specialGT_endpoint_zero_q_le_abs
+specialGT_endpoint_zero_abs_lt_q
+canonical_twoReplica_GT_bound
+```
+
+Transport/final theorem:
+
+```lean
+constrained_log_partition_integral_eq_canonical
+twoReplica_GT_bound
+```
+
+Not every helper needs to be public. Keep highly implementation-specific derivatives `private` inside `FiniteStep.lean` if no other file uses them.
+
+A possible specialized finite-step data structure
+-------------------------------------------------
+
+If repeated branch code becomes unwieldy, define a tiny data structure that describes one Gaussian increment:
+
+```lean
+inductive GTIncrementKind
+| rankOne (sign : ℝ)
+| diagonal
+
+structure GTIncrement where
+  lower : ℝ
+  upper : ℝ
+  mass : ℝ
+  kind : GTIncrementKind
+  lower_le_upper : lower ≤ upper
+  mass_nonneg : 0 ≤ mass
+  mass_le_one : mass ≤ 1
+```
+
+Then branch data are fixed lists of length three.
+
+However, do not force list-based matrix proofs if explicit branch definitions are shorter. The existing `gtSemigroupSolution` is branch-based, so branch-specific bridge lemmas are often easier for Lean.
+
+A possible generic log-sum-exp API
+----------------------------------
+
+For a finite nonempty type `S` define
+
+```lean
+noncomputable def finiteLogPartition
+    (V : S → ℝ) (x : S → ℝ) : ℝ :=
+  Real.log (∑ ξ : S, Real.exp (x ξ + V ξ))
+```
+
+and
+
+```lean
+noncomputable def finiteGibbs
+    (V : S → ℝ) (x : S → ℝ) (ξ : S) : ℝ :=
+  Real.exp (x ξ + V ξ) /
+    ∑ η : S, Real.exp (x η + V η)
+```
+
+Prove
+
+```lean
+finiteGibbs_pos
+finiteGibbs_nonneg
+sum_finiteGibbs
+```
+
+and coordinate derivatives
+
+```text
+∂_ξ finiteLogPartition = finiteGibbs ξ
+```
+
+```text
+∂_η finiteGibbs ξ
+ = Gibbs ξ * (1_{ξ=η} - Gibbs η).
+```
+
+Then Hessian
+
+```text
+H_{ξη} = 1_{ξ=η} p_ξ - p_ξ p_η.
+```
+
+This mirrors the terminal calculation in the supplied proof and is useful beyond this theorem.
+
+Covariance-only derivative theorem option
+-----------------------------------------
+
+If constructing explicit t-dependent Gaussian fields becomes the bottleneck, use a covariance comparison theorem.
+
+For a centered finite-dimensional Gaussian vector `G_t` with covariance `K_t`, a smooth moderate-growth function `F` satisfies
+
+```text
+d/dt E[F(G_t)]
+ = 1/2 E[trace(dot K_t * Hess F(G_t))].
+```
+
+The Hilbert Gaussian IBP infrastructure may support proving this for
+
+```text
+G_t = sqrt(t) A X + sqrt(1-t) B Y
+```
+
+with independent standard Gaussian `X,Y`.
+
+Prove this once for finite-dimensional `EuclideanSpace` and use it at each hierarchy level.
+
+This avoids differentiating Gaussian densities.
+
+If this route is used, prove independence by using separate standard Gaussian coordinate blocks or an existing theorem that standard Gaussian coordinates over a sum type are independent.
+
+Connection to the supplied paper proof
+--------------------------------------
+
+The paper finite-step proof proceeds through exactly these facts:
+
+```text
+chain rule for the tilted hierarchy
+Gaussian IBP level by level
+telescoping Hessians
+cumulative covariance derivative
+self-overlap diagonal cancellation
+square remainder
+endpoint factorization
+scalar correction
+```
+
+Do not replace the proof by a generic statement of the GT inequality unless that generic statement is itself proved in the repository from these ingredients.
+
+Sanity checks to perform during implementation
+----------------------------------------------
+
+Check `N = 1` by simplification where practical. The attainable overlaps are `±1`; the constrained set is nonempty, and the overlap self-identity should be trivial.
+
+Check `s = 0`. Then every `gtIncrementScale` involving `sqrt s` vanishes and `gtCorrection = 0`. The derivative square coefficient is zero, so the interpolation is constant. The final inequality should reduce to a pure random-field/Lagrange inequality.
+
+Check `s = 1`. The base common field scale `sqrt((1-s)q)` vanishes. The GT trial starts from deterministic magnetic field `h` before the hierarchy increments.
+
+Check `v = 0`. Then `gtPathSign 0 = 1` by definition, but every off-diagonal path value is `min u 0 = 0`, so the sign is irrelevant. Make sure no proof incorrectly requires `v ≠ 0`.
+
+Check `v < 0`. The off-diagonal path is negative through `gtPathSign v = -1`; this is why all rank-one auxiliary fields use the second coordinate with `sign * z`. Do not restrict the theorem to nonnegative overlaps.
+
+Check `|v| = q`. Both `gtSemigroupSolution` branches meet at the boundary. Since the definition uses `if q ≤ r`, the Lean proof should use that branch at equality. The zero-length increment has scale zero, so the formulas agree.
+
+Check `q = 0` if the strict assumptions permit it. Zero-length/zero-scale lower increments must be handled by the `m=0` branch without division by zero.
+
+Check all factors in the final formula:
+
+```text
+2 log 2
+-lam*v
+-s β^2/2 (1-q^2)
+```
+
+The correction is `gtCorrection`, not half of it and not twice it.
+
+No infimum over `lam` appears in `twoReplica_GT_bound`.
+
+Downstream caller update if strict-AT parameters are added
+----------------------------------------------------------
+
+`weak_concentration.lean` currently contains a call of the form
+
+```lean
+have hgt := twoReplica_GT_bound path lam hNpos s.2 v.2
+```
+
+in a context where:
+
+```text
+data : UniformATData K
+hp : (β,h) ∈ K
+path : RSSmartPathDisorder ... β h (rsQ β h)
+```
+
+After changing the theorem interface, update it to something like
+
+```lean
+have hgt := twoReplica_GT_bound
+  data hp rfl path lam hNpos s.2 v.2
+```
+
+or the exact argument order chosen in the final theorem.
+
+Compile `weak_concentration.lean` after this change.
+
+Suggested working order for Codex
+---------------------------------
+
+Start by making `Basic.lean` compile with no interpolation. This should include constrained-partition positivity, overlap range, self-overlap, Lagrange cancellation, terminal four-spin identity, sign/path matrix identities, covariance remainder, and correction finite-sum algebra.
+
+Then prove the endpoint tensorization lemmas independently. It should be possible to evaluate the entire `t=0` endpoint without any Gaussian derivative theorem. This confirms that the existing `gtSemigroupSolution` and `gtFunctional` have the expected normalization.
+
+Then build the specialized finite-step derivative theorem on an abstract finite state type. Test it first with a one-level hierarchy so the Gaussian IBP and Hessian conventions are known to be correct.
+
+Then instantiate the three levels and prove the square derivative in each branch.
+
+Then prove monotonicity and both endpoint comparisons.
+
+Only after the canonical-coordinate theorem compiles should `GTBound.lean` be connected to the abstract `RSSmartPathDisorder` using the existing law transport.
+
+Finally update the strict-AT caller if the theorem signature changed and run the full build.
+
+What not to do
+--------------
+
+Do not prove the final theorem by invoking `gtFunctional_uniform_quadratic_gap`; that theorem is downstream information about the GT functional and does not imply the finite-volume GT comparison by itself.
+
+Do not use concentration to prove the GT bound. Concentration is used later and would create the wrong dependency structure.
+
+Do not replace `gtSemigroupSolution` by a new recursive definition unless you also prove exact equality to the existing one and there is a clear implementation benefit.
+
+Do not assume independence of auxiliary Gaussians merely because their covariance is zero unless the API theorem used actually supplies joint Gaussianity and independence.
+
+Do not treat `Real.sqrt x ^ 2 = x` without a proof of `0 ≤ x`.
+
+Do not use monotonicity of the positive-mass log-Laplace transform for a mass whose sign has not been proved.
+
+Do not silently restrict `v` to `v ≥ 0`.
+
+Do not change the definition of `constrainedPartition`, `gtTerminal`, `gtSemigroupSolution`, or `gtFunctional` to make the theorem easier.
+
+Do not introduce global assumptions stronger than needed into unrelated files.
+
+Completion target
+-----------------
+
+The final proof should have the mathematical shape
+
+```lean
+have htransport :
+    expectedConstrainedFreeEnergy path s v =
+      canonicalExpectedConstrainedFreeEnergy N β h q s v := ...
+
+have hcanonical :
+    canonicalExpectedConstrainedFreeEnergy N β h q s v ≤
+      gtFunctional β h q s lam v :=
+  canonical_twoReplica_GT_bound ...
+
+simpa [htransport] using hcanonical
+```
+
+or an equivalent sequence.
+
+Inside `canonical_twoReplica_GT_bound`, the proof should visibly reduce to
+
+```text
+phi(1) ≤ phi(0)
+```
+
+with
+
+```text
+phi(1) = constrained free energy + correction
+phi(0) ≤ one-site GT trial before correction
+phi'(t) ≤ 0.
+```
+
+That is the certificate that the formalization matches the supplied finite-step Guerra-Talagrand proof.
