@@ -212,11 +212,11 @@ lemma continuous_gtHalfTransform_parameter
                     ((gtCoefficientCLM B₁).le_opNorm z₁E))
           _ ≤ K + RB * ‖gtCoefficientCLM B₁‖ * ‖z₁E‖ := by
             have hA := mul_le_mul_of_nonneg_right hsA
-              (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+              (mul_nonneg (norm_nonneg (gtCoefficientCLM A)) (norm_nonneg z₀))
             have hB := mul_le_mul_of_nonneg_right hsB
               (add_nonneg
-                (mul_nonneg (norm_nonneg _) (norm_nonneg _))
-                (mul_nonneg (norm_nonneg _) (norm_nonneg _)))
+                (mul_nonneg (norm_nonneg (gtCoefficientCLM B₀)) (norm_nonneg z₀))
+                (mul_nonneg (norm_nonneg (gtCoefficientCLM B₁)) (norm_nonneg z₁E)))
             dsimp [K]
             nlinarith
       have hg := base.F_bound (gtHalfField A B₀ B₁ H₀ u z₀ z₁E)
@@ -319,13 +319,21 @@ lemma continuous_gtHalfPressure
               gtHalfTransform V A B₀ B₁ H₀ t₀ 0| := by ring_nf
         _ ≤ |gtHalfTransform V A B₀ B₁ H₀ u 0 -
                 gtHalfTransform V A B₀ B₁ H₀ t₀ 0| +
-              |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| := abs_add _ _
-        _ < 1 + |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| :=
-          add_lt_add_right hzero' _
+              |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| := by
+          simpa [Real.norm_eq_abs] using norm_add_le
+            (gtHalfTransform V A B₀ B₁ H₀ u 0 -
+              gtHalfTransform V A B₀ B₁ H₀ t₀ 0)
+            (gtHalfTransform V A B₀ B₁ H₀ t₀ 0)
+        _ < 1 + |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| := by
+          linarith
         _ = |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| + 1 := by ring
     have hzbase : |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| < C := by
-      rw [← gtHalfTransform_eq_base V A B₀ B₁ H₀ u 0]
-      simpa using hz0
+      have heq := gtHalfTransform_eq_base V A B₀ B₁ H₀ u 0
+      have heq' : gtHalfTransform V A B₀ B₁ H₀ u 0 =
+          gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀ := by
+        simpa using heq
+      rw [← heq']
+      exact hz0
     dsimp [bound]
     rw [gtHalfTransform_eq_base]
     change |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)
@@ -335,10 +343,14 @@ lemma continuous_gtHalfPressure
               (gtHalfOuterCLM A B₀ u zE + H₀) -
             gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| +
           |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| := by
-            rw [← abs_sub_add_abs]
+            simpa [Real.norm_eq_abs] using norm_add_le
+              (gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)
+                (gtHalfOuterCLM A B₀ u zE + H₀) -
+                gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀)
+              (gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀)
       _ ≤ ‖gtHalfOuterCLM A B₀ u zE‖ +
           |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| :=
-            add_le_add_right hlip _
+            add_le_add hlip (le_refl _)
       _ ≤ R * ‖zE‖ + C :=
             add_le_add hM hzbase.le
       _ = C + R * ‖zE‖ := by ring
@@ -1460,6 +1472,50 @@ lemma integrable_inner_mul_gtHalfGibbsWeight_outer
     nlinarith [mul_le_mul_of_nonneg_left hw1 (abs_nonneg
       (inner ℝ (WithLp.toLp 2 z : EuclideanSpace ℝ I₀) (C ξ)))]
 
+lemma integrable_gtHalfDerivativeExpression_outer
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S) (t : ℝ) :
+    Integrable (fun z : I₀ → ℝ =>
+      gtHalfDerivativeExpression V A B₀ B₁ H₀ t (WithLp.toLp 2 z))
+      (Measure.pi (fun _ : I₀ => gaussianReal 0 1)) := by
+  let μ := Measure.pi (fun _ : I₀ => gaussianReal 0 1)
+  have hw (ξ : S) := integrable_gtHalfGibbsWeight_outer V A B₀ B₁ H₀ t ξ
+  have hu (ξ η : S) := integrable_gtHalfInnerPairWeight_outer
+    V A B₀ B₁ H₀ t ξ η
+  have hww (ξ η : S) : Integrable (fun z : I₀ → ℝ =>
+      gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ *
+        gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) η) μ := by
+    apply (hw η).bdd_mul (hw ξ).1
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_of_nonneg
+      (gtHalfGibbsWeight_nonneg V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ)]
+    rw [gtHalfGibbsWeight_eq_base]
+    exact gtHalfBaseWeight_le_one V _ _ ξ
+  have hdiag : Integrable (fun z : I₀ → ℝ =>
+      ∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ *
+        (inner ℝ (A ξ) (A ξ) - inner ℝ (B₀ ξ) (B₀ ξ) -
+          inner ℝ (B₁ ξ) (B₁ ξ))) μ := by
+    exact integrable_finset_sum _ fun ξ _ => (hw ξ).mul_const _
+  have houter : Integrable (fun z : I₀ → ℝ =>
+      ∑ ξ : S, ∑ η : S,
+        (gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ *
+          gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) η) *
+          (inner ℝ (A ξ) (A η) - inner ℝ (B₀ ξ) (B₀ η))) μ := by
+    exact integrable_finset_sum _ fun ξ _ => integrable_finset_sum _ fun η _ =>
+      (hww ξ η).mul_const _
+  have hinner : Integrable (fun z : I₀ → ℝ =>
+      ∑ ξ : S, ∑ η : S,
+        gtHalfInnerPairWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ η *
+          (inner ℝ (A ξ) (A η) - inner ℝ (B₀ ξ) (B₀ η) -
+            inner ℝ (B₁ ξ) (B₁ η))) μ := by
+    exact integrable_finset_sum _ fun ξ _ => integrable_finset_sum _ fun η _ =>
+      (hu ξ η).mul_const _
+  unfold gtHalfDerivativeExpression
+  exact ((hdiag.const_mul (1 / 2 : ℝ)).sub
+    (houter.const_mul (1 / 4 : ℝ))).sub (hinner.const_mul (1 / 4 : ℝ))
+
 lemma hasDerivAt_gtHalfPressure_ibp
     {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
     [Fintype I₀] [Fintype I₁]
@@ -1847,5 +1903,57 @@ lemma hasDerivAt_gtHalfPressure_ibp
   have hnegQuarter (a : ℝ) : a * (-1 / 4 : ℝ) = -(a * (1 / 4 : ℝ)) := by ring
   simp_rw [hnegHalf, hnegQuarter, Finset.sum_neg_distrib]
   ring
+
+/-- Integrating a uniform bound on the half-mass interpolation derivative. -/
+theorem gtHalfPressure_one_le_zero_add
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (hAB : ∀ ξ η, inner ℝ (A ξ) (B₀ η) = 0) (K : ℝ)
+    (hbound : ∀ t ∈ Set.Ioo (0 : ℝ) 1, ∀ z₀,
+      gtHalfDerivativeExpression V A B₀ B₁ H₀ t z₀ ≤ K) :
+    gtHalfPressure V A B₀ B₁ H₀ 1 ≤
+      gtHalfPressure V A B₀ B₁ H₀ 0 + K := by
+  let g : ℝ → ℝ := gtHalfPressure V A B₀ B₁ H₀ - fun t => K * t
+  have hgcont : Continuous g :=
+    (continuous_gtHalfPressure V A B₀ B₁ H₀).sub
+      (continuous_const.mul continuous_id)
+  have hgderiv (t : ℝ) (ht : t ∈ Set.Ioo (0 : ℝ) 1) :
+      HasDerivAt g
+        ((∫ z₀ : I₀ → ℝ,
+          gtHalfDerivativeExpression V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀)
+          ∂Measure.pi (fun _ : I₀ => gaussianReal 0 1)) - K) t := by
+    simpa [g] using
+      (hasDerivAt_gtHalfPressure_ibp V A B₀ B₁ H₀ hAB ht).sub
+        ((hasDerivAt_id t).const_mul K)
+  have hganti : AntitoneOn g (Set.Icc (0 : ℝ) 1) := by
+    refine antitoneOn_of_deriv_nonpos (convex_Icc (0 : ℝ) 1)
+      hgcont.continuousOn ?_ ?_
+    · intro t ht
+      rw [interior_Icc] at ht
+      exact (hgderiv t ht).differentiableAt.differentiableWithinAt
+    · intro t ht
+      rw [interior_Icc] at ht
+      rw [(hgderiv t ht).deriv]
+      apply sub_nonpos.mpr
+      calc
+        (∫ z₀ : I₀ → ℝ,
+            gtHalfDerivativeExpression V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀)
+            ∂Measure.pi (fun _ : I₀ => gaussianReal 0 1)) ≤
+            ∫ _z₀ : I₀ → ℝ, K
+              ∂Measure.pi (fun _ : I₀ => gaussianReal 0 1) := by
+          apply integral_mono
+          · exact integrable_gtHalfDerivativeExpression_outer V A B₀ B₁ H₀ t
+          · exact integrable_const K
+          · intro z₀
+            exact hbound t ht (WithLp.toLp 2 z₀)
+        _ = K := by simp
+  have hends := hganti
+    (show (0 : ℝ) ∈ Set.Icc 0 1 by norm_num)
+    (show (1 : ℝ) ∈ Set.Icc 0 1 by norm_num)
+    (show (0 : ℝ) ≤ 1 by norm_num)
+  dsimp [g] at hends
+  linarith
 
 end SpinGlass.AT
