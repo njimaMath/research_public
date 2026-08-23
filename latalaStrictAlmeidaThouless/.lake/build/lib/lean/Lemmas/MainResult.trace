@@ -18,10 +18,10 @@
        [["Lemmas.ATDefs transitive imports (legacy)", "8b3934e56f80bc5b"],
         ["Lemmas.ATDefs:importAllArts", "93ec615659c4d976"],
         ["Lemmas.Cavity.Talagrand_Cavity transitive imports (legacy)",
-         "f51476fbf6a3f1fa"],
+         "e27f4c6aad255111"],
         ["Lemmas.Cavity.Talagrand_Cavity:importAllArts", "969858cd1125c0b3"],
         ["Lemmas.weak_concentration transitive imports (legacy)",
-         "ce27b799525f0033"],
+         "a6f79f3f0bc89abe"],
         ["Lemmas.weak_concentration:importAllArts", "ac3d4f02a0c8eed0"],
         ["Lemmas.smart_path.proof transitive imports (legacy)",
          "2d47b3c989555df6"],
@@ -44,4 +44,4 @@
   ["Module.name: Lemmas.MainResult", "e5fbf75b5b31362e"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "8428746be9e8b32f"}
+ "depHash": "382a1ae16b4195cf"}
