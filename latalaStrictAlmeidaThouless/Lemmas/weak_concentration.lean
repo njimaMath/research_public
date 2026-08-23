@@ -428,12 +428,14 @@ theorem quadraticCoupledPressure_sublinear
       _ ≤ P + (1 + 2 * data.βmax) * r := by
         simpa [add_comm] using add_le_add_left herror P
 
-private lemma fourReplica_firstPair_eq_two
-    {N : ℕ} (H : SpinGlass.EnergySpace N) (q : ℝ) :
+/-- A four-replica observable depending only on the first pair has the same
+expectation as the corresponding two-replica observable. -/
+theorem fourReplica_firstPair_eq_two
+    {N : ℕ} (H : SpinGlass.EnergySpace N) (q : ℝ) (f : ℝ → ℝ) :
     replicaGibbsAverage H
-        (fun σs : Replicas N 4 => centeredOverlap q σs 0 1 ^ 2) =
+        (fun σs : Replicas N 4 => f (centeredOverlap q σs 0 1)) =
       SpinGlass.gibbs_average_n_det (N := N) (n := 2) H
-        (fun σs => (SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2) := by
+        (fun σs => f (SpinGlass.overlap N (σs 0) (σs 1) - q)) := by
   classical
   let e0a := Equiv.prodPiEquivSumPi
     (fun _ : Fin 2 => SpinGlass.Config N)
@@ -471,10 +473,10 @@ private lemma fourReplica_firstPair_eq_two
   unfold replicaGibbsAverage SpinGlass.gibbs_average_n_det
   rw [show (∑ σs : Replicas N 4,
       (∏ a, SpinGlass.gibbs_pmf N H (σs a)) *
-        centeredOverlap q σs 0 1 ^ 2) =
+        f (centeredOverlap q σs 0 1)) =
       ∑ p : Replicas N 2 × Replicas N 2,
         (∏ a, SpinGlass.gibbs_pmf N H (e p a)) *
-          centeredOverlap q (e p) 0 1 ^ 2 by
+          f (centeredOverlap q (e p) 0 1) by
     symm
     exact Fintype.sum_equiv e _ _ (fun _ => rfl)]
   rw [Fintype.sum_prod_type]
@@ -492,8 +494,8 @@ private lemma fourReplica_firstPair_eq_two
     (∑ τs : Replicas N 2,
         SpinGlass.gibbs_pmf N H (σs 0) * SpinGlass.gibbs_pmf N H (σs 1) *
           SpinGlass.gibbs_pmf N H (τs 0) * SpinGlass.gibbs_pmf N H (τs 1) *
-            (SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2) =
-        ((SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2 *
+            f (SpinGlass.overlap N (σs 0) (σs 1) - q)) =
+        (f (SpinGlass.overlap N (σs 0) (σs 1) - q) *
           ∏ l, SpinGlass.gibbs_pmf N H (σs l)) *
           ∑ τs : Replicas N 2,
             SpinGlass.gibbs_pmf N H (τs 0) *
@@ -503,10 +505,12 @@ private lemma fourReplica_firstPair_eq_two
       intro τs _
       simp only [Fin.prod_univ_two]
       ring
-    _ = (SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2 *
+    _ = f (SpinGlass.overlap N (σs 0) (σs 1) - q) *
           ∏ l, SpinGlass.gibbs_pmf N H (σs l) := by rw [hsum, mul_one]
 
-private lemma A_eq_overlapVariance
+/-- The four-replica definition of `A` agrees with the two-replica smart-path
+variance. -/
+theorem A_eq_overlapVariance
     {Omega : Type u} [MeasureSpace Omega]
     [IsProbabilityMeasure (volume : Measure Omega)]
     {N : ℕ} [NeZero N] {beta h q : ℝ}
@@ -526,6 +530,7 @@ private lemma A_eq_overlapVariance
       (fullPathHamiltonian path t omega)
       (fun σs => (SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2)
   exact fourReplica_firstPair_eq_two (fullPathHamiltonian path t omega) q
+    (fun x => x ^ 2)
 
 private lemma rsFreeEnergyGap_hasDerivAt
     {Omega : Type u} [MeasureSpace Omega]
