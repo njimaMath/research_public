@@ -1,0 +1,16 @@
+import Lemmas.GTbound.HalfEndpoint
+
+open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology
+
+#check contDiff_one_iff_fderiv
+#check contDiff_one_iff_deriv
+#check ContDiff.of_fderiv
+#check HasFDerivAt.integral_prod_right
+#check hasFDerivAt_integral_of_dominated
+#check hasFDerivAt_integral_of_dominated_of_fderiv_le
+#check hasFDerivAt_integral_of_dominated_of_fderiv_le'
+#check MeasureTheory.hasFDerivAt_integral_prod_right
+#check MeasureTheory.integral_prod_right
+#check MeasureTheory.integral_prod_left
+#check SpinGlass.AT.gaussianProduct_stein_inner
+#check SYK.gaussian_ibp

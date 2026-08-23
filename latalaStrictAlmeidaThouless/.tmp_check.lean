@@ -16,3 +16,12 @@ open MeasureTheory
 #check ContinuousLinearMap.proj
 #check PiLp.continuousLinearMap_apply
 #check EuclideanSpace.proj
+#check HasFDerivAt.div
+#check HasFDerivAt.inv
+#check HasFDerivAt.mul
+#check Finset.sum_pos'
+#check ProbabilityTheory.IsCenteredGaussianRV
+#check SpinGlass.GeneralizedLatala.gaussianProduct_eval_gaussian
+#check SpinGlass.GeneralizedLatala.gaussianProduct_eval_law
+#check WithLp.toLp
+#print ProbabilityTheory.IsCenteredGaussianRV

@@ -11,7 +11,7 @@ set_option autoImplicit false
 
 namespace SpinGlass.AT
 
-private lemma coefficient_inner
+lemma coupledDisorderCoefficient_inner
     (N : ℕ) (beta q s : ℝ) (hs : s ∈ Set.Icc (0 : ℝ) 1)
     (hq : 0 ≤ q) (sigma tau : SpinGlass.Config N) :
     inner ℝ (coupledDisorderCoefficient N beta q s sigma)
@@ -541,7 +541,7 @@ private theorem smartPath_coordinate_random_law
           change smartPathCovKernel N beta q s.1 sigma tau =
             inner ℝ (coupledDisorderCoefficient N beta q s.1 sigma)
               (coupledDisorderCoefficient N beta q s.1 tau)
-          exact (coefficient_inner N beta q s.1 s.2 hq sigma tau).symm
+          exact (coupledDisorderCoefficient_inner N beta q s.1 s.2 hq sigma tau).symm
         all_goals fun_prop
       _ = covarianceBilin nu x y := (bilin_eq_sum_std N _ x y).symm
 
