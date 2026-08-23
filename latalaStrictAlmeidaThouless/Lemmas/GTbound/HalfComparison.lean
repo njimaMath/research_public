@@ -1164,7 +1164,6 @@ lemma hasDerivAt_gtHalfPressure_before_outer_ibp
     hFmeas hFint hF'meas hdom hbound hdiff).2
   exact hm
 
-/-
 lemma integrable_gtHalfGibbsWeight_outer
     {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
     [Fintype I₀] [Fintype I₁]
@@ -1407,7 +1406,5 @@ lemma hasDerivAt_gtHalfPressure_ibp
   · intro ξ _
     exact (hw ξ).const_mul _ |>.sub
       ((integrable_finset_sum _ fun η _ => (hw η).const_mul _).const_mul _)
-
--/
 
 end SpinGlass.AT
