@@ -1,4 +1,10 @@
 import Lemmas.ATDefs
+import Lemmas.Cavity.Talagrand_Cavity
+import Lemmas.weak_concentration
+import Lemmas.smart_path.proof
+import Lemmas.smart_path.mainresult_latala
+
+
 open MeasureTheory ProbabilityTheory
 
 set_option autoImplicit false

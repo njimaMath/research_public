@@ -138,6 +138,67 @@ theorem beta_sq_mul_repliconCoefficient_eq_atParameter
   subst q
   exact (atParameter_eq_beta_sq_mul_one_sub_two_q_add_r β h).symm
 
+/-- The fourth RS moment is nonnegative. -/
+theorem rsR_nonneg (β h : ℝ) : 0 ≤ rsR β h := by
+  rw [rsR_eq_gaussian_tanh_fourth]
+  unfold standardGaussianExpectation
+  exact integral_nonneg fun z ↦ by positivity
+
+/-- The fourth RS moment is at most the second RS moment. -/
+theorem rsR_le_rsQ {β h : ℝ} (hh : 0 < h) : rsR β h ≤ rsQ β h := by
+  let X : ℝ → ℝ := fun z ↦ h + β * Real.sqrt (rsQ β h) * z
+  have htanh : Continuous (fun x : ℝ ↦ Real.tanh x) := by
+    simp_rw [Real.tanh_eq]
+    apply Continuous.div
+    · fun_prop
+    · fun_prop
+    · intro x
+      positivity
+  have hInt2 : Integrable (fun z ↦ Real.tanh (X z) ^ 2) (gaussianReal 0 1) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (htanh.comp (by fun_prop)).pow 2 |>.aestronglyMeasurable
+    · filter_upwards [] with z
+      rw [Real.norm_eq_abs, abs_pow]
+      exact pow_le_one₀ (abs_nonneg _) (le_of_lt (Real.abs_tanh_lt_one _))
+  have hInt4 : Integrable (fun z ↦ Real.tanh (X z) ^ 4) (gaussianReal 0 1) := by
+    apply Integrable.of_bound (C := 1)
+    · exact (htanh.comp (by fun_prop)).pow 4 |>.aestronglyMeasurable
+    · filter_upwards [] with z
+      rw [Real.norm_eq_abs, abs_pow]
+      exact pow_le_one₀ (abs_nonneg _) (le_of_lt (Real.abs_tanh_lt_one _))
+  rw [rsR_eq_gaussian_tanh_fourth]
+  calc
+    standardGaussianExpectation (fun z ↦ Real.tanh (X z) ^ 4) ≤
+        standardGaussianExpectation (fun z ↦ Real.tanh (X z) ^ 2) := by
+      unfold standardGaussianExpectation
+      apply integral_mono_ae hInt4 hInt2
+      filter_upwards [] with z
+      have ht : |Real.tanh (X z)| ≤ 1 := (Real.abs_tanh_lt_one _).le
+      have ht2' := mul_self_le_mul_self (abs_nonneg (Real.tanh (X z))) ht
+      have ht2 : Real.tanh (X z) ^ 2 ≤ 1 := by
+        simpa [pow_two] using ht2'
+      nlinarith [sq_nonneg (Real.tanh (X z)),
+        mul_nonneg (sq_nonneg (Real.tanh (X z))) (sub_nonneg.mpr ht2)]
+    _ = rsQ β h := (rsQ_eq_gaussian_tanh_sq hh).symm
+
+/-- The cubic overlap moment is nonnegative. -/
+theorem thirdMoment_nonneg
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) :
+    0 ≤ thirdMoment path s := by
+  unfold thirdMoment quenchedReplicaAverage replicaGibbsAverage
+  apply integral_nonneg
+  intro ω
+  apply Finset.sum_nonneg
+  intro σs _
+  exact mul_nonneg
+    (Finset.prod_nonneg fun i _ ↦
+      SpinGlass.gibbs_pmf_nonneg (N := N) (H := fullPathHamiltonian path s ω)
+        (σs i))
+    (by positivity)
+
 /-! ## Inverting the fixed mode change -/
 
 /-- The matrix displayed in `ATDefs` really is the inverse mode change. -/
@@ -289,4 +350,250 @@ theorem exists_hasCavityRemainderBound
     _ ≤ 6 * (C * cavityErrorScale path s) :=
       mul_le_mul_of_nonneg_left (hC hN hK hq hs path) (by norm_num)
     _ = (6 * C) * cavityErrorScale path s := by ring
+
+/-! ## Pre-absorption estimate -/
+
+/-- Uniform form of `A_s ≤ C_K / N + C_K * ν_s[|Q₁₂|^3]`. -/
+def HasCavityPreAbsorptionBound
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {K : Set (ℝ × ℝ)}
+    (_data : UniformATData K) (C : ℝ) : Prop :=
+  0 < C ∧
+    ∀ {N : ℕ}, 0 < N → ∀ {β h q s : ℝ},
+      (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
+      ∀ path : RSSmartPathDisorder Ω N β h q,
+        A path s ≤ C / (N : ℝ) + C * thirdMoment path s
+
+/-- The cavity proposition and the strict AT gap imply the pre-absorption
+bound for the centered-overlap second moment. -/
+theorem exists_hasCavityPreAbsorptionBound
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {K : Set (ℝ × ℝ)}
+    (data : UniformATData K) :
+    ∃ C : ℝ, HasCavityPreAbsorptionBound (Ω := Ω) data C := by
+  obtain ⟨C, hCpos, hC⟩ :=
+    cavityModeRemainder_bound_from_lastSpin (Ω := Ω) data
+  let L : ℝ := (8 + C) / data.gap
+  let M : ℝ := (8 * data.βmax ^ 2 * L + 8 + C) / data.gap
+  let Cstar : ℝ := M + 5 * L
+  have hLpos : 0 < L := by
+    dsimp [L]
+    exact div_pos (by linarith) data.gap_pos
+  have hMpos : 0 < M := by
+    dsimp [M]
+    apply div_pos _ data.gap_pos
+    have hp : 0 ≤ 8 * data.βmax ^ 2 * L := by positivity
+    linarith
+  have hCstarpos : 0 < Cstar := by dsimp [Cstar]; positivity
+  refine ⟨Cstar, hCstarpos, ?_⟩
+  intro N hN β h q s hK hq hs path
+  subst q
+  have hβ : 0 < β := data.β_pos (β, h) hK
+  have hh : 0 < h := data.h_pos (β, h) hK
+  have hβmax : β ≤ data.βmax := data.β_bound (β, h) hK
+  have hβsq : β ^ 2 ≤ data.βmax ^ 2 := by
+    have hp : 0 ≤ (data.βmax - β) * (data.βmax + β) :=
+      mul_nonneg (sub_nonneg.mpr hβmax) (add_nonneg data.βmax_pos.le hβ.le)
+    nlinarith
+  have hqIcc := rsQ_mem_Icc β h
+  have hq0 : 0 ≤ rsQ β h := hqIcc.1
+  have hq1 : rsQ β h ≤ 1 := hqIcc.2
+  have hr0 : 0 ≤ rsR β h := rsR_nonneg β h
+  have hrq : rsR β h ≤ rsQ β h := rsR_le_rsQ hh
+  have hqSq : rsQ β h ^ 2 ≤ 1 := by
+    nlinarith [mul_nonneg hqIcc.1 (sub_nonneg.mpr hqIcc.2)]
+  have hκabs : |cavityKappa (rsQ β h) (rsR β h)| ≤ 8 := by
+    rw [abs_le]
+    constructor <;> simp only [cavityKappa] <;> linarith
+  have hζabs : |cavityZeta (rsQ β h) (rsR β h)| ≤ 8 := by
+    rw [abs_le]
+    constructor <;> simp only [cavityZeta] <;> nlinarith
+  have hcabs : |1 - 2 * rsQ β h + rsR β h| ≤ 8 := by
+    rw [abs_le]
+    constructor <;> linarith
+  have hα0 : 0 ≤ atParameter β h := by
+    rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth hβ hh]
+    exact mul_nonneg (sq_nonneg β)
+      (by
+        unfold standardGaussianExpectation
+        exact integral_nonneg fun z ↦ by positivity)
+  have hκLe :
+      β ^ 2 * cavityKappa (rsQ β h) (rsR β h) ≤ atParameter β h := by
+    rw [atParameter_eq_beta_sq_mul_one_sub_two_q_add_r]
+    simp only [cavityKappa]
+    have hp := mul_nonneg (sq_nonneg β) (sub_nonneg.mpr hrq)
+    nlinarith
+  have hAT : atParameter β h ≤ 1 - data.gap := data.strictAT (β, h) hK
+  have hgapOne : data.gap ≤ 1 := by linarith
+  have hdenκ :
+      data.gap ≤ 1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h) := by
+    by_cases hκ0 : 0 ≤ cavityKappa (rsQ β h) (rsR β h)
+    · have hcoef0 : 0 ≤ β ^ 2 * cavityKappa (rsQ β h) (rsR β h) :=
+        mul_nonneg (sq_nonneg β) hκ0
+      have hscoef := mul_le_of_le_one_left hcoef0 hs.2
+      nlinarith
+    · have hterm : s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h) ≤ 0 :=
+        mul_nonpos_of_nonneg_of_nonpos
+          (mul_nonneg hs.1 (sq_nonneg β)) (le_of_not_ge hκ0)
+      linarith
+  have hdenD : data.gap ≤ 1 - s * atParameter β h := by
+    have hsα := mul_le_of_le_one_left hα0 hs.2
+    linarith
+  have hN1 : 1 ≤ N := hN
+  have hNreal : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN1
+  have hinv0 : 0 ≤ 1 / (N : ℝ) := by positivity
+  have hrpow : (N : ℝ) ^ (-(3 : ℝ) / 2) ≤ 1 / (N : ℝ) := by
+    have hp := Real.rpow_le_rpow_of_exponent_le hNreal
+      (by norm_num : (-(3 : ℝ) / 2) ≤ -1)
+    simpa [Real.rpow_neg_one, one_div] using hp
+  have hthird0 : 0 ≤ thirdMoment path s := thirdMoment_nonneg path s
+  have hE0 : 0 ≤ 1 / (N : ℝ) + thirdMoment path s := by positivity
+  have hinvE : 1 / (N : ℝ) ≤ 1 / (N : ℝ) + thirdMoment path s := by linarith
+  let R : Fin 3 → ℝ := cavityChangeMatrix.mulVec (cavityRemainder path s)
+  have hRnorm : ‖R‖ ≤ C * (1 / (N : ℝ) + thirdMoment path s) := by
+    calc
+      ‖R‖ ≤ C * cavityErrorScale path s := hC hN hK rfl hs path
+      _ ≤ C * (1 / (N : ℝ) + thirdMoment path s) := by
+        apply mul_le_mul_of_nonneg_left _ hCpos.le
+        unfold cavityErrorScale
+        linarith
+  have hRcomp (i : Fin 3) :
+      |R i| ≤ C * (1 / (N : ℝ) + thirdMoment path s) := by
+    rw [← Real.norm_eq_abs]
+    exact (norm_le_pi_norm R i).trans hRnorm
+  have hmode := cavityChangeMatrix_mulVec_cavityRemainder (s := s) path
+  have hUeq :
+      (1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) * cavityU path s =
+        (1 / (N : ℝ)) * cavityKappa (rsQ β h) (rsR β h) + R 1 := by
+    have hc : R 1 = cavityU path s -
+        s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h) * cavityU path s -
+        (1 / (N : ℝ)) * cavityKappa (rsQ β h) (rsR β h) := by
+      simpa [R] using congrFun hmode (1 : Fin 3)
+    rw [hc]
+    ring
+  have hDeq :
+      (1 - s * atParameter β h) * cavityD path s =
+        (1 / (N : ℝ)) * (1 - 2 * rsQ β h + rsR β h) + R 2 := by
+    have hc : R 2 = cavityD path s -
+        s * β ^ 2 * (1 - 2 * rsQ β h + rsR β h) * cavityD path s -
+        (1 / (N : ℝ)) * (1 - 2 * rsQ β h + rsR β h) := by
+      simpa [R] using congrFun hmode (2 : Fin 3)
+    rw [atParameter_eq_beta_sq_mul_one_sub_two_q_add_r, hc]
+    ring
+  have hVeq :
+      (1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) * cavityV path s =
+        s * β ^ 2 * cavityZeta (rsQ β h) (rsR β h) * cavityU path s +
+          (1 / (N : ℝ)) * cavityZeta (rsQ β h) (rsR β h) + R 0 := by
+    have hc : R 0 = cavityV path s -
+        s * β ^ 2 *
+          (cavityZeta (rsQ β h) (rsR β h) * cavityU path s +
+            cavityKappa (rsQ β h) (rsR β h) * cavityV path s) -
+        (1 / (N : ℝ)) * cavityZeta (rsQ β h) (rsR β h) := by
+      simpa [R] using congrFun hmode (0 : Fin 3)
+    rw [hc]
+    ring
+  have hUgap : data.gap * |cavityU path s| ≤
+      (8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by
+    calc
+      data.gap * |cavityU path s| ≤
+          (1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) * |cavityU path s| :=
+        mul_le_mul_of_nonneg_right hdenκ (abs_nonneg _)
+      _ = |(1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) * cavityU path s| := by
+        rw [abs_mul, abs_of_nonneg (le_trans data.gap_pos.le hdenκ)]
+      _ = |(1 / (N : ℝ)) * cavityKappa (rsQ β h) (rsR β h) + R 1| := by rw [hUeq]
+      _ ≤ |(1 / (N : ℝ)) * cavityKappa (rsQ β h) (rsR β h)| + |R 1| := abs_add_le _ _
+      _ ≤ (1 / (N : ℝ)) * 8 + C * (1 / (N : ℝ) + thirdMoment path s) := by
+        rw [abs_mul, abs_of_nonneg hinv0]
+        exact add_le_add (mul_le_mul_of_nonneg_left hκabs hinv0) (hRcomp 1)
+      _ ≤ (8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by nlinarith
+  have hU : |cavityU path s| ≤ L * (1 / (N : ℝ) + thirdMoment path s) := by
+    have hswap : |cavityU path s| * data.gap ≤
+        (8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by
+      simpa only [mul_comm] using hUgap
+    have hd := (le_div_iff₀ data.gap_pos).2 hswap
+    calc
+      |cavityU path s| ≤ ((8 + C) * (1 / (N : ℝ) + thirdMoment path s)) / data.gap := hd
+      _ = L * (1 / (N : ℝ) + thirdMoment path s) := by dsimp [L]; field_simp
+  have hDgap : data.gap * |cavityD path s| ≤
+      (8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by
+    calc
+      data.gap * |cavityD path s| ≤ (1 - s * atParameter β h) * |cavityD path s| :=
+        mul_le_mul_of_nonneg_right hdenD (abs_nonneg _)
+      _ = |(1 - s * atParameter β h) * cavityD path s| := by
+        rw [abs_mul, abs_of_nonneg (le_trans data.gap_pos.le hdenD)]
+      _ = |(1 / (N : ℝ)) * (1 - 2 * rsQ β h + rsR β h) + R 2| := by rw [hDeq]
+      _ ≤ |(1 / (N : ℝ)) * (1 - 2 * rsQ β h + rsR β h)| + |R 2| := abs_add_le _ _
+      _ ≤ (1 / (N : ℝ)) * 8 + C * (1 / (N : ℝ) + thirdMoment path s) := by
+        rw [abs_mul, abs_of_nonneg hinv0]
+        exact add_le_add (mul_le_mul_of_nonneg_left hcabs hinv0) (hRcomp 2)
+      _ ≤ (8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by nlinarith
+  have hD : |cavityD path s| ≤ L * (1 / (N : ℝ) + thirdMoment path s) := by
+    have hswap : |cavityD path s| * data.gap ≤
+        (8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by
+      simpa only [mul_comm] using hDgap
+    have hd := (le_div_iff₀ data.gap_pos).2 hswap
+    calc
+      |cavityD path s| ≤ ((8 + C) * (1 / (N : ℝ) + thirdMoment path s)) / data.gap := hd
+      _ = L * (1 / (N : ℝ) + thirdMoment path s) := by dsimp [L]; field_simp
+  have hcoupling :
+      |s * β ^ 2 * cavityZeta (rsQ β h) (rsR β h) * cavityU path s| ≤
+        8 * data.βmax ^ 2 * L * (1 / (N : ℝ) + thirdMoment path s) := by
+    rw [abs_mul, abs_mul, abs_mul, abs_of_nonneg hs.1, abs_of_nonneg (sq_nonneg β)]
+    calc
+      s * β ^ 2 * |cavityZeta (rsQ β h) (rsR β h)| * |cavityU path s| ≤
+          1 * data.βmax ^ 2 * 8 * (L * (1 / (N : ℝ) + thirdMoment path s)) := by
+        gcongr
+        exact hs.2
+      _ = 8 * data.βmax ^ 2 * L * (1 / (N : ℝ) + thirdMoment path s) := by ring
+  have hVgap : data.gap * |cavityV path s| ≤
+      (8 * data.βmax ^ 2 * L + 8 + C) * (1 / (N : ℝ) + thirdMoment path s) := by
+    calc
+      data.gap * |cavityV path s| ≤
+          (1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) * |cavityV path s| :=
+        mul_le_mul_of_nonneg_right hdenκ (abs_nonneg _)
+      _ = |(1 - s * β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) * cavityV path s| := by
+        rw [abs_mul, abs_of_nonneg (le_trans data.gap_pos.le hdenκ)]
+      _ = |s * β ^ 2 * cavityZeta (rsQ β h) (rsR β h) * cavityU path s +
+            (1 / (N : ℝ)) * cavityZeta (rsQ β h) (rsR β h) + R 0| := by rw [hVeq]
+      _ ≤ |s * β ^ 2 * cavityZeta (rsQ β h) (rsR β h) * cavityU path s| +
+            |(1 / (N : ℝ)) * cavityZeta (rsQ β h) (rsR β h)| + |R 0| := by
+        exact (abs_add_le _ _).trans (add_le_add (abs_add_le _ _) le_rfl)
+      _ ≤ 8 * data.βmax ^ 2 * L * (1 / (N : ℝ) + thirdMoment path s) +
+          (1 / (N : ℝ)) * 8 + C * (1 / (N : ℝ) + thirdMoment path s) := by
+        have hz : |(1 / (N : ℝ)) * cavityZeta (rsQ β h) (rsR β h)| ≤
+            (1 / (N : ℝ)) * 8 := by
+          rw [abs_mul, abs_of_nonneg hinv0]
+          exact mul_le_mul_of_nonneg_left hζabs hinv0
+        exact add_le_add (add_le_add hcoupling hz) (hRcomp 0)
+      _ ≤ (8 * data.βmax ^ 2 * L + 8 + C) *
+          (1 / (N : ℝ) + thirdMoment path s) := by nlinarith
+  have hV : |cavityV path s| ≤ M * (1 / (N : ℝ) + thirdMoment path s) := by
+    have hswap : |cavityV path s| * data.gap ≤
+        (8 * data.βmax ^ 2 * L + 8 + C) *
+          (1 / (N : ℝ) + thirdMoment path s) := by
+      simpa only [mul_comm] using hVgap
+    have hd := (le_div_iff₀ data.gap_pos).2 hswap
+    calc
+      |cavityV path s| ≤ ((8 * data.βmax ^ 2 * L + 8 + C) *
+          (1 / (N : ℝ) + thirdMoment path s)) / data.gap := hd
+      _ = M * (1 / (N : ℝ) + thirdMoment path s) := by dsimp [M]; field_simp
+  have hAeq : A path s = -cavityV path s - 2 * cavityU path s + 3 * cavityD path s := by
+    simp only [cavityV, cavityU, cavityD]
+    ring
+  calc
+    A path s ≤ |A path s| := le_abs_self _
+    _ = |-cavityV path s - 2 * cavityU path s + 3 * cavityD path s| := by rw [hAeq]
+    _ ≤ |cavityV path s| + 2 * |cavityU path s| + 3 * |cavityD path s| := by
+      calc
+        _ ≤ |-cavityV path s - 2 * cavityU path s| + |3 * cavityD path s| := abs_add_le _ _
+        _ ≤ (|-cavityV path s| + |2 * cavityU path s|) + |3 * cavityD path s| :=
+          add_le_add (abs_sub _ _) le_rfl
+        _ = _ := by simp [abs_mul]
+    _ ≤ (M + 5 * L) * (1 / (N : ℝ) + thirdMoment path s) := by nlinarith
+    _ = Cstar / (N : ℝ) + Cstar * thirdMoment path s := by
+      dsimp [Cstar]
+      ring
+
 end SpinGlass.AT
