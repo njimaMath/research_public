@@ -41591,8 +41591,30 @@
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Price.olean"],
   "Lemmas.GaussianMax":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GaussianMax.olean"],
+  "Lemmas.GTbound.Transport":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Transport.olean"],
+  "Lemmas.GTbound.Interpolation":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Interpolation.olean"],
+  "Lemmas.GTbound.HalfStep":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfStep.olean"],
+  "Lemmas.GTbound.HalfEndpoint":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfEndpoint.olean"],
+  "Lemmas.GTbound.HalfComparison":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfComparison.olean"],
+  "Lemmas.GTbound.HalfCalculus":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfCalculus.olean"],
   "Lemmas.GTbound.GTBound":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\GTBound.olean"],
+  "Lemmas.GTbound.FiniteStep":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\FiniteStep.olean"],
+  "Lemmas.GTbound.FiniteState":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\FiniteState.olean"],
+  "Lemmas.GTbound.Endpoint":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Endpoint.olean"],
+  "Lemmas.GTbound.Comparison":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Comparison.olean"],
+  "Lemmas.GTbound.Basic":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Basic.olean"],
   "Lemmas.GTGauss":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTGauss.olean"],
   "Lemmas.GTFlatness_cases.Core":
