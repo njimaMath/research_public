@@ -311,17 +311,95 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
             Cpre + Cpre * ((N : ℝ) * thirdMoment path s) := hpreN
         _ ≤ Cpre + Cpre *
             (split * ((N : ℝ) * A path s) + 8 * (Ctail / c)) :=
-          add_le_add_left (mul_le_mul_of_nonneg_left hthirdN hCpre.le) Cpre
+          by
+            simpa [add_comm] using
+              add_le_add_left (mul_le_mul_of_nonneg_left hthirdN hCpre.le) Cpre
         _ = Cpre + (Cpre * split) * ((N : ℝ) * A path s) +
             8 * Cpre * (Ctail / c) := by ring
     rw [hcoef] at hcombined
-    dsimp [M]
-    nlinarith [hcombined]
+    calc
+      (N : ℝ) * A path s ≤ 2 * (Cpre + 8 * Cpre * (Ctail / c)) := by
+        nlinarith [hcombined]
+      _ = M := by dsimp [M]; ring
   refine
     { secondMoment := ⟨M, hM, hSecond⟩
       freeEnergy := ?_
       replicon := ?_ }
-  · sorry
+  · let Mf : ℝ := data.βmax ^ 2 / 4 * M
+    have hMf : 0 ≤ Mf := by dsimp [Mf]; positivity
+    refine ⟨Mf, hMf, ?_⟩
+    intro N hN β h q hK hq path
+    subst q
+    letI : NeZero N := ⟨Nat.ne_of_gt hN⟩
+    have hNr : (0 : ℝ) < N := by exact_mod_cast hN
+    have hsum := SpinGlass.GeneralizedLatala.replica_symmetric_sum_rule
+      (N := N) (β := β) (h := h) (q := rsQ β h)
+      (sk := path.sk) (sim := path.simple)
+      hN (rsQ_mem_Icc β h).1 path.independent
+    have hfreeId :
+        rsFreeEnergy β h - skFreeEnergy path =
+          SpinGlass.GeneralizedLatala.rsPressure β h (rsQ β h) -
+            SpinGlass.GeneralizedLatala.interpolatedPressure
+              (N := N) (β := β) (h := h) (q := rsQ β h)
+              (sk := path.sk) (sim := path.simple) 1 := by
+      unfold rsFreeEnergy skFreeEnergy rsPathValue pathFreeEnergy
+        SpinGlass.GeneralizedLatala.rsPressure
+        SpinGlass.GeneralizedLatala.interpolatedPressure
+      congr 1
+      ring
+    have hvar0 : ∀ t : ℝ, 0 ≤
+        SpinGlass.GeneralizedLatala.overlapVariance
+          (N := N) (β := β) (h := h) (q := rsQ β h)
+          (sk := path.sk) (sim := path.simple) t :=
+      fun t => SpinGlass.GeneralizedLatala.overlapVariance_nonneg
+        (N := N) (β := β) (h := h) (q := rsQ β h)
+        (sk := path.sk) (sim := path.simple) t
+    have hint0 : 0 ≤ ∫ t in Set.Icc (0 : ℝ) 1,
+        SpinGlass.GeneralizedLatala.overlapVariance
+          (N := N) (β := β) (h := h) (q := rsQ β h)
+          (sk := path.sk) (sim := path.simple) t := integral_nonneg hvar0
+    have hvarBound : ∀ t ∈ Set.Icc (0 : ℝ) 1,
+        SpinGlass.GeneralizedLatala.overlapVariance
+          (N := N) (β := β) (h := h) (q := rsQ β h)
+          (sk := path.sk) (sim := path.simple) t ≤ M / (N : ℝ) := by
+      intro t ht
+      rw [← A_eq_overlapVariance path t]
+      apply (le_div_iff₀ hNr).2
+      simpa [mul_comm] using hSecond hN hK rfl ht path
+    have hconstInt : IntegrableOn (fun _ : ℝ => M / (N : ℝ))
+        (Set.Icc (0 : ℝ) 1) (volume : Measure ℝ) :=
+      integrableOn_const (hs := by rw [Real.volume_Icc]; finiteness)
+    have hintBound : (∫ t in Set.Icc (0 : ℝ) 1,
+        SpinGlass.GeneralizedLatala.overlapVariance
+          (N := N) (β := β) (h := h) (q := rsQ β h)
+          (sk := path.sk) (sim := path.simple) t) ≤ M / (N : ℝ) := by
+      calc
+        _ ≤ ∫ _t in Set.Icc (0 : ℝ) 1, M / (N : ℝ) :=
+          integral_mono_ae hsum.1 hconstInt
+            (ae_restrict_of_forall_mem measurableSet_Icc hvarBound)
+        _ = M / (N : ℝ) := by
+          norm_num [MeasureTheory.integral_const, Measure.restrict_apply_univ,
+            Real.volume_Icc]
+    have hβsq : β ^ 2 ≤ data.βmax ^ 2 := by
+      have hβpos := data.β_pos (β, h) hK
+      have hβmax := data.β_bound (β, h) hK
+      nlinarith [mul_nonneg (sub_nonneg.mpr hβmax)
+        (add_nonneg data.βmax_pos.le hβpos.le)]
+    have hMN : 0 ≤ M / (N : ℝ) := div_nonneg hM hNr.le
+    constructor
+    · rw [hfreeId, hsum.2]
+      exact mul_nonneg (by positivity) hint0
+    · rw [hfreeId, hsum.2]
+      calc
+        (β ^ 2 / 4) * ∫ t in Set.Icc (0 : ℝ) 1,
+            SpinGlass.GeneralizedLatala.overlapVariance
+              (N := N) (β := β) (h := h) (q := rsQ β h)
+              (sk := path.sk) (sim := path.simple) t ≤
+            (β ^ 2 / 4) * (M / (N : ℝ)) :=
+          mul_le_mul_of_nonneg_left hintBound (by positivity)
+        _ ≤ (data.βmax ^ 2 / 4) * (M / (N : ℝ)) := by
+          gcongr
+        _ = Mf / (N : ℝ) := by dsimp [Mf]; ring
   · sorry
 
 
