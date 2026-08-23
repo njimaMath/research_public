@@ -1168,4 +1168,265 @@ lemma gtHalfBaseWeight_stein
   rw [hf]
   exact fderiv_gtHalfBaseWeight_apply V L (M (WithLp.toLp 2 z) + H) (M a) ξ
 
+lemma euclidean_norm_toLp_le_sum_abs
+    {I : Type*} [Fintype I] (z : I → ℝ) :
+    ‖(WithLp.toLp 2 z : EuclideanSpace ℝ I)‖ ≤ ∑ i : I, |z i| := by
+  rw [EuclideanSpace.norm_eq]
+  have hsum0 : (0 : ℝ) ≤ ∑ i : I, |z i| :=
+    Finset.sum_nonneg fun i hi => abs_nonneg _
+  apply (Real.sqrt_le_iff).2
+  refine ⟨by positivity, ?_⟩
+  simpa [Real.norm_eq_abs] using
+    Finset.sum_sq_le_sq_sum_of_nonneg (s := Finset.univ) (fun i hi => abs_nonneg (z i))
+
+/-- Stein identity in the inner Gaussian coordinate.  The tilted density has
+exponential (rather than polynomial) growth, so this uses the product-Gaussian
+Stein theorem with exponential domination. -/
+lemma gtHalfBase_inner_stein
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (a : EuclideanSpace ℝ I) (ξ : S) :
+    (∫ z : I → ℝ,
+        inner ℝ (WithLp.toLp 2 z : EuclideanSpace ℝ I) a *
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ /
+              gtHalfBaseDenominator V L H)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+      gtHalfBaseWeight V L H ξ * (L a) ξ -
+        (1 / 2 : ℝ) * ∑ η : S,
+          gtHalfBasePairWeight V L H ξ η * (L a) η := by
+  classical
+  let D : ℝ := gtHalfBaseDenominator V L H
+  let hfun : (I → ℝ) → ℝ := fun z =>
+    gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+      gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ / D
+  let c : ℝ := (hasModerateGrowth_gtStateLogPartition V).C *
+    (2 + ‖L‖ + ‖H‖)
+  let C : ℝ := Real.exp c * (2 * ‖L‖ + 1) / D
+  have hD : 0 < D := gtHalfBaseDenominator_pos V L H
+  have hc0 : 0 ≤ c := by
+    dsimp [c]
+    exact mul_nonneg (hasModerateGrowth_gtStateLogPartition V).Cpos.le (by
+      nlinarith [norm_nonneg L, norm_nonneg H])
+  have hC0 : 0 ≤ C := by
+    dsimp [C]
+    positivity
+  have hdensity (z : I → ℝ) :
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) ≤
+        Real.exp c * Real.exp (c * ∑ i : I, |z i|) := by
+    have hd := gtHalfBaseDensity_affine_local_bound V L H H
+      (WithLp.toLp 2 z) (by simp)
+    have hn := euclidean_norm_toLp_le_sum_abs z
+    have he : c * (1 + ‖(WithLp.toLp 2 z : EuclideanSpace ℝ I)‖) ≤
+        c + c * ∑ i : I, |z i| := by
+      nlinarith
+    calc
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) ≤
+          Real.exp (c * (1 + ‖(WithLp.toLp 2 z : EuclideanSpace ℝ I)‖)) := hd
+      _ ≤ Real.exp (c + c * ∑ i : I, |z i|) := Real.exp_le_exp.mpr he
+      _ = Real.exp c * Real.exp (c * ∑ i : I, |z i|) := Real.exp_add _ _
+  have hcont : ContDiff ℝ 1 hfun := by
+    dsimp [hfun]
+    have hc : ContDiff ℝ ∞ (fun z : I → ℝ =>
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ / D) :=
+      ((contDiff_gtHalfBaseDensity_mul_gibbs V ξ).comp
+      ((L.contDiff.comp
+        (PiLp.continuousLinearEquiv 2 ℝ (fun _ : I => ℝ)).symm.contDiff).add
+          (contDiff_const : ContDiff ℝ ∞ (fun _ : I → ℝ => H)))).div_const D
+    exact hc.of_le (by norm_num)
+  have hvalue (z : I → ℝ) :
+      |hfun z| ≤ C * Real.exp (c * ∑ i : I, |z i|) := by
+    have hg0 := gtStateGibbs_nonneg V (L (WithLp.toLp 2 z) + H) ξ
+    have hg1 := gtStateGibbs_le_one V (L (WithLp.toLp 2 z) + H) ξ
+    have hρ0 := (gtHalfBaseDensity_pos V (L (WithLp.toLp 2 z) + H)).le
+    rw [show |hfun z| =
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ / D by
+      dsimp [hfun]
+      rw [abs_of_nonneg (div_nonneg (mul_nonneg hρ0 hg0) hD.le)]]
+    have hfac : 1 ≤ 2 * ‖L‖ + 1 := by nlinarith [norm_nonneg L]
+    calc
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ / D ≤
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) / D := by
+          exact div_le_div_of_nonneg_right
+            (mul_le_of_le_one_right hρ0 hg1) hD.le
+      _ ≤ (Real.exp c * Real.exp (c * ∑ i : I, |z i|)) / D :=
+        div_le_div_of_nonneg_right (hdensity z) hD.le
+      _ ≤ (Real.exp c * (2 * ‖L‖ + 1) / D) *
+          Real.exp (c * ∑ i : I, |z i|) := by
+            have he0 := Real.exp_pos (c * ∑ i : I, |z i|)
+            calc
+              Real.exp c * Real.exp (c * ∑ i : I, |z i|) / D =
+                  (Real.exp c / D) * Real.exp (c * ∑ i : I, |z i|) := by ring
+              _ ≤ (Real.exp c * (2 * ‖L‖ + 1) / D) *
+                  Real.exp (c * ∑ i : I, |z i|) := by
+                    gcongr
+                    exact (le_mul_of_one_le_right (Real.exp_pos c).le hfac)
+      _ = C * Real.exp (c * ∑ i : I, |z i|) := rfl
+  have hfderiv (z k : I → ℝ) :
+      fderiv ℝ hfun z k =
+        (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ /
+            D) *
+          ((L (WithLp.toLp 2 k)) ξ -
+            (1 / 2 : ℝ) * ∑ η : S,
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η *
+                (L (WithLp.toLp 2 k)) η) := by
+    have hg : HasFDerivAt
+        (fun J : GTStateSpace S =>
+          gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+        (fderiv ℝ (fun J : GTStateSpace S =>
+          gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+          (L (WithLp.toLp 2 z) + H)) (L (WithLp.toLp 2 z) + H) :=
+      ((contDiff_gtHalfBaseDensity_mul_gibbs V ξ).differentiable (by simp)
+        ).differentiableAt.hasFDerivAt
+    have haff : HasFDerivAt (fun z : I → ℝ => L (WithLp.toLp 2 z) + H)
+        (L.comp (PiLp.continuousLinearEquiv 2 ℝ (fun _ : I => ℝ)).symm.toContinuousLinearMap) z :=
+      (L.comp (PiLp.continuousLinearEquiv 2 ℝ (fun _ : I => ℝ)).symm.toContinuousLinearMap
+        ).hasFDerivAt.add_const H
+    have hcomp := (hg.comp z haff).mul_const D⁻¹
+    have heq := hcomp.fderiv
+    change fderiv ℝ hfun z = _ at heq
+    rw [heq]
+    simp only [ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply,
+      smul_eq_mul]
+    rw [fderiv_gtHalfBaseDensity_mul_gibbs_apply]
+    change D⁻¹ * _ = _
+    have hkL : L ((PiLp.continuousLinearEquiv 2 ℝ (fun _ : I => ℝ)).symm k) =
+        L (WithLp.toLp 2 k : EuclideanSpace ℝ I) := rfl
+    rw [hkL]
+    ring
+  have hderiv (z : I → ℝ) (i : I) :
+      |fderiv ℝ hfun z (Pi.single i 1)| ≤
+        C * Real.exp (c * ∑ j : I, |z j|) := by
+    have hk : ‖(WithLp.toLp 2 (Pi.single i (1 : ℝ)) : EuclideanSpace ℝ I)‖ = 1 := by
+      rw [EuclideanSpace.norm_eq]
+      simp [Pi.single_apply]
+    have hLK := L.le_opNorm
+      (WithLp.toLp 2 (Pi.single i (1 : ℝ)) : EuclideanSpace ℝ I)
+    rw [hk, mul_one] at hLK
+    have hraw : |fderiv ℝ hfun z (Pi.single i 1)| ≤
+        2 * gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) * ‖L‖ / D := by
+      rw [hfderiv]
+      rw [show
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ / D) *
+            ((L (WithLp.toLp 2 (Pi.single i (1 : ℝ)))) ξ -
+              (1 / 2 : ℝ) * ∑ η : S,
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H) η *
+                  (L (WithLp.toLp 2 (Pi.single i (1 : ℝ)))) η) =
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            ((L (WithLp.toLp 2 (Pi.single i (1 : ℝ)))) ξ -
+              (1 / 2 : ℝ) * ∑ η : S,
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H) η *
+                  (L (WithLp.toLp 2 (Pi.single i (1 : ℝ)))) η)) / D by ring]
+      rw [← fderiv_gtHalfBaseDensity_mul_gibbs_apply]
+      rw [abs_div, abs_of_pos hD, ← Real.norm_eq_abs]
+      calc
+        ‖(fderiv ℝ (fun J : GTStateSpace S =>
+            gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+              (L (WithLp.toLp 2 z) + H))
+            (L (WithLp.toLp 2 (Pi.single i (1 : ℝ))))‖ / D ≤
+          (‖fderiv ℝ (fun J : GTStateSpace S =>
+            gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+              (L (WithLp.toLp 2 z) + H)‖ *
+            ‖L (WithLp.toLp 2 (Pi.single i (1 : ℝ)))‖) / D := by
+              gcongr
+              exact ContinuousLinearMap.le_opNorm _ _
+        _ ≤ (2 * gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) * ‖L‖) / D := by
+          apply div_le_div_of_nonneg_right _ hD.le
+          exact mul_le_mul
+            (norm_fderiv_gtHalfBaseDensity_mul_gibbs_le V
+              (L (WithLp.toLp 2 z) + H) ξ) hLK
+            (norm_nonneg _) (mul_nonneg (by positivity) (gtHalfBaseDensity_pos V _).le)
+        _ = 2 * gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) * ‖L‖ / D := rfl
+    calc
+      |fderiv ℝ hfun z (Pi.single i 1)| ≤
+          2 * gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) * ‖L‖ / D := hraw
+      _ ≤ 2 * (Real.exp c * Real.exp (c * ∑ j : I, |z j|)) * ‖L‖ / D := by
+        gcongr
+        exact hdensity z
+      _ ≤ C * Real.exp (c * ∑ j : I, |z j|) := by
+        dsimp [C]
+        have hden := hD.le
+        have hexp := (Real.exp_pos (c * ∑ j : I, |z j|)).le
+        calc
+          2 * (Real.exp c * Real.exp (c * ∑ j : I, |z j|)) * ‖L‖ / D =
+              (Real.exp c * (2 * ‖L‖) / D) *
+                Real.exp (c * ∑ j : I, |z j|) := by ring
+          _ ≤ (Real.exp c * (2 * ‖L‖ + 1) / D) *
+                Real.exp (c * ∑ j : I, |z j|) := by
+                  apply mul_le_mul_of_nonneg_right _ hexp
+                  apply div_le_div_of_nonneg_right _ hden
+                  apply mul_le_mul_of_nonneg_left _ (Real.exp_pos c).le
+                  linarith
+  have hcoord (i : I) := SYK.pi_gaussian_stein_coord hfun i hcont C c hc0 hC0 hvalue hderiv
+  rw [show (∫ z : I → ℝ,
+      inner ℝ (WithLp.toLp 2 z : EuclideanSpace ℝ I) a * hfun z
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+      ∑ i : I, a i * ∫ z : I → ℝ, z i * hfun z
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1) by
+    simp_rw [← integral_const_mul]
+    rw [← integral_finset_sum]
+    · apply integral_congr_ae
+      filter_upwards with z
+      rw [PiLp.inner_apply]
+      simp only [RCLike.inner_apply, conj_trivial]
+      rw [Finset.sum_mul]
+      apply Finset.sum_congr rfl
+      intro i hi
+      ring
+    · intro i hi
+      apply ((SYK.integrable_abs_coord_mul_exp_c_sum_abs_pi c i).const_mul
+        (|a i| * C)).mono'
+      · exact (continuous_const.mul ((continuous_apply i).mul hcont.continuous)
+          ).aestronglyMeasurable
+      · filter_upwards with z
+        rw [Real.norm_eq_abs, abs_mul, abs_mul]
+        calc
+          |a i| * (|z i| * |hfun z|) ≤
+              |a i| * (|z i| * (C * Real.exp (c * ∑ j : I, |z j|))) := by
+                gcongr
+                exact hvalue z
+          _ = |(|a i| * C) *
+              (|z i| * Real.exp (c * ∑ j : I, |z j|))| := by
+                rw [abs_of_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) hC0)
+                  (mul_nonneg (abs_nonneg _) (Real.exp_pos _).le)))]
+                ring
+  simp_rw [hcoord]
+  simp_rw [← integral_const_mul]
+  rw [← integral_finset_sum]
+  · apply integral_congr_ae
+    filter_upwards with z
+    rw [hfderiv]
+    have hspan : WithLp.toLp 2 (∑ i : I, a i • Pi.single i (1 : ℝ)) = a := by
+      ext j
+      simp [Pi.single_apply]
+    rw [show ∑ i : I, a i * fderiv ℝ hfun z (Pi.single i 1) =
+        fderiv ℝ hfun z (∑ i : I, a i • Pi.single i (1 : ℝ)) by
+      simp_rw [map_sum, map_smul, smul_eq_mul]]
+    rw [hfderiv, hspan]
+  · intro i hi
+    exact (SYK.integrable_exp_c_sum_abs_pi c).mono'
+      ((hcont.continuous_fderiv (by norm_num)).aestronglyMeasurable.clm_apply
+        (aestronglyMeasurable_const))
+      (Filter.Eventually.of_forall fun z => by
+        rw [Real.norm_eq_abs]
+        exact (hderiv z i).trans (by gcongr; exact le_add_of_nonneg_right (abs_nonneg (a i))))
+  unfold gtHalfBaseWeight gtHalfBasePairWeight gtHalfBaseNumerator
+    gtHalfBasePairNumerator
+  dsimp [hfun, D]
+  rw [integral_sub, integral_const_mul]
+  · simp_rw [integral_finset_sum Finset.univ (fun η _ =>
+      (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _)]
+    simp_rw [integral_mul_const]
+    field_simp [hD.ne']
+    ring
+  · exact (integrable_gtHalfBaseNumerator_integrand V L H ξ).div_const _
+  · exact integrable_finset_sum _ fun η _ =>
+      (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _
+
 end SpinGlass.AT
