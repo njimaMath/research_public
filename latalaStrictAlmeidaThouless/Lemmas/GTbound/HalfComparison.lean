@@ -1276,18 +1276,13 @@ lemma hasDerivAt_gtHalfPressure_ibp
   have hMA (ξ η : S) :
       (gtHalfOuterCLM A B₀ t (A ξ)) η =
         Real.sqrt t * inner ℝ (A η) (A ξ) := by
-    simp only [gtHalfOuterCLM, ContinuousLinearMap.add_apply, smul_apply,
-      gtCoefficientCLM_apply]
-    rw [show inner ℝ (B₀ η) (A ξ) = 0 by
-      rw [real_inner_comm]; exact hAB ξ η]
-    ring
+    simp [gtHalfOuterCLM, gtCoefficientCLM_apply,
+      show inner ℝ (B₀ η) (A ξ) = 0 by
+        rw [real_inner_comm]; exact hAB ξ η]
   have hMB (ξ η : S) :
       (gtHalfOuterCLM A B₀ t (B₀ ξ)) η =
         Real.sqrt (1-t) * inner ℝ (B₀ η) (B₀ ξ) := by
-    simp only [gtHalfOuterCLM, ContinuousLinearMap.add_apply, smul_apply,
-      gtCoefficientCLM_apply]
-    rw [hAB η ξ]
-    ring
+    simp [gtHalfOuterCLM, gtCoefficientCLM_apply, hAB η ξ]
   have hsteinA (ξ : S) := gtHalf_outer_stein V A B₀ A B₁ H₀ t ξ
   have hsteinB (ξ : S) := gtHalf_outer_stein V A B₀ B₀ B₁ H₀ t ξ
   simp_rw [hMA] at hsteinA
@@ -1327,10 +1322,10 @@ lemma hasDerivAt_gtHalfPressure_ibp
           gtHalfDerivativeBeforeOuterIBP V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ∂μ) =
         ∑ ξ : S,
           ((1 / (2 * Real.sqrt t)) *
-              ∫ z : I₀ → ℝ, inner ℝ (A ξ) (WithLp.toLp 2 z) *
+              ∫ z : I₀ → ℝ, inner ℝ (WithLp.toLp 2 z) (A ξ) *
                 gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ ∂μ -
             (1 / (2 * Real.sqrt (1-t))) *
-              ∫ z : I₀ → ℝ, inner ℝ (B₀ ξ) (WithLp.toLp 2 z) *
+              ∫ z : I₀ → ℝ, inner ℝ (WithLp.toLp 2 z) (B₀ ξ) *
                 gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ ∂μ) -
           (1/2:ℝ) * ∑ ξ : S, inner ℝ (B₁ ξ) (B₁ ξ) *
             ∫ z : I₀ → ℝ,
@@ -1356,7 +1351,21 @@ lemma hasDerivAt_gtHalfPressure_ibp
       unfold gtHalfDerivativeBeforeOuterIBP
       simp_rw [real_inner_comm (A _) (WithLp.toLp 2 z),
         real_inner_comm (B₀ _) (WithLp.toLp 2 z)]
-      simp only [mul_comm]
+      apply congrArg₂ (· + ·)
+      · apply congrArg₂ (· - ·)
+        · apply Finset.sum_congr rfl
+          intro ξ _
+          ring
+        · apply congrArg (fun x : ℝ => (1 / 2) * x)
+          apply Finset.sum_congr rfl
+          intro ξ _
+          ring
+      · apply congrArg (fun x : ℝ => (1 / 4) * x)
+        apply Finset.sum_congr rfl
+        intro ξ _
+        apply Finset.sum_congr rfl
+        intro η _
+        ring
     rw [hpoint]
     rw [integral_add]
     · rw [integral_sub]
@@ -1380,6 +1389,13 @@ lemma hasDerivAt_gtHalfPressure_ibp
             rw [integral_sub ((hzA ξ).const_mul _) ((hzB ξ).const_mul _)]]
           rw [Finset.sum_sub_distrib]
           simp_rw [integral_const_mul]
+          rw [integral_finset_sum Finset.univ (fun ξ _ => (hw ξ).const_mul _)]
+          simp_rw [integral_const_mul]
+          rw [integral_finset_sum Finset.univ (fun ξ _ =>
+            integrable_finset_sum Finset.univ (fun η _ => (hu ξ η).const_mul _))]
+          simp_rw [integral_finset_sum Finset.univ
+            (fun η _ => (hu _ η).const_mul _), integral_const_mul]
+          rw [Finset.sum_sub_distrib]
         · intro ξ _
           exact ((hzA ξ).const_mul _).sub ((hzB ξ).const_mul _)
       · exact integrable_finset_sum _ fun ξ _ =>
@@ -1394,17 +1410,238 @@ lemma hasDerivAt_gtHalfPressure_ibp
   rw [hbefore]
   -- Substitute the two outer Stein identities and normalize the square-root
   -- coefficients.  All remaining terms are finite sums of real scalars.
+  dsimp [μ]
   simp_rw [hsteinA, hsteinB]
-  unfold gtHalfDerivativeExpression
-  rw [← integral_finset_sum]
-  · apply integral_congr_ae
+  let μ₀ := Measure.pi (fun _ : I₀ => gaussianReal 0 1)
+  let w : (I₀ → ℝ) → S → ℝ := fun z ξ =>
+    gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ
+  let u : (I₀ → ℝ) → S → S → ℝ := fun z ξ η =>
+    gtHalfInnerPairWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ η
+  have hw0 (z : I₀ → ℝ) (ξ : S) : 0 ≤ w z ξ :=
+    gtHalfGibbsWeight_nonneg V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ
+  have hw1 (z : I₀ → ℝ) (ξ : S) : w z ξ ≤ 1 := by
+    dsimp [w]
+    rw [gtHalfGibbsWeight_eq_base]
+    exact gtHalfBaseWeight_le_one V _ _ ξ
+  have hww (ξ η : S) : Integrable (fun z => w z ξ * w z η) μ₀ := by
+    apply (hw ξ).mono'
+    · exact (hw ξ).1.mul (hw η).1
+    · filter_upwards with z
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hw0 z ξ),
+        abs_of_nonneg (hw0 z η)]
+      change w z ξ * w z η ≤ w z ξ
+      exact mul_le_of_le_one_right (hw0 z ξ) (hw1 z η)
+  let RA : S → (I₀ → ℝ) → ℝ := fun ξ z =>
+    w z ξ * (Real.sqrt t * inner ℝ (A ξ) (A ξ)) -
+      (1 / 2 : ℝ) * ∑ η : S,
+        u z ξ η * (Real.sqrt t * inner ℝ (A η) (A ξ)) -
+      (1 / 2 : ℝ) * w z ξ * ∑ η : S,
+        w z η * (Real.sqrt t * inner ℝ (A η) (A ξ))
+  let RB : S → (I₀ → ℝ) → ℝ := fun ξ z =>
+    w z ξ * (Real.sqrt (1 - t) * inner ℝ (B₀ ξ) (B₀ ξ)) -
+      (1 / 2 : ℝ) * ∑ η : S,
+        u z ξ η * (Real.sqrt (1 - t) * inner ℝ (B₀ η) (B₀ ξ)) -
+      (1 / 2 : ℝ) * w z ξ * ∑ η : S,
+        w z η * (Real.sqrt (1 - t) * inner ℝ (B₀ η) (B₀ ξ))
+  have hRA (ξ : S) : Integrable (RA ξ) μ₀ := by
+    have h1 := (hw ξ).const_mul (Real.sqrt t * inner ℝ (A ξ) (A ξ))
+    have h2 := (integrable_finset_sum Finset.univ fun η _ =>
+      (hu ξ η).const_mul (Real.sqrt t * inner ℝ (A η) (A ξ))).const_mul (1 / 2 : ℝ)
+    have h3 := (integrable_finset_sum Finset.univ fun η _ =>
+      (hww ξ η).const_mul (Real.sqrt t * inner ℝ (A η) (A ξ))).const_mul
+        (1 / 2 : ℝ)
+    apply (h1.sub h2 |>.sub h3).congr
     filter_upwards with z
-    field_simp [hsA, hsB]
-    simp_rw [Finset.mul_sum, Finset.sum_mul, Finset.sum_add_distrib,
-      Finset.sum_sub_distrib]
+    dsimp [RA, w, u]
+    simp_rw [Finset.mul_sum]
+    apply congrArg₂ (· - ·)
+    · apply congrArg₂ (· - ·)
+      · ring
+      · apply Finset.sum_congr rfl
+        intro η _
+        ring
+    · apply Finset.sum_congr rfl
+      intro η _
+      ring
+  have hRB (ξ : S) : Integrable (RB ξ) μ₀ := by
+    have h1 := (hw ξ).const_mul
+      (Real.sqrt (1 - t) * inner ℝ (B₀ ξ) (B₀ ξ))
+    have h2 := (integrable_finset_sum Finset.univ fun η _ =>
+      (hu ξ η).const_mul
+        (Real.sqrt (1 - t) * inner ℝ (B₀ η) (B₀ ξ))).const_mul (1 / 2 : ℝ)
+    have h3 := (integrable_finset_sum Finset.univ fun η _ =>
+      (hww ξ η).const_mul
+        (Real.sqrt (1 - t) * inner ℝ (B₀ η) (B₀ ξ))).const_mul (1 / 2 : ℝ)
+    apply (h1.sub h2 |>.sub h3).congr
+    filter_upwards with z
+    dsimp [RB, w, u]
+    simp_rw [Finset.mul_sum]
+    apply congrArg₂ (· - ·)
+    · apply congrArg₂ (· - ·)
+      · ring
+      · apply Finset.sum_congr rfl
+        intro η _
+        ring
+    · apply Finset.sum_congr rfl
+      intro η _
+      ring
+  let F : S → (I₀ → ℝ) → ℝ := fun ξ z =>
+    (1 / (2 * Real.sqrt t)) * RA ξ z -
+      (1 / (2 * Real.sqrt (1 - t))) * RB ξ z -
+      (1 / 2 : ℝ) * inner ℝ (B₁ ξ) (B₁ ξ) * w z ξ +
+      (1 / 4 : ℝ) * ∑ η : S, inner ℝ (B₁ ξ) (B₁ η) * u z ξ η
+  have hF (ξ : S) : Integrable (F ξ) μ₀ := by
+    have hFa := (hRA ξ).const_mul (1 / (2 * Real.sqrt t))
+    have hFb := (hRB ξ).const_mul (1 / (2 * Real.sqrt (1 - t)))
+    have hFc := (hw ξ).const_mul
+      ((1 / 2 : ℝ) * inner ℝ (B₁ ξ) (B₁ ξ))
+    have hFd := (integrable_finset_sum Finset.univ fun η _ =>
+      (hu ξ η).const_mul (inner ℝ (B₁ ξ) (B₁ η))).const_mul (1 / 4 : ℝ)
+    apply (((hFa.sub hFb).sub hFc).add hFd).congr
+    filter_upwards with z
+    dsimp [F, w, u]
+  have hFint (ξ : S) :
+      (∫ z, F ξ z ∂μ₀) =
+        (1 / (2 * Real.sqrt t)) * (∫ z, RA ξ z ∂μ₀) -
+          (1 / (2 * Real.sqrt (1 - t))) * (∫ z, RB ξ z ∂μ₀) -
+          (1 / 2 : ℝ) * inner ℝ (B₁ ξ) (B₁ ξ) * (∫ z, w z ξ ∂μ₀) +
+          (1 / 4 : ℝ) * ∑ η : S,
+            inner ℝ (B₁ ξ) (B₁ η) * (∫ z, u z ξ η ∂μ₀) := by
+    let fA := fun z => (1 / (2 * Real.sqrt t)) * RA ξ z
+    let fB := fun z => (1 / (2 * Real.sqrt (1 - t))) * RB ξ z
+    let fC := fun z => (1 / 2 : ℝ) * inner ℝ (B₁ ξ) (B₁ ξ) * w z ξ
+    let fD := fun z => (1 / 4 : ℝ) * ∑ η : S,
+      inner ℝ (B₁ ξ) (B₁ η) * u z ξ η
+    have hA : Integrable fA μ₀ := (hRA ξ).const_mul _
+    have hB : Integrable fB μ₀ := (hRB ξ).const_mul _
+    have hC : Integrable fC μ₀ := (hw ξ).const_mul _
+    have hD : Integrable fD μ₀ :=
+      (integrable_finset_sum Finset.univ fun η _ =>
+        (hu ξ η).const_mul _).const_mul _
+    change (∫ z, (fA - fB - fC) z + fD z ∂μ₀) = _
+    rw [integral_add ((hA.sub hB).sub hC) hD]
+    change (∫ z, (fA - fB) z - fC z ∂μ₀) + (∫ z, fD z ∂μ₀) = _
+    rw [integral_sub (hA.sub hB) hC]
+    change ((∫ z, fA z - fB z ∂μ₀) - (∫ z, fC z ∂μ₀)) +
+      (∫ z, fD z ∂μ₀) = _
+    rw [integral_sub hA hB]
+    dsimp [fA, fB, fC, fD]
+    rw [integral_const_mul, integral_const_mul, integral_const_mul,
+      integral_const_mul, integral_finset_sum]
+    · simp_rw [integral_const_mul]
+    · intro η _
+      exact (hu ξ η).const_mul _
+  change
+    (∑ ξ : S, ((1 / (2 * Real.sqrt t)) * (∫ z, RA ξ z ∂μ₀) -
+      (1 / (2 * Real.sqrt (1 - t))) * (∫ z, RB ξ z ∂μ₀))) -
+      (1 / 2 : ℝ) * ∑ ξ : S,
+        inner ℝ (B₁ ξ) (B₁ ξ) * (∫ z, w z ξ ∂μ₀) +
+      (1 / 4 : ℝ) * ∑ ξ : S, ∑ η : S,
+        inner ℝ (B₁ ξ) (B₁ η) * (∫ z, u z ξ η ∂μ₀) =
+      ∫ z, gtHalfDerivativeExpression V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ∂μ₀
+  have hcollect :
+      (∑ ξ : S, ((1 / (2 * Real.sqrt t)) * (∫ z, RA ξ z ∂μ₀) -
+        (1 / (2 * Real.sqrt (1 - t))) * (∫ z, RB ξ z ∂μ₀))) -
+        (1 / 2 : ℝ) * ∑ ξ : S,
+          inner ℝ (B₁ ξ) (B₁ ξ) * (∫ z, w z ξ ∂μ₀) +
+        (1 / 4 : ℝ) * ∑ ξ : S, ∑ η : S,
+          inner ℝ (B₁ ξ) (B₁ η) * (∫ z, u z ξ η ∂μ₀) =
+        ∑ ξ : S, ∫ z, F ξ z ∂μ₀ := by
+    simp_rw [hFint, Finset.mul_sum]
+    rw [← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro ξ _
     ring
-  · intro ξ _
-    exact (hw ξ).const_mul _ |>.sub
-      ((integrable_finset_sum _ fun η _ => (hw η).const_mul _).const_mul _)
+  rw [hcollect, ← integral_finset_sum Finset.univ (fun ξ _ => hF ξ)]
+  apply integral_congr_ae
+  filter_upwards with z
+  have hAu (ξ : S) :
+      (∑ η : S, u z ξ η * (Real.sqrt t * inner ℝ (A η) (A ξ))) =
+        Real.sqrt t * ∑ η : S, u z ξ η * inner ℝ (A ξ) (A η) := by
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    rw [real_inner_comm]
+    ring
+  have hAw (ξ : S) :
+      (1 / 2 : ℝ) * w z ξ *
+          (∑ η : S, w z η * (Real.sqrt t * inner ℝ (A η) (A ξ))) =
+        (1 / 2 : ℝ) * Real.sqrt t *
+          ∑ η : S, (w z ξ * w z η) * inner ℝ (A ξ) (A η) := by
+    simp_rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    rw [real_inner_comm]
+    ring
+  have hBu (ξ : S) :
+      (∑ η : S, u z ξ η * (Real.sqrt (1 - t) * inner ℝ (B₀ η) (B₀ ξ))) =
+        Real.sqrt (1 - t) * ∑ η : S, u z ξ η * inner ℝ (B₀ ξ) (B₀ η) := by
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    rw [real_inner_comm]
+    ring
+  have hBw (ξ : S) :
+      (1 / 2 : ℝ) * w z ξ *
+          (∑ η : S, w z η * (Real.sqrt (1 - t) * inner ℝ (B₀ η) (B₀ ξ))) =
+        (1 / 2 : ℝ) * Real.sqrt (1 - t) *
+          ∑ η : S, (w z ξ * w z η) * inner ℝ (B₀ ξ) (B₀ η) := by
+    simp_rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    rw [real_inner_comm]
+    ring
+  have hRAnorm (ξ : S) :
+      (1 / (2 * Real.sqrt t)) * RA ξ z =
+        (1 / 2 : ℝ) * w z ξ * inner ℝ (A ξ) (A ξ) -
+          (1 / 4 : ℝ) * ∑ η : S, u z ξ η * inner ℝ (A ξ) (A η) -
+          (1 / 4 : ℝ) * ∑ η : S,
+            (w z ξ * w z η) * inner ℝ (A ξ) (A η) := by
+    dsimp [RA]
+    rw [hAu, hAw]
+    field_simp [hsA]
+    ring
+  have hRBnorm (ξ : S) :
+      (1 / (2 * Real.sqrt (1 - t))) * RB ξ z =
+        (1 / 2 : ℝ) * w z ξ * inner ℝ (B₀ ξ) (B₀ ξ) -
+          (1 / 4 : ℝ) * ∑ η : S, u z ξ η * inner ℝ (B₀ ξ) (B₀ η) -
+          (1 / 4 : ℝ) * ∑ η : S,
+            (w z ξ * w z η) * inner ℝ (B₀ ξ) (B₀ η) := by
+    dsimp [RB]
+    rw [hBu, hBw]
+    field_simp [hsB]
+    ring
+  dsimp [F]
+  simp_rw [hRAnorm, hRBnorm]
+  dsimp [w, u]
+  unfold gtHalfDerivativeExpression
+  simp only [Finset.mul_sum, Finset.sum_mul, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib]
+  ring_nf
+  simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib]
+  have hdiagB₁ :
+      (∑ ξ : S, inner ℝ (B₁ ξ) (B₁ ξ) *
+          gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ * (1 / 2 : ℝ)) =
+        ∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ *
+          inner ℝ (B₁ ξ) (B₁ ξ) * (1 / 2 : ℝ) := by
+    apply Finset.sum_congr rfl
+    intro ξ _
+    ring
+  have hpairB₁ :
+      (∑ ξ : S, ∑ η : S, inner ℝ (B₁ ξ) (B₁ η) *
+          gtHalfInnerPairWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ η * (1 / 4 : ℝ)) =
+        ∑ ξ : S, ∑ η : S,
+          gtHalfInnerPairWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z) ξ η *
+            inner ℝ (B₁ ξ) (B₁ η) * (1 / 4 : ℝ) := by
+    apply Finset.sum_congr rfl
+    intro ξ _
+    apply Finset.sum_congr rfl
+    intro η _
+    ring
+  rw [hdiagB₁, hpairB₁]
+  have hnegHalf (a : ℝ) : a * (-1 / 2 : ℝ) = -(a * (1 / 2 : ℝ)) := by ring
+  have hnegQuarter (a : ℝ) : a * (-1 / 4 : ℝ) = -(a * (1 / 4 : ℝ)) := by ring
+  simp_rw [hnegHalf, hnegQuarter, Finset.sum_neg_distrib]
+  ring
 
 end SpinGlass.AT
