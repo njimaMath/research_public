@@ -11,3 +11,6 @@ open Filter Topology
 #check Real.tendsto_sqrt_atTop.comp
 #check MeasureTheory.Integrable.const_mul
 #check MeasureTheory.integral_add
+#check div_le_div_of_nonneg_left
+#check div_le_div_of_nonneg_right
+#check div_le_div₀

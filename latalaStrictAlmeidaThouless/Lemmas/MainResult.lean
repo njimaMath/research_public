@@ -345,6 +345,8 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
       unfold rsFreeEnergy skFreeEnergy rsPathValue pathFreeEnergy
         SpinGlass.GeneralizedLatala.rsPressure
         SpinGlass.GeneralizedLatala.interpolatedPressure
+        SpinGlass.AT.standardGaussianExpectation
+        SpinGlass.GeneralizedLatala.standardGaussianExpectation
       congr 1
       ring
     have hvar0 : ∀ t : ℝ, 0 ≤
@@ -400,7 +402,176 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
         _ ≤ (data.βmax ^ 2 / 4) * (M / (N : ℝ)) := by
           gcongr
         _ = Mf / (N : ℝ) := by dsimp [Mf]; ring
-  · sorry
+  · obtain ⟨Cmode, hCmode, hmodeBound⟩ :=
+      cavityModeRemainder_bound_from_lastSpin (Ω := Ω) data
+    intro target htarget
+    let eta : ℝ := target * data.gap / (4 * Cmode * (M + 1))
+    have heta : 0 < eta := by
+      dsimp [eta]
+      positivity
+    obtain ⟨ct, hct, Ct, hCt, htailEta⟩ :=
+      overlap_tail (Omega := Ω) data heta
+    let delta : ℝ :=
+      target * data.gap / (4 * Cmode * (1 + 8 * Ct))
+    have hdelta : 0 < delta := by
+      dsimp [delta]
+      positivity
+    obtain ⟨Nr, hNr⟩ :=
+      (Metric.tendsto_atTop.1 nat_mul_rpow_neg_three_halves_tendsto_zero)
+        delta hdelta
+    obtain ⟨Ne, hNe⟩ :=
+      (Metric.tendsto_atTop.1 (nat_mul_exp_neg_tendsto_zero ct hct))
+        delta hdelta
+    let N0 : ℕ := max 1 (max Nr Ne)
+    refine ⟨N0, ?_⟩
+    intro N hN0 β h q s hK hq hs path
+    subst q
+    have hN : 0 < N := lt_of_lt_of_le (by
+      have : 1 ≤ N0 := le_max_left _ _
+      exact this) hN0
+    letI : NeZero N := ⟨Nat.ne_of_gt hN⟩
+    have hNrPos : (0 : ℝ) < N := by exact_mod_cast hN
+    have hNrIndex : Nr ≤ N :=
+      le_trans (le_trans (le_max_left Nr Ne) (le_max_right 1 (max Nr Ne))) hN0
+    have hNeIndex : Ne ≤ N :=
+      le_trans (le_trans (le_max_right Nr Ne) (le_max_right 1 (max Nr Ne))) hN0
+    have hrSmall : (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) < delta := by
+      have hd := hNr N hNrIndex
+      simpa [Real.dist_eq, abs_of_nonneg
+        (mul_nonneg hNrPos.le (Real.rpow_nonneg hNrPos.le _))] using hd
+    have heSmall : (N : ℝ) * Real.exp (-ct * (N : ℝ)) < delta := by
+      have hd := hNe N hNeIndex
+      simpa [Real.dist_eq, abs_of_nonneg
+        (mul_nonneg hNrPos.le (Real.exp_nonneg _))] using hd
+    have htail' : quenchedTail path s eta ≤
+        Ct * Real.exp (-ct * (N : ℝ)) := by
+      rw [quenchedTail_eq_twoReplica]
+      exact htailEta hN hK ⟨s, hs⟩ path
+    have hthird := thirdMoment_split (s := s) (eps := eta)
+      path hN (rsQ_mem_Icc β h) heta.le
+    have htailN : (N : ℝ) * quenchedTail path s eta ≤
+        Ct * ((N : ℝ) * Real.exp (-ct * (N : ℝ))) := by
+      calc
+        (N : ℝ) * quenchedTail path s eta ≤
+            (N : ℝ) * (Ct * Real.exp (-ct * (N : ℝ))) :=
+          mul_le_mul_of_nonneg_left htail' hNrPos.le
+        _ = Ct * ((N : ℝ) * Real.exp (-ct * (N : ℝ))) := by ring
+    have hthirdN : (N : ℝ) * thirdMoment path s ≤
+        eta * M + 8 * Ct *
+          ((N : ℝ) * Real.exp (-ct * (N : ℝ))) := by
+      calc
+        (N : ℝ) * thirdMoment path s ≤
+            (N : ℝ) * (eta * A path s + 8 * quenchedTail path s eta) :=
+          mul_le_mul_of_nonneg_left hthird hNrPos.le
+        _ = eta * ((N : ℝ) * A path s) +
+            8 * ((N : ℝ) * quenchedTail path s eta) := by ring
+        _ ≤ eta * M + 8 *
+            (Ct * ((N : ℝ) * Real.exp (-ct * (N : ℝ)))) := by
+          exact add_le_add
+            (mul_le_mul_of_nonneg_left (hSecond hN hK rfl hs path) heta.le)
+            (mul_le_mul_of_nonneg_left htailN (by norm_num))
+        _ = eta * M + 8 * Ct *
+            ((N : ℝ) * Real.exp (-ct * (N : ℝ))) := by ring
+    let R : Fin 3 → ℝ :=
+      cavityChangeMatrix.mulVec (cavityRemainder path s)
+    have hRnorm : ‖R‖ ≤ Cmode *
+        ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s) := by
+      simpa [R, cavityErrorScale] using hmodeBound hN hK rfl hs path
+    have hRcomp : |R 2| ≤ Cmode *
+        ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s) := by
+      rw [← Real.norm_eq_abs]
+      exact (norm_le_pi_norm R 2).trans hRnorm
+    have hmodeEq := cavityChangeMatrix_mulVec_cavityRemainder (s := s) path
+    have hReq : R 2 = cavityD path s -
+        s * β ^ 2 * rsA β h * cavityD path s -
+          (1 / (N : ℝ)) * rsA β h := by
+      simpa [R, rsA] using congrFun hmodeEq (2 : Fin 3)
+    have hα0 : 0 ≤ atParameter β h := by
+      rw [atParameter_eq_beta_sq_mul_gaussian_sech_fourth
+        (data.β_pos (β, h) hK) (data.h_pos (β, h) hK)]
+      exact mul_nonneg (sq_nonneg β)
+        (integral_nonneg fun z => by positivity)
+    have hden : data.gap ≤ 1 - s * atParameter β h := by
+      have hsα := mul_le_of_le_one_left hα0 hs.2
+      linarith [data.strictAT (β, h) hK]
+    have hdenPos : 0 < 1 - s * atParameter β h :=
+      data.gap_pos.trans_le hden
+    have hDeq : (1 - s * atParameter β h) * cavityD path s =
+        rsA β h / (N : ℝ) + R 2 := by
+      rw [hReq]
+      unfold atParameter
+      ring
+    have htargetEq :
+        (N : ℝ) * cavityD path s -
+            rsA β h / (1 - s * atParameter β h) =
+          ((N : ℝ) * R 2) / (1 - s * atParameter β h) := by
+      field_simp [hNrPos.ne', hdenPos.ne'] at hDeq ⊢
+      linear_combination (N : ℝ) * hDeq
+    have herrorBound :
+        |(N : ℝ) * cavityD path s -
+            rsA β h / (1 - s * atParameter β h)| ≤
+          (Cmode / data.gap) *
+            ((N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) +
+              (N : ℝ) * thirdMoment path s) := by
+      rw [htargetEq, abs_div, abs_mul, abs_of_pos hNrPos,
+        abs_of_pos hdenPos]
+      have hnum : (N : ℝ) * |R 2| ≤
+          (N : ℝ) * (Cmode *
+            ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s)) :=
+        mul_le_mul_of_nonneg_left hRcomp hNrPos.le
+      have hnum0 : 0 ≤ (N : ℝ) * (Cmode *
+          ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s)) := by
+        positivity
+      calc
+        (N : ℝ) * |R 2| / (1 - s * atParameter β h) ≤
+            ((N : ℝ) * (Cmode *
+              ((N : ℝ) ^ (-(3 : ℝ) / 2) + thirdMoment path s))) /
+                data.gap := div_le_div₀ hnum0 hnum data.gap_pos hden
+        _ = (Cmode / data.gap) *
+            ((N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) +
+              (N : ℝ) * thirdMoment path s) := by ring
+    have hscaledExp : 8 * Ct *
+        ((N : ℝ) * Real.exp (-ct * (N : ℝ))) < 8 * Ct * delta :=
+      mul_lt_mul_of_pos_left heSmall (mul_pos (by norm_num) hCt)
+    have hseq :
+        (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) +
+            (N : ℝ) * thirdMoment path s <
+          eta * M + (1 + 8 * Ct) * delta := by
+      nlinarith [hrSmall, hthirdN, hscaledExp]
+    have hetaPart :
+        (Cmode / data.gap) * (eta * M) < target / 4 := by
+      have hratio : M / (M + 1) < 1 := by
+        apply (div_lt_one (by linarith [hM])).2
+        linarith
+      have heq : (Cmode / data.gap) * (eta * M) =
+          target / 4 * (M / (M + 1)) := by
+        dsimp [eta]
+        field_simp [hCmode.ne', data.gap_pos.ne']
+        <;> ring
+      rw [heq]
+      exact mul_lt_of_lt_one_right (by positivity) hratio
+    have hdeltaPart :
+        (Cmode / data.gap) * ((1 + 8 * Ct) * delta) = target / 4 := by
+      dsimp [delta]
+      field_simp [hCmode.ne', data.gap_pos.ne']
+      <;> ring
+    have hcoefPos : 0 < Cmode / data.gap := div_pos hCmode data.gap_pos
+    calc
+      |(N : ℝ) * (A path s - 2 * B path s + C path s) -
+          rsA β h / (1 - s * atParameter β h)| =
+          |(N : ℝ) * cavityD path s -
+            rsA β h / (1 - s * atParameter β h)| := by
+        rfl
+      _ ≤ (Cmode / data.gap) *
+            ((N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) +
+              (N : ℝ) * thirdMoment path s) := herrorBound
+      _ < (Cmode / data.gap) *
+            (eta * M + (1 + 8 * Ct) * delta) :=
+        mul_lt_mul_of_pos_left hseq hcoefPos
+      _ = (Cmode / data.gap) * (eta * M) +
+            (Cmode / data.gap) * ((1 + 8 * Ct) * delta) := by ring
+      _ < target / 4 + target / 4 := by rw [hdeltaPart]; linarith
+      _ < target := by linarith
 
 
 end SpinGlass.AT
