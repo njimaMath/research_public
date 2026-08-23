@@ -5,13 +5,208 @@ import Lemmas.smart_path.proof
 import Lemmas.smart_path.mainresult_latala
 
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Real BigOperators Filter
 
 set_option autoImplicit false
+set_option maxHeartbeats 800000
 
 namespace SpinGlass.AT
 
 universe u
+
+private theorem gibbs_average_n_det_mono
+    {N n : ℕ} (H : SpinGlass.EnergySpace N)
+    {f g : SpinGlass.ReplicaFun N n} (hfg : ∀ σs, f σs ≤ g σs) :
+    SpinGlass.gibbs_average_n_det (N := N) (n := n) H f ≤
+      SpinGlass.gibbs_average_n_det (N := N) (n := n) H g := by
+  unfold SpinGlass.gibbs_average_n_det
+  apply Finset.sum_le_sum
+  intro σs _
+  exact mul_le_mul_of_nonneg_right (hfg σs)
+    (Finset.prod_nonneg fun i _ =>
+      SpinGlass.gibbs_pmf_nonneg (N := N) (H := H) (σs i))
+
+private theorem gibbs_average_n_det_linear
+    {N n : ℕ} (H : SpinGlass.EnergySpace N)
+    (a b : ℝ) (f g : SpinGlass.ReplicaFun N n) :
+    SpinGlass.gibbs_average_n_det (N := N) (n := n) H
+        (fun σs => a * f σs + b * g σs) =
+      a * SpinGlass.gibbs_average_n_det (N := N) (n := n) H f +
+        b * SpinGlass.gibbs_average_n_det (N := N) (n := n) H g := by
+  unfold SpinGlass.gibbs_average_n_det
+  rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro σs _
+  ring
+
+private theorem thirdMoment_eq_twoReplica
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} [NeZero N] {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (s : ℝ) :
+    thirdMoment path s =
+      SpinGlass.nu
+        (N := N) (β := β) (h := h) (q := q)
+        (sk := path.sk) (sim := path.simple) 2 s
+        (fun σs => |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 3) := by
+  unfold thirdMoment quenchedReplicaAverage SpinGlass.nu SpinGlass.gibbs_average_n
+  apply integral_congr_ae
+  filter_upwards with ω
+  change replicaGibbsAverage (fullPathHamiltonian path s ω)
+      (fun σs : Replicas N 4 => |centeredOverlap q σs 0 1| ^ 3) =
+    SpinGlass.gibbs_average_n_det (N := N) (n := 2)
+      (fullPathHamiltonian path s ω)
+      (fun σs => |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 3)
+  exact fourReplica_firstPair_eq_two (fullPathHamiltonian path s ω) q
+    (fun x => |x| ^ 3)
+
+private theorem quenchedTail_eq_twoReplica
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} [NeZero N] {β h q : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q) (s eps : ℝ) :
+    quenchedTail path s eps =
+      SpinGlass.nu
+        (N := N) (β := β) (h := h) (q := q)
+        (sk := path.sk) (sim := path.simple) 2 s
+        (fun σs => if eps ≤
+          |SpinGlass.overlap N (σs 0) (σs 1) - q| then 1 else 0) := by
+  unfold quenchedTail quenchedReplicaAverage SpinGlass.nu SpinGlass.gibbs_average_n
+  apply integral_congr_ae
+  filter_upwards with ω
+  change replicaGibbsAverage (fullPathHamiltonian path s ω)
+      (fun σs : Replicas N 4 =>
+        if eps ≤ |centeredOverlap q σs 0 1| then 1 else 0) =
+    SpinGlass.gibbs_average_n_det (N := N) (n := 2)
+      (fullPathHamiltonian path s ω)
+      (fun σs => if eps ≤
+        |SpinGlass.overlap N (σs 0) (σs 1) - q| then 1 else 0)
+  exact fourReplica_firstPair_eq_two (fullPathHamiltonian path s ω) q
+    (fun x => if eps ≤ |x| then 1 else 0)
+
+private theorem thirdMoment_split
+    {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} [NeZero N] {β h q s eps : ℝ}
+    (path : RSSmartPathDisorder Ω N β h q)
+    (hN : 0 < N) (hq : q ∈ Set.Icc (0 : ℝ) 1) (heps : 0 ≤ eps) :
+    thirdMoment path s ≤ eps * A path s + 8 * quenchedTail path s eps := by
+  rw [thirdMoment_eq_twoReplica, A_eq_overlapVariance,
+    quenchedTail_eq_twoReplica]
+  unfold SpinGlass.GeneralizedLatala.overlapVariance SpinGlass.nu
+  rw [← MeasureTheory.integral_const_mul, ← MeasureTheory.integral_const_mul]
+  rw [← MeasureTheory.integral_add
+    ((SpinGlass.integrable_gibbs_average_n
+      (N := N) (β := β) (h := h) (q := q)
+      (sk := path.sk) (sim := path.simple) 2 s
+      (SpinGlass.GeneralizedLatala.centeredOverlapSq N q)).const_mul eps)
+    ((SpinGlass.integrable_gibbs_average_n
+      (N := N) (β := β) (h := h) (q := q)
+      (sk := path.sk) (sim := path.simple) 2 s
+      (fun σs => if eps ≤
+        |SpinGlass.overlap N (σs 0) (σs 1) - q| then 1 else 0)).const_mul 8)]
+  apply integral_mono
+  · exact SpinGlass.integrable_gibbs_average_n
+      (N := N) (β := β) (h := h) (q := q)
+      (sk := path.sk) (sim := path.simple) 2 s _
+  · exact ((SpinGlass.integrable_gibbs_average_n
+      (N := N) (β := β) (h := h) (q := q)
+      (sk := path.sk) (sim := path.simple) 2 s
+      (SpinGlass.GeneralizedLatala.centeredOverlapSq N q)).const_mul eps).add
+      ((SpinGlass.integrable_gibbs_average_n
+        (N := N) (β := β) (h := h) (q := q)
+        (sk := path.sk) (sim := path.simple) 2 s
+        (fun σs => if eps ≤
+          |SpinGlass.overlap N (σs 0) (σs 1) - q| then 1 else 0)).const_mul 8)
+  · intro ω
+    change SpinGlass.gibbs_average_n_det (N := N) (n := 2)
+        (fullPathHamiltonian path s ω)
+        (fun σs => |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 3) ≤
+      eps * SpinGlass.gibbs_average_n_det (N := N) (n := 2)
+        (fullPathHamiltonian path s ω)
+        (SpinGlass.GeneralizedLatala.centeredOverlapSq N q) +
+      8 * SpinGlass.gibbs_average_n_det (N := N) (n := 2)
+        (fullPathHamiltonian path s ω)
+        (fun σs => if eps ≤
+          |SpinGlass.overlap N (σs 0) (σs 1) - q| then 1 else 0)
+    rw [← gibbs_average_n_det_linear]
+    apply gibbs_average_n_det_mono
+    intro σs
+    show
+        |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 3 ≤
+          eps * (SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2 +
+            8 * (if eps ≤ |SpinGlass.overlap N (σs 0) (σs 1) - q| then 1 else 0)
+    ·
+      let x := |SpinGlass.overlap N (σs 0) (σs 1) - q|
+      have hx0 : 0 ≤ x := abs_nonneg _
+      have hx2 : x ≤ 2 := by
+        have hover : SpinGlass.overlap N (σs 0) (σs 1) ∈ Set.Icc (-1 : ℝ) 1 := by
+          apply attainableOverlap_mem_Icc hN
+          simp only [attainableOverlaps, Finset.mem_image]
+          exact ⟨(σs 0, σs 1), Finset.mem_univ _, rfl⟩
+        rw [abs_le]
+        constructor <;> linarith [hover.1, hover.2, hq.1, hq.2]
+      by_cases htail : eps ≤ x
+      · rw [if_pos htail]
+        have hxSq : x ^ 2 ≤ 4 := by nlinarith [sq_nonneg x]
+        have hxCube : x ^ 3 ≤ 8 := by
+          calc
+            x ^ 3 = x * x ^ 2 := by ring
+            _ ≤ 2 * x ^ 2 := mul_le_mul_of_nonneg_right hx2 (sq_nonneg x)
+            _ ≤ 8 := by linarith
+        dsimp [x] at hxCube ⊢
+        nlinarith [mul_nonneg heps (sq_nonneg
+          (SpinGlass.overlap N (σs 0) (σs 1) - q))]
+      · rw [if_neg htail]
+        have hxeps : x ≤ eps := (lt_of_not_ge htail).le
+        dsimp [x] at hxeps ⊢
+        have hsquare : 0 ≤
+            |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 2 := sq_nonneg _
+        calc
+          |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 3 =
+              |SpinGlass.overlap N (σs 0) (σs 1) - q| *
+                |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 2 := by ring
+          _ ≤ eps * |SpinGlass.overlap N (σs 0) (σs 1) - q| ^ 2 :=
+            mul_le_mul_of_nonneg_right hxeps hsquare
+          _ = eps * (SpinGlass.overlap N (σs 0) (σs 1) - q) ^ 2 + 8 * 0 := by
+            rw [sq_abs]
+            ring
+
+private theorem nat_mul_rpow_neg_three_halves_tendsto_zero :
+    Tendsto (fun N : ℕ => (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2))
+      atTop (nhds 0) := by
+  have hsqrt : Tendsto (fun N : ℕ => Real.sqrt (N : ℝ)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+  have hinv := tendsto_inv_atTop_zero.comp hsqrt
+  convert hinv using 1
+  funext N
+  by_cases hN : N = 0
+  · simp [hN]
+  · have hNr : (0 : ℝ) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
+    calc
+      (N : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) =
+          (N : ℝ) ^ (1 : ℝ) * (N : ℝ) ^ (-(3 : ℝ) / 2) := by
+            rw [Real.rpow_one]
+      _ = (N : ℝ) ^ ((1 : ℝ) + (-(3 : ℝ) / 2)) :=
+        (Real.rpow_add hNr 1 (-(3 : ℝ) / 2)).symm
+      _ = (N : ℝ) ^ (-(1 / 2 : ℝ)) := by norm_num
+      _ = ((N : ℝ) ^ (1 / 2 : ℝ))⁻¹ := Real.rpow_neg hNr.le (1 / 2)
+      _ = (Real.sqrt (N : ℝ))⁻¹ := by rw [Real.sqrt_eq_rpow]
+
+private theorem nat_mul_exp_neg_tendsto_zero (c : ℝ) (hc : 0 < c) :
+    Tendsto (fun N : ℕ => (N : ℝ) * Real.exp (-c * (N : ℝ)))
+      atTop (nhds 0) := by
+  have hcN : Tendsto (fun N : ℕ => c * (N : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.const_mul_atTop hc
+  have hmain := (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).comp hcN
+  have hcconst : Tendsto (fun _ : ℕ => c⁻¹) atTop (nhds c⁻¹) :=
+    tendsto_const_nhds
+  have hscaled := hcconst.mul hmain
+  convert hscaled using 1
+  · funext N
+    field_simp [hc.ne']
+    congr 1 <;> ring
+  · norm_num
 
 /--
 Do not edit this claim even if you have any reason

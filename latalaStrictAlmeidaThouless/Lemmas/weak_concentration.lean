@@ -187,7 +187,8 @@ private lemma constrainedPartition_pos_of_attainable
     (fun p _ => by split <;> positivity)
     ⟨p, Finset.mem_univ p, by rw [if_pos hpv]; exact Real.exp_pos _⟩
 
-private lemma attainableOverlap_mem_Icc
+/-- Every overlap attained by two configurations lies in `[-1,1]`. -/
+theorem attainableOverlap_mem_Icc
     {N : ℕ} (hN : 0 < N) {v : ℝ}
     (hv : v ∈ attainableOverlaps N) : v ∈ Set.Icc (-1 : ℝ) 1 := by
   classical
