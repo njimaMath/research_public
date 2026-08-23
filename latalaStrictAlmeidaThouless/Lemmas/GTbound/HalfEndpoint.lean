@@ -871,6 +871,9 @@ lemma gtRankOneStep_zero_half_add_const
   rw [integral_add hi (integrable_const k)]
   simp
 
+/- The ordinary stopped comparison alone has too large a diagonal remainder;
+the final theorem below instead uses the half-mass interpolation.  The
+calculation is retained temporarily while the endpoint identity is assembled.
 lemma gtUnconstrainedStoppedPressure_zero_add_gap_le_gtFunctional
     {N : ℕ} (hN : 0 < N) {β h q s v lam : ℝ}
     (hs : s ∈ Set.Icc (0 : ℝ) 1) (hq0 : 0 < q) (hq1 : q ≤ 1)
@@ -968,4 +971,5 @@ lemma gtUnconstrainedStoppedPressure_zero_add_gap_le_gtFunctional
   have hjN := mul_le_mul_of_nonneg_left hj hN0
   rw [hc]
   ring_nf
+-/
 end SpinGlass.AT

@@ -143,6 +143,210 @@ lemma integrable_gtHalfTransform
     norm_num at hlip
     nlinarith
 
+lemma continuous_gtHalfTransform_parameter
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (z₀ : EuclideanSpace ℝ I₀) :
+    Continuous (fun t => gtHalfTransform V A B₀ B₁ H₀ t z₀) := by
+  have hden : Continuous (fun t => gtHalfDenominator V A B₀ B₁ H₀ t z₀) := by
+    rw [continuous_iff_continuousAt]
+    intro t₀
+    unfold gtHalfDenominator
+    let base := hasModerateGrowth_gtStateLogPartition V
+    let RA : ℝ := Real.sqrt (|t₀| + 1)
+    let RB : ℝ := Real.sqrt (|t₀| + 2)
+    let K : ℝ := RA * (‖gtCoefficientCLM A‖ * ‖z₀‖) +
+      RB * (‖gtCoefficientCLM B₀‖ * ‖z₀‖) + ‖H₀‖
+    let c : ℝ := (1 / 2 : ℝ) * base.C * RB * ‖gtCoefficientCLM B₁‖
+    let M : ℝ := Real.exp ((1 / 2 : ℝ) * base.C * (1 + K))
+    let bound : (I₁ → ℝ) → ℝ := fun z₁ =>
+      M * Real.exp (c * ‖(WithLp.toLp 2 z₁ : EuclideanSpace ℝ I₁)‖)
+    have hbi : Integrable bound
+        (Measure.pi (fun _ : I₁ => gaussianReal 0 1)) :=
+      (integrable_exp_mul_norm_gaussianProduct (I := I₁) c).const_mul M
+    apply MeasureTheory.continuousAt_of_dominated (bound := bound)
+    · filter_upwards with u
+      exact (integrable_gtHalfDenominator_integrand V A B₀ B₁ H₀ u z₀).1
+    · filter_upwards [Metric.ball_mem_nhds t₀ one_pos] with u hu
+      filter_upwards with z₁
+      have hut : |u - t₀| < 1 := by
+        simpa [Metric.mem_ball, Real.dist_eq] using hu
+      have huA : u ≤ |t₀| + 1 := by
+        have := (abs_lt.1 hut).2
+        linarith [le_abs_self t₀]
+      have huB : 1 - u ≤ |t₀| + 2 := by
+        have := (abs_lt.1 hut).1
+        linarith [neg_le_abs t₀]
+      have hsA : Real.sqrt u ≤ RA := by
+        dsimp [RA]
+        exact Real.sqrt_le_sqrt huA
+      have hsB : Real.sqrt (1 - u) ≤ RB := by
+        dsimp [RB]
+        exact Real.sqrt_le_sqrt huB
+      let z₁E : EuclideanSpace ℝ I₁ := WithLp.toLp 2 z₁
+      have hfield : ‖gtHalfField A B₀ B₁ H₀ u z₀ z₁E‖ ≤
+          K + RB * ‖gtCoefficientCLM B₁‖ * ‖z₁E‖ := by
+        calc
+          ‖gtHalfField A B₀ B₁ H₀ u z₀ z₁E‖ ≤
+              Real.sqrt u * (‖gtCoefficientCLM A‖ * ‖z₀‖) +
+                Real.sqrt (1 - u) *
+                  (‖gtCoefficientCLM B₀‖ * ‖z₀‖ +
+                    ‖gtCoefficientCLM B₁‖ * ‖z₁E‖) + ‖H₀‖ := by
+            unfold gtHalfField
+            calc
+              _ ≤ ‖Real.sqrt u • gtCoefficientCLM A z₀ +
+                    Real.sqrt (1 - u) •
+                      (gtCoefficientCLM B₀ z₀ + gtCoefficientCLM B₁ z₁E)‖ + ‖H₀‖ :=
+                norm_add_le _ _
+              _ ≤ _ := by
+                gcongr
+                refine (norm_add_le _ _).trans ?_
+                rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs,
+                  abs_of_nonneg (Real.sqrt_nonneg _), abs_of_nonneg (Real.sqrt_nonneg _)]
+                gcongr
+                · exact (gtCoefficientCLM A).le_opNorm z₀
+                · exact (norm_add_le _ _).trans (add_le_add
+                    ((gtCoefficientCLM B₀).le_opNorm z₀)
+                    ((gtCoefficientCLM B₁).le_opNorm z₁E))
+          _ ≤ K + RB * ‖gtCoefficientCLM B₁‖ * ‖z₁E‖ := by
+            have hA := mul_le_mul_of_nonneg_right hsA
+              (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+            have hB := mul_le_mul_of_nonneg_right hsB
+              (add_nonneg
+                (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+                (mul_nonneg (norm_nonneg _) (norm_nonneg _)))
+            dsimp [K]
+            nlinarith
+      have hg := base.F_bound (gtHalfField A B₀ B₁ H₀ u z₀ z₁E)
+      have hm : base.m = 1 := by rfl
+      rw [hm, pow_one] at hg
+      rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+      dsimp [bound, M, c]
+      rw [← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      have hlog : gtStateLogPartition V
+          (gtHalfField A B₀ B₁ H₀ u z₀ z₁E) ≤
+          base.C * (1 + ‖gtHalfField A B₀ B₁ H₀ u z₀ z₁E‖) :=
+        (le_abs_self _).trans hg
+      dsimp [z₁E] at hfield ⊢
+      nlinarith [base.Cpos.le]
+    · exact hbi
+    · filter_upwards with z₁
+      have hf : Continuous (fun u =>
+          gtHalfField A B₀ B₁ H₀ u z₀ (WithLp.toLp 2 z₁)) := by
+        unfold gtHalfField
+        fun_prop
+      exact (Real.continuous_exp.comp
+        (continuous_const.mul ((contDiff_gtStateLogPartition V).continuous.comp hf))).continuousAt
+  unfold gtHalfTransform
+  exact continuous_const.mul
+    (hden.log (fun t => (gtHalfDenominator_pos V A B₀ B₁ H₀ t z₀).ne'))
+
+lemma continuous_gtHalfPressure
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S) :
+    Continuous (gtHalfPressure V A B₀ B₁ H₀) := by
+  rw [continuous_iff_continuousAt]
+  intro t₀
+  let RA : ℝ := Real.sqrt (|t₀| + 1)
+  let RB : ℝ := Real.sqrt (|t₀| + 2)
+  let R : ℝ := RA * ‖gtCoefficientCLM A‖ + RB * ‖gtCoefficientCLM B₀‖
+  let C : ℝ := |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| + 1
+  let bound : (I₀ → ℝ) → ℝ := fun z =>
+    C + R * ‖(WithLp.toLp 2 z : EuclideanSpace ℝ I₀)‖
+  have hR : 0 ≤ R := by dsimp [R, RA, RB]; positivity
+  have hbi : Integrable bound (Measure.pi (fun _ : I₀ => gaussianReal 0 1)) :=
+    (integrable_const C).add
+      ((integrable_norm_gaussianProduct (I := I₀)).const_mul R)
+  unfold gtHalfPressure
+  apply MeasureTheory.continuousAt_of_dominated (bound := bound)
+  · filter_upwards with u
+    exact (integrable_gtHalfTransform V A B₀ B₁ H₀ u).1
+  · filter_upwards [Metric.ball_mem_nhds t₀ one_pos,
+      (continuous_gtHalfTransform_parameter V A B₀ B₁ H₀ 0).continuousAt
+        (Metric.ball_mem_nhds
+          (gtHalfTransform V A B₀ B₁ H₀ t₀ 0) one_pos)] with u hu hzero
+    filter_upwards with z
+    have hut : |u - t₀| < 1 := by simpa [Metric.mem_ball, Real.dist_eq] using hu
+    have huA : u ≤ |t₀| + 1 := by
+      have := (abs_lt.1 hut).2
+      linarith [le_abs_self t₀]
+    have huB : 1 - u ≤ |t₀| + 2 := by
+      have := (abs_lt.1 hut).1
+      linarith [neg_le_abs t₀]
+    have hsA : Real.sqrt u ≤ RA := Real.sqrt_le_sqrt huA
+    have hsB : Real.sqrt (1 - u) ≤ RB := Real.sqrt_le_sqrt huB
+    let zE : EuclideanSpace ℝ I₀ := WithLp.toLp 2 z
+    have hM : ‖gtHalfOuterCLM A B₀ u zE‖ ≤ R * ‖zE‖ := by
+      have hop : ‖gtHalfOuterCLM A B₀ u‖ ≤ R := by
+        unfold gtHalfOuterCLM
+        calc
+          _ ≤ ‖Real.sqrt u • gtCoefficientCLM A‖ +
+              ‖Real.sqrt (1 - u) • gtCoefficientCLM B₀‖ := norm_add_le _ _
+          _ = Real.sqrt u * ‖gtCoefficientCLM A‖ +
+              Real.sqrt (1 - u) * ‖gtCoefficientCLM B₀‖ := by
+            rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs,
+              abs_of_nonneg (Real.sqrt_nonneg _), abs_of_nonneg (Real.sqrt_nonneg _)]
+          _ ≤ RA * ‖gtCoefficientCLM A‖ + RB * ‖gtCoefficientCLM B₀‖ := by
+            gcongr
+          _ = R := by rfl
+      calc
+        _ ≤ ‖gtHalfOuterCLM A B₀ u‖ * ‖zE‖ :=
+          (gtHalfOuterCLM A B₀ u).le_opNorm zE
+        _ ≤ R * ‖zE‖ := mul_le_mul_of_nonneg_right hop (norm_nonneg zE)
+    rw [Real.norm_eq_abs]
+    have hlip := (lipschitzWith_gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)).norm_sub_le
+      (gtHalfOuterCLM A B₀ u zE + H₀) (gtHalfOuterCLM A B₀ u 0 + H₀)
+    norm_num at hlip
+    have habs := abs_sub_abs_le_abs_sub
+      (gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)
+        (gtHalfOuterCLM A B₀ u zE + H₀))
+      (gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)
+        (gtHalfOuterCLM A B₀ u 0 + H₀))
+    have hz0 : |gtHalfTransform V A B₀ B₁ H₀ u 0| < C := by
+      dsimp [C]
+      have hzero' : |gtHalfTransform V A B₀ B₁ H₀ u 0 -
+          gtHalfTransform V A B₀ B₁ H₀ t₀ 0| < 1 := by
+        simpa [Metric.mem_ball, Real.dist_eq] using hzero
+      calc
+        |gtHalfTransform V A B₀ B₁ H₀ u 0| =
+            |(gtHalfTransform V A B₀ B₁ H₀ u 0 -
+                gtHalfTransform V A B₀ B₁ H₀ t₀ 0) +
+              gtHalfTransform V A B₀ B₁ H₀ t₀ 0| := by ring_nf
+        _ ≤ |gtHalfTransform V A B₀ B₁ H₀ u 0 -
+                gtHalfTransform V A B₀ B₁ H₀ t₀ 0| +
+              |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| := abs_add _ _
+        _ < 1 + |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| :=
+          add_lt_add_right hzero' _
+        _ = |gtHalfTransform V A B₀ B₁ H₀ t₀ 0| + 1 := by ring
+    have hzbase : |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| < C := by
+      rw [← gtHalfTransform_eq_base V A B₀ B₁ H₀ u 0]
+      simpa using hz0
+    dsimp [bound]
+    rw [gtHalfTransform_eq_base]
+    change |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)
+        (gtHalfOuterCLM A B₀ u zE + H₀)| ≤ C + R * ‖zE‖
+    calc
+      _ ≤ |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u)
+              (gtHalfOuterCLM A B₀ u zE + H₀) -
+            gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| +
+          |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| := by
+            rw [← abs_sub_add_abs]
+      _ ≤ ‖gtHalfOuterCLM A B₀ u zE‖ +
+          |gtHalfBaseTransform V (gtHalfInnerCLM B₁ u) H₀| :=
+            add_le_add_right hlip _
+      _ ≤ R * ‖zE‖ + C :=
+            add_le_add hM hzbase.le
+      _ = C + R * ‖zE‖ := by ring
+  · exact hbi
+  · filter_upwards with z
+    exact (continuous_gtHalfTransform_parameter V A B₀ B₁ H₀
+      (WithLp.toLp 2 z)).continuousAt
+
 /-- Derivative of the two-level field on the open interpolation interval. -/
 noncomputable def gtHalfFieldDeriv
     {S I₀ I₁ : Type*} [Fintype S] [Fintype I₀] [Fintype I₁]
