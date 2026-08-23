@@ -41595,18 +41595,20 @@
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\GTBound.olean"],
   "Lemmas.GTGauss":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTGauss.olean"],
-  "Lemmas.GTFlatness_cases.GTFlatnessCore":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\GTFlatnessCore.olean"],
-  "Lemmas.GTFlatness_cases.GTFlat_small_positive":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\GTFlat_small_positive.olean"],
-  "Lemmas.GTFlatness_cases.GTFlat_small_negative":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\GTFlat_small_negative.olean"],
-  "Lemmas.GTFlatness_cases.GTFlat_large_positive":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\GTFlat_large_positive.olean"],
-  "Lemmas.GTFlatness_cases.GTFlat_large_negative":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\GTFlat_large_negative.olean"],
-  "Lemmas.GTFlatness_cases.GTFlat_endpoints":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\GTFlat_endpoints.olean"],
+  "Lemmas.GTFlatness_cases.Core":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Core.olean"],
+  "Lemmas.GTFlatness_cases.Cases.SmallPositive":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\SmallPositive.olean"],
+  "Lemmas.GTFlatness_cases.Cases.SmallNegative":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\SmallNegative.olean"],
+  "Lemmas.GTFlatness_cases.Cases.LargePositive":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\LargePositive.olean"],
+  "Lemmas.GTFlatness_cases.Cases.LargeNegative":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\LargeNegative.olean"],
+  "Lemmas.GTFlatness_cases.Cases.Endpoints":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\Endpoints.olean"],
+  "Lemmas.GTFlatness_cases.Cases":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases.olean"],
   "Lemmas.GTFlatness":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness.olean"],
   "Lemmas.Concentration_Coupled_Transport":

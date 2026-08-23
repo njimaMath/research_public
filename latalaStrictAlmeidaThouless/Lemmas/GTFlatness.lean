@@ -1,16 +1,12 @@
-import Lemmas.GTFlatness_cases.GTFlatnessCore
-import Lemmas.GTFlatness_cases.GTFlat_endpoints
-import Lemmas.GTFlatness_cases.GTFlat_small_positive
-import Lemmas.GTFlatness_cases.GTFlat_small_negative
-import Lemmas.GTFlatness_cases.GTFlat_large_negative
-import Lemmas.GTFlatness_cases.GTFlat_large_positive
+import Lemmas.GTFlatness_cases.Core
+import Lemmas.GTFlatness_cases.Cases
 /-!
 # GT flatness
 
 This public module collects the shared GT-flatness theory and its
-case-specific consequences. Case modules depend only on
-`GTFlatnessCore`, avoiding an import cycle while preserving the original
-single-import API.
+case-specific consequences. Case modules use the canonical `Core` and
+`Cases` hierarchy. The former module paths remain available as compatibility
+imports, while this module preserves the original single-import API.
 -/
 
 namespace SpinGlass.AT
