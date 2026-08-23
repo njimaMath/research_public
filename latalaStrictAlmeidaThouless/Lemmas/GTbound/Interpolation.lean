@@ -56,7 +56,7 @@ theorem canonical_constrained_le_gtFunctional_of_q_le_abs
     (N := N) (β := β) (h := h) (q := q) (s := s) (v := v) (lam := lam) hv
   have hend := gtUnconstrainedHalfPressure_zero_add_derivativeGap_eq_gtFunctional
     (N := N) (β := β) (h := h) (q := q) (s := s) (v := v) (lam := lam)
-    hN hs hq.1 hq.2.le hqr hr1
+    hN hs hq.1 hqr hr1
   rw [hone.symm]
   calc
     gtConstrainedHalfPressure N β h q s v lam hv 1 ≤

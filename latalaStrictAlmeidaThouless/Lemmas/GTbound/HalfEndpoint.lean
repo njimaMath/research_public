@@ -1497,7 +1497,7 @@ lemma gtRankOneStep_zero_half_add_const
 
 lemma gtUnconstrainedHalfPressure_zero_add_derivativeGap_eq_gtFunctional
     {N : ℕ} (hN : 0 < N) {β h q s v lam : ℝ}
-    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hq0 : 0 < q) (hq1 : q ≤ 1)
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hq0 : 0 < q)
     (hqr : q ≤ |v|) (hr1 : |v| ≤ 1) :
     gtUnconstrainedHalfPressure N β h q s v lam 0 +
         ((N : ℝ) * (s * β ^ 2 * (1 - |v|) ^ 2)) / 2 +

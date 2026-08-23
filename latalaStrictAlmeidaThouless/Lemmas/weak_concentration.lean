@@ -175,18 +175,6 @@ private lemma constrained_log_integrable
     (Finset.univ.filter fun p : SpinGlass.Config N × SpinGlass.Config N =>
       SpinGlass.overlap N p.1 p.2 = v) (by simp)]
 
-private lemma constrainedPartition_pos_of_attainable
-    {N : ℕ} (H : SpinGlass.EnergySpace N) {v : ℝ}
-    (hv : v ∈ attainableOverlaps N) :
-    0 < constrainedPartition H v := by
-  classical
-  rw [attainableOverlaps, Finset.mem_image] at hv
-  obtain ⟨p, _hp, hpv⟩ := hv
-  unfold constrainedPartition
-  exact Finset.sum_pos'
-    (fun p _ => by split <;> positivity)
-    ⟨p, Finset.mem_univ p, by rw [if_pos hpv]; exact Real.exp_pos _⟩
-
 /-- Every overlap attained by two configurations lies in `[-1,1]`. -/
 theorem attainableOverlap_mem_Icc
     {N : ℕ} (hN : 0 < N) {v : ℝ}
