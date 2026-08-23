@@ -1,4 +1,5 @@
 import Lemmas.ATDefs
+import Lemmas.Cavity.cavity_estimates
 import Mathlib.Tactic
 import Lemmas.weak_concentration
 
@@ -322,7 +323,50 @@ theorem cavityModeRemainder_bound_from_lastSpin
     {K : Set (ℝ × ℝ)}
     (data : UniformATData K) :
     ∃ C : ℝ, HasCavityModeRemainderBound (Ω := Ω) data C := by
-  sorry
+  let C : ℝ :=
+    360000 * (1 + data.βmax ^ 4) * Real.exp (64 * data.βmax ^ 2)
+  refine ⟨C, ?_, ?_⟩
+  · dsimp [C]
+    positivity
+  · intro N hN β h q s hK hq hs path
+    have hβ : 0 < β := data.β_pos (β, h) hK
+    have hh : 0 < h := data.h_pos (β, h) hK
+    have hβmax : β ≤ data.βmax := data.β_bound (β, h) hK
+    have hβsq : β ^ 2 ≤ data.βmax ^ 2 := by
+      have hp : 0 ≤ (data.βmax - β) * (data.βmax + β) :=
+        mul_nonneg (sub_nonneg.mpr hβmax) (add_nonneg data.βmax_pos.le hβ.le)
+      nlinarith
+    have hβfour : β ^ 4 ≤ data.βmax ^ 4 := by
+      have hp :
+          0 ≤ (data.βmax ^ 2 - β ^ 2) * (data.βmax ^ 2 + β ^ 2) :=
+        mul_nonneg (sub_nonneg.mpr hβsq)
+          (add_nonneg (sq_nonneg data.βmax) (sq_nonneg β))
+      nlinarith
+    have hexp :
+        Real.exp (64 * β ^ 2) ≤ Real.exp (64 * data.βmax ^ 2) :=
+      Real.exp_le_exp.mpr (by nlinarith)
+    have hqI : q ∈ Set.Icc (0 : ℝ) 1 := by
+      rw [hq]
+      exact rsQ_mem_Icc β h
+    have hrI : rsR β h ∈ Set.Icc (0 : ℝ) 1 := by
+      constructor
+      · exact rsR_nonneg β h
+      · calc
+          rsR β h ≤ rsQ β h := rsR_le_rsQ hh
+          _ = q := hq.symm
+          _ ≤ 1 := hqI.2
+    have hscale : 0 ≤ cavityErrorScale path s := by
+      unfold cavityErrorScale
+      have ht : 0 ≤ thirdMoment path s := thirdMoment_nonneg path s
+      positivity
+    calc
+      ‖cavityChangeMatrix.mulVec (cavityRemainder path s)‖ ≤
+          360000 * (1 + β ^ 4) * Real.exp (64 * β ^ 2) *
+            cavityErrorScale path s :=
+        CavityEstimates.cavityModeRemainder_norm_bound path hN hh hq hqI hrI hs
+      _ ≤ C * cavityErrorScale path s := by
+        dsimp [C]
+        gcongr
 
 /-! ## Final cavity proposition -/
 

@@ -41615,6 +41615,10 @@
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration_Coupled_Transport.olean"],
   "Lemmas.Concentration_Coupled":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration_Coupled.olean"],
+  "Lemmas.Cavity.cavity_interpolation":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\cavity_interpolation.olean"],
+  "Lemmas.Cavity.cavity_estimates":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\cavity_estimates.olean"],
   "Lemmas.Cavity.Talagrand_Cavity":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\Talagrand_Cavity.olean"],
   "Lemmas.ATDefs":

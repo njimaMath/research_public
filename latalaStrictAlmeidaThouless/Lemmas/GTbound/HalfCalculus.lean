@@ -1,5 +1,6 @@
 import Lemmas.GTbound.HalfStep
 import Mathlib.Analysis.Calculus.FDeriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Inv
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology
 open scoped ContDiff
@@ -229,6 +230,16 @@ noncomputable def gtHalfBaseNumerator
       gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ
     ∂Measure.pi (fun _ : I => gaussianReal 0 1)
 
+noncomputable def gtHalfBasePairNumerator
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ η : S) : ℝ :=
+  ∫ z : I → ℝ,
+    gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+      (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+        gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)
+    ∂Measure.pi (fun _ : I => gaussianReal 0 1)
+
 lemma integrable_gtHalfBaseDenominator_integrand
     {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
     (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
@@ -261,6 +272,43 @@ lemma integrable_gtHalfBaseNumerator_integrand
       abs_of_nonneg (gtStateGibbs_nonneg V _ ξ)]
     exact mul_le_of_le_one_right (gtHalfBaseDensity_pos V _).le
       (gtStateGibbs_le_one V _ ξ)
+
+lemma integrable_gtHalfBasePairNumerator_integrand
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ η : S) :
+    Integrable (fun z : I → ℝ =>
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+        (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) η))
+      (Measure.pi (fun _ : I => gaussianReal 0 1)) := by
+  have hi := integrable_gtHalfBaseNumerator_integrand V L H ξ
+  apply hi.mono'
+  · have hfield : Continuous (fun z : I → ℝ =>
+        L (WithLp.toLp 2 z) + H) := by fun_prop
+    exact (((contDiff_gtHalfBaseDensity V).continuous.comp hfield).mul
+      (((contDiff_gtStateGibbs V ξ).continuous.comp hfield).mul
+        ((contDiff_gtStateGibbs V η).continuous.comp hfield)
+      )).aestronglyMeasurable
+  · filter_upwards with z
+    have hη0 := gtStateGibbs_nonneg V (L (WithLp.toLp 2 z) + H) η
+    have hη1 := gtStateGibbs_le_one V (L (WithLp.toLp 2 z) + H) η
+    have hbase0 := gtHalfBaseDensity_pos V (L (WithLp.toLp 2 z) + H)
+    have hξ0 := gtStateGibbs_nonneg V (L (WithLp.toLp 2 z) + H) ξ
+    rw [Real.norm_eq_abs, abs_mul, abs_mul,
+      abs_of_nonneg hbase0.le, abs_of_nonneg hξ0, abs_of_nonneg hη0]
+    calc
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η) =
+        (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ) *
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η := by ring
+      _ ≤ (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ) * 1 :=
+        mul_le_mul_of_nonneg_left hη1 (mul_nonneg hbase0.le hξ0)
+      _ = gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ := by ring
 
 lemma hasFDerivAt_gtHalfBaseDenominator
     {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
@@ -421,6 +469,182 @@ lemma gtHalfBaseDenominator_pos
   rw [hsupp]
   simp
 
+lemma integrable_fderiv_gtHalfBaseDensity_affine
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) :
+    Integrable (fun z : I → ℝ =>
+      fderiv ℝ (gtHalfBaseDensity V) (L (WithLp.toLp 2 z) + H))
+      (Measure.pi (fun _ : I => gaussianReal 0 1)) := by
+  have hd := integrable_gtHalfBaseDenominator_integrand V L H
+  apply (hd.const_mul (1 / 2 : ℝ)).mono'
+  · have hfd : ContDiff ℝ 0 (fderiv ℝ (gtHalfBaseDensity V)) :=
+      (contDiff_gtHalfBaseDensity V).fderiv_right
+        (m := (0 : WithTop ℕ∞)) (by simp)
+    exact (hfd.continuous.comp (by fun_prop)).aestronglyMeasurable
+  · filter_upwards with z
+    simpa [Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2),
+      abs_of_nonneg (gtHalfBaseDensity_pos V _).le] using
+      norm_fderiv_gtHalfBaseDensity_le V (L (WithLp.toLp 2 z) + H)
+
+lemma integrable_fderiv_gtHalfBaseDensity_mul_gibbs_affine
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ : S) :
+    Integrable (fun z : I → ℝ =>
+      fderiv ℝ (fun K : GTStateSpace S =>
+        gtHalfBaseDensity V K * gtStateGibbs V K ξ)
+        (L (WithLp.toLp 2 z) + H))
+      (Measure.pi (fun _ : I => gaussianReal 0 1)) := by
+  have hd := integrable_gtHalfBaseDenominator_integrand V L H
+  apply (hd.const_mul 2).mono'
+  · have hfd : ContDiff ℝ 0 (fderiv ℝ (fun K : GTStateSpace S =>
+        gtHalfBaseDensity V K * gtStateGibbs V K ξ)) :=
+      (contDiff_gtHalfBaseDensity_mul_gibbs V ξ).fderiv_right
+        (m := (0 : WithTop ℕ∞)) (by simp)
+    exact (hfd.continuous.comp (by fun_prop)).aestronglyMeasurable
+  · filter_upwards with z
+    simpa [Real.norm_eq_abs, abs_of_nonneg (gtHalfBaseDensity_pos V _).le] using
+      norm_fderiv_gtHalfBaseDensity_mul_gibbs_le V
+        (L (WithLp.toLp 2 z) + H) ξ
+
+lemma gtHalfBaseDenominator_fderiv_apply
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H K : GTStateSpace S) :
+    (∫ z : I → ℝ,
+      fderiv ℝ (gtHalfBaseDensity V) (L (WithLp.toLp 2 z) + H)
+      ∂Measure.pi (fun _ : I => gaussianReal 0 1)) K =
+      (1 / 2 : ℝ) * ∑ η : S,
+        gtHalfBaseNumerator V L H η * K η := by
+  let ev : (GTStateSpace S →L[ℝ] ℝ) →L[ℝ] ℝ :=
+    ContinuousLinearMap.apply ℝ ℝ K
+  have hi := integrable_fderiv_gtHalfBaseDensity_affine V L H
+  change ev (∫ z : I → ℝ,
+    fderiv ℝ (gtHalfBaseDensity V) (L (WithLp.toLp 2 z) + H)
+    ∂Measure.pi (fun _ : I => gaussianReal 0 1)) = _
+  rw [← ev.integral_comp_comm hi]
+  dsimp [ev]
+  simp_rw [fderiv_gtHalfBaseDensity_apply]
+  rw [show (fun z : I → ℝ =>
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) * (1 / 2 : ℝ) *
+        ∑ η : S, gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * K η) =
+      fun z => ∑ η : S, ((1 / 2 : ℝ) * K η) *
+        (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) η) by
+    funext z
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    ring]
+  rw [integral_finset_sum]
+  · simp_rw [integral_const_mul]
+    unfold gtHalfBaseNumerator
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    ring
+  · intro η _
+    exact (integrable_gtHalfBaseNumerator_integrand V L H η
+      ).const_mul ((1 / 2 : ℝ) * K η)
+
+lemma gtHalfBaseNumerator_fderiv_apply
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H K : GTStateSpace S) (ξ : S) :
+    (∫ z : I → ℝ,
+      fderiv ℝ (fun J : GTStateSpace S =>
+        gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+        (L (WithLp.toLp 2 z) + H)
+      ∂Measure.pi (fun _ : I => gaussianReal 0 1)) K =
+      gtHalfBaseNumerator V L H ξ * K ξ -
+        (1 / 2 : ℝ) * ∑ η : S,
+          gtHalfBasePairNumerator V L H ξ η * K η := by
+  let ev : (GTStateSpace S →L[ℝ] ℝ) →L[ℝ] ℝ :=
+    ContinuousLinearMap.apply ℝ ℝ K
+  have hi := integrable_fderiv_gtHalfBaseDensity_mul_gibbs_affine V L H ξ
+  change ev (∫ z : I → ℝ,
+    fderiv ℝ (fun J : GTStateSpace S =>
+      gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+      (L (WithLp.toLp 2 z) + H)
+    ∂Measure.pi (fun _ : I => gaussianReal 0 1)) = _
+  rw [← ev.integral_comp_comm hi]
+  dsimp [ev]
+  simp_rw [fderiv_gtHalfBaseDensity_mul_gibbs_apply]
+  have hfirst :
+      (∫ z : I → ℝ,
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ * K ξ
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+        gtHalfBaseNumerator V L H ξ * K ξ := by
+    rw [integral_mul_const]
+    rfl
+  have hsecond :
+      (∫ z : I → ℝ,
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+          ((1 / 2 : ℝ) * ∑ η : S,
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * K η)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+        (1 / 2 : ℝ) * ∑ η : S,
+          gtHalfBasePairNumerator V L H ξ η * K η := by
+    rw [show (fun z : I → ℝ =>
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+          ((1 / 2 : ℝ) * ∑ η : S,
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * K η)) =
+        fun z => ∑ η : S, ((1 / 2 : ℝ) * K η) *
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+            (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)) by
+      funext z
+      rw [Finset.mul_sum, Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro η _
+      ring]
+    rw [integral_finset_sum]
+    · simp_rw [integral_const_mul]
+      unfold gtHalfBasePairNumerator
+      rw [Finset.mul_sum]
+      apply Finset.sum_congr rfl
+      intro η _
+      ring
+    · intro η _
+      exact (integrable_gtHalfBasePairNumerator_integrand V L H ξ η
+        ).const_mul ((1 / 2 : ℝ) * K η)
+  rw [show (fun z : I → ℝ =>
+      gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+        gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+          (K ξ - (1 / 2 : ℝ) * ∑ η : S,
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * K η)) =
+      fun z =>
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ * K ξ -
+        gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+            ((1 / 2 : ℝ) * ∑ η : S,
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * K η) by
+        funext z
+        ring]
+  rw [integral_sub]
+  · rw [hfirst, hsecond]
+  · exact (integrable_gtHalfBaseNumerator_integrand V L H ξ).mul_const (K ξ)
+  · have hs : Integrable (fun z : I → ℝ =>
+        ∑ η : S, (1 / 2 : ℝ) * K η *
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+            (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)))
+        (Measure.pi (fun _ : I => gaussianReal 0 1)) :=
+      integrable_finset_sum _ fun η _ =>
+        (integrable_gtHalfBasePairNumerator_integrand V L H ξ η
+          ).const_mul ((1 / 2 : ℝ) * K η)
+    convert hs using 1
+    funext z
+    rw [Finset.mul_sum, Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro η _
+    ring
+
 /-- A Gibbs coordinate after the normalized inner half-mass tilt, expressed
 as a function of the deterministic base field. -/
 noncomputable def gtHalfBaseWeight
@@ -428,6 +652,12 @@ noncomputable def gtHalfBaseWeight
     (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
     (H : GTStateSpace S) (ξ : S) : ℝ :=
   gtHalfBaseNumerator V L H ξ / gtHalfBaseDenominator V L H
+
+noncomputable def gtHalfBasePairWeight
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H : GTStateSpace S) (ξ η : S) : ℝ :=
+  gtHalfBasePairNumerator V L H ξ η / gtHalfBaseDenominator V L H
 
 lemma hasFDerivAt_gtHalfBaseWeight
     {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
@@ -445,5 +675,82 @@ lemma hasFDerivAt_gtHalfBaseWeight
     (fderiv ℝ ((fun H' => gtHalfBaseNumerator V L H' ξ) *
       (gtHalfBaseDenominator V L)⁻¹) H) H
   exact hm.hasFDerivAt
+
+lemma fderiv_gtHalfBaseWeight_apply
+    {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
+    (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
+    (H K : GTStateSpace S) (ξ : S) :
+    fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) H K =
+      gtHalfBaseWeight V L H ξ * K ξ -
+        (1 / 2 : ℝ) * ∑ η : S,
+          gtHalfBasePairWeight V L H ξ η * K η -
+        (1 / 2 : ℝ) * gtHalfBaseWeight V L H ξ *
+          ∑ η : S, gtHalfBaseWeight V L H η * K η := by
+  let D : ℝ := gtHalfBaseDenominator V L H
+  let Nξ : ℝ := gtHalfBaseNumerator V L H ξ
+  let DN : GTStateSpace S →L[ℝ] ℝ :=
+    ∫ z : I → ℝ,
+      fderiv ℝ (fun J : GTStateSpace S =>
+        gtHalfBaseDensity V J * gtStateGibbs V J ξ)
+        (L (WithLp.toLp 2 z) + H)
+      ∂Measure.pi (fun _ : I => gaussianReal 0 1)
+  let DD : GTStateSpace S →L[ℝ] ℝ :=
+    ∫ z : I → ℝ,
+      fderiv ℝ (gtHalfBaseDensity V) (L (WithLp.toLp 2 z) + H)
+      ∂Measure.pi (fun _ : I => gaussianReal 0 1)
+  have hD : 0 < D := gtHalfBaseDenominator_pos V L H
+  have ha : HasDerivAt (fun t : ℝ => H + t • K) K 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const K).const_add H
+  have hn : HasFDerivAt (fun H' => gtHalfBaseNumerator V L H' ξ) DN H :=
+    hasFDerivAt_gtHalfBaseNumerator V L H ξ
+  have hd : HasFDerivAt (gtHalfBaseDenominator V L) DD H :=
+    hasFDerivAt_gtHalfBaseDenominator V L H
+  have hnline := by
+    have hn0 : HasFDerivAt (fun H' => gtHalfBaseNumerator V L H' ξ) DN
+        (H + (0 : ℝ) • K) := by simpa using hn
+    exact hn0.comp_hasDerivAt 0 ha
+  have hdline := by
+    have hd0 : HasFDerivAt (gtHalfBaseDenominator V L) DD
+        (H + (0 : ℝ) • K) := by simpa using hd
+    exact hd0.comp_hasDerivAt 0 ha
+  have hD0 : gtHalfBaseDenominator V L (H + (0 : ℝ) • K) ≠ 0 := by
+    simpa using hD.ne'
+  have hquot := hnline.div hdline hD0
+  have hwline := by
+      have hw0 : HasFDerivAt (fun H' => gtHalfBaseWeight V L H' ξ)
+          (fderiv ℝ (fun H' => gtHalfBaseWeight V L H' ξ) H)
+          (H + (0 : ℝ) • K) := by
+        simpa using hasFDerivAt_gtHalfBaseWeight V L H ξ
+      exact hw0.comp_hasDerivAt 0 ha
+  have heq := hwline.unique hquot
+  have hDN : DN K = Nξ * K ξ - (1 / 2 : ℝ) * ∑ η : S,
+      gtHalfBasePairNumerator V L H ξ η * K η :=
+    gtHalfBaseNumerator_fderiv_apply V L H K ξ
+  have hDD : DD K = (1 / 2 : ℝ) * ∑ η : S,
+      gtHalfBaseNumerator V L H η * K η :=
+    gtHalfBaseDenominator_fderiv_apply V L H K
+  rw [hDN, hDD] at heq
+  rw [heq]
+  unfold gtHalfBaseWeight gtHalfBasePairWeight
+  dsimp [D, Nξ] at hD ⊢
+  simp only [zero_smul, add_zero] at heq ⊢
+  simp_rw [Finset.mul_sum]
+  field_simp [hD.ne']
+  simp_rw [Finset.mul_sum]
+  field_simp [hD.ne']
+  have hcancel :
+      gtHalfBaseDenominator V L H *
+          ∑ x : S,
+            gtHalfBaseNumerator V L H ξ * gtHalfBaseNumerator V L H x * K x /
+              (2 * gtHalfBaseDenominator V L H) =
+        ∑ x : S,
+          gtHalfBaseNumerator V L H ξ * gtHalfBaseNumerator V L H x * K x / 2 := by
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro x hx
+    field_simp [hD.ne']
+  conv_rhs => rw [mul_sub, mul_sub]
+  rw [hcancel]
+  ring
 
 end SpinGlass.AT

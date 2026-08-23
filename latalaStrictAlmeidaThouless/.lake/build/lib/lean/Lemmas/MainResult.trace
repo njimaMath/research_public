@@ -1,13 +1,13 @@
 {"synthetic": false,
  "schemaVersion": "2025-09-10",
  "outputs":
- {"o": ["da287f8fb3300e66.olean"],
+ {"o": ["db4b4d02251bea09.olean"],
   "m": false,
   "i": "ea9f9beb4dc606f4.ilean",
   "c": "7b4f41e89fc33809.c"},
  "log":
  [{"message":
-   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\MainResult.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\MainResult.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\MainResult.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\MainResult.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\MainResult.setup.json --json",
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\njima\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\MainResult.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\MainResult.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\MainResult.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\MainResult.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\MainResult.setup.json --json",
    "level": "trace"}],
  "inputs":
  [["Lemmas.MainResult:deps",
@@ -18,8 +18,8 @@
        [["Lemmas.ATDefs transitive imports (legacy)", "8b3934e56f80bc5b"],
         ["Lemmas.ATDefs:importAllArts", "93ec615659c4d976"],
         ["Lemmas.Cavity.Talagrand_Cavity transitive imports (legacy)",
-         "6dfb73b914adc014"],
-        ["Lemmas.Cavity.Talagrand_Cavity:importAllArts", "d03ed3aea83f8a14"],
+         "29dc8f71dd4b1bd2"],
+        ["Lemmas.Cavity.Talagrand_Cavity:importAllArts", "969858cd1125c0b3"],
         ["Lemmas.weak_concentration transitive imports (legacy)",
          "3b25cca6f800b9d1"],
         ["Lemmas.weak_concentration:importAllArts", "b0bffbc4c55ae0a1"],
@@ -44,4 +44,4 @@
   ["Module.name: Lemmas.MainResult", "e5fbf75b5b31362e"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "9d1bf15cc65f3329"}
+ "depHash": "80473959f603a954"}

@@ -14,3 +14,6 @@ open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology
 #check MeasureTheory.integral_prod_left
 #check SpinGlass.AT.gaussianProduct_stein_inner
 #check SYK.gaussian_ibp
+#check ContinuousLinearMap.integral_comp_comm
+#check ContinuousLinearMap.integral_comp_comm_apply
+#check hasFDerivAt_inv
