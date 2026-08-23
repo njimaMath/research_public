@@ -9,6 +9,8 @@ set_option maxHeartbeats 800000
 
 namespace SpinGlass.AT
 
+/- These foundational transform estimates now live in `HalfEndpoint`, below
+the comparison module in the import graph.
 noncomputable def gtHalfBaseTransform
     {S I : Type*} [Fintype S] [Nonempty S] [Fintype I]
     (V : S → ℝ) (L : EuclideanSpace ℝ I →L[ℝ] GTStateSpace S)
@@ -143,6 +145,7 @@ lemma integrable_gtHalfTransform
     norm_num at hlip
     nlinarith
 
+-/
 lemma continuous_gtHalfTransform_parameter
     {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
     [Fintype I₀] [Fintype I₁]
@@ -1955,5 +1958,31 @@ theorem gtHalfPressure_one_le_zero_add
     (show (0 : ℝ) ≤ 1 by norm_num)
   dsimp [g] at hends
   linarith
+
+theorem gtConstrainedHalfPressure_one_le_zero
+    {N : ℕ} (hN : 0 < N) {β h q s v lam : ℝ}
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hq0 : 0 ≤ q) (hqr : q ≤ |v|)
+    (hv : v ∈ attainableOverlaps N) :
+    gtConstrainedHalfPressure N β h q s v lam hv 1 ≤
+      gtConstrainedHalfPressure N β h q s v lam hv 0 +
+        ((N : ℝ) * (s * β ^ 2 * (1 - |v|) ^ 2)) / 2 +
+        ((N : ℝ) * gtScalarVariance β s v q -
+          (N : ℝ) * gtScalarVariance β s v |v|) / 4 := by
+  letI : Nonempty (ConstrainedPair N v) := constrainedPair_nonempty hv
+  unfold gtConstrainedHalfPressure
+  have hcomp := gtHalfPressure_one_le_zero_add
+    (V := fun p : ConstrainedPair N v => gtPairPotential N h lam v p.1)
+    (A := fun p => gtOrdinaryBarePhysicalCoefficient N β q s p.1)
+    (B₀ := fun p => gtHalfOuterTrialCoefficient N β q s v p.1)
+    (B₁ := fun p => gtHalfInnerTrialCoefficient N β q s v p.1)
+    (H₀ := 0)
+    (hAB := fun p r =>
+      gtHalfOuter_coefficients_orthogonal N β q s v p.1 r.1)
+    (K := ((N : ℝ) * (s * β ^ 2 * (1 - |v|) ^ 2)) / 2 +
+      ((N : ℝ) * gtScalarVariance β s v q -
+        (N : ℝ) * gtScalarVariance β s v |v|) / 4)
+    (hbound := fun t ht z₀ =>
+      gtConstrainedHalfDerivativeExpression_le hN hs hq0 hqr hv t z₀)
+  convert hcomp using 1 <;> ring
 
 end SpinGlass.AT

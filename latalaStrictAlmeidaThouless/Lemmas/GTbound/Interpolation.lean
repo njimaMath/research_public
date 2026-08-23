@@ -1,5 +1,5 @@
 import Lemmas.GTbound.Endpoint
-import Lemmas.GTbound.HalfEndpoint
+import Lemmas.GTbound.HalfComparison
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 
@@ -34,6 +34,41 @@ theorem canonical_constrained_le_gtFunctional_of_abs_lt_q
     _ ≤ gtUnconstrainedOrdinaryPressure N β h q s v lam 0 +
           (N : ℝ) * (s * β ^ 2 * (1 - q) ^ 2) / 2 :=
         add_le_add hrelax le_rfl
+    _ = (N : ℝ) * gtFunctional β h q s lam v := hend
+
+/-- Canonical finite-volume GT comparison in the branch `q ≤ |v|`. -/
+theorem canonical_constrained_le_gtFunctional_of_q_le_abs
+    {N : ℕ} (hN : 0 < N) {β h q s v lam : ℝ}
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) (hq : q ∈ Set.Ioo (0 : ℝ) 1)
+    (hv : v ∈ attainableOverlaps N) (hqr : q ≤ |v|) :
+    (∫ x, coupledConstrainedLogPartition N β h q s v x
+        ∂SYK.standardGaussianMeasureOnEuclidean (CoupledGaussianIndex N)) ≤
+      (N : ℝ) * gtFunctional β h q s lam v := by
+  have hqIcc : q ∈ Set.Icc (0 : ℝ) 1 := ⟨hq.1.le, hq.2.le⟩
+  have hr1 : |v| ≤ 1 := abs_le.2 (gtAttainableOverlap_mem_Icc hN hv)
+  have hone := gtConstrainedHalfPressure_one_eq_canonical
+    (N := N) (β := β) (h := h) (q := q) (s := s) (v := v) (lam := lam)
+    hN hs hqIcc hv
+  have hcompare := gtConstrainedHalfPressure_one_le_zero
+    (N := N) (β := β) (h := h) (q := q) (s := s) (v := v) (lam := lam)
+    hN hs hq.1.le hqr hv
+  have hrelax := gtConstrainedHalfPressure_zero_le_unconstrained
+    (N := N) (β := β) (h := h) (q := q) (s := s) (v := v) (lam := lam) hv
+  have hend := gtUnconstrainedHalfPressure_zero_add_derivativeGap_eq_gtFunctional
+    (N := N) (β := β) (h := h) (q := q) (s := s) (v := v) (lam := lam)
+    hN hs hq.1 hq.2.le hqr hr1
+  rw [hone.symm]
+  calc
+    gtConstrainedHalfPressure N β h q s v lam hv 1 ≤
+        gtConstrainedHalfPressure N β h q s v lam hv 0 +
+          ((N : ℝ) * (s * β ^ 2 * (1 - |v|) ^ 2)) / 2 +
+          ((N : ℝ) * gtScalarVariance β s v q -
+            (N : ℝ) * gtScalarVariance β s v |v|) / 4 := hcompare
+    _ ≤ gtUnconstrainedHalfPressure N β h q s v lam 0 +
+          ((N : ℝ) * (s * β ^ 2 * (1 - |v|) ^ 2)) / 2 +
+          ((N : ℝ) * gtScalarVariance β s v q -
+            (N : ℝ) * gtScalarVariance β s v |v|) / 4 := by
+      gcongr
     _ = (N : ℝ) * gtFunctional β h q s lam v := hend
 
 end SpinGlass.AT
