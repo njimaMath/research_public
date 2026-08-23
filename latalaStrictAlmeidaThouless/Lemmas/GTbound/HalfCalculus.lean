@@ -1525,4 +1525,132 @@ lemma gtHalfBase_inner_stein
           ((integrable_gtHalfBasePairNumerator_integrand V L H ξ η).div_const _).mul_const _
           ).const_mul _
 
+noncomputable def gtHalfOuterCLM
+    {S I₀ : Type*} [Fintype S] [Fintype I₀]
+    (A B₀ : S → EuclideanSpace ℝ I₀) (t : ℝ) :
+    EuclideanSpace ℝ I₀ →L[ℝ] GTStateSpace S :=
+  Real.sqrt t • gtCoefficientCLM A +
+    Real.sqrt (1 - t) • gtCoefficientCLM B₀
+
+noncomputable def gtHalfInnerCLM
+    {S I₁ : Type*} [Fintype S] [Fintype I₁]
+    (B₁ : S → EuclideanSpace ℝ I₁) (t : ℝ) :
+    EuclideanSpace ℝ I₁ →L[ℝ] GTStateSpace S :=
+  Real.sqrt (1 - t) • gtCoefficientCLM B₁
+
+lemma gtHalfField_eq_base_affine
+    {S I₀ I₁ : Type*} [Fintype S] [Fintype I₀] [Fintype I₁]
+    (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (t : ℝ) (z₀ : EuclideanSpace ℝ I₀) (z₁ : EuclideanSpace ℝ I₁) :
+    gtHalfField A B₀ B₁ H₀ t z₀ z₁ =
+      gtHalfInnerCLM B₁ t z₁ + (gtHalfOuterCLM A B₀ t z₀ + H₀) := by
+  simp [gtHalfField, gtHalfInnerCLM, gtHalfOuterCLM]
+  abel
+
+lemma gtHalfDenominator_eq_base
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (t : ℝ) (z₀ : EuclideanSpace ℝ I₀) :
+    gtHalfDenominator V A B₀ B₁ H₀ t z₀ =
+      gtHalfBaseDenominator V (gtHalfInnerCLM B₁ t)
+        (gtHalfOuterCLM A B₀ t z₀ + H₀) := by
+  unfold gtHalfDenominator gtHalfBaseDenominator gtHalfBaseDensity
+  apply integral_congr_ae
+  filter_upwards with z₁
+  rw [gtHalfField_eq_base_affine]
+
+lemma gtHalfGibbsWeight_eq_base
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (t : ℝ) (z₀ : EuclideanSpace ℝ I₀) (ξ : S) :
+    gtHalfGibbsWeight V A B₀ B₁ H₀ t z₀ ξ =
+      gtHalfBaseWeight V (gtHalfInnerCLM B₁ t)
+        (gtHalfOuterCLM A B₀ t z₀ + H₀) ξ := by
+  unfold gtHalfGibbsWeight gtHalfBaseWeight gtHalfBaseNumerator gtHalfDensity
+  rw [gtHalfDenominator_eq_base]
+  congr 1
+  apply integral_congr_ae
+  filter_upwards with z₁
+  unfold gtHalfBaseDensity
+  rw [gtHalfField_eq_base_affine]
+
+lemma gtHalfInnerPairWeight_eq_base
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (t : ℝ) (z₀ : EuclideanSpace ℝ I₀) (ξ η : S) :
+    gtHalfInnerPairWeight V A B₀ B₁ H₀ t z₀ ξ η =
+      gtHalfBasePairWeight V (gtHalfInnerCLM B₁ t)
+        (gtHalfOuterCLM A B₀ t z₀ + H₀) ξ η := by
+  unfold gtHalfInnerPairWeight gtHalfBasePairWeight gtHalfBasePairNumerator
+    gtHalfDensity
+  rw [gtHalfDenominator_eq_base]
+  congr 1
+  apply integral_congr_ae
+  filter_upwards with z₁
+  rw [gtHalfField_eq_base_affine]
+  rfl
+
+lemma gtHalf_outer_stein
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ C : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (t : ℝ) (ξ : S) :
+    (∫ z₀ : I₀ → ℝ,
+        inner ℝ (WithLp.toLp 2 z₀ : EuclideanSpace ℝ I₀) (C ξ) *
+          gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀) ξ
+        ∂Measure.pi (fun _ : I₀ => gaussianReal 0 1)) =
+      ∫ z₀ : I₀ → ℝ,
+        let H := gtHalfOuterCLM A B₀ t (WithLp.toLp 2 z₀) + H₀
+        gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀) ξ *
+            (gtHalfOuterCLM A B₀ t (C ξ)) ξ -
+          (1 / 2 : ℝ) * ∑ η : S,
+            gtHalfInnerPairWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀) ξ η *
+              (gtHalfOuterCLM A B₀ t (C ξ)) η -
+          (1 / 2 : ℝ) *
+            gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀) ξ *
+              ∑ η : S,
+                gtHalfGibbsWeight V A B₀ B₁ H₀ t (WithLp.toLp 2 z₀) η *
+                  (gtHalfOuterCLM A B₀ t (C ξ)) η
+        ∂Measure.pi (fun _ : I₀ => gaussianReal 0 1) := by
+  have h := gtHalfBaseWeight_stein V (gtHalfInnerCLM B₁ t)
+    (gtHalfOuterCLM A B₀ t) H₀ (C ξ) ξ
+  simpa only [gtHalfGibbsWeight_eq_base, gtHalfInnerPairWeight_eq_base] using h
+
+lemma gtHalf_inner_stein
+    {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
+    [Fintype I₀] [Fintype I₁]
+    (V : S → ℝ) (A B₀ : S → EuclideanSpace ℝ I₀)
+    (B₁ : S → EuclideanSpace ℝ I₁) (H₀ : GTStateSpace S)
+    (t : ℝ) (z₀ : EuclideanSpace ℝ I₀) (ξ : S) :
+    (∫ z₁ : I₁ → ℝ,
+        inner ℝ (WithLp.toLp 2 z₁ : EuclideanSpace ℝ I₁) (B₁ ξ) *
+          (gtHalfDensity V A B₀ B₁ H₀ t z₀ (WithLp.toLp 2 z₁) *
+            gtStateGibbs V
+              (gtHalfField A B₀ B₁ H₀ t z₀ (WithLp.toLp 2 z₁)) ξ /
+                gtHalfDenominator V A B₀ B₁ H₀ t z₀)
+        ∂Measure.pi (fun _ : I₁ => gaussianReal 0 1)) =
+      gtHalfGibbsWeight V A B₀ B₁ H₀ t z₀ ξ *
+          (gtHalfInnerCLM B₁ t (B₁ ξ)) ξ -
+        (1 / 2 : ℝ) * ∑ η : S,
+          gtHalfInnerPairWeight V A B₀ B₁ H₀ t z₀ ξ η *
+            (gtHalfInnerCLM B₁ t (B₁ ξ)) η := by
+  have h := gtHalfBase_inner_stein V (gtHalfInnerCLM B₁ t)
+    (gtHalfOuterCLM A B₀ t z₀ + H₀) (B₁ ξ) ξ
+  rw [← gtHalfDenominator_eq_base] at h
+  rw [← gtHalfGibbsWeight_eq_base] at h
+  simp_rw [← gtHalfInnerPairWeight_eq_base] at h
+  convert h using 1
+  apply integral_congr_ae
+  filter_upwards with z₁
+  unfold gtHalfDensity gtHalfBaseDensity
+  rw [gtHalfField_eq_base_affine]
+
 end SpinGlass.AT
