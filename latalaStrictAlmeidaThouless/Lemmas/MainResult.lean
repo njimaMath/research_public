@@ -238,7 +238,91 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     (K : Set (ℝ × ℝ))
     (data : UniformATData K) :
     QuantitativeATConclusion (Ω := Ω) K := by
-  sorry
+  obtain ⟨Cpre, hCpre, hpre⟩ :=
+    exists_hasCavityPreAbsorptionBound (Ω := Ω) data
+  let split : ℝ := 1 / (2 * Cpre)
+  have hsplit : 0 < split := by dsimp [split]; positivity
+  obtain ⟨c, hc, Ctail, hCtail, htail⟩ :=
+    overlap_tail (Omega := Ω) data hsplit
+  let M : ℝ := 2 * Cpre + 16 * Cpre * Ctail / c
+  have hM : 0 ≤ M := by dsimp [M]; positivity
+  have hSecond :
+      ∀ {N : ℕ}, 0 < N → ∀ {β h q s : ℝ},
+        (β, h) ∈ K → q = rsQ β h → s ∈ Set.Icc (0 : ℝ) 1 →
+        ∀ path : RSSmartPathDisorder Ω N β h q, N * A path s ≤ M := by
+    intro N hN β h q s hK hq hs path
+    subst q
+    letI : NeZero N := ⟨Nat.ne_of_gt hN⟩
+    have hNr : (0 : ℝ) < N := by exact_mod_cast hN
+    have htail' : quenchedTail path s split ≤
+        Ctail * Real.exp (-c * (N : ℝ)) := by
+      rw [quenchedTail_eq_twoReplica]
+      exact htail hN hK ⟨s, hs⟩ path
+    have hthird := thirdMoment_split (s := s) (eps := split)
+      path hN (rsQ_mem_Icc β h) hsplit.le
+    have hpre' := hpre hN hK rfl hs path
+    have hexpInv : Real.exp (-c * (N : ℝ)) ≤ 1 / (c * (N : ℝ)) := by
+      have hcn : 0 < c * (N : ℝ) := mul_pos hc hNr
+      have hlin : c * (N : ℝ) ≤ Real.exp (c * (N : ℝ)) := by
+        linarith [Real.add_one_le_exp (c * (N : ℝ))]
+      simpa [one_div, Real.exp_neg] using
+        one_div_le_one_div_of_le hcn hlin
+    have hexpN : (N : ℝ) * Real.exp (-c * (N : ℝ)) ≤ 1 / c := by
+      calc
+        (N : ℝ) * Real.exp (-c * (N : ℝ)) ≤
+            (N : ℝ) * (1 / (c * (N : ℝ))) :=
+          mul_le_mul_of_nonneg_left hexpInv hNr.le
+        _ = 1 / c := by field_simp [hc.ne', hNr.ne']
+    have htailN : (N : ℝ) * quenchedTail path s split ≤ Ctail / c := by
+      calc
+        (N : ℝ) * quenchedTail path s split ≤
+            (N : ℝ) * (Ctail * Real.exp (-c * (N : ℝ))) :=
+          mul_le_mul_of_nonneg_left htail' hNr.le
+        _ = Ctail * ((N : ℝ) * Real.exp (-c * (N : ℝ))) := by ring
+        _ ≤ Ctail * (1 / c) := mul_le_mul_of_nonneg_left hexpN hCtail.le
+        _ = Ctail / c := by ring
+    have hthirdN : (N : ℝ) * thirdMoment path s ≤
+        split * ((N : ℝ) * A path s) + 8 * (Ctail / c) := by
+      calc
+        (N : ℝ) * thirdMoment path s ≤
+            (N : ℝ) * (split * A path s + 8 * quenchedTail path s split) :=
+          mul_le_mul_of_nonneg_left hthird hNr.le
+        _ = split * ((N : ℝ) * A path s) +
+            8 * ((N : ℝ) * quenchedTail path s split) := by ring
+        _ ≤ split * ((N : ℝ) * A path s) + 8 * (Ctail / c) := by
+          gcongr
+    have hpreN : (N : ℝ) * A path s ≤
+        Cpre + Cpre * ((N : ℝ) * thirdMoment path s) := by
+      calc
+        (N : ℝ) * A path s ≤
+            (N : ℝ) * (Cpre / (N : ℝ) + Cpre * thirdMoment path s) :=
+          mul_le_mul_of_nonneg_left hpre' hNr.le
+        _ = Cpre + Cpre * ((N : ℝ) * thirdMoment path s) := by
+          field_simp [hNr.ne']
+          <;> ring
+    have hcoef : Cpre * split = 1 / 2 := by
+      dsimp [split]
+      field_simp [hCpre.ne']
+    have hcombined : (N : ℝ) * A path s ≤
+        Cpre + (Cpre * split) * ((N : ℝ) * A path s) +
+          8 * Cpre * (Ctail / c) := by
+      calc
+        (N : ℝ) * A path s ≤
+            Cpre + Cpre * ((N : ℝ) * thirdMoment path s) := hpreN
+        _ ≤ Cpre + Cpre *
+            (split * ((N : ℝ) * A path s) + 8 * (Ctail / c)) :=
+          add_le_add_left (mul_le_mul_of_nonneg_left hthirdN hCpre.le) Cpre
+        _ = Cpre + (Cpre * split) * ((N : ℝ) * A path s) +
+            8 * Cpre * (Ctail / c) := by ring
+    rw [hcoef] at hcombined
+    dsimp [M]
+    nlinarith [hcombined]
+  refine
+    { secondMoment := ⟨M, hM, hSecond⟩
+      freeEnergy := ?_
+      replicon := ?_ }
+  · sorry
+  · sorry
 
 
 end SpinGlass.AT
