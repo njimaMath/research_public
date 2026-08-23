@@ -1426,6 +1426,8 @@ lemma gtHalfBase_inner_stein
           rw [abs_of_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) hC0)
             (Real.exp_pos _).le)]
           ring
+      rw [abs_of_nonneg]
+      positivity
   calc
     (∑ i : I, a i * ∫ z : I → ℝ, fderiv ℝ hfun z (Pi.single i 1)
         ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
@@ -1452,14 +1454,75 @@ lemma gtHalfBase_inner_stein
       unfold gtHalfBaseWeight gtHalfBasePairWeight gtHalfBaseNumerator
         gtHalfBasePairNumerator
       dsimp [D]
+      have hpoint (z : I → ℝ) :
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ /
+                gtHalfBaseDenominator V L H) *
+            ((L a) ξ - (1 / 2 : ℝ) * ∑ η : S,
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * (L a) η) =
+          (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+              gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ /
+                gtHalfBaseDenominator V L H) * (L a) ξ -
+            (1 / 2 : ℝ) * ∑ η : S,
+              (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+                  gtStateGibbs V (L (WithLp.toLp 2 z) + H) η) /
+                    gtHalfBaseDenominator V L H) * (L a) η := by
+        have hsum :
+            (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ /
+                  gtHalfBaseDenominator V L H) *
+              ((1 / 2 : ℝ) * ∑ η : S,
+                gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * (L a) η) =
+            (1 / 2 : ℝ) * ∑ η : S,
+              (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+                  gtStateGibbs V (L (WithLp.toLp 2 z) + H) η) /
+                    gtHalfBaseDenominator V L H) * (L a) η := by
+          rw [Finset.mul_sum]
+          rw [Finset.mul_sum]
+          rw [Finset.mul_sum]
+          apply Finset.sum_congr rfl
+          intro η hη
+          ring
+        rw [mul_sub, hsum]
+      rw [integral_congr_ae (ae_of_all _ hpoint)]
       rw [integral_sub, integral_const_mul]
       · simp_rw [integral_finset_sum Finset.univ (fun η _ =>
-          (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _)]
+          ((integrable_gtHalfBasePairNumerator_integrand V L H ξ η).div_const _
+            ).mul_const _)]
         simp_rw [integral_mul_const]
-        field_simp [hD.ne']
-        ring
-      · exact (integrable_gtHalfBaseNumerator_integrand V L H ξ).div_const _
-      · exact integrable_finset_sum _ fun η _ =>
-          (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _
+        have hnum :
+            (∫ z : I → ℝ,
+                gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                  gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ /
+                    gtHalfBaseDenominator V L H
+              ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+              (∫ z : I → ℝ,
+                gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                  gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ
+              ∂Measure.pi (fun _ : I => gaussianReal 0 1)) /
+                gtHalfBaseDenominator V L H := by
+          rw [integral_div]
+        have hpair (η : S) :
+            (∫ z : I → ℝ,
+                gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                  (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+                    gtStateGibbs V (L (WithLp.toLp 2 z) + H) η) /
+                  gtHalfBaseDenominator V L H
+              ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+              (∫ z : I → ℝ,
+                  gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+                    (gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ *
+                      gtStateGibbs V (L (WithLp.toLp 2 z) + H) η)
+                ∂Measure.pi (fun _ : I => gaussianReal 0 1)) /
+                  gtHalfBaseDenominator V L H := by
+          rw [integral_div]
+        rw [hnum]
+        simp_rw [hpair]
+      · exact ((integrable_gtHalfBaseNumerator_integrand V L H ξ).div_const _).mul_const _
+      · exact (integrable_finset_sum _ fun η _ =>
+          ((integrable_gtHalfBasePairNumerator_integrand V L H ξ η).div_const _).mul_const _
+          ).const_mul _
 
 end SpinGlass.AT
