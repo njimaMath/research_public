@@ -855,12 +855,43 @@ lemma hasDerivAt_gtHalfTransform_inner_ibp
   apply (hasDerivAt_gtHalfTransform_before_ibp V A B₀ B₁ H₀ ht z₀).congr_deriv
   have hs : Real.sqrt (1 - t) ≠ 0 :=
     (Real.sqrt_pos.2 (sub_pos.mpr ht.2)).ne'
+  have hinner (ξ η : S) :
+      (gtHalfInnerCLM B₁ t (B₁ ξ)) η =
+        Real.sqrt (1 - t) * inner ℝ (B₁ η) (B₁ ξ) := by
+    simp [gtHalfInnerCLM, gtCoefficientCLM_apply]
   simp_rw [gtHalf_inner_stein V A B₀ B₁ H₀ t z₀]
-  unfold gtHalfDerivativeBeforeOuterIBP gtHalfInnerCLM
-  simp only [smul_apply]
+  simp_rw [hinner]
+  unfold gtHalfDerivativeBeforeOuterIBP
   field_simp [hs]
   ring_nf
-  ring
+  have hsumcomm (ξ : S) :
+      (∑ η : S,
+        Real.sqrt (1-t) * gtHalfInnerPairWeight V A B₀ B₁ H₀ t z₀ ξ η *
+          inner ℝ (B₁ η) (B₁ ξ)) =
+      ∑ η : S,
+        Real.sqrt (1-t) * gtHalfInnerPairWeight V A B₀ B₁ H₀ t z₀ ξ η *
+          inner ℝ (B₁ ξ) (B₁ η) := by
+    apply Finset.sum_congr rfl
+    intro η _
+    rw [real_inner_comm]
+  simp_rw [hsumcomm]
+  have hdist :
+      (∑ ξ : S,
+        (Real.sqrt (1-t) * gtHalfGibbsWeight V A B₀ B₁ H₀ t z₀ ξ *
+            inner ℝ (B₁ ξ) (B₁ ξ) +
+          (∑ η : S, Real.sqrt (1-t) *
+            gtHalfInnerPairWeight V A B₀ B₁ H₀ t z₀ ξ η *
+              inner ℝ (B₁ ξ) (B₁ η)) * (-1/2))) =
+        Real.sqrt (1-t) * ∑ ξ : S,
+          gtHalfGibbsWeight V A B₀ B₁ H₀ t z₀ ξ * inner ℝ (B₁ ξ) (B₁ ξ) +
+        (-1/2) * Real.sqrt (1-t) * ∑ ξ : S, ∑ η : S,
+          gtHalfInnerPairWeight V A B₀ B₁ H₀ t z₀ ξ η *
+            inner ℝ (B₁ ξ) (B₁ η) := by
+    rw [Finset.sum_add_distrib]
+    simp_rw [Finset.mul_sum, Finset.sum_mul]
+    ring
+  rw [hdist]
+  abel
 
 lemma hasDerivAt_gtHalfPressure_before_outer_ibp
     {S I₀ I₁ : Type*} [Fintype S] [Nonempty S]
@@ -998,36 +1029,27 @@ lemma hasDerivAt_gtHalfPressure_before_outer_ibp
       exact gtHalfBasePairWeight_le_one V _ _ ξ η
     rw [Real.norm_eq_abs]
     dsimp [F', gtHalfDerivativeBeforeOuterIBP]
+    let X := ∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
+      ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
+        (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE)
+    let Y := (1/2:ℝ) * ∑ ξ : S,
+      gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ * inner ℝ (B₁ ξ) (B₁ ξ)
+    let Z := (1/4:ℝ) * ∑ ξ : S, ∑ η : S,
+      gtHalfInnerPairWeight V A B₀ B₁ H₀ x zE ξ η * inner ℝ (B₁ ξ) (B₁ η)
+    change |X - Y + Z| ≤ bound z
     calc
-      |_ - _ + _| ≤
-          |∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
-            ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
-              (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE)| +
-          |(1/2:ℝ) * ∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
-            inner ℝ (B₁ ξ) (B₁ ξ)| +
-          |(1/4:ℝ) * ∑ ξ : S, ∑ η : S,
-            gtHalfInnerPairWeight V A B₀ B₁ H₀ x zE ξ η *
-              inner ℝ (B₁ ξ) (B₁ η)| := by
-            linarith [abs_add_le
-              ((∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
-                ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
-                  (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE)) -
-                (1/2:ℝ) * ∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
-                  inner ℝ (B₁ ξ) (B₁ ξ))
-              ((1/4:ℝ) * ∑ ξ : S, ∑ η : S,
-                gtHalfInnerPairWeight V A B₀ B₁ H₀ x zE ξ η *
-                  inner ℝ (B₁ ξ) (B₁ η)),
-              abs_sub_le
-                (∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
-                  ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
-                    (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE))
-                ((1/2:ℝ) * ∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
-                  inner ℝ (B₁ ξ) (B₁ ξ))]
+      |X - Y + Z| ≤ |X| + |Y| + |Z| := by
+        linarith [abs_add_le (X - Y) Z, abs_sub X Y]
       _ ≤ C₀ * ‖zE‖ + C₁ := by
+        dsimp [X, Y, Z]
         rw [abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 1/2),
           abs_of_nonneg (by norm_num : (0:ℝ) ≤ 1/4)]
-        apply add_le_add
-        · calc
+        have hX :
+            |∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
+              ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
+                (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE)| ≤
+              C₀ * ‖zE‖ := by
+          calc
             |∑ ξ : S, _| ≤ ∑ ξ : S, |gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
                 ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
                   (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE)| :=
@@ -1036,27 +1058,42 @@ lemma hasDerivAt_gtHalfPressure_before_outer_ibp
               apply Finset.sum_le_sum
               intro ξ _
               rw [abs_mul, abs_of_nonneg (hw0 ξ)]
+              have hfield :
+                  |(1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
+                    (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE| ≤
+                    |1 / (2 * Real.sqrt x)| * |inner ℝ (A ξ) zE| +
+                    |1 / (2 * Real.sqrt (1-x))| * |inner ℝ (B₀ ξ) zE| := by
+                simpa [abs_mul] using abs_sub
+                  ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE)
+                  ((1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE)
+              have hw := mul_le_mul_of_nonneg_right (hw1 ξ) (abs_nonneg
+                ((1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
+                  (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE))
               calc
                 gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
                     |(1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
                       (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE| ≤
-                    1 * (|1 / (2 * Real.sqrt x)| * |inner ℝ (A ξ) zE| +
-                      |1 / (2 * Real.sqrt (1-x))| * |inner ℝ (B₀ ξ) zE|) := by
-                        gcongr
-                        exact abs_sub _ _
+                    |(1 / (2 * Real.sqrt x)) * inner ℝ (A ξ) zE -
+                      (1 / (2 * Real.sqrt (1-x))) * inner ℝ (B₀ ξ) zE| := by
+                        simpa using hw
+                _ ≤ |1 / (2 * Real.sqrt x)| * |inner ℝ (A ξ) zE| +
+                      |1 / (2 * Real.sqrt (1-x))| * |inner ℝ (B₀ ξ) zE| := hfield
                 _ ≤ (cA * ‖A ξ‖ + cB * ‖B₀ ξ‖) * ‖zE‖ := by
                   have hA := abs_real_inner_le_norm (A ξ) zE
                   have hB := abs_real_inner_le_norm (B₀ ξ) zE
-                  gcongr
-                  · exact hcoeffA x hx
-                  · exact hA
-                  · exact hcoeffB x hx
-                  · exact hB
-            _ = C₀ * ‖zE‖ := by rw [← Finset.sum_mul]; rfl
-        · dsimp [C₁]
-          apply add_le_add
-          · gcongr
-            calc
+                  have hmulA := mul_le_mul (hcoeffA x hx) hA
+                    (abs_nonneg _) hcA
+                  have hmulB := mul_le_mul (hcoeffB x hx) hB
+                    (abs_nonneg _) hcB
+                  nlinarith
+            _ = C₀ * ‖zE‖ := by
+              rw [← Finset.sum_mul]
+        have hY : (1/2:ℝ) *
+            |∑ ξ : S, gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
+              inner ℝ (B₁ ξ) (B₁ ξ)| ≤
+            (1/2:ℝ) * ∑ ξ : S, |inner ℝ (B₁ ξ) (B₁ ξ)| := by
+          gcongr
+          calc
               |∑ ξ : S, _| ≤ ∑ ξ : S,
                   |gtHalfGibbsWeight V A B₀ B₁ H₀ x zE ξ *
                     inner ℝ (B₁ ξ) (B₁ ξ)| := Finset.abs_sum_le_sum_abs _ _
@@ -1065,8 +1102,14 @@ lemma hasDerivAt_gtHalfPressure_before_outer_ibp
                 intro ξ _
                 rw [abs_mul, abs_of_nonneg (hw0 ξ)]
                 exact mul_le_of_le_one_left (abs_nonneg _) (hw1 ξ)
-          · gcongr
-            calc
+        have hZ : (1/4:ℝ) *
+            |∑ ξ : S, ∑ η : S,
+              gtHalfInnerPairWeight V A B₀ B₁ H₀ x zE ξ η *
+                inner ℝ (B₁ ξ) (B₁ η)| ≤
+            (1/4:ℝ) * ∑ ξ : S, ∑ η : S,
+              |inner ℝ (B₁ ξ) (B₁ η)| := by
+          gcongr
+          calc
               |∑ ξ : S, ∑ η : S, _| ≤ ∑ ξ : S, |∑ η : S,
                   gtHalfInnerPairWeight V A B₀ B₁ H₀ x zE ξ η *
                     inner ℝ (B₁ ξ) (B₁ η)| := Finset.abs_sum_le_sum_abs _ _
@@ -1082,7 +1125,15 @@ lemma hasDerivAt_gtHalfPressure_before_outer_ibp
                     intro η _
                     rw [abs_mul, abs_of_nonneg (hu0 ξ η)]
                     exact mul_le_of_le_one_left (abs_nonneg _) (hu1 ξ η)
-      _ = bound z := rfl
+        dsimp [C₁]
+        calc
+          _ ≤ (C₀ * ‖zE‖ + (1/2:ℝ) * ∑ ξ : S,
+                |inner ℝ (B₁ ξ) (B₁ ξ)|) +
+              (1/4:ℝ) * ∑ ξ : S, ∑ η : S,
+                |inner ℝ (B₁ ξ) (B₁ η)| :=
+            add_le_add (add_le_add hX hY) hZ
+          _ = _ := by ring
+      _ = bound z := by rfl
   have hdiff : ∀ᵐ z ∂Measure.pi (fun _ : I₀ => gaussianReal 0 1),
       ∀ x ∈ Metric.ball t ε, HasDerivAt (fun u => F u z) (F' x z) x := by
     refine ae_of_all _ (fun z x hx => ?_)
