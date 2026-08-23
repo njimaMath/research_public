@@ -1394,42 +1394,72 @@ lemma gtHalfBase_inner_stein
               |a i| * (|z i| * (C * Real.exp (c * ∑ j : I, |z j|))) := by
                 gcongr
                 exact hvalue z
+          _ = (|a i| * C) *
+              (|z i| * Real.exp (c * ∑ j : I, |z j|)) := by ring
           _ = |(|a i| * C) *
               (|z i| * Real.exp (c * ∑ j : I, |z j|))| := by
-                have hnon : 0 ≤ (|a i| * C) *
-                    (|z i| * Real.exp (c * ∑ j : I, |z j|)) := by positivity
-                exact (abs_of_nonneg hnon).symm
+            have hnon : 0 ≤ (|a i| * C) *
+                (|z i| * Real.exp (c * ∑ j : I, |z j|)) := by positivity
+            exact (abs_of_nonneg hnon).symm
+        rw [abs_of_nonneg]
+        positivity
+    ]
   simp_rw [hcoord]
-  simp_rw [← integral_const_mul]
-  rw [← integral_finset_sum]
-  · apply integral_congr_ae
-    filter_upwards with z
-    rw [hfderiv]
-    have hspan : WithLp.toLp 2 (∑ i : I, a i • Pi.single i (1 : ℝ)) = a := by
-      ext j
-      simp [Pi.single_apply]
-    rw [show ∑ i : I, a i * fderiv ℝ hfun z (Pi.single i 1) =
-        fderiv ℝ hfun z (∑ i : I, a i • Pi.single i (1 : ℝ)) by
-      simp_rw [map_sum, map_smul, smul_eq_mul]]
-    rw [hfderiv, hspan]
-  · intro i hi
-    exact (SYK.integrable_exp_c_sum_abs_pi c).mono'
-      ((hcont.continuous_fderiv (by norm_num)).aestronglyMeasurable.clm_apply
-        (aestronglyMeasurable_const))
-      (Filter.Eventually.of_forall fun z => by
-        rw [Real.norm_eq_abs]
-        exact (hderiv z i).trans (by gcongr; exact le_add_of_nonneg_right (abs_nonneg (a i))))
-  unfold gtHalfBaseWeight gtHalfBasePairWeight gtHalfBaseNumerator
-    gtHalfBasePairNumerator
-  dsimp [hfun, D]
-  rw [integral_sub, integral_const_mul]
-  · simp_rw [integral_finset_sum Finset.univ (fun η _ =>
-      (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _)]
-    simp_rw [integral_mul_const]
-    field_simp [hD.ne']
-    ring
-  · exact (integrable_gtHalfBaseNumerator_integrand V L H ξ).div_const _
-  · exact integrable_finset_sum _ fun η _ =>
-      (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _
+  have hspan : WithLp.toLp 2 (∑ i : I, a i • Pi.single i (1 : ℝ)) = a := by
+    ext j
+    simp [Pi.single_apply]
+  have hintDeriv (i : I) : Integrable
+      (fun z : I → ℝ => a i * fderiv ℝ hfun z (Pi.single i 1))
+      (Measure.pi (fun _ : I => gaussianReal 0 1)) := by
+    apply ((SYK.integrable_exp_c_sum_abs_pi c).const_mul (|a i| * C)).mono'
+    · exact (continuous_const.mul
+        ((hcont.continuous_fderiv (by norm_num)).clm_apply continuous_const)
+          ).aestronglyMeasurable
+    · filter_upwards with z
+      rw [Real.norm_eq_abs, abs_mul]
+      calc
+        |a i| * |fderiv ℝ hfun z (Pi.single i 1)| ≤
+            |a i| * (C * Real.exp (c * ∑ j : I, |z j|)) := by
+              gcongr
+              exact hderiv z i
+        _ = |(|a i| * C) * Real.exp (c * ∑ j : I, |z j|)| := by
+          rw [abs_of_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) hC0)
+            (Real.exp_pos _).le)]
+          ring
+  calc
+    (∑ i : I, a i * ∫ z : I → ℝ, fderiv ℝ hfun z (Pi.single i 1)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1)) =
+      ∫ z : I → ℝ, ∑ i : I, a i * fderiv ℝ hfun z (Pi.single i 1)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1) := by
+          simp_rw [← integral_const_mul]
+          rw [integral_finset_sum]
+          exact fun i hi => hintDeriv i
+    _ = ∫ z : I → ℝ,
+        (gtHalfBaseDensity V (L (WithLp.toLp 2 z) + H) *
+          gtStateGibbs V (L (WithLp.toLp 2 z) + H) ξ / D) *
+          ((L a) ξ - (1 / 2 : ℝ) * ∑ η : S,
+            gtStateGibbs V (L (WithLp.toLp 2 z) + H) η * (L a) η)
+        ∂Measure.pi (fun _ : I => gaussianReal 0 1) := by
+          apply integral_congr_ae
+          filter_upwards with z
+          rw [show ∑ i : I, a i * fderiv ℝ hfun z (Pi.single i 1) =
+              fderiv ℝ hfun z (∑ i : I, a i • Pi.single i (1 : ℝ)) by
+            simp_rw [map_sum, map_smul, smul_eq_mul]]
+          rw [hfderiv, hspan]
+    _ = gtHalfBaseWeight V L H ξ * (L a) ξ -
+        (1 / 2 : ℝ) * ∑ η : S,
+          gtHalfBasePairWeight V L H ξ η * (L a) η := by
+      unfold gtHalfBaseWeight gtHalfBasePairWeight gtHalfBaseNumerator
+        gtHalfBasePairNumerator
+      dsimp [D]
+      rw [integral_sub, integral_const_mul]
+      · simp_rw [integral_finset_sum Finset.univ (fun η _ =>
+          (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _)]
+        simp_rw [integral_mul_const]
+        field_simp [hD.ne']
+        ring
+      · exact (integrable_gtHalfBaseNumerator_integrand V L H ξ).div_const _
+      · exact integrable_finset_sum _ fun η _ =>
+          (integrable_gtHalfBasePairNumerator_integrand V L H ξ η).const_mul _
 
 end SpinGlass.AT
