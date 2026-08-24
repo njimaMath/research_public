@@ -7,7 +7,7 @@
   "c": "6063fbd86a51c40c.c"},
  "log":
  [{"message":
-   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\interpolatedAT.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\interpolatedAT.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\interpolatedAT.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\interpolatedAT.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\interpolatedAT.setup.json --json",
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\njima\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\interpolatedAT.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\interpolatedAT.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\interpolatedAT.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\interpolatedAT.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\interpolatedAT.setup.json --json",
    "level": "trace"},
   {"message":
    "Lemmas/interpolatedAT.lean:898:4: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`",
@@ -48,7 +48,7 @@
      [["LatalaMeetsAT/LatalaMeetsAT:extraDep",
        [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
       ["imports",
-       [["Lemmas.ATDefs transitive imports (legacy)", "8b3934e56f80bc5b"],
+       [["Lemmas.ATDefs transitive imports (legacy)", "ca920c5975599999"],
         ["Lemmas.ATDefs:importAllArts", "93ec615659c4d976"],
         ["Mathlib.Analysis.Calculus.ParametricIntegral transitive imports (legacy)",
          "7d107f4a5140e299"],
@@ -84,4 +84,4 @@
   ["Module.name: Lemmas.interpolatedAT", "aec07c8ce93bf495"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "1d6ea12d1d1d69b6"}
+ "depHash": "071971e62c73dcf9"}

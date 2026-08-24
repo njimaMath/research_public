@@ -4,7 +4,9 @@
  "name": "Lemmas.fixed_point",
  "isModule": false,
  "importArts":
- {"Qq.Typ":
+ {"SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\GaussianIntegrationByParts.olean"],
+  "Qq.Typ":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.olean.server",
@@ -474,6 +476,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CountableSeparatingOn.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CountableSeparatingOn.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CountableSeparatingOn.olean.private"],
+  "Mathlib.Topology.Separation.CompletelyRegular":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CompletelyRegular.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CompletelyRegular.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CompletelyRegular.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\CompletelyRegular.olean.private"],
   "Mathlib.Topology.Separation.Basic":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\Basic.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Separation\\Basic.ir",
@@ -1039,6 +1046,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Pi.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Pi.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Pi.olean.private"],
+  "Mathlib.Topology.EMetricSpace.Paracompact":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Paracompact.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Paracompact.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Paracompact.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Paracompact.olean.private"],
   "Mathlib.Topology.EMetricSpace.Lipschitz":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Lipschitz.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\EMetricSpace\\Lipschitz.ir",
@@ -1244,6 +1256,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\SigmaCompact.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\SigmaCompact.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\SigmaCompact.olean.private"],
+  "Mathlib.Topology.Compactness.Paracompact":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Paracompact.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Paracompact.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Paracompact.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Paracompact.olean.private"],
   "Mathlib.Topology.Compactness.NhdsKer":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\NhdsKer.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\NhdsKer.ir",
@@ -1279,6 +1296,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Bases.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Bases.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactness\\Bases.olean.private"],
+  "Mathlib.Topology.Compactification.StoneCech":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactification\\StoneCech.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactification\\StoneCech.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactification\\StoneCech.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\Compactification\\StoneCech.olean.private"],
   "Mathlib.Topology.CompactOpen":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\CompactOpen.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Topology\\CompactOpen.ir",
@@ -3304,6 +3326,21 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Defs.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Defs.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Defs.olean.private"],
+  "Mathlib.RingTheory.Spectrum.Prime.Basic":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Basic.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Basic.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Basic.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Prime\\Basic.olean.private"],
+  "Mathlib.RingTheory.Spectrum.Maximal.Defs":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Defs.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Defs.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Defs.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Defs.olean.private"],
+  "Mathlib.RingTheory.Spectrum.Maximal.Basic":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Basic.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Basic.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Basic.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Spectrum\\Maximal\\Basic.olean.private"],
   "Mathlib.RingTheory.SimpleRing.Matrix":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\SimpleRing\\Matrix.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\SimpleRing\\Matrix.ir",
@@ -3579,6 +3616,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\LocalRing\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\LocalRing\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\LocalRing\\Basic.olean.private"],
+  "Mathlib.RingTheory.Jacobson.Semiprimary":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Jacobson\\Semiprimary.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Jacobson\\Semiprimary.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Jacobson\\Semiprimary.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Jacobson\\Semiprimary.olean.private"],
   "Mathlib.RingTheory.Jacobson.Radical":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Jacobson\\Radical.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Jacobson\\Radical.ir",
@@ -3689,6 +3731,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\Nonunits.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\Nonunits.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\Nonunits.olean.private"],
+  "Mathlib.RingTheory.Ideal.MinimalPrime.Basic":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\MinimalPrime\\Basic.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\MinimalPrime\\Basic.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\MinimalPrime\\Basic.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\MinimalPrime\\Basic.olean.private"],
   "Mathlib.RingTheory.Ideal.Maximal":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\Maximal.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Ideal\\Maximal.ir",
@@ -3834,6 +3881,16 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Congruence\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Congruence\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Congruence\\Basic.olean.private"],
+  "Mathlib.RingTheory.Artinian.Module":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Module.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Module.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Module.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Module.olean.private"],
+  "Mathlib.RingTheory.Artinian.Defs":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Defs.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Defs.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Defs.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Artinian\\Defs.olean.private"],
   "Mathlib.RingTheory.Algebraic.Integral":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Algebraic\\Integral.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\RingTheory\\Algebraic\\Integral.ir",
@@ -4284,6 +4341,16 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Nat.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Nat.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Nat.olean.private"],
+  "Mathlib.Order.Monotone.Union":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Union.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Union.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Union.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Union.olean.private"],
+  "Mathlib.Order.Monotone.Odd":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Odd.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Odd.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Odd.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Odd.olean.private"],
   "Mathlib.Order.Monotone.Monovary":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Monovary.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\Monotone\\Monovary.ir",
@@ -4914,6 +4981,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\ConditionallyCompleteLattice\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\ConditionallyCompleteLattice\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\ConditionallyCompleteLattice\\Basic.olean.private"],
+  "Mathlib.Order.CompletePartialOrder":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\CompletePartialOrder.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\CompletePartialOrder.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\CompletePartialOrder.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\CompletePartialOrder.olean.private"],
   "Mathlib.Order.CompleteLatticeIntervals":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\CompleteLatticeIntervals.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Order\\CompleteLatticeIntervals.ir",
@@ -7709,6 +7781,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Setoid\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Setoid\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Setoid\\Basic.olean.private"],
+  "Mathlib.Data.SetLike.Fintype":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\SetLike\\Fintype.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\SetLike\\Fintype.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\SetLike\\Fintype.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\SetLike\\Fintype.olean.private"],
   "Mathlib.Data.SetLike.Basic":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\SetLike\\Basic.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\SetLike\\Basic.ir",
@@ -7934,6 +8011,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Rel.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Rel.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Rel.olean.private"],
+  "Mathlib.Data.Real.StarOrdered":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\StarOrdered.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\StarOrdered.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\StarOrdered.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\StarOrdered.olean.private"],
   "Mathlib.Data.Real.Star":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\Star.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\Star.ir",
@@ -9609,6 +9691,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\Inverse.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\Inverse.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\Inverse.olean.private"],
+  "Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\DerivHyp.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\DerivHyp.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\DerivHyp.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\DerivHyp.olean.private"],
   "Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\Deriv.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Analysis\\SpecialFunctions\\Trigonometric\\Deriv.ir",
@@ -12954,6 +13041,26 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Module\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Module\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Module\\Basic.olean.private"],
+  "Mathlib.Algebra.Lie.Submodule":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Submodule.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Submodule.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Submodule.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Submodule.olean.private"],
+  "Mathlib.Algebra.Lie.Subalgebra":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Subalgebra.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Subalgebra.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Subalgebra.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Subalgebra.olean.private"],
+  "Mathlib.Algebra.Lie.OfAssociative":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\OfAssociative.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\OfAssociative.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\OfAssociative.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\OfAssociative.olean.private"],
+  "Mathlib.Algebra.Lie.Basic":
+  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Basic.olean",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Basic.ir",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Basic.olean.server",
+   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Lie\\Basic.olean.private"],
   "Mathlib.Algebra.IsPrimePow":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\IsPrimePow.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\IsPrimePow.ir",
@@ -14304,6 +14411,8 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Algebra\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Algebra\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Algebra\\Basic.olean.private"],
+  "Lemmas.LatalaGuerra":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\LatalaGuerra.olean"],
   "LeanSearchClient.Syntax":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean\\LeanSearchClient\\Syntax.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean\\LeanSearchClient\\Syntax.ir",

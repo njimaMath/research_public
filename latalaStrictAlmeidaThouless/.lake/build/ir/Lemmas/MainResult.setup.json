@@ -14,20 +14,14 @@
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\Calculus.olean"],
   "SpinGlass.AT.SKModel":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\SKModel.olean"],
-  "SpinGlass.AT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\Gaussian_IBP_Hilbert.olean"],
   "SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\GaussianIntegrationByParts.olean"],
   "SpinGlass.AT.GuerraBound":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\GuerraBound.olean"],
   "SpinGlass.AT.Gaussian_concentration.gaussian_concentration":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Gaussian_concentration\\gaussian_concentration.olean"],
-  "SpinGlass.AT.Defs":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Defs.olean"],
   "SpinGlass.AT.Calculus":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Calculus.olean"],
-  "SpinGlass.AT.Algebra":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Algebra.olean"],
   "Qq.Typ":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.ir",
@@ -41589,6 +41583,8 @@
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Price\\Cosh.olean"],
   "Lemmas.Price":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Price.olean"],
+  "Lemmas.LatalaGuerra":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\LatalaGuerra.olean"],
   "Lemmas.GaussianMax":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GaussianMax.olean"],
   "Lemmas.GTbound.Transport":

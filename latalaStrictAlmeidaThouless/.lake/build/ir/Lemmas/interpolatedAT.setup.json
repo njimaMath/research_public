@@ -6,12 +6,8 @@
  "importArts":
  {"SpinGlass.AT.SKModel":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\SKModel.olean"],
-  "SpinGlass.AT.Mathlib.Probability.Distributions.Gaussian_IBP_Hilbert":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\Gaussian_IBP_Hilbert.olean"],
   "SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\GaussianIntegrationByParts.olean"],
-  "SpinGlass.AT.Defs":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Defs.olean"],
   "Qq.Typ":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean\\Qq\\Typ.ir",
@@ -8042,11 +8038,6 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\ConjExponents.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\ConjExponents.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\ConjExponents.olean.private"],
-  "Mathlib.Data.Real.CompleteField":
-  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\CompleteField.olean",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\CompleteField.ir",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\CompleteField.olean.server",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\CompleteField.olean.private"],
   "Mathlib.Data.Real.Basic":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\Basic.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Data\\Real\\Basic.ir",
@@ -12522,11 +12513,6 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Field\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Field\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Field\\Basic.olean.private"],
-  "Mathlib.Algebra.Order.CompleteField":
-  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\CompleteField.olean",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\CompleteField.ir",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\CompleteField.olean.server",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\CompleteField.olean.private"],
   "Mathlib.Algebra.Order.CauSeq.Completion":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\CauSeq\\Completion.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\CauSeq\\Completion.ir",
@@ -12597,21 +12583,11 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\BigOperators\\Expect.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\BigOperators\\Expect.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\BigOperators\\Expect.olean.private"],
-  "Mathlib.Algebra.Order.Archimedean.Real.Hom":
-  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Hom.olean",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Hom.ir",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Hom.olean.server",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Hom.olean.private"],
   "Mathlib.Algebra.Order.Archimedean.Real.Basic":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Basic.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Basic.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Basic.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Real\\Basic.olean.private"],
-  "Mathlib.Algebra.Order.Archimedean.Hom":
-  ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Hom.olean",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Hom.ir",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Hom.olean.server",
-   "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Hom.olean.private"],
   "Mathlib.Algebra.Order.Archimedean.Defs":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Defs.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Order\\Archimedean\\Defs.ir",
@@ -14439,6 +14415,8 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib\\Algebra\\Algebra\\Basic.olean.private"],
   "Lemmas.fixed_point":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\fixed_point.olean"],
+  "Lemmas.LatalaGuerra":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\LatalaGuerra.olean"],
   "Lemmas.ATDefs":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\ATDefs.olean"],
   "LeanSearchClient.Syntax":

@@ -7,7 +7,7 @@
   "c": "ef026be1634105ef.c"},
  "log":
  [{"message":
-   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\shuta\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\ATDefs.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\ATDefs.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\ATDefs.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\ATDefs.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\ATDefs.setup.json --json",
+   ".> LEAN_PATH=C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Cli\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\batteries\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\Qq\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\aesop\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\proofwidgets\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\importGraph\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\plausible\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean;C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean c:\\Users\\njima\\.elan\\toolchains\\leanprover--lean4---v4.32.1\\bin\\lean.exe C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\Lemmas\\ATDefs.lean -o C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\ATDefs.olean -i C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\ATDefs.ilean -c C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\ATDefs.c --setup C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\ir\\Lemmas\\ATDefs.setup.json --json",
    "level": "trace"},
   {"message":
    "Lemmas/ATDefs.lean:430:14: This simp argument is unused:\n  attainableOverlaps\n\nHint: Omit it from the simp argument list.\n  simp [a̵t̵t̵a̵i̵n̵a̵b̵l̵e̵O̵v̵e̵r̵l̵a̵p̵s̵,̵ ̵← Real.exp_add, add_comm]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`",
@@ -21,10 +21,10 @@
      [["LatalaMeetsAT/LatalaMeetsAT:extraDep",
        [["@LatalaMeetsAT:extraDep", "00000000000006bb"]]],
       ["imports",
-       [["Lemmas.fixed_point transitive imports (legacy)", "345f631d7a857355"],
-        ["Lemmas.fixed_point:importAllArts", "4b5b7bcbee853fb9"],
+       [["Lemmas.fixed_point transitive imports (legacy)", "c508c7e9f2b122d0"],
+        ["Lemmas.fixed_point:importAllArts", "cc6012340ee71902"],
         ["SpinGlass.AT.SKModel transitive imports (legacy)",
-         "e2ecc9b05c5f0d1d"],
+         "00000000000006bb"],
         ["SpinGlass.AT.SKModel:importAllArts", "93b4410a22703a16"]]]]],
     ["libs",
      [["import dynlibs", "00000000000006bb"],
@@ -40,4 +40,4 @@
   ["Module.name: Lemmas.ATDefs", "ad91e8b71bbf92ba"],
   ["Package.id?: (some LatalaMeetsAT)", "d6e0e2c3e446b395"],
   ["Module.leanArgs: #[]", "00000000000006bb"]],
- "depHash": "4c7c0efd1ae2b50b"}
+ "depHash": "0c0732110fecef24"}

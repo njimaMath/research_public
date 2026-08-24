@@ -1,6 +1,7 @@
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Topology.MetricSpace.ProperSpace.Real
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
+import Lemmas.LatalaGuerra
 
 open MeasureTheory ProbabilityTheory Real Filter
 open scoped Topology
@@ -203,7 +204,69 @@ theorem rsFixedPoint_unique {β h q₁ q₂ : ℝ} (hh : 0 < h)
     (hq₁ : q₁ ∈ Set.Icc (0 : ℝ) 1) (hfixed₁ : IsRSFixedPoint β h q₁)
     (hq₂ : q₂ ∈ Set.Icc (0 : ℝ) 1) (hfixed₂ : IsRSFixedPoint β h q₂) :
     q₁ = q₂ := by
-  sorry
+  by_cases hβ : β = 0
+  · subst β
+    simp [IsRSFixedPoint, standardGaussianExpectation] at hfixed₁ hfixed₂
+    exact hfixed₁.trans hfixed₂.symm
+  have hβsq : 0 < β ^ 2 := sq_pos_of_ne_zero hβ
+  have hq₁pos : 0 < q₁ := by
+    by_contra hnot
+    have hq₁zero : q₁ = 0 := le_antisymm (le_of_not_gt hnot) hq₁.1
+    subst q₁
+    simp [IsRSFixedPoint, standardGaussianExpectation] at hfixed₁
+    have ht : Real.tanh h ≠ 0 := by
+      rw [Real.tanh_eq_sinh_div_cosh]
+      exact div_ne_zero (Real.sinh_ne_zero.mpr hh.ne') (Real.cosh_pos h).ne'
+    exact ht (sq_eq_zero_iff.mp hfixed₁.symm)
+  have hq₂pos : 0 < q₂ := by
+    by_contra hnot
+    have hq₂zero : q₂ = 0 := le_antisymm (le_of_not_gt hnot) hq₂.1
+    subst q₂
+    simp [IsRSFixedPoint, standardGaussianExpectation] at hfixed₂
+    have ht : Real.tanh h ≠ 0 := by
+      rw [Real.tanh_eq_sinh_div_cosh]
+      exact div_ne_zero (Real.sinh_ne_zero.mpr hh.ne') (Real.cosh_pos h).ne'
+    exact ht (sq_eq_zero_iff.mp hfixed₂.symm)
+  have hsqrt₁ : Real.sqrt (β ^ 2 * q₁) = |β| * Real.sqrt q₁ := by
+    rw [Real.sqrt_mul (sq_nonneg β), Real.sqrt_sq_eq_abs]
+  have hsqrt₂ : Real.sqrt (β ^ 2 * q₂) = |β| * Real.sqrt q₂ := by
+    rw [Real.sqrt_mul (sq_nonneg β), Real.sqrt_sq_eq_abs]
+  have heven (q : ℝ) :
+      (∫ z, Real.tanh (h + |β| * Real.sqrt q * z) ^ 2 ∂gaussianReal 0 1) =
+      ∫ z, Real.tanh (h + β * Real.sqrt q * z) ^ 2 ∂gaussianReal 0 1 := by
+    rcases le_total 0 β with hβ0 | hβ0
+    · rw [abs_of_nonneg hβ0]
+    · rw [abs_of_nonpos hβ0]
+      have hcomp := standardGaussian_integral_comp_neg
+        (fun z => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
+        ((continuous_tanh.comp (by fun_prop)).pow 2)
+      simpa only [neg_mul, neg_mul_neg, mul_neg, neg_neg] using hcomp
+  have hratio₁ : latalaGuerraRatio h (β ^ 2 * q₁) = 1 / β ^ 2 := by
+    have hfp : (∫ z, Real.tanh (h + β * Real.sqrt q₁ * z) ^ 2
+        ∂gaussianReal 0 1) = q₁ := by
+      simpa [IsRSFixedPoint, standardGaussianExpectation] using hfixed₁.symm
+    unfold latalaGuerraRatio latalaGuerraNumerator
+    rw [hsqrt₁, heven q₁, hfp]
+    field_simp [hβsq.ne', hq₁pos.ne']
+  have hratio₂ : latalaGuerraRatio h (β ^ 2 * q₂) = 1 / β ^ 2 := by
+    have hfp : (∫ z, Real.tanh (h + β * Real.sqrt q₂ * z) ^ 2
+        ∂gaussianReal 0 1) = q₂ := by
+      simpa [IsRSFixedPoint, standardGaussianExpectation] using hfixed₂.symm
+    unfold latalaGuerraRatio latalaGuerraNumerator
+    rw [hsqrt₂, heven q₂, hfp]
+    field_simp [hβsq.ne', hq₂pos.ne']
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with hlt | hgt
+  · have hcontra := latalaGuerraRatio_strictAnti hh
+      (mul_pos hβsq hq₁pos) (mul_pos hβsq hq₂pos)
+      (mul_lt_mul_of_pos_left hlt hβsq)
+    rw [hratio₁, hratio₂] at hcontra
+    exact hcontra.false
+  · have hcontra := latalaGuerraRatio_strictAnti hh
+      (mul_pos hβsq hq₂pos) (mul_pos hβsq hq₁pos)
+      (mul_lt_mul_of_pos_left hgt hβsq)
+    rw [hratio₂, hratio₁] at hcontra
+    exact hcontra.false
 
 /-- For positive external field, the two-spin SK fixed-point equation has
 exactly one solution in `[0,1]`. -/

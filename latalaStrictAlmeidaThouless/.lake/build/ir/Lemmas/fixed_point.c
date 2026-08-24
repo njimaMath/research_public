@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Lemmas.fixed_point
-// Imports: public import Init public meta import Init public import Mathlib.Probability.Distributions.Gaussian.Real public import Mathlib.Topology.MetricSpace.ProperSpace.Real public import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
+// Imports: public import Init public meta import Init public import Mathlib.Probability.Distributions.Gaussian.Real public import Mathlib.Topology.MetricSpace.ProperSpace.Real public import Mathlib.Order.Filter.AtTopBot.CountablyGenerated public import Lemmas.LatalaGuerra
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -18,6 +18,7 @@ lean_object* initialize_Init(uint8_t builtin);
 lean_object* initialize_mathlib_Mathlib_Probability_Distributions_Gaussian_Real(uint8_t builtin);
 lean_object* initialize_mathlib_Mathlib_Topology_MetricSpace_ProperSpace_Real(uint8_t builtin);
 lean_object* initialize_mathlib_Mathlib_Order_Filter_AtTopBot_CountablyGenerated(uint8_t builtin);
+lean_object* initialize_LatalaMeetsAT_Lemmas_LatalaGuerra(uint8_t builtin);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_LatalaMeetsAT_Lemmas_fixed__point(uint8_t builtin) {
 lean_object * res;
@@ -36,6 +37,9 @@ res = initialize_mathlib_Mathlib_Topology_MetricSpace_ProperSpace_Real(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_mathlib_Mathlib_Order_Filter_AtTopBot_CountablyGenerated(builtin);
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_LatalaMeetsAT_Lemmas_LatalaGuerra(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));
