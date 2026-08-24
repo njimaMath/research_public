@@ -1,144 +1,135 @@
 # RSAT: Quantitative Strict Almeida-Thouless Theorem
 
-Formalization in Lean of quantitative results in the strict Almeida-Thouless region for the Sherrington-Kirkpatrick spin glass model.
+This directory contains a Lean formalization of quantitative replica-symmetric results for the Sherrington-Kirkpatrick spin glass model in the positive-field strict Almeida-Thouless region.
 
-The fixed endpoint of this package is [`Main.lean`](./Main.lean). It states a quantitative strict-AT theorem whose proof is supplied by [`Lemmas/MainResult.lean`](./Lemmas/MainResult.lean).
+[`Main.lean`](./Main.lean) is the public endpoint. It defines a concrete smart-path Hamiltonian on a canonical countable product Gaussian space and states the final theorem in the notation of the reference argument. The abstract analytic proof is assembled in [`Lemmas/MainResult.lean`](./Lemmas/MainResult.lean), then connected to the concrete Gaussian model by [`Lemmas/Gaussian/CanonicalModel.lean`](./Lemmas/Gaussian/CanonicalModel.lean) and [`Lemmas/Gaussian/ConcreteModel.lean`](./Lemmas/Gaussian/ConcreteModel.lean).
 
 ## Main result
 
-For a compact parameter set `K : Set (ℝ × ℝ)` contained in the positive-field strict Almeida-Thouless region, the project proves three quantitative conclusions along the replica-symmetric smart path:
+Let `K : Set (ℝ × ℝ)` be compact and contained in
 
-- a uniform bound on the scaled second moment `N * A path s`;
-- an `O(1 / N)` bound on the replica-symmetric/free-energy discrepancy;
-- convergence of the scaled replicon combination
-  `N * (A path s - 2 * B path s + C path s)`
-  to the strict-AT expression
-  `rsA β h / (1 - s * atParameter β h)`.
+```text
+strictStabilityRegion = {(β, h) | 0 < β ∧ 0 < h ∧ stabilityIndex β h < 1}.
+```
 
-The public theorem in `Main.lean` is:
+For the canonical overlap `q = canonicalOverlap β h` and every smart-path time `s ∈ [0, 1]`, the project proves:
+
+- uniform overlap concentration: `N * A_s N β h s ≤ C_K`;
+- a signed `O(1 / N)` free-energy correction:
+  `0 ≤ replicaSymmetricFreeEnergy β h - φ_N N β h ≤ C_K / N`;
+- uniform convergence of the scaled replicon susceptibility
+  `N * (A_s N β h s - 2 * B_s N β h s + C_s N β h s)`
+  to
+  `stabilityIndex β h / (β ^ 2 * (1 - s * stabilityIndex β h))`.
+
+Here `A_s`, `B_s`, and `C_s` are the equal-pair, shared-index, and disjoint-index centered-overlap moments. The stability index is
+
+```text
+stabilityIndex β h = β^2 E[sech^4(h + β sqrt(q) Z)].
+```
+
+The public theorem is:
 
 ```lean
-theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
-    [IsProbabilityMeasure (volume : Measure Ω)]
+theorem strictAT_main
     (K : Set (ℝ × ℝ))
     (hKcompact : IsCompact K)
-    (hKsub : K ⊆ strictATRegion) :
-    QuantitativeAT (Ω := Ω) K
+    (hKsub : K ⊆ strictStabilityRegion) :
+    StrictATClaim K
 ```
 
-`Main.lean` is intentionally treated as immutable. Proof work belongs in its dependencies.
+The fields of `StrictATClaim` are `overlapConcentration`, `freeEnergyCorrection`, and `repliconSusceptibility`.
 
-## Lean version
+## Concrete smart path
 
-This package uses:
+`Main.lean` defines
 
 ```text
-Lean 4.32.1
+H_{N,s}(σ) = β sqrt(s) / sqrt(2N) Σᵢⱼ gᵢⱼ σᵢ σⱼ
+             + Σᵢ (h + β sqrt((1-s)q) zᵢ) σᵢ,
 ```
 
-as specified by [`lean-toolchain`](./lean-toolchain):
+where all `gᵢⱼ` and `zᵢ` are independent standard Gaussian coordinates on `CanonicalGaussianSpace`. The theorem `H_N_s_eq_smartPath` identifies this displayed Hamiltonian with the implementation used by the proof backend.
+
+## Proof architecture
+
+The main dependency path is:
 
 ```text
-leanprover/lean4:v4.32.1
+Main.lean
+  -> Lemmas/Gaussian/ConcreteModel.lean
+  -> Lemmas/Gaussian/CanonicalModel.lean
+  -> Lemmas/MainResult.lean
+  -> cavity, concentration, Guerra-Talagrand, smart-path,
+     interpolation, Gaussian, and fixed-point estimates
 ```
+
+Two intermediate interfaces separate the proof layers:
+
+- `SpinGlass.AT.QuantitativeATConclusion` is the abstract conclusion for a replica-symmetric smart-path disorder.
+- `QuantitativeAT` transfers that conclusion to the concrete Gaussian-disorder interface before `strictAT_main` specializes it to canonical coordinates.
+
+The compactness theorem `SpinGlass.AT.quantitative_strictAT_on_compact` extracts uniform numerical data from a compact subset of the strict AT region. The core theorem `SpinGlass.AT.quantitative_strictAT` consumes this data and proves the three estimates.
 
 ## Project layout
 
 ```text
 RSAT/
-├── Main.lean                 # fixed endpoint and public quantitative theorem
-├── Lemmas/                   # analytic and probabilistic proof development
-│   ├── AT/                   # strict-AT definitions and fixed-point analysis
-│   ├── MainResult.lean       # proof of the final quantitative theorem
-│   ├── Cavity/               # cavity-method estimates and blueprint
-│   ├── Concentration/        # concentration and transport estimates
-│   ├── Gaussian/             # Gaussian estimates
-│   ├── GuerraTalagrand/      # Guerra-Talagrand bounds and flatness
-│   ├── Price/                # quantitative interpolation estimates
-│   ├── SmartPath/            # smart-path interpolation arguments
-│   └── ...
-├── SpinGlass/                # SK-model and AT infrastructure
-│   ├── AT/                   # AT definitions, calculus, model, and bounds
-│   └── Replicas.lean
-├── refs/                     # mathematical references/supporting material
+├── Main.lean
+├── Lemmas/
+│   ├── AT/                   # fixed point, AT data, and scalar interpolation
+│   ├── Cavity/               # cavity interpolation and remainder estimates
+│   ├── Concentration/        # coupled-pressure, transport, and tail bounds
+│   ├── Gaussian/             # canonical coordinates and concrete model bridge
+│   ├── GuerraTalagrand/      # two-replica bounds and strict flatness
+│   ├── Price/                # quantitative Gaussian interpolation estimates
+│   ├── SmartPath/            # smart-path identities and endpoint estimates
+│   └── MainResult.lean       # abstract quantitative theorem
+├── SpinGlass/                # underlying SK and AT infrastructure
+├── refs/                     # reference argument
 ├── lakefile.lean
 ├── lake-manifest.json
 └── lean-toolchain
 ```
 
-The proof dependency direction is roughly
-
-```text
-Main.lean
-    ↑
-Lemmas/MainResult.lean
-    ↑
-strict-AT quantitative estimates
-    ↑
-Guerra-Talagrand / cavity / concentration estimates
-    ↑
-interpolation, Gaussian, fixed-point, and model infrastructure
-```
-
-The Lean import graph is authoritative when this schematic picture differs from the code.
-
 ## Dependencies
 
-The Lake package is named `LatalaMeetsAT`.
+The Lake package is named `LatalaMeetsAT`. Its [`lakefile.lean`](./lakefile.lean) uses local shared dependencies:
 
-The current [`lakefile.lean`](./lakefile.lean) uses local shared dependencies:
+- Mathlib at `../../.lake/packages/mathlib`;
+- shared spin-glass support at `../generalizedLatala`.
 
-- Mathlib from `../../.lake/packages/mathlib`;
-- additional spin-glass infrastructure from `../generalizedLatala`.
-
-Therefore the package is not configured as a completely standalone checkout. Preserve the repository/local dependency layout expected by `lakefile.lean`, or adjust those paths for your local environment.
+The package therefore expects the surrounding repository layout. Adjust the local paths in `lakefile.lean` if the dependencies are stored elsewhere.
 
 ## Build
 
-From this directory, the primary checks are:
+The selected toolchain is Lean 4.32.1, specified by [`lean-toolchain`](./lean-toolchain).
+
+From the `RSAT` directory, run:
 
 ```bash
 lake build LatalaMeetsAT
 lake env lean Main.lean
 ```
 
-To confirm the selected Lean toolchain:
+The first command builds the library modules. The second checks the public endpoint, which is not included in the library glob.
+
+To inspect the selected compiler version:
 
 ```bash
-lean --version
+lake env lean --version
 ```
-
-which should report Lean `4.32.1`.
 
 ## Proof integrity
 
-The aim is a genuine Lean proof of the unchanged final theorem. Project-local proof placeholders or substitute axioms are not acceptable.
-
-Before treating the development as complete, run:
+The intended result is a kernel-checked proof with no project-local placeholders or substitute axioms. A useful final check is:
 
 ```bash
 lake build LatalaMeetsAT
 lake env lean Main.lean
-git diff -- Main.lean
-rg '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
+rg -n '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
   --glob '*.lean' \
   --glob '!.lake/**'
 ```
 
-The intended completion criterion is:
-
-- `lake build LatalaMeetsAT` succeeds;
-- `lake env lean Main.lean` succeeds;
-- `Main.lean` has no diff;
-- every proof obligation relevant to the dependency closure of `Main.lean` is discharged by genuine Lean proofs, without `sorry`, `admit`, `sorryAx`, or project-local `axiom` declarations.
-
-## Development guidance
-
-When working on the formalization:
-
-- start from `Main.lean` and trace dependencies backward through `Lemmas/MainResult.lean`;
-- preserve the mathematical statements required by the final theorem;
-- prefer established Mathlib results and already-proved repository lemmas;
-- compile the smallest affected module after coherent changes;
-- periodically rebuild `LatalaMeetsAT`;
-- do not edit `Main.lean` to make downstream proof obligations easier.
+When changing the proof, keep the statements of `StrictATClaim` and `SpinGlass.AT.QuantitativeATConclusion` fixed, compile the smallest affected module first, and then rerun both project-level checks.
