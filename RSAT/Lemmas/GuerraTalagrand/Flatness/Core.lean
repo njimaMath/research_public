@@ -4,7 +4,7 @@ import Lemmas.AT.Definitions
 import Lemmas.GuerraTalagrand.Gaussian
 import Lemmas.AT.Interpolation
 import Lemmas.AT.PropertyOfG
-import Lemmas.Price
+import Lemmas.Price.Price
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 
 open MeasureTheory ProbabilityTheory Set
