@@ -17,14 +17,10 @@ lean_lib GeneralizedSupport where
 
 lean_lib LatalaMeetsAT where
   globs := #[
-    .one `SpinGlass.SKModel,
-    .one `SpinGlass.GuerraBound,
-    .one `SpinGlass.Calculus,
     .one `SpinGlass.Replicas,
     .one `SpinGlass.AT.SKModel,
     .one `SpinGlass.AT.Calculus,
     .one `SpinGlass.AT.GuerraBound,
     .one `SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts,
-    .one `SpinGlass.AT.Gaussian_concentration.gaussian_concentration,
     .submodules `Lemmas
   ]

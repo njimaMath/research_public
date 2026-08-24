@@ -1,8 +1,16 @@
-import Lemmas.ATDefs
-import Lemmas.Cavity.Talagrand_Cavity
-import Lemmas.weak_concentration
-import Lemmas.smart_path.proof
-import Lemmas.smart_path.mainresult_latala
+import Lemmas.AT.Definitions
+import Lemmas.Cavity.TalagrandCavity
+import Lemmas.Concentration.Weak
+import Lemmas.SmartPath.Interpolation
+import Lemmas.SmartPath.MainResult
+
+/-!
+# Quantitative strict Almeida--Thouless result
+
+This fixed public entry module assembles the AT parameter theory, concentration,
+cavity estimates, Guerra--Talagrand bounds, and smart-path estimates used by
+`Main.lean`.
+-/
 
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter

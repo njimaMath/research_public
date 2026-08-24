@@ -4,22 +4,14 @@
  "name": "Lemmas.MainResult",
  "isModule": false,
  "importArts":
- {"SpinGlass.SKModel":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\SKModel.olean"],
-  "SpinGlass.Replicas":
+ {"SpinGlass.Replicas":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\Replicas.olean"],
-  "SpinGlass.GuerraBound":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\GuerraBound.olean"],
-  "SpinGlass.Calculus":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\Calculus.olean"],
   "SpinGlass.AT.SKModel":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\SKModel.olean"],
   "SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Mathlib\\Probability\\Distributions\\GaussianIntegrationByParts.olean"],
   "SpinGlass.AT.GuerraBound":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\GuerraBound.olean"],
-  "SpinGlass.AT.Gaussian_concentration.gaussian_concentration":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Gaussian_concentration\\gaussian_concentration.olean"],
   "SpinGlass.AT.Calculus":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\SpinGlass\\AT\\Calculus.olean"],
   "Qq.Typ":
@@ -41547,26 +41539,16 @@
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib.ir",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib.olean.server",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\mathlib\\.lake\\build\\lib\\lean\\Mathlib.olean.private"],
-  "Lemmas.weak_concentration":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\weak_concentration.olean"],
-  "Lemmas.smart_path.proof":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\smart_path\\proof.olean"],
-  "Lemmas.smart_path.mainresult_latala":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\smart_path\\mainresult_latala.olean"],
-  "Lemmas.smart_path.KS_inequality":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\smart_path\\KS_inequality.olean"],
-  "Lemmas.smart_path.IndependentGaussianAffineIBP":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\smart_path\\IndependentGaussianAffineIBP.olean"],
-  "Lemmas.smart_path.IndependentEndpoint":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\smart_path\\IndependentEndpoint.olean"],
-  "Lemmas.interpolatedAT":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\interpolatedAT.olean"],
-  "Lemmas.fixed_point":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\fixed_point.olean"],
-  "Lemmas.Psi_continuity":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Psi_continuity.olean"],
-  "Lemmas.Propertyofg":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Propertyofg.olean"],
+  "Lemmas.SmartPath.MainResult":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\SmartPath\\MainResult.olean"],
+  "Lemmas.SmartPath.KSInequality":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\SmartPath\\KSInequality.olean"],
+  "Lemmas.SmartPath.Interpolation":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\SmartPath\\Interpolation.olean"],
+  "Lemmas.SmartPath.IndependentGaussianAffineIBP":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\SmartPath\\IndependentGaussianAffineIBP.olean"],
+  "Lemmas.SmartPath.IndependentEndpoint":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\SmartPath\\IndependentEndpoint.olean"],
   "Lemmas.Price.Taylor":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Price\\Taylor.olean"],
   "Lemmas.Price.Sqrt":
@@ -41583,64 +41565,74 @@
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Price\\Cosh.olean"],
   "Lemmas.Price":
   ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Price.olean"],
-  "Lemmas.LatalaGuerra":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\LatalaGuerra.olean"],
-  "Lemmas.GaussianMax":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GaussianMax.olean"],
-  "Lemmas.GTbound.Transport":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Transport.olean"],
-  "Lemmas.GTbound.Interpolation":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Interpolation.olean"],
-  "Lemmas.GTbound.HalfStep":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfStep.olean"],
-  "Lemmas.GTbound.HalfEndpoint":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfEndpoint.olean"],
-  "Lemmas.GTbound.HalfComparison":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfComparison.olean"],
-  "Lemmas.GTbound.HalfCalculus":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\HalfCalculus.olean"],
-  "Lemmas.GTbound.GTBound":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\GTBound.olean"],
-  "Lemmas.GTbound.FiniteStep":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\FiniteStep.olean"],
-  "Lemmas.GTbound.FiniteState":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\FiniteState.olean"],
-  "Lemmas.GTbound.Endpoint":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Endpoint.olean"],
-  "Lemmas.GTbound.Comparison":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Comparison.olean"],
-  "Lemmas.GTbound.Basic":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTbound\\Basic.olean"],
-  "Lemmas.GTGauss":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTGauss.olean"],
-  "Lemmas.GTFlatness_cases.Core":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Core.olean"],
-  "Lemmas.GTFlatness_cases.Cases.SmallPositive":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\SmallPositive.olean"],
-  "Lemmas.GTFlatness_cases.Cases.SmallNegative":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\SmallNegative.olean"],
-  "Lemmas.GTFlatness_cases.Cases.LargePositive":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\LargePositive.olean"],
-  "Lemmas.GTFlatness_cases.Cases.LargeNegative":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\LargeNegative.olean"],
-  "Lemmas.GTFlatness_cases.Cases.Endpoints":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases\\Endpoints.olean"],
-  "Lemmas.GTFlatness_cases.Cases":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness_cases\\Cases.olean"],
-  "Lemmas.GTFlatness":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GTFlatness.olean"],
-  "Lemmas.Concentration_Coupled_Transport":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration_Coupled_Transport.olean"],
-  "Lemmas.Concentration_Coupled":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration_Coupled.olean"],
-  "Lemmas.Cavity.cavity_interpolation":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\cavity_interpolation.olean"],
-  "Lemmas.Cavity.cavity_estimates":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\cavity_estimates.olean"],
-  "Lemmas.Cavity.Talagrand_Cavity":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\Talagrand_Cavity.olean"],
-  "Lemmas.ATDefs":
-  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\ATDefs.olean"],
+  "Lemmas.GuerraTalagrand.LatalaGuerra":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\LatalaGuerra.olean"],
+  "Lemmas.GuerraTalagrand.Gaussian":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Gaussian.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Core":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Core.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Cases.SmallPositive":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Cases\\SmallPositive.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Cases.SmallNegative":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Cases\\SmallNegative.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Cases.LargePositive":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Cases\\LargePositive.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Cases.LargeNegative":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Cases\\LargeNegative.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Cases.Endpoints":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Cases\\Endpoints.olean"],
+  "Lemmas.GuerraTalagrand.Flatness.Cases":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness\\Cases.olean"],
+  "Lemmas.GuerraTalagrand.Flatness":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Flatness.olean"],
+  "Lemmas.GuerraTalagrand.Bound.Transport":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\Transport.olean"],
+  "Lemmas.GuerraTalagrand.Bound.Interpolation":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\Interpolation.olean"],
+  "Lemmas.GuerraTalagrand.Bound.HalfStep":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\HalfStep.olean"],
+  "Lemmas.GuerraTalagrand.Bound.HalfEndpoint":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\HalfEndpoint.olean"],
+  "Lemmas.GuerraTalagrand.Bound.HalfComparison":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\HalfComparison.olean"],
+  "Lemmas.GuerraTalagrand.Bound.HalfCalculus":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\HalfCalculus.olean"],
+  "Lemmas.GuerraTalagrand.Bound.FiniteStep":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\FiniteStep.olean"],
+  "Lemmas.GuerraTalagrand.Bound.FiniteState":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\FiniteState.olean"],
+  "Lemmas.GuerraTalagrand.Bound.Endpoint":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\Endpoint.olean"],
+  "Lemmas.GuerraTalagrand.Bound.Comparison":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\Comparison.olean"],
+  "Lemmas.GuerraTalagrand.Bound.Basic":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound\\Basic.olean"],
+  "Lemmas.GuerraTalagrand.Bound":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\GuerraTalagrand\\Bound.olean"],
+  "Lemmas.Gaussian.Max":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Gaussian\\Max.olean"],
+  "Lemmas.Concentration.Weak":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration\\Weak.olean"],
+  "Lemmas.Concentration.Transport":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration\\Transport.olean"],
+  "Lemmas.Concentration.Coupled":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Concentration\\Coupled.olean"],
+  "Lemmas.Cavity.TalagrandCavity":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\TalagrandCavity.olean"],
+  "Lemmas.Cavity.Interpolation":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\Interpolation.olean"],
+  "Lemmas.Cavity.Estimates":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\Cavity\\Estimates.olean"],
+  "Lemmas.AT.PsiContinuity":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\AT\\PsiContinuity.olean"],
+  "Lemmas.AT.PropertyOfG":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\AT\\PropertyOfG.olean"],
+  "Lemmas.AT.Interpolation":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\AT\\Interpolation.olean"],
+  "Lemmas.AT.FixedPoint":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\AT\\FixedPoint.olean"],
+  "Lemmas.AT.Definitions":
+  ["C:\\Users\\Public\\Github\\Lean\\research_public\\latalaStrictAlmeidaThouless\\.lake\\build\\lib\\lean\\Lemmas\\AT\\Definitions.olean"],
   "LeanSearchClient.Syntax":
   ["C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean\\LeanSearchClient\\Syntax.olean",
    "C:\\Users\\Public\\Github\\Lean\\.lake\\packages\\LeanSearchClient\\.lake\\build\\lib\\lean\\LeanSearchClient\\Syntax.ir",

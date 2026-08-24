@@ -1,6 +1,6 @@
-import SpinGlass.SKModel
-import SpinGlass.GuerraBound
-import SpinGlass.Calculus
+import SpinGlass.AT.SKModel
+import SpinGlass.AT.GuerraBound
+import SpinGlass.AT.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -1560,5 +1560,4 @@ theorem hasDerivAt_nu (t : ℝ) (ht : t ∈ Ioo (0 : ℝ) 1) (f : ReplicaFun N n
 end ReplicaCalculus
 
 end SpinGlass
-
 
