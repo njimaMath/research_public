@@ -592,5 +592,61 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
       _ < target / 4 + target / 4 := by rw [hdeltaPart]; linarith
       _ < target := by linarith
 
+/-- The quantitative theorem with the uniform numerical data extracted from
+compactness.  Keeping this construction here leaves public entry modules free
+of the compactness and empty-set bookkeeping. -/
+theorem quantitative_strictAT_on_compact {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    (K : Set (ℝ × ℝ)) (hKcompact : IsCompact K)
+    (hKsub : K ⊆ strictATRegion) :
+    QuantitativeATConclusion (Ω := Ω) K := by
+  by_cases hKne : K.Nonempty
+  · obtain ⟨pβ, hpβ, hβmax⟩ :=
+      hKcompact.exists_isMaxOn hKne
+        (continuousOn_fst : ContinuousOn (fun p : ℝ × ℝ => p.1) K)
+    have hqcont : ContinuousOn
+        (fun p : ℝ × ℝ => rsQ p.1 p.2) K :=
+      (continuousOn_rsParameters_of_subset_strictATRegion hKsub).1
+    obtain ⟨pq, hpq, hqmin⟩ := hKcompact.exists_isMinOn hKne hqcont
+    obtain ⟨gap, hgap_pos, hgap_lower⟩ :=
+      exists_uniform_at_gap_on_compact hKcompact hKne hKsub
+    let data : UniformATData K :=
+      { isCompact := hKcompact
+        βmax := pβ.1
+        qmin := rsQ pq.1 pq.2
+        gap := gap
+        βmax_pos := (hKsub hpβ).1
+        qmin_pos := rsQ_pos (hKsub hpq).1 (hKsub hpq).2.1
+        gap_pos := hgap_pos
+        β_pos := fun p hp => (hKsub hp).1
+        h_pos := fun p hp => (hKsub hp).2.1
+        β_bound := fun p hp => hβmax hp
+        q_lower := fun p hp => hqmin hp
+        strictAT := by
+          intro p hp
+          have hgap := hgap_lower p hp
+          linarith }
+    exact quantitative_strictAT K data
+  · let data : UniformATData K :=
+      { isCompact := hKcompact
+        βmax := 1
+        qmin := 1
+        gap := 1
+        βmax_pos := by norm_num
+        qmin_pos := by norm_num
+        gap_pos := by norm_num
+        β_pos := fun p hp => (hKsub hp).1
+        h_pos := fun p hp => (hKsub hp).2.1
+        β_bound := by
+          intro p hp
+          exact (hKne ⟨p, hp⟩).elim
+        q_lower := by
+          intro p hp
+          exact (hKne ⟨p, hp⟩).elim
+        strictAT := by
+          intro p hp
+          exact (hKne ⟨p, hp⟩).elim }
+    exact quantitative_strictAT K data
+
 
 end SpinGlass.AT
