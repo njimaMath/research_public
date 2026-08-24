@@ -66,14 +66,40 @@ noncomputable def centeredReplicaOverlap {N n : ℕ} (q : ℝ)
     (σs : ReplicaFamily N n) (a b : Fin n) : ℝ :=
   selectedReplicaOverlap σs a b - q
 
-/-- A centered Gaussian realization of the replica-symmetric smart path. -/
+/-- A coordinate realization of the replica-symmetric smart path.
+
+The coordinates `g ω i j` and `z ω i` are the independent standard Gaussian
+variables denoted by $g_{ij}$ and $z_i$ in the reference.  The last two fields
+identify the coordinate formulas with the Gaussian energy-space objects used
+by the general theorem. -/
 structure SmartPath (Ω : Type u) [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     (N : ℕ) (β h q : ℝ) where
+  g : Ω → Fin N → Fin N → ℝ
+  z : Ω → Fin N → ℝ
+  g_standardGaussian : ∀ i j,
+    Measure.map (fun ω => g ω i j) (volume : Measure Ω) = gaussianReal 0 1
+  z_standardGaussian : ∀ i,
+    Measure.map (fun ω => z ω i) (volume : Measure Ω) = gaussianReal 0 1
+  g_independent : ProbabilityTheory.iIndepFun
+    (fun ij : Fin N × Fin N => fun ω => g ω ij.1 ij.2)
+    (volume : Measure Ω)
+  z_independent : ProbabilityTheory.iIndepFun
+    (fun i : Fin N => fun ω => z ω i) (volume : Measure Ω)
+  coordinateFamiliesIndependent : ProbabilityTheory.IndepFun g z
+    (volume : Measure Ω)
   skDisorder : SpinGlass.SKDisorder (Ω := Ω) N β h
   fieldDisorder : SpinGlass.SimpleDisorder (Ω := Ω) N β q
   independent : ProbabilityTheory.IndepFun skDisorder.U fieldDisorder.V
     (volume : Measure Ω)
+  sk_realization : ∀ ω σ,
+    skDisorder.U ω σ =
+      β / Real.sqrt (2 * (N : ℝ)) *
+        ∑ i : Fin N, ∑ j : Fin N,
+          g ω i j * SpinGlass.spin N σ i * SpinGlass.spin N σ j
+  field_realization : ∀ ω σ,
+    fieldDisorder.V ω σ =
+      β * Real.sqrt q * ∑ i : Fin N, z ω i * SpinGlass.spin N σ i
 
 namespace SmartPath
 
@@ -87,8 +113,11 @@ private def toLibrary {Ω : Type u} [MeasureSpace Ω]
 
 end SmartPath
 
-/-- The full smart-path Hamiltonian, including the external field. -/
-noncomputable def smartPathHamiltonian {Ω : Type u} [MeasureSpace Ω]
+/-- The specific smart-path Hamiltonian $H_s(σ)$, including the external
+field.  By `H_s_apply` below, this is exactly
+$\frac{β\sqrt{s}}{\sqrt{2N}}\sum_{i,j}g_{ij}σ_iσ_j
+ +\sum_i(h+β\sqrt{1-s}\sqrt q\,z_i)σ_i$. -/
+noncomputable def H_s {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N : ℕ} {β h q : ℝ} (path : SmartPath Ω N β h q)
     (s : ℝ) (ω : Ω) : SpinGlass.EnergySpace N :=
@@ -96,12 +125,28 @@ noncomputable def smartPathHamiltonian {Ω : Type u} [MeasureSpace Ω]
     Real.sqrt (1 - s) • path.fieldDisorder.V ω +
     SpinGlass.magnetic_field_vector N h
 
+theorem H_s_apply {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    {N : ℕ} {β h q : ℝ} (path : SmartPath Ω N β h q)
+    (s : ℝ) (ω : Ω) (σ : SpinGlass.Config N) :
+    H_s path s ω σ =
+      β * Real.sqrt s / Real.sqrt (2 * (N : ℝ)) *
+          ∑ i : Fin N, ∑ j : Fin N,
+            path.g ω i j * SpinGlass.spin N σ i * SpinGlass.spin N σ j +
+        ∑ i : Fin N,
+          (h + β * Real.sqrt (1 - s) * Real.sqrt q * path.z ω i) *
+            SpinGlass.spin N σ i := by
+  rw [H_s, path.sk_realization, path.field_realization]
+  simp [SpinGlass.magnetic_field_vector, SpinGlass.magnetization,
+    Finset.mul_sum]
+  ring
+
 /-- The quenched free-energy density along the smart path. -/
 noncomputable def smartPathFreeEnergy {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N : ℕ} {β h q : ℝ} (path : SmartPath Ω N β h q) (s : ℝ) : ℝ :=
   ∫ ω, SpinGlass.free_energy_density
-      (N := N) (smartPathHamiltonian path s ω)
+      (N := N) (H_s path s ω)
     ∂(volume : Measure Ω)
 
 /-- The replica-symmetric free energy at the canonical fixed point. -/
@@ -121,14 +166,14 @@ noncomputable def finiteVolumeFreeEnergy {Ω : Type u} [MeasureSpace Ω]
 noncomputable def overlapVariance {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N : ℕ} {β h q : ℝ} (path : SmartPath Ω N β h q) (s : ℝ) : ℝ :=
-  disorderAveragedExpectation (smartPathHamiltonian path s)
+  disorderAveragedExpectation (H_s path s)
     (fun σs : ReplicaFamily N 4 => centeredReplicaOverlap q σs 0 1 ^ 2)
 
 /-- The centered-overlap moment for two pairs sharing one replica. -/
 noncomputable def sharedReplicaMoment {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N : ℕ} {β h q : ℝ} (path : SmartPath Ω N β h q) (s : ℝ) : ℝ :=
-  disorderAveragedExpectation (smartPathHamiltonian path s)
+  disorderAveragedExpectation (H_s path s)
     (fun σs : ReplicaFamily N 4 =>
       centeredReplicaOverlap q σs 0 1 * centeredReplicaOverlap q σs 0 2)
 
@@ -136,7 +181,7 @@ noncomputable def sharedReplicaMoment {Ω : Type u} [MeasureSpace Ω]
 noncomputable def disjointReplicaMoment {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N : ℕ} {β h q : ℝ} (path : SmartPath Ω N β h q) (s : ℝ) : ℝ :=
-  disorderAveragedExpectation (smartPathHamiltonian path s)
+  disorderAveragedExpectation (H_s path s)
     (fun σs : ReplicaFamily N 4 =>
       centeredReplicaOverlap q σs 0 1 * centeredReplicaOverlap q σs 2 3)
 
@@ -236,7 +281,7 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
       simpa [canonicalOverlap, SpinGlass.AT.rsQ] using hq
     have h := hbound hN hK hq' hs path.toLibrary
     simpa [overlapVariance, disorderAveragedExpectation,
-      productGibbsExpectation, smartPathHamiltonian,
+      productGibbsExpectation, H_s,
       centeredReplicaOverlap, selectedReplicaOverlap, SmartPath.toLibrary,
       SpinGlass.AT.A, SpinGlass.AT.quenchedReplicaAverage,
       SpinGlass.AT.replicaGibbsAverage, SpinGlass.AT.fullPathHamiltonian,
@@ -248,7 +293,7 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
       simpa [canonicalOverlap, SpinGlass.AT.rsQ] using hq
     have h := hbound hN hK hq' path.toLibrary
     simpa [replicaSymmetricFreeEnergy, finiteVolumeFreeEnergy,
-      smartPathFreeEnergy, smartPathHamiltonian, canonicalOverlap,
+      smartPathFreeEnergy, H_s, canonicalOverlap,
       SmartPath.toLibrary, SpinGlass.AT.rsFreeEnergy,
       SpinGlass.AT.rsPathValue, SpinGlass.AT.skFreeEnergy,
       SpinGlass.AT.pathFreeEnergy, SpinGlass.AT.rsQ,
@@ -262,7 +307,7 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     have h := hbound hN hK hq' hs path.toLibrary
     simpa [overlapVariance, sharedReplicaMoment, disjointReplicaMoment,
       disorderAveragedExpectation, productGibbsExpectation,
-      smartPathHamiltonian, centeredReplicaOverlap, selectedReplicaOverlap,
+      H_s, centeredReplicaOverlap, selectedReplicaOverlap,
       canonicalSechFourthMoment, canonicalFourthMoment, canonicalOverlap,
       stabilityIndex, SmartPath.toLibrary, SpinGlass.AT.A, SpinGlass.AT.B,
       SpinGlass.AT.C, SpinGlass.AT.quenchedReplicaAverage,
