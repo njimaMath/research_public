@@ -1,4 +1,4 @@
-s# Latala Meets Almeida-Thouless
+# RSAT: Quantitative Strict Almeida-Thouless Theorem
 
 Formalization in Lean of quantitative results in the strict Almeida-Thouless region for the Sherrington-Kirkpatrick spin glass model.
 
@@ -6,7 +6,7 @@ The fixed endpoint of this package is [`Main.lean`](./Main.lean). It states a qu
 
 ## Main result
 
-For a parameter set `K : Set (ℝ × ℝ)` equipped with `UniformATData K`, the project proves three quantitative conclusions along the replica-symmetric smart path:
+For a compact parameter set `K : Set (ℝ × ℝ)` contained in the positive-field strict Almeida-Thouless region, the project proves three quantitative conclusions along the replica-symmetric smart path:
 
 - a uniform bound on the scaled second moment `N * A path s`;
 - an `O(1 / N)` bound on the replica-symmetric/free-energy discrepancy;
@@ -21,8 +21,9 @@ The public theorem in `Main.lean` is:
 theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
-    (data : UniformATData K) :
-    QuantitativeATConclusion (Ω := Ω) K
+    (hKcompact : IsCompact K)
+    (hKsub : K ⊆ strictATRegion) :
+    QuantitativeAT (Ω := Ω) K
 ```
 
 `Main.lean` is intentionally treated as immutable. Proof work belongs in its dependencies.
@@ -44,27 +45,25 @@ leanprover/lean4:v4.32.1
 ## Project layout
 
 ```text
-latalaStrictAlmeidaThouless/
+RSAT/
 ├── Main.lean                 # fixed endpoint and public quantitative theorem
 ├── Lemmas/                   # analytic and probabilistic proof development
-│   ├── ATDefs.lean           # strict-AT definitions and quantitative data
+│   ├── AT/                   # strict-AT definitions and fixed-point analysis
 │   ├── MainResult.lean       # proof of the final quantitative theorem
 │   ├── Cavity/               # cavity-method estimates and blueprint
-│   ├── GTbound/              # Guerra-Talagrand bounds
-│   ├── GTFlatness_cases/     # auxiliary GT flatness cases
-│   ├── smart_path/           # smart-path interpolation arguments
+│   ├── Concentration/        # concentration and transport estimates
+│   ├── Gaussian/             # Gaussian estimates
+│   ├── GuerraTalagrand/      # Guerra-Talagrand bounds and flatness
+│   ├── Price/                # quantitative interpolation estimates
+│   ├── SmartPath/            # smart-path interpolation arguments
 │   └── ...
 ├── SpinGlass/                # SK-model and AT infrastructure
-│   ├── AT/
-│   ├── Replicas.lean
-│   ├── SKModel.lean
-│   ├── GuerraBound.lean
-│   └── Calculus.lean
+│   ├── AT/                   # AT definitions, calculus, model, and bounds
+│   └── Replicas.lean
 ├── refs/                     # mathematical references/supporting material
 ├── lakefile.lean
 ├── lake-manifest.json
-├── lean-toolchain
-└── AGENTS.md                 # proof-integrity and development requirements
+└── lean-toolchain
 ```
 
 The proof dependency direction is roughly
@@ -143,5 +142,3 @@ When working on the formalization:
 - compile the smallest affected module after coherent changes;
 - periodically rebuild `LatalaMeetsAT`;
 - do not edit `Main.lean` to make downstream proof obligations easier.
-
-See [`AGENTS.md`](./AGENTS.md) for the complete project-specific proof and repository rules.
