@@ -14,7 +14,7 @@ set_option autoImplicit false
 
 universe u
 
-structure QuantitativeATConclusion {Ω : Type u} [MeasureSpace Ω]
+structure QuantitativeAT {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)] (K : Set (ℝ × ℝ)) : Prop where
   secondMoment :
     ∃ M, 0 ≤ M ∧ ∀ {N : ℕ}, 0 < N → ∀ {β h q s : ℝ},
@@ -39,7 +39,7 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     (K : Set (ℝ × ℝ))
     (data : UniformATData K) :
-    _root_.QuantitativeATConclusion (Ω := Ω) K := by
+    QuantitativeAT (Ω := Ω) K := by
   have result : SpinGlass.AT.QuantitativeATConclusion (Ω := Ω) K :=
     SpinGlass.AT.quantitative_strictAT K data
   exact

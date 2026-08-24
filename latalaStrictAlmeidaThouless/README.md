@@ -1,141 +1,147 @@
-# Latała Meets the Strict Almeida–Thouless Condition
+s# Latala Meets Almeida-Thouless
 
-Lean formalization of a quantitative strict Almeida–Thouless result for the Sherrington–Kirkpatrick model.
+Formalization in Lean of quantitative results in the strict Almeida-Thouless region for the Sherrington-Kirkpatrick spin glass model.
 
-## Primary goal
+The fixed endpoint of this package is [`Main.lean`](./Main.lean). It states a quantitative strict-AT theorem whose proof is supplied by [`Lemmas/MainResult.lean`](./Lemmas/MainResult.lean).
 
-The single non-negotiable goal of this project is:
+## Main result
 
-> `Main.lean` must compile exactly as it is, using complete Lean proofs.
+For a parameter set `K : Set (ℝ × ℝ)` equipped with `UniformATData K`, the project proves three quantitative conclusions along the replica-symmetric smart path:
 
-`Main.lean` is the fixed public endpoint of the formalization. Do not modify it to make the project compile.
+- a uniform bound on the scaled second moment `N * A path s`;
+- an `O(1 / N)` bound on the replica-symmetric/free-energy discrepancy;
+- convergence of the scaled replicon combination
+  `N * (A path s - 2 * B path s + C path s)`
+  to the strict-AT expression
+  `rsA β h / (1 - s * atParameter β h)`.
 
-The final development must not rely on proof holes or project-local assumptions inserted to bypass missing mathematics. In particular, do not use:
+The public theorem in `Main.lean` is:
 
-- `sorry`
-- `admit`
-- `sorryAx`
-- new project-local `axiom` declarations used to replace proofs
-- equivalent shortcuts whose purpose is to assume an unproved mathematical result
+```lean
+theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
+    [IsProbabilityMeasure (volume : Measure Ω)]
+    (K : Set (ℝ × ℝ))
+    (data : UniformATData K) :
+    QuantitativeATConclusion (Ω := Ω) K
+```
 
-Reorganization, refactoring, file deletion, renaming, and cleanup are useful only insofar as they support this goal.
+`Main.lean` is intentionally treated as immutable. Proof work belongs in its dependencies.
 
-## Entry point
+## Lean version
 
-The public theorem is exposed through:
+This package uses:
+
+```text
+Lean 4.32.1
+```
+
+as specified by [`lean-toolchain`](./lean-toolchain):
+
+```text
+leanprover/lean4:v4.32.1
+```
+
+## Project layout
+
+```text
+latalaStrictAlmeidaThouless/
+├── Main.lean                 # fixed endpoint and public quantitative theorem
+├── Lemmas/                   # analytic and probabilistic proof development
+│   ├── ATDefs.lean           # strict-AT definitions and quantitative data
+│   ├── MainResult.lean       # proof of the final quantitative theorem
+│   ├── Cavity/               # cavity-method estimates and blueprint
+│   ├── GTbound/              # Guerra-Talagrand bounds
+│   ├── GTFlatness_cases/     # auxiliary GT flatness cases
+│   ├── smart_path/           # smart-path interpolation arguments
+│   └── ...
+├── SpinGlass/                # SK-model and AT infrastructure
+│   ├── AT/
+│   ├── Replicas.lean
+│   ├── SKModel.lean
+│   ├── GuerraBound.lean
+│   └── Calculus.lean
+├── refs/                     # mathematical references/supporting material
+├── lakefile.lean
+├── lake-manifest.json
+├── lean-toolchain
+└── AGENTS.md                 # proof-integrity and development requirements
+```
+
+The proof dependency direction is roughly
 
 ```text
 Main.lean
-```
-
-It imports:
-
-```text
-Lemmas.MainResult
-```
-
-and packages the quantitative strict-AT conclusions proved by the library.
-
-Treat `Main.lean` as read-only.
-
-## Repository organization
-
-The Lean package contains the main proof development under:
-
-```text
-Lemmas/
-SpinGlass/
-```
-
-Important mathematical components currently include topics such as:
-
-```text
-Lemmas/ATDefs.lean
-Lemmas/Cavity/
-Lemmas/GTbound/
-Lemmas/Price/
-Lemmas/GTFlatness_cases/
-Lemmas/smart_path/
+    ↑
 Lemmas/MainResult.lean
+    ↑
+strict-AT quantitative estimates
+    ↑
+Guerra-Talagrand / cavity / concentration estimates
+    ↑
+interpolation, Gaussian, fixed-point, and model infrastructure
 ```
 
-The directory structure may be improved as the formalization matures. Prefer a professional Lean module layout:
+The Lean import graph is authoritative when this schematic picture differs from the code.
 
-- organize files by mathematical topic;
-- use stable, descriptive module names;
-- keep imports acyclic and as local as practical;
-- split very large files when there is a genuine mathematical boundary;
-- remove obsolete compatibility modules after all importers have migrated;
-- remove scratch files, temporary checks, and tracked build artifacts;
-- preserve useful local `AGENTS.md` instructions and mathematical blueprints.
+## Dependencies
 
-Any move or rename must update all affected Lean imports.
+The Lake package is named `LatalaMeetsAT`.
 
-## Proof policy
+The current [`lakefile.lean`](./lakefile.lean) uses local shared dependencies:
 
-When a theorem is missing, prove it or reorganize the supporting theory so that it can be proved.
+- Mathlib from `../../.lake/packages/mathlib`;
+- additional spin-glass infrastructure from `../generalizedLatala`.
 
-Do not weaken theorem statements merely to make Lean accept them.
+Therefore the package is not configured as a completely standalone checkout. Preserve the repository/local dependency layout expected by `lakefile.lean`, or adjust those paths for your local environment.
 
-Do not replace a difficult theorem by an assumption.
+## Build
 
-Do not introduce a stronger hypothesis into a public theorem unless the mathematics genuinely requires it and the change remains compatible with the fixed `Main.lean` endpoint.
-
-Before deleting a lemma, check that it is not used through:
-
-- direct imports or theorem references;
-- namespace-qualified references;
-- typeclass instances;
-- attributes;
-- simplification lemmas;
-- notation or coercions;
-- downstream public theorems.
-
-If usefulness is uncertain, keep the declaration until the dependency is understood.
-
-## Local instructions
-
-Subdirectories may contain their own `AGENTS.md` files with more specific mathematical or implementation requirements.
-
-Always follow the most specific applicable instructions while preserving the global objective:
-
-```text
-Main.lean must remain unchanged and compile without proof holes.
-```
-
-## Building
-
-Run commands from the `latalaStrictAlmeidaThouless` package directory.
-
-Build the library:
+From this directory, the primary checks are:
 
 ```bash
 lake build LatalaMeetsAT
-```
-
-Check the fixed entry point explicitly:
-
-```bash
 lake env lean Main.lean
 ```
 
-Both commands must succeed after structural changes.
+To confirm the selected Lean toolchain:
 
-## Final verification
-
-Before considering a reorganization or proof task complete, verify all of the following:
-
-```text
-Main.lean is byte-for-byte unchanged.
-lake build LatalaMeetsAT succeeds.
-lake env lean Main.lean succeeds.
-No sorry remains in the project proof development.
-No admit remains.
-No sorryAx is used as a proof shortcut.
-No new project-local axiom has been introduced to replace a missing proof.
-All renamed or moved modules have correct imports.
-No required theorem was accidentally deleted.
-Temporary and generated files are not part of the mathematical source tree.
+```bash
+lean --version
 ```
 
-A cleaner directory tree is desirable. A complete proof of the unchanged `Main.lean` is mandatory.
+which should report Lean `4.32.1`.
+
+## Proof integrity
+
+The aim is a genuine Lean proof of the unchanged final theorem. Project-local proof placeholders or substitute axioms are not acceptable.
+
+Before treating the development as complete, run:
+
+```bash
+lake build LatalaMeetsAT
+lake env lean Main.lean
+git diff -- Main.lean
+rg '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
+  --glob '*.lean' \
+  --glob '!.lake/**'
+```
+
+The intended completion criterion is:
+
+- `lake build LatalaMeetsAT` succeeds;
+- `lake env lean Main.lean` succeeds;
+- `Main.lean` has no diff;
+- every proof obligation relevant to the dependency closure of `Main.lean` is discharged by genuine Lean proofs, without `sorry`, `admit`, `sorryAx`, or project-local `axiom` declarations.
+
+## Development guidance
+
+When working on the formalization:
+
+- start from `Main.lean` and trace dependencies backward through `Lemmas/MainResult.lean`;
+- preserve the mathematical statements required by the final theorem;
+- prefer established Mathlib results and already-proved repository lemmas;
+- compile the smallest affected module after coherent changes;
+- periodically rebuild `LatalaMeetsAT`;
+- do not edit `Main.lean` to make downstream proof obligations easier.
+
+See [`AGENTS.md`](./AGENTS.md) for the complete project-specific proof and repository rules.
