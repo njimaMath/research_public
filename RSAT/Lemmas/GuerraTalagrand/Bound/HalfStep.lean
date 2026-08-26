@@ -1,5 +1,5 @@
 import Lemmas.GuerraTalagrand.Bound.Comparison
-import SpinGlass.AT.Gaussian_concentration.gaussian_concentration
+import Lemmas.SpinGlass.gaussian_concentration
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology
 

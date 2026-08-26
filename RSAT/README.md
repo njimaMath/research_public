@@ -83,9 +83,9 @@ RSAT/
 │   ├── Gaussian/             # canonical coordinates and concrete model bridge
 │   ├── GuerraTalagrand/      # two-replica bounds and strict flatness
 │   ├── Price/                # quantitative Gaussian interpolation estimates
+│   ├── SpinGlass/            # underlying SK and AT infrastructure
 │   ├── SmartPath/            # smart-path identities and endpoint estimates
 │   └── MainResult.lean       # abstract quantitative theorem
-├── SpinGlass/                # underlying SK and AT infrastructure
 ├── refs/                     # reference argument
 ├── lakefile.lean
 ├── lake-manifest.json
@@ -95,6 +95,9 @@ RSAT/
 ## Dependencies
 
 The Lake package is named `LatalaMeetsAT`. Its [`lakefile.lean`](./lakefile.lean) uses local shared dependencies:
+
+Most files in [`Lemmas/SpinGlass/`](./Lemmas/SpinGlass/) are borrowed from the
+[`or4nge19/SpinGlass`](https://github.com/or4nge19/SpinGlass) library.
 
 - Mathlib at `../../.lake/packages/mathlib`;
 - shared spin-glass support at `../generalizedLatala`.

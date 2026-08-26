@@ -1,4 +1,4 @@
-import SpinGlass.AT.Defs
+import Lemmas.SpinGlass.Defs
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 

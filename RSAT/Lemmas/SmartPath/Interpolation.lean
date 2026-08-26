@@ -1,6 +1,6 @@
-import SpinGlass.AT.SKModel
-import SpinGlass.AT.Calculus
-import SpinGlass.AT.GuerraBound
+import Lemmas.SpinGlass.SKModel
+import Lemmas.SpinGlass.Calculus
+import Lemmas.SpinGlass.GuerraBound
 import Lemmas.SmartPath.KSInequality
 import Lemmas.SmartPath.IndependentEndpoint
 import Lemmas.SmartPath.IndependentGaussianAffineIBP
@@ -22,8 +22,8 @@ namespace GeneralizedLatala
 # Generalized Latała argument for the SK model
 
 This module develops the finite-volume SK and simple Gaussian disorders from
-`SpinGlass.AT.SKModel`, together with the smart path, replica Gibbs averages, and annealed
-expectation `nu` from `SpinGlass.Replicas`.
+`Lemmas.SpinGlass.SKModel`, together with the smart path, replica Gibbs averages, and annealed
+expectation `nu` from `Lemmas.SpinGlass.Replicas`.
 
 The scalar order parameter `q` is kept as an input satisfying the replica-symmetric fixed-point
 equation.  This is preferable to making an arbitrary global choice of a fixed point.  The

@@ -1,5 +1,5 @@
 import Lemmas.AT.Definitions
-import SpinGlass.Replicas
+import Lemmas.SpinGlass.Replicas
 import Lemmas.SmartPath.IndependentGaussianAffineIBP
 import Lemmas.SmartPath.IndependentEndpoint
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence

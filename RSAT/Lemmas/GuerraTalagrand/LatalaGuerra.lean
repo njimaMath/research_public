@@ -2,7 +2,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Probability.Distributions.Gaussian.Real
-import SpinGlass.AT.Mathlib.Probability.Distributions.GaussianIntegrationByParts
+import Lemmas.SpinGlass.GaussianIntegrationByParts
 
 open MeasureTheory ProbabilityTheory Real Filter
 open scoped NNReal

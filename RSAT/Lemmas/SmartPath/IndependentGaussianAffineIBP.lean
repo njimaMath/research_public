@@ -1,6 +1,6 @@
-import SpinGlass.AT.SKModel
-import SpinGlass.AT.Calculus
-import SpinGlass.Replicas
+import Lemmas.SpinGlass.SKModel
+import Lemmas.SpinGlass.Calculus
+import Lemmas.SpinGlass.Replicas
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 open scoped ENNReal NNReal

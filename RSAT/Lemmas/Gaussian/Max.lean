@@ -1,4 +1,4 @@
-import SpinGlass.AT.Gaussian_concentration.gaussian_concentration
+import Lemmas.SpinGlass.gaussian_concentration
 import Mathlib.Analysis.Convex.Integral
 
 open MeasureTheory ProbabilityTheory Real BigOperators
