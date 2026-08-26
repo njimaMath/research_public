@@ -1,4 +1,5 @@
 import Lemmas.Price.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!

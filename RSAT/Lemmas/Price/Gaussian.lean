@@ -1,4 +1,5 @@
 import Lemmas.Price.Sqrt
+import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
 /-!
 # Centered Gaussian measures on `EuclideanSpace ℝ n` with a prescribed covariance matrix

@@ -125,8 +125,8 @@ The CLT is downstream of those estimates:
 Main.lean
   -> Lemmas/CLT/CLT_Main.lean
   -> Lemmas/CLT/SteinLimit.lean
-  -> Lemmas/CLT/SteinCavity.lean
   -> Lemmas/CLT/SteinSystem.lean
+  -> Lemmas/CLT/SteinCavity.lean
   -> Lemmas/CLT/Basic.lean
   -> Lemmas/MainResult.lean
 ```
@@ -172,6 +172,20 @@ Most files in [`Lemmas/SpinGlass/`](./Lemmas/SpinGlass/) are borrowed from the
 The package expects this surrounding directory layout. Adjust the local paths
 in `lakefile.lean` if the dependencies are stored elsewhere.
 
+## Maintenance policy
+
+[`Main.lean`](./Main.lean) is the fixed public theorem file. Refactoring is
+performed under [`Lemmas/AGENTS.md`](./Lemmas/AGENTS.md) and must preserve
+`Main.lean` byte for byte. Its two project imports,
+`Lemmas.Gaussian.ConcreteModel` and `Lemmas.CLT.CLT_Main`, are the roots of the
+required dependency graph.
+
+The `Lemmas` tree is kept dependency-driven: obsolete forwarding modules,
+unused internal declarations, and broad imports should be removed when the
+two public proof paths continue to compile. In particular, each module should
+declare the Mathlib facilities it uses instead of relying on an unrelated
+project module to import them transitively.
+
 ## Build
 
 The selected toolchain is Lean 4.32.1, specified by
@@ -190,6 +204,19 @@ endpoint, run:
 lake env lean Lemmas/CLT/CLT_Main.lean
 ```
 
+Before a release or after dependency refactoring, perform a clean build:
+
+```bash
+lake clean
+lake build LatalaMeetsAT
+lake env lean Main.lean
+git diff -- Main.lean
+```
+
+The last command must produce no output. Because Mathlib is shared from a
+parent directory, a clean build may need to regenerate or restore that shared
+compiled cache before rebuilding the project modules.
+
 To inspect the selected compiler version, run:
 
 ```bash
@@ -202,8 +229,10 @@ The intended result is a kernel-checked proof with no project-local
 placeholders or substitute axioms. A full verification is:
 
 ```bash
+lake clean
 lake build LatalaMeetsAT
 lake env lean Main.lean
+git diff -- Main.lean
 rg -n '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
   --glob '*.lean' \
   --glob '!.lake/**'

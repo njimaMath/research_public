@@ -9,7 +9,7 @@ import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
 
-open MeasureTheory ProbabilityTheory Real BigOperators SpinGlass SpinGlass.Algebra
+open MeasureTheory ProbabilityTheory Real BigOperators SpinGlass
 open PhysLean.Probability.GaussianIBP
 open scoped ENNReal NNReal
 
