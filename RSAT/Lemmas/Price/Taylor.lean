@@ -1,4 +1,7 @@
-import Mathlib
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Tactic
 
 /-!
 # A second-order Taylor estimate with a modulus-of-continuity remainder

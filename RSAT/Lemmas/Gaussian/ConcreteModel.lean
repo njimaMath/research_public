@@ -846,32 +846,3 @@ theorem quantitative_strictAT {Ω : Type u} [MeasureSpace Ω]
       SpinGlass.AT.centeredOverlap, SpinGlass.AT.replicaOverlap,
       SpinGlass.AT.rsA, SpinGlass.AT.rsR, SpinGlass.AT.rsQ,
       SpinGlass.AT.atParameter] using h
-
-/-- On compact subsets of the strict AT region, the concrete two-spin SK
-free energy differs from the replica-symmetric value by at most $C_K/N$.
-The statement contains no smart path or abstract disorder parameter. -/
-theorem concreteSKFreeEnergy_strictAT
-    (K : Set (ℝ × ℝ))
-    (hKcompact : IsCompact K)
-    (hKsub : K ⊆ strictStabilityRegion) :
-    ∃ C_K : ℝ, 0 ≤ C_K ∧
-      ∀ {N : ℕ}, 0 < N → ∀ {β h : ℝ}, (β, h) ∈ K →
-        |concreteSKFreeEnergy N β h - replicaSymmetricFreeEnergy β h| ≤
-          C_K / N := by
-  obtain ⟨C_K, hC_K, hbound⟩ :=
-    (quantitative_strictAT (Ω := CanonicalGaussianSpace)
-      K hKcompact hKsub).freeEnergy
-  refine ⟨C_K, hC_K, ?_⟩
-  intro N hN β h hp
-  have hresult := hbound hN hp rfl (canonicalSKDisorder N β h)
-  have hnonneg :
-      0 ≤ replicaSymmetricFreeEnergy β h - concreteSKFreeEnergy N β h := by
-    rw [← finiteVolumeFreeEnergy_canonicalSKDisorder]
-    exact hresult.1
-  calc
-    |concreteSKFreeEnergy N β h - replicaSymmetricFreeEnergy β h| =
-        replicaSymmetricFreeEnergy β h - concreteSKFreeEnergy N β h := by
-          rw [abs_sub_comm, abs_of_nonneg hnonneg]
-    _ ≤ C_K / N := by
-      rw [← finiteVolumeFreeEnergy_canonicalSKDisorder]
-      exact hresult.2

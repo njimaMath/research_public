@@ -48,23 +48,8 @@ noncomputable def tanhCov
   fun i j =>
     if i = j then A else A * rho q s B
 
-/-- Derivative of the covariance matrix with respect to `B`. -/
-noncomputable def tanhCovDot
-    (A s : ℝ) : Matrix Pair Pair ℝ :=
-  fun i j =>
-    if i = j then 0 else A * s
-
 /-- Observable after centering the Gaussian pair. -/
 noncomputable def tanhPair
     (h : ℝ) (z : EuclideanSpace ℝ Pair) : ℝ :=
   Real.tanh (h + z 0) * Real.tanh (h + z 1)
 
-/-- Price integrand after centering the Gaussian pair. -/
-noncomputable def tanhPriceIntegrand
-    (h : ℝ) (z : EuclideanSpace ℝ Pair) : ℝ :=
-  sechSq (h + z 0) * sechSq (h + z 1)
-
-/-- Gaussian expectation defining `g̃_s(B)`. -/
-noncomputable def tildeG
-    (A q s h B : ℝ) : ℝ :=
-  Gint (tanhPair h) (tanhCov A q s B)

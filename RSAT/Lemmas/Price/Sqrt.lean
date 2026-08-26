@@ -1,4 +1,6 @@
-import Mathlib
+import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
+import Mathlib.Analysis.Matrix.PosDef
+import Mathlib.Tactic
 
 /-!
 # A square root for positive semidefinite real matrices

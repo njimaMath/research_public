@@ -2,7 +2,6 @@ import Lemmas.AT.Definitions
 import Lemmas.Cavity.TalagrandCavity
 import Lemmas.Concentration.Weak
 import Lemmas.SmartPath.Interpolation
-import Lemmas.SmartPath.MainResult
 
 /-!
 # Quantitative strict Almeida--Thouless result
