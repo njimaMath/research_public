@@ -646,7 +646,8 @@ noncomputable def canonical (N : ℕ) (β h : ℝ) (q : NNReal) :
         q.coe_nonneg
       independent := coordinateEnergies_independent β q g z hfamilies }
 
-private noncomputable def toLibrary {Ω : Type u} [MeasureSpace Ω]
+/-- Convert concrete Gaussian disorder to the abstract smart-path interface. -/
+noncomputable def toLibrary {Ω : Type u} [MeasureSpace Ω]
     [IsProbabilityMeasure (volume : Measure Ω)]
     {N : ℕ} {β h q : ℝ} (disorder : GaussianDisorder Ω N β h q) :
     SpinGlass.AT.RSSmartPathDisorder Ω N β h q :=

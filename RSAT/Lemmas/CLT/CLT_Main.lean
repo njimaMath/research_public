@@ -4,6 +4,7 @@ import Mathlib.Probability.Distributions.Gaussian.Real
 import Lemmas.Cavity.TalagrandCavity
 import Lemmas.Cavity.Estimates
 import Lemmas.Cavity.Interpolation
+import Lemmas.CLT.SteinLimit
 
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter
@@ -204,7 +205,18 @@ theorem overlapCLT_characteristic
                     centeredOverlap (rsQ β h) σs 0 1)))
           atTop
           (𝓝 0) := by
-  sorry
+  dsimp only
+  intro t
+  have hc := CLT.cltCos4_tendsto hβ hh hAT paths t
+  have hs := CLT.cltSin4_tendsto hβ hh hAT paths t
+  simp_rw [CLT.cltCos4_eq_twoReplica] at hc
+  simp_rw [CLT.cltSin4_eq_twoReplica] at hs
+  constructor
+  · convert hc using 1
+    unfold CLT.cltVariance
+    congr 2
+    ring
+  · exact hs
 
 /--
 Weak-convergence form of the central limit theorem. If
@@ -271,7 +283,7 @@ theorem overlapCLT_weak
       simpa using hle N
     rw [Real.exp_le_one_iff] at hexp
     linarith
-  refine ⟨hσ2, ?_⟩
+  apply And.intro hσ2
   have hcoe : (σ2.toNNReal : ℝ) = σ2 := Real.coe_toNNReal σ2 hσ2
   apply MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t

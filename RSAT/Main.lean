@@ -1,4 +1,5 @@
 import Lemmas.Gaussian.ConcreteModel
+import Lemmas.CLT.CLT_Main
 
 /-!
 # Quantitative strict Almeida-Thouless theorem
@@ -165,3 +166,39 @@ theorem strictAT_main
       centeredReplicaOverlap, selectedReplicaOverlap,
       disorderAveragedExpectation, productGibbsExpectation,
       H_N_s_eq_smartPath N β h s hs] using hresult
+
+/-! ## Weak convergence of the overlap -/
+
+/-- The canonical Gaussian disorder, viewed through the abstract smart-path
+interface at the replica-symmetric fixed point. -/
+noncomputable def canonicalRSSmartPathDisorder (N : ℕ) (β h : ℝ) :
+    SpinGlass.AT.RSSmartPathDisorder CanonicalGaussianSpace N β h
+      (SpinGlass.AT.rsQ β h) := by
+  simpa [canonicalOverlap, SpinGlass.AT.rsQ] using
+    (canonicalSKDisorder N β h).toLibrary
+
+/-- The scaled overlap at the endpoint of the canonical SK smart path
+converges weakly to its centered Gaussian limit in the strict AT region. -/
+theorem strictAT_overlapCLT_weak
+    {β h : ℝ}
+    (hβ : 0 < β)
+    (hh : 0 < h)
+    (hAT : SpinGlass.AT.atParameter β h < 1) :
+    let σ2 : ℝ :=
+      3 * SpinGlass.AT.rsA β h / (1 - SpinGlass.AT.atParameter β h)
+        - 2 * SpinGlass.AT.cavityKappa (SpinGlass.AT.rsQ β h)
+            (SpinGlass.AT.rsR β h) /
+            (1 - β ^ 2 * SpinGlass.AT.cavityKappa (SpinGlass.AT.rsQ β h)
+              (SpinGlass.AT.rsR β h))
+        - SpinGlass.AT.cavityZeta (SpinGlass.AT.rsQ β h)
+            (SpinGlass.AT.rsR β h) /
+            (1 - β ^ 2 * SpinGlass.AT.cavityKappa (SpinGlass.AT.rsQ β h)
+              (SpinGlass.AT.rsR β h)) ^ 2
+    0 ≤ σ2 ∧
+      Filter.Tendsto
+        (fun N : ℕ => SpinGlass.AT.scaledOverlapLaw
+          (canonicalRSSmartPathDisorder N.succ β h))
+        Filter.atTop
+        (nhds (SpinGlass.AT.centeredGaussianLaw σ2)) := by
+  exact SpinGlass.AT.overlapCLT_weak hβ hh hAT
+    (fun N => canonicalRSSmartPathDisorder N.succ β h)

@@ -1832,7 +1832,9 @@ and put
 
 \begin{proposition}
 \label{prop:cavity}
-There are remainders
+The last-spin cavity expansion has a common three-edge closure, as follows.
+
+For the scalar specialization, there are remainders
 $\mathcal R^U_{N,s},\mathcal R^V_{N,s},\mathcal R^D_{N,s}$ and $C_\cK>0$ such that
 \begin{align}
  (1-s\beta^2\kappa )U_s
@@ -1851,9 +1853,70 @@ and uniformly on $\cK\times[0,1]$,
  \le C_{\cK}(N^{-3/2}+\nu_s[|Q_{12}|^3]).
  \label{eq:cavity-remainders}
 \end{equation}
+
+More generally, let a bounded cavity observable distinguish a marked
+replica edge only according as a second edge is the same edge, shares one
+endpoint with it, or is disjoint from it.  At the decoupled endpoint the
+three corresponding last-spin coefficients are
+\begin{equation}
+ \theta_A=1-q^2,
+ \qquad
+ \theta_B=q-q^2,
+ \qquad
+ \theta_C=r-q^2.
+ \label{eq:cavity-edge-coefficients}
+\end{equation}
+If $T_A,T_B,T_C$ are the resulting same-edge, shared-endpoint, and
+disjoint-edge correlations, the first cavity derivative is governed by
+the edge-incidence matrix
+\begin{equation}
+ \mathcal M_s=s\beta^2
+ \begin{pmatrix}
+ \theta_A&-4\theta_B&3\theta_C\\
+ \theta_B&\theta_A-2\theta_B-3\theta_C&6\theta_C-3\theta_B\\
+ \theta_C&4\theta_B-8\theta_C&\theta_A-8\theta_B+10\theta_C
+ \end{pmatrix}.
+ \label{eq:cavity-edge-matrix}
+\end{equation}
+For a vector $T=(T_A,T_B,T_C)^{\mathsf T}$, write
+\[
+ \mathcal U(T)=T_A-4T_B+3T_C,
+ \qquad \mathcal V(T)=2T_B-3T_C,
+ \qquad \mathcal D(T)=T_A-2T_B+T_C.
+\]
+The same change of variables as in \eqref{eq:cavity-modes} gives
+\begin{equation}
+ \mathcal U(\mathcal M_sT)=s\beta^2\kappa\mathcal U(T),
+ \qquad
+ \mathcal V(\mathcal M_sT)=s\beta^2(\zeta\mathcal U(T)+\kappa\mathcal V(T)),
+ \qquad
+ \mathcal D(\mathcal M_sT)=s\alpha\mathcal D(T).
+ \label{eq:cavity-general-modes}
+\end{equation}
+Whenever the second cavity derivative and the replacement of the
+decoupled correlations by their endpoint values are $O(\eta_N)$, this
+first-order expansion has an $O(\eta_N)$ remainder in each of the three
+mode equations.
 \end{proposition}
 
-The proof follows from a straightforward, but technical, application of Talagrand's cavity argument (see \cite[Chapter~1]{Talagrand}). We postpone the details to Appendix~\ref{app:cavity-identities}.
+The scalar specialization follows from a straightforward, but technical,
+application of Talagrand's cavity argument (see
+\cite[Chapter~1]{Talagrand}); its details are given in
+Appendix~\ref{app:cavity-identities}.  For the general statement, apply
+the derivative identity \eqref{eq:cavity-derivative-proof}.  The
+decoupled last-spin expectation is $\theta_A$, $\theta_B$, or $\theta_C$
+according to the three incidence classes, by
+\eqref{eq:edge-rule-proof}.  Enumerating the edges in that identity gives
+\eqref{eq:cavity-edge-matrix}.  Direct multiplication gives
+\eqref{eq:cavity-general-modes}; explicitly,
+\[
+ \theta_A-4\theta_B+3\theta_C=\kappa,
+ \qquad
+ 2\theta_B-3\theta_C=\zeta,
+ \qquad
+ \theta_A-2\theta_B+\theta_C=1-2q+r=\frac{\alpha}{\beta^2}.
+\]
+Taylor's formula for the cavity interpolation proves the final assertion.
 
 Since $r\le q$,
 \[
@@ -1945,6 +2008,909 @@ uniformly in $s$.  Equation \eqref{eq:cavity-D}, together with
  =
  \frac{\alpha}{\beta^2(1-s\alpha)}+o_{\cK}(1).
 \]
+This proves \eqref{eq:main3} and completes the proof of
+Theorem~\ref{thm:main}.
+
+% This file is intended to be inserted immediately after Appendix A.
+% It contains exactly one section and uses the notation already introduced
+% in the main text and in the cavity appendix.
+
+\section{Central limit theorem for the overlap}
+\label{sec:overlap-clt}
+
+In this section we work at the endpoint $s=1$ of the smart path and
+suppress the subscript $s$.  Put
+\[
+ a\coloneqq1-2q+r=\frac{\alpha}{\beta^2}.
+\]
+The argument preceding \eqref{eq:denominator-bounds} gives
+$\beta^2\kappa\le\alpha<1$, and hence
+\begin{equation}
+ 1-\alpha>0,
+ \qquad
+ 1-\beta^2\kappa>0.
+ \label{eq:clt-positive-denominators}
+\end{equation}
+
+Define
+\begin{equation}
+ \sigma^2
+ \coloneqq
+ \frac{3a}{1-\alpha}
+ -\frac{2\kappa}{1-\beta^2\kappa}
+ -\frac{\zeta}{(1-\beta^2\kappa)^2}.
+ \label{eq:clt-variance}
+\end{equation}
+
+Our second main theorem is the following.
+
+\begin{theorem}[Central limit theorem for the overlap]
+\label{thm:overlap-clt}
+For every fixed $(\beta,h)$ in the strict Almeida--Thouless region,
+\[
+ \sqrt N\,(R_{12}-q)
+ \xrightarrow{\mathrm d}
+ \mathcal N(0,\sigma^2)
+\]
+with respect to the disorder-averaged two-replica Gibbs measure, where
+$\sigma^2$ is given by \eqref{eq:clt-variance}.  Equivalently, for every
+$t\in\mathbb R$,
+\begin{align}
+ \nu\!\left[
+ \cos\!\left(t\sqrt N\,Q_{12}\right)
+ \right]
+ &\longrightarrow
+ \exp\!\left(-\frac{\sigma^2t^2}{2}\right),
+ \label{eq:clt-cos-limit}\\
+ \nu\!\left[
+ \sin\!\left(t\sqrt N\,Q_{12}\right)
+ \right]
+ &\longrightarrow 0.
+ \label{eq:clt-sin-limit}
+\end{align}
+\end{theorem}
+
+\begin{proof}
+We divide the computation into several paragraphs.
+
+\paragraph{Uniform second moment along the last-spin interpolation.}
+Let $\nu_u$, $0\le u\le1$, be the last-spin interpolation from
+Appendix~\ref{app:cavity-identities}, so that $\nu_1=\nu$.  Recall
+\[
+ \varepsilon_a=\sigma_N^a,
+ \qquad
+ Q^-_{ab}=\frac1N\sum_{i<N}\sigma_i^a\sigma_i^b-q,
+ \qquad
+ Q_{ab}=Q^-_{ab}+\frac1N\varepsilon_a\varepsilon_b.
+\]
+The optimal overlap estimate already proved in the main text gives
+\begin{equation}
+ \nu[Q_{12}^2]\le\frac{C}{N}.
+ \label{eq:clt-endpoint-second-moment}
+\end{equation}
+Set
+\[
+ M_2(u)\coloneqq\nu_u[(Q^-_{12})^2].
+\]
+Applying \eqref{eq:cavity-derivative-proof} to
+$F=(Q^-_{12})^2$, every term in $M_2'(u)$ has the form
+\[
+ \nu_u\!\left[
+ (Q^-_{12})^2
+ \varepsilon_a\varepsilon_bQ^-_{ab}
+ \right].
+\]
+Since $|Q^-_{ab}|\le2$,
+\[
+ \left|
+ \nu_u\!\left[
+ (Q^-_{12})^2
+ \varepsilon_a\varepsilon_bQ^-_{ab}
+ \right]
+ \right|
+ \le2M_2(u).
+\]
+The number of terms in the cavity derivative is fixed, and $\beta$ is fixed,
+hence
+\begin{equation}
+ |M_2'(u)|\le C M_2(u).
+ \label{eq:clt-M2-differential}
+\end{equation}
+Moreover,
+\[
+ |Q^-_{12}|^2
+ \le
+ 2|Q_{12}|^2+\frac2{N^2},
+\]
+so \eqref{eq:clt-endpoint-second-moment} gives
+\[
+ M_2(1)\le\frac{C}{N}.
+\]
+Gronwall's inequality applied backward from $u=1$ therefore yields
+\begin{equation}
+ \sup_{0\le u\le1}
+ \nu_u[(Q^-_{12})^2]
+ \le\frac{C}{N}.
+ \label{eq:clt-uniform-cavity-second}
+\end{equation}
+By replica symmetry the same estimate holds for every fixed replica edge.
+Consequently, for all fixed edges $ab,cd$,
+\begin{align}
+ \sup_{0\le u\le1}\nu_u[|Q^-_{ab}|]
+ &\le\frac{C}{\sqrt N},
+ \label{eq:clt-cavity-first}\\
+ \sup_{0\le u\le1}
+ \nu_u[|Q^-_{ab}Q^-_{cd}|]
+ &\le\frac{C}{N}.
+ \label{eq:clt-cavity-product}
+\end{align}
+The second inequality follows from Cauchy--Schwarz.
+
+\paragraph{Three test-function correlations.}
+Let $f\in C^2(\mathbb R)$ satisfy
+\[
+ \|f\|_\infty+\|f'\|_\infty+\|f''\|_\infty<\infty.
+\]
+Put
+\[
+ X_{ab}\coloneqq\sqrt N\,Q_{ab}.
+\]
+We consider the three replica-edge classes
+\begin{align}
+ T_A(f)&\coloneqq\nu[X_{12}f(X_{12})],
+ \label{eq:clt-TA}\\
+ T_B(f)&\coloneqq\nu[X_{13}f(X_{12})],
+ \label{eq:clt-TB}\\
+ T_C(f)&\coloneqq\nu[X_{34}f(X_{12})].
+ \label{eq:clt-TC}
+\end{align}
+After the disorder average the sites are exchangeable.  Hence, for every
+edge $ab$ appearing above,
+\[
+ \nu[Q_{ab}f(X_{12})]
+ =
+ \nu[(\varepsilon_a\varepsilon_b-q)f(X_{12})].
+\]
+Thus, if
+\[
+ \overline\varepsilon_{ab}
+ \coloneqq
+ \varepsilon_a\varepsilon_b-q,
+\]
+then
+\begin{equation}
+ T_E(f)
+ =
+ \sqrt N\,\nu[
+ \overline\varepsilon_{e(E)}f(X_{12})],
+ \qquad
+ e(A)=12,\quad e(B)=13,\quad e(C)=34.
+ \label{eq:clt-site-exchangeability}
+\end{equation}
+
+For $E\in\{A,B,C\}$ define
+\[
+ g_E(u)
+ \coloneqq
+ \sqrt N\,\nu_u[
+ \overline\varepsilon_{e(E)}f(X_{12})].
+\]
+Then
+\[
+ g_E(1)=T_E(f).
+\]
+
+It is convenient to remove the last-spin contribution from the argument of
+$f$.  Put
+\begin{equation}
+ Y
+ \coloneqq
+ \sqrt N\,Q^-_{12}+\frac q{\sqrt N}.
+ \label{eq:clt-Yminus}
+\end{equation}
+Since
+\[
+ X_{12}
+ =
+ \sqrt N\,Q^-_{12}+\frac{\varepsilon_1\varepsilon_2}{\sqrt N},
+\]
+we have the exact identity
+\begin{equation}
+ X_{12}
+ =
+ Y+\frac{\overline\varepsilon_{12}}{\sqrt N}.
+ \label{eq:clt-X-Y}
+\end{equation}
+
+At $u=0$ the last spin is independent of the first $N-1$ spins, and its
+effective field has the distribution
+\[
+ h+\beta\sqrt q\,Z.
+\]
+Therefore, for distinct replica labels,
+\[
+ \mathbb E_0[\varepsilon_a\varepsilon_b]=q,
+ \qquad
+ \mathbb E_0[
+ \varepsilon_a\varepsilon_b\varepsilon_c\varepsilon_d]=r.
+\]
+In particular,
+\begin{align}
+ \mathbb E_0[\overline\varepsilon_{12}^2]
+ &=1-q^2,
+ \label{eq:clt-source-A}\\
+ \mathbb E_0[
+ \overline\varepsilon_{13}\overline\varepsilon_{12}]
+ &=q-q^2,
+ \label{eq:clt-source-B}\\
+ \mathbb E_0[
+ \overline\varepsilon_{34}\overline\varepsilon_{12}]
+ &=r-q^2.
+ \label{eq:clt-source-C}
+\end{align}
+For example,
+\[
+ \mathbb E_0[
+ \overline\varepsilon_{13}\overline\varepsilon_{12}]
+ =
+ \mathbb E_0[\varepsilon_2\varepsilon_3]
+ -q\mathbb E_0[\varepsilon_1\varepsilon_3]
+ -q\mathbb E_0[\varepsilon_1\varepsilon_2]
+ +q^2
+ =
+ q-q^2.
+\]
+
+By Taylor's theorem and \eqref{eq:clt-X-Y},
+\[
+ f(X_{12})
+ =
+ f(Y)
+ +\frac{\overline\varepsilon_{12}}{\sqrt N}f'(Y)
+ +\rho_N,
+\]
+where
+\[
+ |\rho_N|
+ \le
+ \frac{\|f''\|_\infty}{2N}
+ |\overline\varepsilon_{12}|^2
+ \le
+ \frac{2\|f''\|_\infty}{N}.
+\]
+Because
+$\mathbb E_0[\overline\varepsilon_{e(E)}]=0$, independence at $u=0$
+and \eqref{eq:clt-source-A}--\eqref{eq:clt-source-C} give
+\begin{equation}
+ g_E(0)
+ =
+ \theta_E\,\nu_0[f'(Y)]
+ +O_f(N^{-1/2}),
+ \label{eq:clt-g-zero-pre}
+\end{equation}
+where
+\begin{equation}
+ \theta_A=1-q^2,
+ \qquad
+ \theta_B=q-q^2,
+ \qquad
+ \theta_C=r-q^2.
+ \label{eq:clt-theta}
+\end{equation}
+Here and below $O_f(\cdot)$ means that the implicit constant depends only on
+$\beta,h$ and
+$\|f\|_\infty+\|f'\|_\infty+\|f''\|_\infty$.
+
+We next replace $\nu_0[f'(Y)]$ by the endpoint quantity
+$\nu[f'(X_{12})]$.  Applying \eqref{eq:cavity-derivative-proof} to the
+bounded cavity observable $f'(Y)$ and using
+\eqref{eq:clt-cavity-first},
+\[
+ \left|
+ \frac{\mathrm d}{\mathrm du}\nu_u[f'(Y)]
+ \right|
+ \le
+ \frac{C\|f'\|_\infty}{\sqrt N}.
+\]
+Also, by \eqref{eq:clt-X-Y},
+\[
+ |f'(X_{12})-f'(Y)|
+ \le
+ \frac{2\|f''\|_\infty}{\sqrt N}.
+\]
+Hence
+\begin{equation}
+ \nu_0[f'(Y)]
+ =
+ \nu[f'(X_{12})]+O_f(N^{-1/2}).
+ \label{eq:clt-derivative-endpoint-replacement}
+\end{equation}
+Combining \eqref{eq:clt-g-zero-pre} and
+\eqref{eq:clt-derivative-endpoint-replacement},
+\begin{equation}
+ g_E(0)
+ =
+ \theta_E\,m_f+O_f(N^{-1/2}),
+ \qquad
+ m_f\coloneqq\nu[f'(X_{12})].
+ \label{eq:clt-g-zero}
+\end{equation}
+
+\paragraph{First cavity derivative and the replica-edge matrix.}
+Define the cavity analogues
+\begin{align}
+ \widetilde T_A(f)
+ &\coloneqq
+ \sqrt N\,\nu_0[Q^-_{12}f(Y)],
+ \label{eq:clt-Ttilde-A}\\
+ \widetilde T_B(f)
+ &\coloneqq
+ \sqrt N\,\nu_0[Q^-_{13}f(Y)],
+ \label{eq:clt-Ttilde-B}\\
+ \widetilde T_C(f)
+ &\coloneqq
+ \sqrt N\,\nu_0[Q^-_{34}f(Y)].
+ \label{eq:clt-Ttilde-C}
+\end{align}
+We compute $g_E'(0)$ using
+\eqref{eq:cavity-derivative-proof}.  In the derivative, replacing
+$f(X_{12})$ by $f(Y)$ costs $O_f(N^{-1/2})$: indeed,
+\[
+ |f(X_{12})-f(Y)|
+ \le
+ \frac{2\|f'\|_\infty}{\sqrt N},
+\]
+and each derivative term contains one cavity overlap, whose first moment is
+$O(N^{-1/2})$ by \eqref{eq:clt-cavity-first}.
+
+Introduce
+\[
+ b_2\coloneqq\beta^2(1-q^2),
+ \qquad
+ b_1\coloneqq\beta^2(q-q^2),
+ \qquad
+ b_0\coloneqq\beta^2(r-q^2).
+\]
+The three rows of the cavity matrix are obtained as follows.
+
+For $E=A$, use two replicas in
+\eqref{eq:cavity-derivative-proof}.  The positive pair is $12$, the two
+negative pairs are $13,23$, and the final pair is $34$.  By the edge rule,
+\[
+ g_A'(0)
+ =
+ b_2\widetilde T_A
+ -4b_1\widetilde T_B
+ +3b_0\widetilde T_C
+ +O_f(N^{-1/2}).
+ \label{eq:clt-row-A}
+\]
+
+For $E=B$, use three replicas.  The positive pairs $12,13,23$ contribute
+\[
+ b_1\widetilde T_A+(b_2+b_1)\widetilde T_B.
+\]
+The three negative terms are multiplied by $-3$.  The edges $14$ and $24$
+give respectively the coefficients $b_1$ and $b_0$ in the shared-index
+class, while $34$ gives the coefficient $b_1$ in the disjoint class.
+Finally the coefficient of the new edge $45$ is $6b_0$.  Therefore
+\begin{align}
+ g_B'(0)
+ &=
+ b_1\widetilde T_A
+ +(b_2+b_1)\widetilde T_B
+ -3(b_1+b_0)\widetilde T_B
+ -3b_1\widetilde T_C
+ +6b_0\widetilde T_C
+ +O_f(N^{-1/2})
+ \nonumber\\
+ &=
+ b_1\widetilde T_A
+ +(b_2-2b_1-3b_0)\widetilde T_B
+ +(6b_0-3b_1)\widetilde T_C
+ +O_f(N^{-1/2}).
+ \label{eq:clt-row-B}
+\end{align}
+
+For $E=C$, use four replicas.  Among the six positive pairs, the edge $12$
+is disjoint from $34$, the four edges $13,14,23,24$ share one endpoint with
+$34$, and the edge $34$ is the same edge.  Hence the positive contribution is
+\[
+ b_0\widetilde T_A
+ +4b_1\widetilde T_B
+ +b_2\widetilde T_C.
+\]
+For the four negative terms, multiplied by $-4$, the edges $15,25$ are
+disjoint from $34$ and belong to the shared-index class relative to $12$,
+whereas $35,45$ share one endpoint with $34$ and belong to the disjoint
+class relative to $12$.  Thus the negative contribution is
+\[
+ -8b_0\widetilde T_B-8b_1\widetilde T_C.
+\]
+The final edge $56$ is disjoint from $34$ and contributes
+$10b_0\widetilde T_C$.  Therefore
+\begin{equation}
+ g_C'(0)
+ =
+ b_0\widetilde T_A
+ +(4b_1-8b_0)\widetilde T_B
+ +(b_2-8b_1+10b_0)\widetilde T_C
+ +O_f(N^{-1/2}).
+ \label{eq:clt-row-C}
+\end{equation}
+
+Thus, with
+\[
+ T(f)=
+ \begin{pmatrix}
+ T_A(f)\\ T_B(f)\\ T_C(f)
+ \end{pmatrix},
+ \qquad
+ \widetilde T(f)=
+ \begin{pmatrix}
+ \widetilde T_A(f)\\
+ \widetilde T_B(f)\\
+ \widetilde T_C(f)
+ \end{pmatrix},
+ \qquad
+ \theta=
+ \begin{pmatrix}
+ 1-q^2\\ q-q^2\\ r-q^2
+ \end{pmatrix},
+\]
+and
+\begin{equation}
+ M=
+ \begin{pmatrix}
+ b_2 & -4b_1 & 3b_0\\
+ b_1 & b_2-2b_1-3b_0 & 6b_0-3b_1\\
+ b_0 & 4b_1-8b_0 & b_2-8b_1+10b_0
+ \end{pmatrix},
+ \label{eq:clt-cavity-matrix}
+\end{equation}
+equations \eqref{eq:clt-row-A}--\eqref{eq:clt-row-C} become
+\begin{equation}
+ g'(0)
+ =
+ M\widetilde T(f)+O_f(N^{-1/2}).
+ \label{eq:clt-g-prime-zero}
+\end{equation}
+
+\paragraph{Cavity Taylor remainder and endpoint replacement.}
+Apply the cavity derivative formula once more.  Every term in $g_E''(u)$ is
+a fixed numerical multiple of an expectation containing two cavity overlaps.
+Since
+\[
+ \left|
+ \sqrt N\,
+ \overline\varepsilon_{e(E)}f(X_{12})
+ \right|
+ \le
+ 2\sqrt N\,\|f\|_\infty,
+\]
+equation \eqref{eq:clt-cavity-product} gives
+\begin{equation}
+ \sup_{0\le u\le1}|g_E''(u)|
+ \le
+ \frac{C_f}{\sqrt N}.
+ \label{eq:clt-second-cavity-derivative}
+\end{equation}
+Taylor's formula in $u$ therefore yields
+\begin{equation}
+ T_E(f)=g_E(1)
+ =
+ g_E(0)+g_E'(0)+O_f(N^{-1/2}).
+ \label{eq:clt-cavity-Taylor}
+\end{equation}
+
+It remains to replace $\widetilde T_E(f)$ by $T_E(f)$.  Consider, for
+example,
+\[
+ H_A(u)
+ =
+ \sqrt N\,\nu_u[Q^-_{12}f(Y)].
+\]
+Differentiating with respect to $u$ produces one additional cavity overlap.
+Using \eqref{eq:clt-cavity-product},
+\[
+ |H_A'(u)|
+ \le
+ \frac{C_f}{\sqrt N}.
+\]
+The same argument applies to the $B$ and $C$ classes.  Hence
+\begin{equation}
+ \sqrt N\,\nu_0[Q^-_{e(E)}f(Y)]
+ =
+ \sqrt N\,\nu[Q^-_{e(E)}f(Y)]
+ +O_f(N^{-1/2}).
+ \label{eq:clt-u-endpoint-replacement}
+\end{equation}
+At $u=1$,
+\[
+ Q_{e(E)}-Q^-_{e(E)}
+ =
+ \frac1N\varepsilon_{e(E)},
+\]
+so
+\[
+ \sqrt N\,
+ \left|
+ \nu[(Q_{e(E)}-Q^-_{e(E)})f(X_{12})]
+ \right|
+ \le
+ \frac{\|f\|_\infty}{\sqrt N}.
+\]
+Furthermore,
+\[
+ |f(X_{12})-f(Y)|
+ \le
+ \frac{2\|f'\|_\infty}{\sqrt N},
+\]
+and therefore, by \eqref{eq:clt-cavity-first},
+\[
+ \sqrt N\,
+ \nu\!\left[
+ |Q^-_{e(E)}|
+ |f(X_{12})-f(Y)|
+ \right]
+ \le
+ \frac{C_f}{\sqrt N}.
+\]
+Combining these estimates,
+\begin{equation}
+ \widetilde T_E(f)
+ =
+ T_E(f)+O_f(N^{-1/2}),
+ \qquad E\in\{A,B,C\}.
+ \label{eq:clt-Ttilde-T}
+\end{equation}
+
+Equations \eqref{eq:clt-g-zero},
+\eqref{eq:clt-g-prime-zero},
+\eqref{eq:clt-cavity-Taylor}, and
+\eqref{eq:clt-Ttilde-T} give the approximate Stein system
+\begin{equation}
+ T(f)
+ =
+ \theta\,m_f
+ +
+ M T(f)
+ +
+ O_f(N^{-1/2}),
+ \qquad
+ m_f=\nu[f'(X_{12})].
+ \label{eq:clt-vector-Stein}
+\end{equation}
+
+\paragraph{Diagonalization in the three cavity modes.}
+For the test-function correlations define
+\begin{align}
+ U_f&\coloneqq T_A(f)-4T_B(f)+3T_C(f),
+ \label{eq:clt-Uf}\\
+ V_f&\coloneqq2T_B(f)-3T_C(f),
+ \label{eq:clt-Vf}\\
+ D_f&\coloneqq T_A(f)-2T_B(f)+T_C(f).
+ \label{eq:clt-Df}
+\end{align}
+The same deterministic change of basis as in the cavity closure triangularizes
+the matrix \eqref{eq:clt-cavity-matrix}.  We record the coefficient
+calculation explicitly.
+
+First,
+\begin{align*}
+ \theta_A-4\theta_B+3\theta_C
+ &=
+ (1-q^2)-4(q-q^2)+3(r-q^2)\\
+ &=1-4q+3r
+ =\kappa,
+\\
+ 2\theta_B-3\theta_C
+ &=
+ 2(q-q^2)-3(r-q^2)\\
+ &=2q+q^2-3r
+ =\zeta,
+\\
+ \theta_A-2\theta_B+\theta_C
+ &=
+ (1-q^2)-2(q-q^2)+(r-q^2)\\
+ &=1-2q+r
+ =a.
+\end{align*}
+Second, direct multiplication of the rows in
+\eqref{eq:clt-Uf}--\eqref{eq:clt-Df} by $M$ gives
+\begin{align*}
+ U(MT)
+ &=\beta^2\kappa\,U_f,\\
+ V(MT)
+ &=\beta^2\zeta\,U_f+\beta^2\kappa\,V_f,\\
+ D(MT)
+ &=\beta^2a\,D_f
+ =\alpha D_f.
+\end{align*}
+Thus \eqref{eq:clt-vector-Stein} is equivalent to
+\begin{align}
+ (1-\beta^2\kappa)U_f
+ &=
+ \kappa\,m_f+O_f(N^{-1/2}),
+ \label{eq:clt-Stein-U}\\
+ (1-\beta^2\kappa)V_f-\beta^2\zeta U_f
+ &=
+ \zeta\,m_f+O_f(N^{-1/2}),
+ \label{eq:clt-Stein-V}\\
+ (1-\alpha)D_f
+ &=
+ a\,m_f+O_f(N^{-1/2}).
+ \label{eq:clt-Stein-D}
+\end{align}
+Using \eqref{eq:clt-positive-denominators},
+\begin{align}
+ U_f
+ &=
+ \frac{\kappa}{1-\beta^2\kappa}\,m_f
+ +O_f(N^{-1/2}),
+ \label{eq:clt-U-solved}\\
+ D_f
+ &=
+ \frac{a}{1-\alpha}\,m_f
+ +O_f(N^{-1/2}).
+ \label{eq:clt-D-solved}
+\end{align}
+Substituting \eqref{eq:clt-U-solved} into
+\eqref{eq:clt-Stein-V},
+\begin{align*}
+ V_f
+ &=
+ \frac{
+ \zeta m_f+\beta^2\zeta U_f
+ }{1-\beta^2\kappa}
+ +O_f(N^{-1/2})
+\\
+ &=
+ \frac{\zeta}{1-\beta^2\kappa}
+ \left(
+ 1+
+ \frac{\beta^2\kappa}{1-\beta^2\kappa}
+ \right)m_f
+ +O_f(N^{-1/2})
+\\
+ &=
+ \frac{\zeta}{(1-\beta^2\kappa)^2}\,m_f
+ +O_f(N^{-1/2}).
+ \label{eq:clt-V-solved}
+\end{align*}
+The inverse mode transformation is
+\begin{equation}
+ T_A(f)=-V_f-2U_f+3D_f.
+ \label{eq:clt-inverse-mode-A}
+\end{equation}
+Therefore
+\begin{align}
+ \nu[X_{12}f(X_{12})]
+ &=
+ \left(
+ \frac{3a}{1-\alpha}
+ -\frac{2\kappa}{1-\beta^2\kappa}
+ -\frac{\zeta}{(1-\beta^2\kappa)^2}
+ \right)
+ \nu[f'(X_{12})]
+ +O_f(N^{-1/2})
+ \nonumber\\
+ &=
+ \sigma^2\,\nu[f'(X_{12})]
+ +O_f(N^{-1/2}).
+ \label{eq:clt-scalar-Stein}
+\end{align}
+This is the required approximate Gaussian integration-by-parts identity.
+
+Notice that the choice $f\equiv1$ gives
+\begin{equation}
+ \nu[X_{12}]
+ =
+ O(N^{-1/2}),
+ \label{eq:clt-bias}
+\end{equation}
+so the centering by the infinite-volume parameter $q$ has no residual
+order-one bias.
+
+\paragraph{Identification and nonnegativity of the variance.}
+For completeness, we check that \eqref{eq:clt-variance} is the limiting
+second moment.  From the cavity equations at $s=1$, the already proved
+estimate
+\[
+ \nu[|Q_{12}|^3]=o(N^{-1})
+\]
+implies that the cavity remainders are $o(N^{-1})$.  Therefore
+\begin{equation}
+ NU
+ \longrightarrow
+ \frac{\kappa}{1-\beta^2\kappa}.
+ \label{eq:clt-second-U}
+\end{equation}
+Next,
+\[
+ (1-\beta^2\kappa)NV
+ -
+ \beta^2\zeta\,NU
+ =
+ \zeta+o(1),
+\]
+and \eqref{eq:clt-second-U} gives
+\begin{align}
+ NV
+ &\longrightarrow
+ \frac{
+ \zeta+
+ \beta^2\zeta\kappa/(1-\beta^2\kappa)
+ }{1-\beta^2\kappa}
+ \nonumber\\
+ &=
+ \frac{\zeta}{(1-\beta^2\kappa)^2}.
+ \label{eq:clt-second-V}
+\end{align}
+Likewise,
+\begin{equation}
+ ND
+ \longrightarrow
+ \frac{a}{1-\alpha}.
+ \label{eq:clt-second-D}
+\end{equation}
+Since
+\[
+ A=-V-2U+3D,
+\]
+we conclude that
+\begin{align}
+ N\nu[Q_{12}^2]
+ =NA
+ &\longrightarrow
+ -\frac{\zeta}{(1-\beta^2\kappa)^2}
+ -\frac{2\kappa}{1-\beta^2\kappa}
+ +\frac{3a}{1-\alpha}
+ \nonumber\\
+ &=\sigma^2.
+ \label{eq:clt-second-moment-limit}
+\end{align}
+In particular,
+\begin{equation}
+ \sigma^2\ge0.
+ \label{eq:clt-variance-nonnegative}
+\end{equation}
+
+\paragraph{Characteristic-function ODE.}
+Define
+\begin{align}
+ C_N(t)
+ &\coloneqq
+ \nu[\cos(tX_{12})],
+ \label{eq:clt-CN}\\
+ S_N(t)
+ &\coloneqq
+ \nu[\sin(tX_{12})].
+ \label{eq:clt-SN}
+\end{align}
+For fixed $N$ these functions are differentiable and
+\begin{align}
+ C_N'(t)
+ &=
+ -\nu[X_{12}\sin(tX_{12})],
+ \label{eq:clt-CN-derivative}\\
+ S_N'(t)
+ &=
+ \nu[X_{12}\cos(tX_{12})].
+ \label{eq:clt-SN-derivative}
+\end{align}
+Fix $T>0$.  For $|t|\le T$, the functions
+\[
+ f_t(x)=\sin(tx),
+ \qquad
+ \widetilde f_t(x)=\cos(tx)
+\]
+satisfy
+\[
+ \|f_t\|_\infty,\|\widetilde f_t\|_\infty\le1,
+ \qquad
+ \|f_t'\|_\infty,\|\widetilde f_t'\|_\infty\le T,
+ \qquad
+ \|f_t''\|_\infty,\|\widetilde f_t''\|_\infty\le T^2.
+\]
+Hence the error in \eqref{eq:clt-scalar-Stein} is uniform for
+$|t|\le T$.
+
+Applying \eqref{eq:clt-scalar-Stein} to $f_t$ gives
+\[
+ \nu[X_{12}\sin(tX_{12})]
+ =
+ \sigma^2t\,C_N(t)+O_T(N^{-1/2}),
+\]
+and therefore
+\begin{equation}
+ C_N'(t)+\sigma^2tC_N(t)
+ =
+ O_T(N^{-1/2})
+ \qquad(|t|\le T).
+ \label{eq:clt-C-approx-ODE}
+\end{equation}
+Applying \eqref{eq:clt-scalar-Stein} to $\widetilde f_t$ gives
+\[
+ \nu[X_{12}\cos(tX_{12})]
+ =
+ -\sigma^2t\,S_N(t)+O_T(N^{-1/2}),
+\]
+and hence
+\begin{equation}
+ S_N'(t)+\sigma^2tS_N(t)
+ =
+ O_T(N^{-1/2})
+ \qquad(|t|\le T).
+ \label{eq:clt-S-approx-ODE}
+\end{equation}
+
+Multiply \eqref{eq:clt-C-approx-ODE} by
+$\exp(\sigma^2t^2/2)$.  Since
+\[
+ C_N(0)=1,
+\]
+we obtain, for $|t|\le T$,
+\begin{align*}
+ \left|
+ e^{\sigma^2t^2/2}C_N(t)-1
+ \right|
+ &\le
+ \int_0^{|t|}
+ e^{\sigma^2u^2/2}
+ \frac{C_T}{\sqrt N}\,\mathrm du\\
+ &\le
+ \frac{C_TT}{\sqrt N}
+ e^{\sigma^2T^2/2}.
+\end{align*}
+Therefore
+\begin{equation}
+ \sup_{|t|\le T}
+ \left|
+ C_N(t)-e^{-\sigma^2t^2/2}
+ \right|
+ \longrightarrow0.
+ \label{eq:clt-C-uniform}
+\end{equation}
+Similarly, since $S_N(0)=0$,
+\begin{align*}
+ \left|
+ e^{\sigma^2t^2/2}S_N(t)
+ \right|
+ &\le
+ \int_0^{|t|}
+ e^{\sigma^2u^2/2}
+ \frac{C_T}{\sqrt N}\,\mathrm du,
+\end{align*}
+so
+\begin{equation}
+ \sup_{|t|\le T}|S_N(t)|
+ \longrightarrow0.
+ \label{eq:clt-S-uniform}
+\end{equation}
+Since $T>0$ was arbitrary,
+\eqref{eq:clt-C-uniform} and \eqref{eq:clt-S-uniform} prove
+\eqref{eq:clt-cos-limit} and \eqref{eq:clt-sin-limit}.  Equivalently,
+\[
+ \nu[e^{itX_{12}}]
+ \longrightarrow
+ e^{-\sigma^2t^2/2}
+ \qquad(t\in\mathbb R).
+\]
+The right-hand side is the characteristic function of
+$\mathcal N(0,\sigma^2)$ by
+\eqref{eq:clt-variance-nonnegative}.  The continuity theorem for
+characteristic functions now gives
+\[
+ X_{12}
+ =
+ \sqrt N\,(R_{12}-q)
+ \xrightarrow{\mathrm d}
+ \mathcal N(0,\sigma^2),
+\]
+which completes the proof.
+\end{proof}
+
 
 \appendix
 \section{Proof of the cavity approximations}
