@@ -2046,14 +2046,7 @@ Our second main theorem is the following.
 
 \begin{theorem}[Central limit theorem for the overlap]
 \label{thm:overlap-clt}
-For every fixed $(\beta,h)$ in the strict Almeida--Thouless region,
-\[
- \sqrt N\,(R_{12}-q)
- \xrightarrow{\mathrm d}
- \mathcal N(0,\sigma^2)
-\]
-with respect to the disorder-averaged two-replica Gibbs measure, where
-$\sigma^2$ is given by \eqref{eq:clt-variance}.  Equivalently, for every
+For every
 $t\in\mathbb R$,
 \begin{align}
  \nu\!\left[
@@ -2073,7 +2066,6 @@ $t\in\mathbb R$,
 \begin{proof}
 We divide the computation into several paragraphs.
 
-\paragraph{Uniform second moment along the last-spin interpolation.}
 Let $\nu_u$, $0\le u\le1$, be the last-spin interpolation from
 Appendix~\ref{app:cavity-identities}, so that $\nu_1=\nu$.  Recall
 \[
@@ -2146,7 +2138,6 @@ Consequently, for all fixed edges $ab,cd$,
 \end{align}
 The second inequality follows from Cauchy--Schwarz.
 
-\paragraph{Three test-function correlations.}
 Let $f\in C^2(\mathbb R)$ satisfy
 \[
  \|f\|_\infty+\|f'\|_\infty+\|f''\|_\infty<\infty.
@@ -2336,7 +2327,6 @@ Combining \eqref{eq:clt-g-zero-pre} and
  \label{eq:clt-g-zero}
 \end{equation}
 
-\paragraph{First cavity derivative and the replica-edge matrix.}
 Define the cavity analogues
 \begin{align}
  \widetilde T_A(f)
@@ -2476,7 +2466,6 @@ equations \eqref{eq:clt-row-A}--\eqref{eq:clt-row-C} become
  \label{eq:clt-g-prime-zero}
 \end{equation}
 
-\paragraph{Cavity Taylor remainder and endpoint replacement.}
 Apply the cavity derivative formula once more.  Every term in $g_E''(u)$ is
 a fixed numerical multiple of an expectation containing two cavity overlaps.
 Since
@@ -2582,7 +2571,6 @@ Equations \eqref{eq:clt-g-zero},
  \label{eq:clt-vector-Stein}
 \end{equation}
 
-\paragraph{Diagonalization in the three cavity modes.}
 For the test-function correlations define
 \begin{align}
  U_f&\coloneqq T_A(f)-4T_B(f)+3T_C(f),
@@ -2712,7 +2700,6 @@ Notice that the choice $f\equiv1$ gives
 so the centering by the infinite-volume parameter $q$ has no residual
 order-one bias.
 
-\paragraph{Identification and nonnegativity of the variance.}
 For completeness, we check that \eqref{eq:clt-variance} is the limiting
 second moment.  From the cavity equations at $s=1$, the already proved
 estimate
@@ -2776,7 +2763,6 @@ In particular,
  \label{eq:clt-variance-nonnegative}
 \end{equation}
 
-\paragraph{Characteristic-function ODE.}
 Define
 \begin{align}
  C_N(t)
