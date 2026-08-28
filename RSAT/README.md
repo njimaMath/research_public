@@ -159,16 +159,13 @@ RSAT/
 ## Dependencies
 
 The Lake package is named `LatalaMeetsAT`. Its
-[`lakefile.lean`](./lakefile.lean) uses local shared dependencies:
+[`lakefile.lean`](./lakefile.lean) uses:
 
-- Mathlib at `../../.lake/packages/mathlib`;
+- Mathlib tag `v4.32.1` from the official Mathlib Git repository;
 - shared spin-glass support at `../generalizedLatala`.
 
-Most files in [`Lemmas/SpinGlass/`](./Lemmas/SpinGlass/) are borrowed from the
-[`or4nge19/SpinGlass`](https://github.com/or4nge19/SpinGlass) library.
-
-The package expects this surrounding directory layout. Adjust the local paths
-in `lakefile.lean` if the dependencies are stored elsewhere.
+The local support dependency is included in the same `research_public`
+repository, so no external directory layout is required.
 
 ## Maintenance policy
 
@@ -184,7 +181,19 @@ two public proof paths continue to compile.
 ## Build
 
 The selected toolchain is Lean 4.32.1, specified by
-[`lean-toolchain`](./lean-toolchain). From the `RSAT` directory, run:
+[`lean-toolchain`](./lean-toolchain). For a fresh clone, run:
+
+```bash
+git clone https://github.com/njimaMath/research_public.git
+cd research_public/RSAT
+lake update
+lake build
+lake env lean Main.lean
+```
+
+The first `lake update` fetches the pinned Mathlib release and its transitive
+dependencies into the ignored local `.lake` directory. For subsequent checks
+from the `RSAT` directory, run:
 
 ```bash
 lake build LatalaMeetsAT
@@ -209,8 +218,8 @@ git diff -- Main.lean
 ```
 
 The last command must produce no output. Because Mathlib is shared from a
-parent directory, a clean build may need to regenerate or restore that shared
-compiled cache before rebuilding the project modules.
+local Lake package directory, `lake update` restores the pinned dependency set
+after that directory is removed.
 
 To inspect the selected compiler version, run:
 
@@ -235,3 +244,11 @@ rg -n '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
 
 When changing a proof, compile the smallest affected module first and then
 rerun the project-level build, public-endpoint check, and placeholder scan.
+
+## License
+
+The RSAT formalization is distributed under the Apache License 2.0; see
+[`LICENSE`](./LICENSE). Portions of [`Lemmas/SpinGlass/`](./Lemmas/SpinGlass/)
+are borrowed or adapted from
+[`or4nge19/SpinGlass`](https://github.com/or4nge19/SpinGlass) and retain the
+applicable Apache-2.0 attribution; see [`NOTICE`](./NOTICE).

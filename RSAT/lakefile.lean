@@ -3,9 +3,9 @@ import Lake
 open Lake DSL
 
 package LatalaMeetsAT where
-  packagesDir := "../../.lake/packages"
 
-require mathlib from "../../.lake/packages/mathlib"
+require mathlib from git
+  "https://github.com/leanprover-community/mathlib4.git" @ "v4.32.1"
 
 lean_lib GeneralizedSupport where
   srcDir := "../generalizedLatala"
