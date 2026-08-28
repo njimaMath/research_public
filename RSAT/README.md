@@ -151,6 +151,8 @@ Lévy continuity theorem to obtain weak convergence.
 
 ```text
 RSAT/
+├── ARTIFACT.md               # standalone referee guide
+├── CITATION.cff              # artifact citation metadata
 ├── Main.lean
 ├── Lemmas/
 │   ├── AT/                   # fixed point, AT data, and scalar interpolation
@@ -165,7 +167,8 @@ RSAT/
 │   └── MainResult.lean       # abstract quantitative strict-AT theorem
 ├── lakefile.lean
 ├── lake-manifest.json
-└── lean-toolchain
+├── lean-toolchain
+└── verify.sh                 # reproducibility and source-integrity checks
 ```
 
 ## Dependencies
