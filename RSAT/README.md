@@ -2,13 +2,26 @@
 
 This directory contains a Lean formalization of quantitative replica-symmetric
 results for the Sherrington-Kirkpatrick spin glass model in the
-strict Almeida-Thouless region. It proves uniform finite-size estimates on a 
-compact set of parameter and a pointwise central limit theorem for the centered
+strict Almeida-Thouless region. It proves uniform finite-size estimates on
+compact sets of parameters and a pointwise central limit theorem for the centered
 overlap.
 
 [`Main.lean`](./Main.lean) is the public endpoint. It instantiates the abstract
 results on a canonical countable product Gaussian space and exports the
 theorems `strictAT_main` and `strictAT_overlapCLT_weak`.
+
+## Correspondence with the paper
+
+| Paper statement | Lean declaration | File |
+| --- | --- | --- |
+| Smart-path Hamiltonian, the equation defining $H_{N,s}$ | `H_N_s` | `Main.lean` |
+| Identification of the concrete Hamiltonian with the abstract smart-path implementation | `H_N_s_eq_smartPath` | `Main.lean` |
+| Principal quantitative theorem (`thm:main`) | `strictAT_main` | `Main.lean` |
+| Overlap central limit theorem (`thm:overlap-clt-intro`) | `strictAT_overlapCLT_weak` | `Main.lean` |
+
+The conclusion `StrictATClaim` of `strictAT_main` contains the three components
+`overlapConcentration`, `freeEnergyCorrection`, and
+`repliconSusceptibility`.
 
 ## Concrete smart path
 
@@ -73,7 +86,7 @@ X_N = sqrt(N) * (R₁₂ - rsQ β h).
 ```
 
 The theorem
-`SpinGlass.AT.overlapCLT_weak` showes the weak convergence of 'X_N' to a centered
+`SpinGlass.AT.overlapCLT_weak` shows the weak convergence of `X_N` to a centered
 Gaussian law with strictly positive variance
 
 ```text
@@ -150,7 +163,6 @@ RSAT/
 │   ├── SpinGlass/            # underlying SK infrastructure
 │   ├── SmartPath/            # smart-path identities and endpoint estimates
 │   └── MainResult.lean       # abstract quantitative strict-AT theorem
-├── refs/                     # reference arguments
 ├── lakefile.lean
 ├── lake-manifest.json
 └── lean-toolchain
@@ -162,6 +174,12 @@ The Lake package is named `QuantitativeStrictAT`. Its
 [`lakefile.lean`](./lakefile.lean) uses:
 
 - Mathlib tag `v4.32.1` from the official Mathlib Git repository.
+
+Lake obtains Mathlib and its transitive dependencies inside the local RSAT
+build environment. No sibling project or directory is required. A fresh clone
+of `research_public`, followed by entering `RSAT`, is sufficient. RSAT can also
+be copied and built independently of every other directory in
+`research_public`.
 
 ## Maintenance policy
 
@@ -213,9 +231,9 @@ lake env lean Main.lean
 git diff -- Main.lean
 ```
 
-The last command must produce no output. Because Mathlib is shared from a
-local Lake package directory, `lake update` restores the pinned dependency set
-after that directory is removed.
+The last command must produce no output. `lake update` obtains the pinned
+dependency set recorded by `lake-manifest.json` in the local `.lake` directory.
+It is a dependency-setup command and is not part of every verification run.
 
 To inspect the selected compiler version, run:
 
@@ -230,12 +248,8 @@ placeholders or substitute axioms. A full verification is:
 
 ```bash
 lake clean
-lake build QuantitativeStrictAT
-lake env lean Main.lean
+./verify.sh
 git diff -- Main.lean
-rg -n '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
-  --glob '*.lean' \
-  --glob '!.lake/**'
 ```
 
 When changing a proof, compile the smallest affected module first and then

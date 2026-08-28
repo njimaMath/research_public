@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software artifact, please cite it and the associated paper."
+title: "RSAT: Quantitative Strict de Almeida-Thouless Theorem and Overlap CLT"
+type: software
+authors:
+  - family-names: Kusuoka
+    given-names: Seiichiro
+  - family-names: Nakajima
+    given-names: Shuta
+repository-code: "https://github.com/njimaMath/research_public"
+license: Apache-2.0
+identifiers:
+  - type: other
+    value: "arXiv:2608.23413"
+    description: "Associated paper: A quantitative replica-symmetric bound of Sherrington--Kirkpatrick model in the entire de Almeida--Thouless region"
