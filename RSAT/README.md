@@ -158,7 +158,7 @@ RSAT/
 
 ## Dependencies
 
-The Lake package is named `LatalaMeetsAT`. Its
+The Lake package is named `QuantitativeStrictAT`. Its
 [`lakefile.lean`](./lakefile.lean) uses:
 
 - Mathlib tag `v4.32.1` from the official Mathlib Git repository;
@@ -196,7 +196,7 @@ dependencies into the ignored local `.lake` directory. For subsequent checks
 from the `RSAT` directory, run:
 
 ```bash
-lake build LatalaMeetsAT
+lake build QuantitativeStrictAT
 lake env lean Main.lean
 ```
 
@@ -212,7 +212,7 @@ Before a release or after dependency refactoring, perform a clean build:
 
 ```bash
 lake clean
-lake build LatalaMeetsAT
+lake build QuantitativeStrictAT
 lake env lean Main.lean
 git diff -- Main.lean
 ```
@@ -234,7 +234,7 @@ placeholders or substitute axioms. A full verification is:
 
 ```bash
 lake clean
-lake build LatalaMeetsAT
+lake build QuantitativeStrictAT
 lake env lean Main.lean
 git diff -- Main.lean
 rg -n '\b(sorry|admit)\b|sorryAx|^[[:space:]]*axiom\b' . \
