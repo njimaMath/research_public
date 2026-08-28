@@ -161,11 +161,7 @@ RSAT/
 The Lake package is named `QuantitativeStrictAT`. Its
 [`lakefile.lean`](./lakefile.lean) uses:
 
-- Mathlib tag `v4.32.1` from the official Mathlib Git repository;
-- shared spin-glass support at `../generalizedLatala`.
-
-The local support dependency is included in the same `research_public`
-repository, so no external directory layout is required.
+- Mathlib tag `v4.32.1` from the official Mathlib Git repository.
 
 ## Maintenance policy
 
