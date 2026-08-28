@@ -1,14 +1,30 @@
 # RSAT: Quantitative Strict Almeida-Thouless Theorem and Overlap CLT
 
 This directory contains a Lean formalization of quantitative replica-symmetric
-results for the Sherrington-Kirkpatrick spin glass model in the positive-field
-strict Almeida-Thouless region. It proves uniform finite-size estimates on
-compact parameter sets and a pointwise central limit theorem for the centered
+results for the Sherrington-Kirkpatrick spin glass model in the
+strict Almeida-Thouless region. It proves uniform finite-size estimates on a 
+compact set of parameter and a pointwise central limit theorem for the centered
 overlap.
 
 [`Main.lean`](./Main.lean) is the public endpoint. It instantiates the abstract
 results on a canonical countable product Gaussian space and exports the
 theorems `strictAT_main` and `strictAT_overlapCLT_weak`.
+
+## Concrete smart path
+
+`Main.lean` defines
+
+```text
+H_{N,s}(σ) = β sqrt(s) / sqrt(2N) Σᵢⱼ gᵢⱼ σᵢ σⱼ
+             + Σᵢ (h + β sqrt((1-s)q) zᵢ) σᵢ,
+```
+
+where the `gᵢⱼ` and `zᵢ` are independent standard Gaussian coordinates on
+`CanonicalGaussianSpace`. The theorem `H_N_s_eq_smartPath` identifies this
+Hamiltonian with the implementation used by the abstract proof. The
+definition `canonicalRSSmartPathDisorder` supplies the same concrete model to
+the CLT interface.
+
 
 ## Quantitative strict-AT theorem
 
@@ -19,23 +35,23 @@ strictStabilityRegion = {(β, h) | 0 < β ∧ 0 < h ∧ stabilityIndex β h < 1}
 ```
 
 For the replica-symmetric overlap `q = canonicalOverlap β h` and every
-smart-path time `s ∈ [0, 1]`, the project proves:
+smart-path time `s ∈ [0, 1]`, the main results prove:
 
-- uniform overlap concentration: `N * A_s N β h s ≤ C_K`;
-- a signed `O(1 / N)` free-energy correction:
+- "overlapConcentration": uniform overlap concentration: `N * A_s N β h s ≤ C_K`;
+- "freeEnergyCorrection": a signed `O(1 / N)` free-energy correction:
   `0 ≤ replicaSymmetricFreeEnergy β h - φ_N N β h ≤ C_K / N`;
-- uniform convergence of the scaled replicon susceptibility
+- "repliconSusceptibility": uniform convergence of the scaled replicon susceptibility
   `N * (A_s N β h s - 2 * B_s N β h s + C_s N β h s)` to
   `stabilityIndex β h / (β ^ 2 * (1 - s * stabilityIndex β h))`.
 
 Here `A_s`, `B_s`, and `C_s` are the equal-pair, shared-index, and
-disjoint-index centered-overlap moments. The stability index is
+disjoint-index centered-overlap moments. The stability parameter is
 
 ```text
 stabilityIndex β h = β^2 E[sech^4(h + β sqrt(q) Z)].
 ```
 
-The public statement is:
+So, the first main claim is:
 
 ```lean
 theorem strictAT_main
@@ -45,7 +61,7 @@ theorem strictAT_main
     StrictATClaim K
 ```
 
-The fields of `StrictATClaim` are `overlapConcentration`,
+The contents of `StrictATClaim` are `overlapConcentration`,
 `freeEnergyCorrection`, and `repliconSusceptibility`.
 
 ## Overlap central limit theorem
@@ -56,9 +72,8 @@ For fixed `β > 0` and `h > 0` with `atParameter β h < 1`, set
 X_N = sqrt(N) * (R₁₂ - rsQ β h).
 ```
 
-The theorem `SpinGlass.AT.overlapCLT_characteristic` proves convergence of
-the cosine and sine parts of the characteristic function. The theorem
-`SpinGlass.AT.overlapCLT_weak` packages this as weak convergence to a centered
+The theorem
+`SpinGlass.AT.overlapCLT_weak` showes the weak convergence of 'X_N' to a centered
 Gaussian law with strictly positive variance
 
 ```text
@@ -71,7 +86,7 @@ where `α = atParameter β h`, `a = rsA β h`,
 `κ = cavityKappa (rsQ β h) (rsR β h)`, and
 `ζ = cavityZeta (rsQ β h) (rsR β h)`.
 
-The canonical specialization exported by [`Main.lean`](./Main.lean) is:
+The second main claim is:
 
 ```lean
 theorem strictAT_overlapCLT_weak
@@ -88,23 +103,6 @@ theorem strictAT_overlapCLT_weak
         (nhds (SpinGlass.AT.centeredGaussianLaw σ2))
 ```
 
-The sequence uses physical size `N.succ`, so the statement never includes a
-zero-size spin system.
-
-## Concrete smart path
-
-`Main.lean` defines
-
-```text
-H_{N,s}(σ) = β sqrt(s) / sqrt(2N) Σᵢⱼ gᵢⱼ σᵢ σⱼ
-             + Σᵢ (h + β sqrt((1-s)q) zᵢ) σᵢ,
-```
-
-where the `gᵢⱼ` and `zᵢ` are independent standard Gaussian coordinates on
-`CanonicalGaussianSpace`. The theorem `H_N_s_eq_smartPath` identifies this
-Hamiltonian with the implementation used by the abstract proof. The
-definition `canonicalRSSmartPathDisorder` supplies the same concrete model to
-the CLT interface.
 
 ## Proof architecture
 
@@ -174,17 +172,14 @@ in `lakefile.lean` if the dependencies are stored elsewhere.
 
 ## Maintenance policy
 
-[`Main.lean`](./Main.lean) is the fixed public theorem file. Refactoring is
-performed under [`Lemmas/AGENTS.md`](./Lemmas/AGENTS.md) and must preserve
+[`Main.lean`](./Main.lean) is the fixed public theorem file. Refactoring must preserve
 `Main.lean` byte for byte. Its two project imports,
 `Lemmas.Gaussian.ConcreteModel` and `Lemmas.CLT.CLT_Main`, are the roots of the
 required dependency graph.
 
 The `Lemmas` tree is kept dependency-driven: obsolete forwarding modules,
 unused internal declarations, and broad imports should be removed when the
-two public proof paths continue to compile. In particular, each module should
-declare the Mathlib facilities it uses instead of relying on an unrelated
-project module to import them transitively.
+two public proof paths continue to compile. 
 
 ## Build
 
