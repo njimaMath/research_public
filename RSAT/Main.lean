@@ -194,7 +194,7 @@ theorem strictAT_overlapCLT_weak
             (SpinGlass.AT.rsR β h) /
             (1 - β ^ 2 * SpinGlass.AT.cavityKappa (SpinGlass.AT.rsQ β h)
               (SpinGlass.AT.rsR β h)) ^ 2
-    0 ≤ σ2 ∧
+    0 < σ2 ∧
       Filter.Tendsto
         (fun N : ℕ => SpinGlass.AT.scaledOverlapLaw
           (canonicalRSSmartPathDisorder N.succ β h))

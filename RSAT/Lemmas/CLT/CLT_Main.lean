@@ -218,6 +218,137 @@ theorem overlapCLT_characteristic
     ring
   · exact hs
 
+private lemma overlapCLT_variance_pos
+    {β h : ℝ} (hβ : 0 < β) (hh : 0 < h)
+    (hAT : atParameter β h < 1) :
+    0 <
+      3 * rsA β h / (1 - atParameter β h)
+        - 2 * cavityKappa (rsQ β h) (rsR β h) /
+            (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h))
+        - cavityZeta (rsQ β h) (rsR β h) /
+            (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) ^ 2 := by
+  let q := rsQ β h
+  let r := rsR β h
+  let α := atParameter β h
+  let κ := cavityKappa q r
+  let ζ := cavityZeta q r
+  have htanh : Continuous (fun x : ℝ => Real.tanh x) := by
+    simp_rw [Real.tanh_eq]
+    apply Continuous.div
+    · fun_prop
+    · fun_prop
+    · intro x
+      positivity
+  have hqSq : q ^ 2 ≤ r := by
+    let X : ℝ → ℝ := fun z => Real.tanh (h + β * Real.sqrt q * z) ^ 2
+    have hXmem : MemLp X 2 (gaussianReal 0 1) := by
+      apply memLp_of_bounded (a := 0) (b := 1)
+      · exact ae_of_all _ fun z =>
+          ⟨sq_nonneg _, (Real.tanh_sq_lt_one _).le⟩
+      · exact ((htanh.comp (by fun_prop)).pow 2).aestronglyMeasurable
+    have hv := variance_nonneg X (gaussianReal 0 1)
+    rw [variance_eq_sub hXmem] at hv
+    have heq : (∫ z, X z ^ 2 ∂gaussianReal 0 1) =
+        ∫ z, Real.tanh (h + β * Real.sqrt q * z) ^ 4 ∂gaussianReal 0 1 := by
+      apply integral_congr_ae
+      filter_upwards [] with z
+      dsimp [X]
+      ring
+    dsimp [q, r]
+    rw [rsQ_eq_gaussian_tanh_sq hh, rsR_eq_gaussian_tanh_fourth]
+    unfold standardGaussianExpectation
+    rw [← heq]
+    simp only [Pi.pow_apply] at hv
+    linarith
+  have hrq : r ≤ q := by
+    dsimp [q, r]
+    exact rsR_le_rsQ hh
+  have hαpos : 0 < α := by
+    have hqLt : q < 1 := by
+      dsimp [q]
+      exact rsQ_lt_one hβ hh
+    have hApos : 0 < 1 - 2 * q + r := by
+      nlinarith [sq_pos_of_pos (sub_pos.mpr hqLt)]
+    dsimp [α, q, r, atParameter, rsA]
+    exact mul_pos (sq_pos_of_pos hβ) hApos
+  have hα : α = β ^ 2 * (1 - 2 * q + r) := by
+    dsimp [α, q, r, atParameter, rsA]
+  let w := β ^ 2 * (q - r) / α
+  have hw : 0 ≤ w := by
+    exact div_nonneg (mul_nonneg (sq_nonneg β) (sub_nonneg.mpr hrq)) hαpos.le
+  have hwα : w * α = β ^ 2 * (q - r) := by
+    dsimp [w]
+    exact div_mul_cancel₀ _ hαpos.ne'
+  have hκ : β ^ 2 * κ = α * (1 - 2 * w) := by
+    dsimp only [κ, cavityKappa]
+    nlinarith [hα, hwα]
+  have hζ : β ^ 2 * ζ ≤ 2 * α * w := by
+    have hζraw : ζ ≤ 2 * (q - r) := by
+      dsimp [ζ, cavityZeta]
+      nlinarith
+    calc
+      β ^ 2 * ζ ≤ β ^ 2 * (2 * (q - r)) :=
+        mul_le_mul_of_nonneg_left hζraw (sq_nonneg β)
+      _ = 2 * α * w := by
+        calc
+          β ^ 2 * (2 * (q - r)) = 2 * (β ^ 2 * (q - r)) := by ring
+          _ = 2 * (w * α) := by rw [← hwα]
+        ring
+  let dA := 1 - α
+  let dκ := 1 - β ^ 2 * κ
+  have hdApos : 0 < dA := by
+    dsimp [dA, α]
+    linarith
+  have hdκeq : dκ = 1 - α + 2 * α * w := by
+    dsimp [dκ]
+    rw [hκ]
+    ring
+  have hdκpos : 0 < dκ := by
+    rw [hdκeq]
+    nlinarith
+  let P := (1 - α) ^ 2 + 2 * (1 - α) * (1 + 2 * α) * w +
+    4 * α * (α + 2) * w ^ 2
+  have hPpos : 0 < P := by
+    have hterm₁ : 0 ≤ 2 * (1 - α) * (1 + 2 * α) * w := by
+      positivity
+    have hterm₂ : 0 ≤ 4 * α * (α + 2) * w ^ 2 := by
+      positivity
+    dsimp [P]
+    nlinarith [sq_pos_of_pos hdApos]
+  have hratio :
+      3 * α / dA - 2 * (β ^ 2 * κ) / dκ - 2 * α * w / dκ ^ 2 =
+        α * P / (dA * dκ ^ 2) := by
+    rw [hκ]
+    field_simp [hdApos.ne', hdκpos.ne']
+    rw [hdκeq]
+    dsimp [P, dA]
+    ring
+  have hζdiv : β ^ 2 * ζ / dκ ^ 2 ≤ 2 * α * w / dκ ^ 2 := by
+    exact (div_le_div_iff₀ (sq_pos_of_pos hdκpos)
+      (sq_pos_of_pos hdκpos)).2 (by
+        simpa [mul_comm] using
+          mul_le_mul_of_nonneg_right hζ (sq_pos_of_pos hdκpos).le)
+  have hnorm : 0 <
+      3 * α / dA - 2 * (β ^ 2 * κ) / dκ - β ^ 2 * ζ / dκ ^ 2 := by
+    have hright : 0 < α * P / (dA * dκ ^ 2) := by
+      exact div_pos (mul_pos hαpos hPpos)
+        (mul_pos hdApos (sq_pos_of_pos hdκpos))
+    calc
+      0 < α * P / (dA * dκ ^ 2) := hright
+      _ = 3 * α / dA - 2 * (β ^ 2 * κ) / dκ - 2 * α * w / dκ ^ 2 := hratio.symm
+      _ ≤ 3 * α / dA - 2 * (β ^ 2 * κ) / dκ - β ^ 2 * ζ / dκ ^ 2 := by
+        linarith
+  have hnorm' : 0 < β ^ 2 *
+      (3 * rsA β h / (1 - atParameter β h)
+        - 2 * cavityKappa (rsQ β h) (rsR β h) /
+            (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h))
+        - cavityZeta (rsQ β h) (rsR β h) /
+            (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) ^ 2) := by
+    dsimp only [α, κ, ζ, dA, dκ, q, r] at hnorm
+    unfold atParameter at hnorm ⊢
+    convert hnorm using 1 <;> ring
+  exact pos_of_mul_pos_right hnorm' (sq_nonneg β)
+
 /--
 Weak-convergence form of the central limit theorem. If
 
@@ -243,7 +374,7 @@ theorem overlapCLT_weak
             (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h))
         - cavityZeta (rsQ β h) (rsR β h) /
             (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) ^ 2
-    0 ≤ σ2 ∧
+    0 < σ2 ∧
       Tendsto
         (fun N : ℕ => scaledOverlapLaw (paths N))
         atTop
@@ -255,36 +386,17 @@ theorem overlapCLT_weak
           (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h))
       - cavityZeta (rsQ β h) (rsR β h) /
           (1 - β ^ 2 * cavityKappa (rsQ β h) (rsR β h)) ^ 2
-  change 0 ≤ σ2 ∧ Tendsto (fun N : ℕ => scaledOverlapLaw (paths N)) atTop
+  change 0 < σ2 ∧ Tendsto (fun N : ℕ => scaledOverlapLaw (paths N)) atTop
       (𝓝 (centeredGaussianLaw σ2))
   have hchar := overlapCLT_characteristic hβ hh hAT paths
   have hH (N : ℕ) : Measurable (fullPathHamiltonian (paths N) 1) := by
     exact (((paths N).sk.hU.repr_measurable.const_smul (Real.sqrt 1)).add
       ((paths N).simple.hV.repr_measurable.const_smul (Real.sqrt (1 - 1)))).add
         measurable_const
-  have hσ2 : 0 ≤ σ2 := by
-    have hlim := (hchar 1).1
-    have hle : ∀ N : ℕ,
-        quenchedReplicaAverage (fullPathHamiltonian (paths N) 1)
-          (fun σs : Replicas N.succ 2 => Real.cos
-            (1 * Real.sqrt (N.succ : ℝ) * centeredOverlap (rsQ β h) σs 0 1)) ≤ 1 := by
-      intro N
-      calc
-        _ ≤ quenchedReplicaAverage (fullPathHamiltonian (paths N) 1)
-              (fun _ : Replicas N.succ 2 => 1) :=
-          quenchedReplicaAverage_mono _ (hH N) _ _ (fun σs => Real.cos_le_one _)
-        _ = 1 := by
-          unfold quenchedReplicaAverage replicaGibbsAverage
-          simp_rw [mul_one, SpinGlass.sum_prod_gibbs_pmf_eq_one]
-          simp
-    have hexp : Real.exp (-((1 : ℝ) / 2) * σ2) ≤ 1 := by
-      apply le_of_tendsto (by simpa using hlim)
-      filter_upwards with N
-      simpa using hle N
-    rw [Real.exp_le_one_iff] at hexp
-    linarith
+  have hσ2 : 0 < σ2 := by
+    exact overlapCLT_variance_pos hβ hh hAT
   apply And.intro hσ2
-  have hcoe : (σ2.toNNReal : ℝ) = σ2 := Real.coe_toNNReal σ2 hσ2
+  have hcoe : (σ2.toNNReal : ℝ) = σ2 := Real.coe_toNNReal σ2 hσ2.le
   apply MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
   have h_charFun_scaled (N : ℕ) :
