@@ -11,7 +11,7 @@ echo "Checking Main.lean"
 lake env lean Main.lean
 
 echo "Scanning project Lean sources for placeholders and local axioms"
-pattern='(^|[^[:alnum:]_])(sorry|admit|sorryAx)([^[:alnum:]_]|$)|^[[:space:]]*axiom[[:space:]]'
+pattern='(^|[^[:alnum:]_])(sorry|admit|sorryAx|axiom)([^[:alnum:]_]|$)'
 found=0
 while IFS= read -r -d '' source_file; do
   if grep -En "$pattern" "$source_file"; then
