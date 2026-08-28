@@ -59,7 +59,7 @@ X_N = sqrt(N) * (R₁₂ - rsQ β h).
 The theorem `SpinGlass.AT.overlapCLT_characteristic` proves convergence of
 the cosine and sine parts of the characteristic function. The theorem
 `SpinGlass.AT.overlapCLT_weak` packages this as weak convergence to a centered
-Gaussian law with variance
+Gaussian law with strictly positive variance
 
 ```text
 σ² = 3a / (1 - α)
@@ -80,7 +80,7 @@ theorem strictAT_overlapCLT_weak
     (hh : 0 < h)
     (hAT : SpinGlass.AT.atParameter β h < 1) :
     let σ2 : ℝ := ...
-    0 ≤ σ2 ∧
+    0 < σ2 ∧
       Filter.Tendsto
         (fun N : ℕ => SpinGlass.AT.scaledOverlapLaw
           (canonicalRSSmartPathDisorder N.succ β h))
