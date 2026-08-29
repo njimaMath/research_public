@@ -1,4 +1,4 @@
-import Proof_of_generalized_latala.proof
+import GeneralizedLatala.Proof
 
 open MeasureTheory ProbabilityTheory BigOperators
 open PhysLean.Probability.GaussianIBP

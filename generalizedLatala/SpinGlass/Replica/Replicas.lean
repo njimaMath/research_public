@@ -1,6 +1,6 @@
-import SpinGlass.SKModel
-import SpinGlass.GuerraBound
-import SpinGlass.Calculus
+import SpinGlass.Model.SKModel
+import SpinGlass.Interpolation.GuerraBound
+import SpinGlass.Core.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -28,9 +28,8 @@ which is an induction on `N`.
 
 variable {Ω : Type*} [MeasureSpace Ω] [IsProbabilityMeasure (ℙ : Measure Ω)]
 variable (N : ℕ) (β h q : ℝ)
-variable {covU covV : Config N → Config N → ℝ}
-variable (sk : GaussianDisorder (Ω := Ω) N β h covU)
-variable (sim : ReferenceDisorder (Ω := Ω) N β q covV)
+variable (sk : SKDisorder (Ω := Ω) N β h)
+variable (sim : SimpleDisorder (Ω := Ω) N β q)
 
 section ReplicaCalculus
 

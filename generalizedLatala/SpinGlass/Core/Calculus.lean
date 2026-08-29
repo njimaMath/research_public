@@ -1,4 +1,4 @@
-import SpinGlass.Defs
+import SpinGlass.Core.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology

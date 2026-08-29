@@ -1,4 +1,4 @@
-import SpinGlass.Defs
+import SpinGlass.Core.Defs
 
 open MeasureTheory ProbabilityTheory Real BigOperators
 
@@ -9,7 +9,7 @@ namespace SpinGlass.Algebra
 
 These are the *purely algebraic* steps used in Guerra's interpolation:
 
-- trace identities for the SK and simple covariance kernels (proved in `Defs.lean`);
+- trace identities for the SK and simple covariance kernels (proved in `SpinGlass.Core.Defs`);
 - the “square completion” identity which turns a difference of traces into a
   negative Gibbs average of a square.
 

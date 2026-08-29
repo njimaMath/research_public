@@ -1,12 +1,21 @@
-import SpinGlass.Replicas
+import SpinGlass.Replica.Replicas
 import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 
 /-!
-# Permanent support for the independent endpoint
+# Independent endpoint support
 
 This module contains the Gaussian-law, reference-field, and product-spin identities used by
 the independent endpoint of the generalized Latała argument.
+
+Main declarations:
+- `simpleDisorder_law_eq_reference`
+- `integral_fintype_prod_eq_pow`
+
+Dependencies:
+- finite-replica calculus from `SpinGlass.Replica.Replicas`
+
+This file corresponds to the independent-endpoint part of `blueprint_latala.txt`.
 -/
 
 open MeasureTheory ProbabilityTheory Real BigOperators

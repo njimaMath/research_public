@@ -5,6 +5,21 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
+/-!
+# Finite-volume spin-glass definitions
+
+Core configuration, energy, Gibbs-weight, covariance, and free-energy definitions shared by the
+model, replica, and interpolation layers.
+
+Main declarations:
+- `Config`
+- `EnergySpace`
+- `gibbs_pmf`
+- `free_energy_density`
+
+Dependencies:
+- local finite-dimensional Gaussian integration-by-parts support
+-/
 
 open MeasureTheory ProbabilityTheory Real BigOperators Filter Topology
 

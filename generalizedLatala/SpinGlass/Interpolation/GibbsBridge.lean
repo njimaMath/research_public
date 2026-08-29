@@ -1,6 +1,6 @@
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import SpinGlass.Defs
-import SpinGlass.SKModel
+import SpinGlass.Core.Defs
+import SpinGlass.Model.SKModel
 
 /-!
 ## Talagrand ↔ Georgii bridge (finite `N`)
