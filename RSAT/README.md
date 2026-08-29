@@ -261,7 +261,7 @@ rerun the project-level build, public-endpoint check, and placeholder scan.
 ## License
 
 The RSAT formalization is distributed under the Apache License 2.0; see
-[`LICENSE`](./LICENSE). Portions of [`Lemmas/SpinGlass/`](./Lemmas/SpinGlass/)
+[`LICENSE`](./LICENSE). Most parts of [`Lemmas/SpinGlass/`](./Lemmas/SpinGlass/)
 are borrowed or adapted from
 [`or4nge19/SpinGlass`](https://github.com/or4nge19/SpinGlass) and retain the
 applicable Apache-2.0 attribution; see [`NOTICE`](./NOTICE).
