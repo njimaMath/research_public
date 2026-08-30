@@ -3,10 +3,6 @@ import Lemmas.CLT.CLT_Main
 
 /-!
 # Quantitative strict Almeida-Thouless theorem
-
-This file follows the model-and-main-result portion of
-`refs/latalaArgumentsStrictAlmeidaThoulessCondition.tex`.  The Gaussian
-construction and the compactness bookkeeping are kept in `Lemmas`.
 -/
 
 open MeasureTheory ProbabilityTheory BigOperators
