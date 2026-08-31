@@ -8,9 +8,13 @@ echo "Building QuantitativeStrictAT"
 lake build QuantitativeStrictAT
 
 echo "Checking Main.lean and the public ConcreteMain API"
-{
-  cat Main.lean
-  cat <<'LEAN'
+lake env lean -o .lake/build/lib/lean/Main.olean Main.lean
+
+api_check="$(mktemp "${TMPDIR:-/tmp}/rsat-api-check.XXXXXX.lean")"
+trap 'rm -f -- "$api_check"' EXIT
+cat >"$api_check" <<'LEAN'
+import Main
+
 example (β : ℝ) {h : ℝ} (hh : 0 < h) :
     ConcreteMain.ReplicaSymmetricFixedPointClaim β h :=
   ConcreteMain.replicaSymmetricFixedPointClaim_of_pos_field β hh
@@ -21,7 +25,9 @@ example : ConcreteMain.QuantitativeStrictATClaim :=
 example (β h : ℝ) : ConcreteMain.OverlapCLTClaim β h :=
   ConcreteMain.overlapCLTClaim β h
 LEAN
-} | lake env lean --stdin
+lake env lean "$api_check"
+rm -f -- "$api_check"
+trap - EXIT
 
 echo "Scanning project Lean sources for placeholders and local axioms"
 pattern='(^|[^[:alnum:]_])(sorry|admit|sorryAx|axiom)([^[:alnum:]_]|$)'
