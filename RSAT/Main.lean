@@ -11,6 +11,52 @@ set_option autoImplicit false
 
 /-! ## The explicit smart path -/
 
+/-- The canonical overlap $q=q(\beta,h)$ satisfies the replica-symmetric
+fixed-point equation. -/
+theorem canonicalOverlap_fixedPoint (β h : ℝ) :
+    canonicalOverlap β h =
+      ∫ z : ℝ,
+        Real.tanh (h + β * Real.sqrt (canonicalOverlap β h) * z) ^ 2
+          ∂gaussianReal 0 1 := by
+  simpa [canonicalOverlap, SpinGlass.AT.rsQ,
+    SpinGlass.AT.IsRSFixedPoint, SpinGlass.AT.standardGaussianExpectation] using
+    SpinGlass.AT.rsQ_fixedPoint β h
+
+/-- For every finite system, the coordinates $(g_{ij})$ are independent
+standard Gaussian random variables. -/
+theorem canonicalG_iid_standardGaussian (N : ℕ) :
+    (∀ i j : Fin N,
+      Measure.map (fun ω : CanonicalGaussianSpace => canonicalG ω i j)
+        (volume : Measure CanonicalGaussianSpace) = gaussianReal 0 1) ∧
+    iIndepFun
+      (fun ij : Fin N × Fin N => fun ω : CanonicalGaussianSpace =>
+        canonicalG ω ij.1 ij.2)
+      (volume : Measure CanonicalGaussianSpace) := by
+  let disorder := canonicalSKDisorder N 0 0
+  constructor
+  · intro i j
+    simpa [disorder, canonicalSKDisorder, GaussianDisorder.canonical] using
+      disorder.g_standardGaussian i j
+  · simpa [disorder, canonicalSKDisorder, GaussianDisorder.canonical] using
+      disorder.g_independent
+
+/-- For every finite system, the coordinates $(z_i)$ are independent standard
+Gaussian random variables. -/
+theorem canonicalZ_iid_standardGaussian (N : ℕ) :
+    (∀ i : Fin N,
+      Measure.map (fun ω : CanonicalGaussianSpace => canonicalZ ω i)
+        (volume : Measure CanonicalGaussianSpace) = gaussianReal 0 1) ∧
+    iIndepFun
+      (fun i : Fin N => fun ω : CanonicalGaussianSpace => canonicalZ ω i)
+      (volume : Measure CanonicalGaussianSpace) := by
+  let disorder := canonicalSKDisorder N 0 0
+  constructor
+  · intro i
+    simpa [disorder, canonicalSKDisorder, GaussianDisorder.canonical] using
+      disorder.z_standardGaussian i
+  · simpa [disorder, canonicalSKDisorder, GaussianDisorder.canonical] using
+      disorder.z_independent
+
 /-- The smart-path Hamiltonian $H_{N,s}$ from equation (path) of the paper.
 
 Here $N\in\mathbb N$, the coordinates $(g_{ij})_{1\leq i,j\leq N}$ and
