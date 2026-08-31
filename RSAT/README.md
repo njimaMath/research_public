@@ -1,121 +1,136 @@
 # RSAT: Quantitative Strict Almeida-Thouless Theorem and Overlap CLT
 
-This directory contains a Lean formalization of quantitative replica-symmetric
-results for the Sherrington-Kirkpatrick spin glass model in the
-strict Almeida-Thouless region. It proves uniform finite-size estimates on
-compact sets of parameters and a pointwise central limit theorem for the centered
+This directory contains a Lean formalization of quantitative
+replica-symmetric results for the Sherrington-Kirkpatrick spin glass model in
+the strict Almeida-Thouless region. It proves uniform finite-size estimates on
+compact parameter sets and a pointwise central limit theorem for the centered
 overlap.
 
-[`Main.lean`](./Main.lean) is the public endpoint. It instantiates the abstract
-results on a canonical countable product Gaussian space and exports the
-theorems `strictAT_main` and `strictAT_overlapCLT_weak`.
+[`Main.lean`](./Main.lean) is the public endpoint. The `ConcreteMain` namespace
+defines the model directly in the notation of the paper and exports these
+principal results:
+
+- `replicaSymmetricFixedPointClaim_of_pos_field`
+- `quantitativeStrictATClaim`
+- `overlapCLTClaim`
 
 ## Correspondence with the paper
 
 | Paper statement | Lean declaration | File |
 | --- | --- | --- |
-| Smart-path Hamiltonian, the equation defining $H_{N,s}$ | `H_N_s` | `Main.lean` |
-| Identification of the concrete Hamiltonian with the abstract smart-path implementation | `H_N_s_eq_smartPath` | `Main.lean` |
-| Principal quantitative theorem (`thm:main`) | `strictAT_main` | `Main.lean` |
-| Overlap central limit theorem (`thm:overlap-clt-intro`) | `strictAT_overlapCLT_weak` | `Main.lean` |
+| Replica-symmetric fixed-point characterization | `ConcreteMain.replicaSymmetricFixedPointClaim_of_pos_field` | `Main.lean` |
+| Smart-path Hamiltonian $H_{N,s}$ | `ConcreteMain.H_N_s` | `Main.lean` |
+| Identification with the proof backend | `ConcreteMain.H_N_s_eq_smartPath` | `Main.lean` |
+| Principal quantitative theorem (`thm:main`) | `ConcreteMain.quantitativeStrictATClaim` | `Main.lean` |
+| Overlap central limit theorem (`thm:overlap-clt-intro`) | `ConcreteMain.overlapCLTClaim` | `Main.lean` |
 
-The conclusion `StrictATClaim` of `strictAT_main` contains the three components
-`overlapConcentration`, `freeEnergyCorrection`, and
-`repliconSusceptibility`.
+## Concrete parameters and model
 
-## Concrete smart path
-
-`Main.lean` defines
+For a standard real Gaussian random variable $Z$, `Main.lean` defines
 
 ```text
-H_{N,s}(σ) = β sqrt(s) / sqrt(2N) Σᵢⱼ gᵢⱼ σᵢ σⱼ
-             + Σᵢ (h + β sqrt((1-s)q) zᵢ) σᵢ,
+q = E[tanh(h + beta sqrt(q) Z)^2],
+r = E[tanh(h + beta sqrt(q) Z)^4],
+alpha = beta^2 (1 - 2q + r).
 ```
 
-where the `gᵢⱼ` and `zᵢ` are independent standard Gaussian coordinates on
-`CanonicalGaussianSpace`. The theorem `H_N_s_eq_smartPath` identifies this
-Hamiltonian with the implementation used by the abstract proof. The
-definition `canonicalRSSmartPathDisorder` supplies the same concrete model to
-the CLT interface.
+The canonical value `q beta h` is defined as the infimum of the fixed points
+in $[0,1]$. When $h>0$,
+`replicaSymmetricFixedPointClaim_of_pos_field` proves that it is the unique
+fixed point in this interval.
 
+The strict AT region is the concrete set
+
+```text
+strictATRegion = {(beta, h) | 0 < beta and 0 < h and alpha beta h < 1}.
+```
+
+A configuration on $N$ sites is a function `Fin N -> Bool`, with Boolean
+coordinates mapped to spins in ${-1,1}$. All disorder coordinates live on
+
+```text
+GaussianSpace = ((Nat x Nat) + Nat) -> Real,
+```
+
+equipped with the countable product standard Gaussian measure. The two summands
+index the coordinates $g_{ij}$ and $z_i$. The smart-path Hamiltonian is
+
+```text
+H_{N,s}(sigma) = beta sqrt(s) / sqrt(2N) sum_{i,j} g_{ij} sigma_i sigma_j
+                 + sum_i (h + beta sqrt((1-s)q) z_i) sigma_i.
+```
+
+The file then defines the partition function, Gibbs weights, replica families,
+the Gibbs bracket, the averaged expectation $nu_s$, the overlap $R_{ab}$, and
+the centered overlap $Q_{ab}=R_{ab}-q$. Bridge theorems identify each concrete
+object with the corresponding implementation used by the proof library.
 
 ## Quantitative strict-AT theorem
 
-Let `K : Set (ℝ × ℝ)` be compact and contained in
-
-```text
-strictStabilityRegion = {(β, h) | 0 < β ∧ 0 < h ∧ stabilityIndex β h < 1}.
-```
-
-For the replica-symmetric overlap `q = canonicalOverlap β h` and every
-smart-path time `s ∈ [0, 1]`, the main results prove:
-
-- "overlapConcentration": uniform overlap concentration: `N * A_s N β h s ≤ C_K`;
-- "freeEnergyCorrection": a signed `O(1 / N)` free-energy correction:
-  `0 ≤ replicaSymmetricFreeEnergy β h - φ_N N β h ≤ C_K / N`;
-- "repliconSusceptibility": uniform convergence of the scaled replicon susceptibility
-  `N * (A_s N β h s - 2 * B_s N β h s + C_s N β h s)` to
-  `stabilityIndex β h / (β ^ 2 * (1 - s * stabilityIndex β h))`.
-
-Here `A_s`, `B_s`, and `C_s` are the equal-pair, shared-index, and
-disjoint-index centered-overlap moments. The stability parameter is
-
-```text
-stabilityIndex β h = β^2 E[sech^4(h + β sqrt(q) Z)].
-```
-
-So, the first main claim is:
+`QuantitativeStrictATClaim` states that every compact
+`K : Set (Real x Real)` contained in `strictATRegion` satisfies `MainClaim K`:
 
 ```lean
-theorem strictAT_main
-    (K : Set (ℝ × ℝ))
-    (hKcompact : IsCompact K)
-    (hKsub : K ⊆ strictStabilityRegion) :
-    StrictATClaim K
+theorem quantitativeStrictATClaim : QuantitativeStrictATClaim
 ```
 
-The contents of `StrictATClaim` are `overlapConcentration`,
-`freeEnergyCorrection`, and `repliconSusceptibility`.
+The `quantitativeBounds` field supplies one nonnegative constant $C_K$ for both
+of the following estimates, uniformly over the indicated parameters:
+
+```text
+N A_s <= C_K,
+0 <= replicaSymmetricFreeEnergy - phi_N <= C_K / N.
+```
+
+Here $A_s=nu_s[Q_{12}^2]$, and the bounds hold for every positive $N$, every
+$(beta,h)$ in $K$, and, for the first bound, every $s$ in $[0,1]$.
+
+The `repliconSusceptibility` field states the uniform convergence
+
+```text
+N (A_s - 2 B_s + C_s)
+  -> alpha / (beta^2 (1 - s alpha)),
+```
+
+where $B_s=nu_s[Q_{12}Q_{13}]$ and $C_s=nu_s[Q_{12}Q_{34}]$.
 
 ## Overlap central limit theorem
 
-For fixed `β > 0` and `h > 0` with `atParameter β h < 1`, set
+Define
 
 ```text
-X_N = sqrt(N) * (R₁₂ - rsQ β h).
+kappa = 1 - 4q + 3r,
+zeta  = 2q + q^2 - 3r,
+
+overlapVariance = 3(1 - 2q + r) / (1 - alpha)
+                  - 2 kappa / (1 - beta^2 kappa)
+                  - zeta / (1 - beta^2 kappa)^2.
 ```
 
-The theorem
-`SpinGlass.AT.overlapCLT_weak` shows the weak convergence of `X_N` to a centered
-Gaussian law with strictly positive variance
+For a test function $f$, `scaledOverlapExpectation N beta h f` is the quenched
+expectation of
 
 ```text
-σ² = 3a / (1 - α)
-     - 2κ / (1 - β²κ)
-     - ζ / (1 - β²κ)²,
+f(sqrt(N) (R_12 - q))
 ```
 
-where `α = atParameter β h`, `a = rsA β h`,
-`κ = cavityKappa (rsQ β h) (rsR β h)`, and
-`ζ = cavityZeta (rsQ β h) (rsR β h)`.
-
-The second main claim is:
+at the endpoint of the smart path. The public theorem is
 
 ```lean
-theorem strictAT_overlapCLT_weak
-    {β h : ℝ}
-    (hβ : 0 < β)
-    (hh : 0 < h)
-    (hAT : SpinGlass.AT.atParameter β h < 1) :
-    let σ2 : ℝ := ...
-    0 < σ2 ∧
-      Filter.Tendsto
-        (fun N : ℕ => SpinGlass.AT.scaledOverlapLaw
-          (canonicalRSSmartPathDisorder N.succ β h))
-        Filter.atTop
-        (nhds (SpinGlass.AT.centeredGaussianLaw σ2))
+theorem overlapCLTClaim (beta h : Real) : OverlapCLTClaim beta h
 ```
 
+Under $beta>0$, $h>0$, and $alpha<1$, it proves that `overlapVariance` is
+strictly positive and, for every bounded continuous real-valued $f$,
+
+```text
+scaledOverlapExpectation N beta h f
+  -> E[f(sqrt(overlapVariance beta h) Z)].
+```
+
+Thus the scaled centered overlap converges weakly to the centered Gaussian with
+the displayed variance, stated directly through bounded continuous test
+functions.
 
 ## Proof architecture
 
@@ -143,120 +158,77 @@ Main.lean
 ```
 
 Its proof uses a cavity-Stein system for the three overlap covariance classes,
-solves that system in the existing cavity-mode basis, identifies the limiting
-variance, proves convergence of characteristic functions, and then invokes a
-Lévy continuity theorem to obtain weak convergence.
+solves that system in the cavity-mode basis, identifies the limiting variance,
+proves convergence of characteristic functions, and invokes a Levy continuity
+theorem to obtain weak convergence.
 
 ## Project layout
 
 ```text
 RSAT/
-├── ARTIFACT.md               # standalone referee guide
-├── CITATION.cff              # artifact citation metadata
-├── Main.lean
-├── Lemmas/
-│   ├── AT/                   # fixed point, AT data, and scalar interpolation
-│   ├── Cavity/               # cavity interpolation and remainder estimates
-│   ├── CLT/                  # Stein system and overlap CLT
-│   ├── Concentration/        # coupled-pressure, transport, and tail bounds
-│   ├── Gaussian/             # canonical coordinates and concrete model bridge
-│   ├── GuerraTalagrand/      # two-replica bounds and strict flatness
-│   ├── Price/                # quantitative Gaussian interpolation estimates
-│   ├── SpinGlass/            # underlying SK infrastructure
-│   ├── SmartPath/            # smart-path identities and endpoint estimates
-│   └── MainResult.lean       # abstract quantitative strict-AT theorem
-├── lakefile.lean
-├── lake-manifest.json
-├── lean-toolchain
-└── verify.sh                 # reproducibility and source-integrity checks
+|-- ARTIFACT.md               # standalone referee guide
+|-- CITATION.cff              # artifact citation metadata
+|-- Main.lean                 # concrete public statements and proofs
+|-- Lemmas/
+|   |-- AT/                   # fixed point, AT data, and scalar interpolation
+|   |-- Cavity/               # cavity interpolation and remainder estimates
+|   |-- CLT/                  # Stein system and overlap CLT
+|   |-- Concentration/        # coupled-pressure, transport, and tail bounds
+|   |-- Gaussian/             # canonical coordinates and concrete model bridge
+|   |-- GuerraTalagrand/      # two-replica bounds and strict flatness
+|   |-- Price/                # quantitative Gaussian interpolation estimates
+|   |-- SpinGlass/            # underlying SK infrastructure
+|   |-- SmartPath/            # smart-path identities and endpoint estimates
+|   `-- MainResult.lean       # abstract quantitative strict-AT theorem
+|-- lakefile.lean
+|-- lake-manifest.json
+|-- lean-toolchain
+`-- verify.sh                 # build, API, and source-integrity checks
 ```
 
-## Dependencies
+## Dependencies and build
 
-The Lake package is named `QuantitativeStrictAT`. Its
-[`lakefile.lean`](./lakefile.lean) uses:
-
-- Mathlib tag `v4.32.1` from the official Mathlib Git repository.
-
-Lake obtains Mathlib and its transitive dependencies inside the local RSAT
-build environment. No sibling project or directory is required. A fresh clone
-of `research_public`, followed by entering `RSAT`, is sufficient. RSAT can also
-be copied and built independently of every other directory in
-`research_public`.
-
-## Maintenance policy
-
-[`Main.lean`](./Main.lean) is the fixed public theorem file. Refactoring must preserve
-`Main.lean` byte for byte. Its two project imports,
-`Lemmas.Gaussian.ConcreteModel` and `Lemmas.CLT.CLT_Main`, are the roots of the
-required dependency graph.
-
-The `Lemmas` tree is kept dependency-driven: obsolete forwarding modules,
-unused internal declarations, and broad imports should be removed when the
-two public proof paths continue to compile. 
-
-## Build
-
-The selected toolchain is Lean 4.32.1, specified by
-[`lean-toolchain`](./lean-toolchain). For a fresh clone, run:
+The Lake package is named `QuantitativeStrictAT`. It uses Lean 4.32.1 and
+Mathlib tag `v4.32.1`. A fresh checkout can be prepared and checked with:
 
 ```bash
 git clone https://github.com/njimaMath/research_public.git
 cd research_public/RSAT
 lake update
-lake build
-lake env lean Main.lean
-```
-
-The first `lake update` fetches the pinned Mathlib release and its transitive
-dependencies into the ignored local `.lake` directory. For subsequent checks
-from the `RSAT` directory, run:
-
-```bash
 lake build QuantitativeStrictAT
 lake env lean Main.lean
 ```
 
-The first command builds all modules below `Lemmas`. The second checks the
-public endpoint, which is outside the library glob. To check only the CLT
-endpoint, run:
+`lake update` fetches the pinned dependencies into the ignored `.lake`
+directory. It is needed for initial setup, not for every verification run.
+
+For the complete project check, run:
 
 ```bash
-lake env lean Lemmas/CLT/CLT_Main.lean
+./verify.sh
 ```
 
-Before a release or after dependency refactoring, perform a clean build:
+The script builds all modules under `Lemmas`, checks `Main.lean`, type-checks
+the public `ConcreteMain` theorem contracts, and scans project Lean sources for
+placeholders and project-local axioms.
 
-```bash
-lake clean
-lake build QuantitativeStrictAT
-lake env lean Main.lean
-git diff -- Main.lean
-```
-
-The last command must produce no output. `lake update` obtains the pinned
-dependency set recorded by `lake-manifest.json` in the local `.lake` directory.
-It is a dependency-setup command and is not part of every verification run.
-
-To inspect the selected compiler version, run:
-
-```bash
-lake env lean --version
-```
-
-## Proof integrity
-
-The intended result is a kernel-checked proof with no project-local
-placeholders or substitute axioms. A full verification is:
+Before a release or after dependency refactoring, a clean verification is:
 
 ```bash
 lake clean
 ./verify.sh
-git diff -- Main.lean
 ```
 
-When changing a proof, compile the smallest affected module first and then
-rerun the project-level build, public-endpoint check, and placeholder scan.
+## Maintenance policy
+
+`Main.lean` is the public statement layer. Changes to its definitions or theorem
+contracts should be reflected in this README and in the API smoke test in
+`verify.sh`. Its two project imports, `Lemmas.Gaussian.ConcreteModel` and
+`Lemmas.CLT.CLT_Main`, are the roots of the required dependency graph.
+
+The `Lemmas` tree is kept dependency-driven: obsolete forwarding modules,
+unused internal declarations, and broad imports should be removed when the
+public proof paths continue to compile.
 
 ## License
 

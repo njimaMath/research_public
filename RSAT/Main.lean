@@ -20,22 +20,29 @@ noncomputable section
 
 /-! ## Replica-symmetric parameters -/
 
-/-- Expectation with respect to a standard real Gaussian random variable. -/
+/-- Expectation with respect to a standard real Gaussian random variable:
+$\mathbb E[f(Z)] = \int_{\mathbb R} f(z)\,\varphi(z)\,dz$, where
+$Z \sim \mathcal N(0,1)$ and $\varphi(z) = (2\pi)^{-1/2}e^{-z^2/2}$. -/
 def standardGaussianExpectation (f : ℝ → ℝ) : ℝ :=
   ∫ z, f z ∂gaussianReal 0 1
 
 /-- The replica-symmetric fixed-point equation
-`q = E[tanh (h + β √q Z)²]`. -/
+$q = \mathbb E[\tanh^2(h + \beta\sqrt q\,Z)]$. -/
 def IsReplicaSymmetricFixedPoint (β h q : ℝ) : Prop :=
   q = standardGaussianExpectation
     (fun z => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
 
-/-- The canonical replica-symmetric overlap. -/
+/-- The canonical replica-symmetric overlap:
+$q(\beta,h) = \inf\{x \in [0,1] :
+x = \mathbb E[\tanh^2(h + \beta\sqrt x\,Z)]\}$. -/
 def q (β h : ℝ) : ℝ :=
   sInf {x : ℝ | x ∈ Set.Icc (0 : ℝ) 1 ∧
     IsReplicaSymmetricFixedPoint β h x}
 
-/-- The assertion that `q β h` is the unique interval-valued fixed point. -/
+/-- The assertion that $q(\beta,h)$ is the unique interval-valued fixed point:
+$q(\beta,h) \in [0,1]$, $q(\beta,h) = T_{\beta,h}(q(\beta,h))$, and
+$x \in [0,1] \land x = T_{\beta,h}(x) \Rightarrow x = q(\beta,h)$, where
+$T_{\beta,h}(x) = \mathbb E[\tanh^2(h + \beta\sqrt x\,Z)]$. -/
 def ReplicaSymmetricFixedPointClaim (β h : ℝ) : Prop :=
   IsReplicaSymmetricFixedPoint β h (q β h) ∧
     q β h ∈ Set.Icc (0 : ℝ) 1 ∧
@@ -58,52 +65,66 @@ theorem replicaSymmetricFixedPointClaim_of_pos_field
     rw [hq]
     exact SpinGlass.AT.eq_rsQ_of_isRSFixedPoint hh hx hfixed
 
-/-- The fourth local-magnetization moment. -/
+/-- The fourth local-magnetization moment:
+$r(\beta,h) = \mathbb E[\tanh^4(h + \beta\sqrt{q(\beta,h)}\,Z)]$. -/
 def r (β h : ℝ) : ℝ :=
   standardGaussianExpectation
     (fun z => Real.tanh (h + β * Real.sqrt (q β h) * z) ^ 4)
 
-/-- The de Almeida--Thouless parameter
-`α = β² (1 - 2q + r)`. -/
+/-- The de Almeida--Thouless parameter:
+$\alpha(\beta,h) = \beta^2(1 - 2q(\beta,h) + r(\beta,h))$. -/
 def α (β h : ℝ) : ℝ :=
   β ^ 2 * (1 - 2 * q β h + r β h)
 
-/-- The positive-temperature, positive-field strict AT region. -/
+/-- The positive-temperature, positive-field strict AT region:
+$\mathcal A_{\mathrm{strict}} =
+\{(\beta,h) \in \mathbb R^2 : \beta > 0,\ h > 0,\ \alpha(\beta,h) < 1\}$. -/
 def strictATRegion : Set (ℝ × ℝ) :=
   {p | 0 < p.1 ∧ 0 < p.2 ∧ α p.1 p.2 < 1}
 
 /-! ## Gaussian disorder and the finite-volume model -/
 
-/-- A spin configuration on `N` sites. -/
+/-- A spin configuration on $N$ sites, represented by a Boolean vector:
+$\Sigma_N = \{-1,+1\}^N$. -/
 abbrev Configuration (N : ℕ) := Fin N → Bool
 
-/-- The real spin associated with a Boolean coordinate. -/
+/-- The real spin associated with a Boolean coordinate:
+$s_i(\sigma) = 1$ if $\sigma_i$ is true, and $s_i(\sigma) = -1$ otherwise. -/
 def spin {N : ℕ} (σ : Configuration N) (i : Fin N) : ℝ :=
   if σ i then 1 else -1
 
-/-- A single probability space carrying all coordinates `g_ij` and `z_i`. -/
+/-- A single probability space carrying all coordinates $g_{ij}$ and $z_i$:
+$\Omega = \mathbb R^{(\mathbb N\times\mathbb N)\sqcup\mathbb N}$. -/
 abbrev GaussianSpace := ((ℕ × ℕ) ⊕ ℕ) → ℝ
 
-/-- The countable product standard Gaussian measure. -/
+/-- The countable product standard Gaussian measure:
+$\mathbb P = \bigotimes_{k\in(\mathbb N\times\mathbb N)\sqcup\mathbb N}
+\mathcal N(0,1)$. -/
 def gaussianMeasure : Measure GaussianSpace :=
   Measure.infinitePi (fun _ : (ℕ × ℕ) ⊕ ℕ => gaussianReal 0 1)
 
-/-- The disorder coordinate `g_ij`. -/
+/-- The disorder coordinate $g_{ij}(\omega) = \omega(i,j)$. -/
 def g (ω : GaussianSpace) {N : ℕ} (i j : Fin N) : ℝ :=
   ω (Sum.inl (i, j))
 
-/-- The auxiliary-field coordinate `z_i`. -/
+/-- The auxiliary-field coordinate $z_i(\omega) = \omega(i)$. -/
 def z (ω : GaussianSpace) {N : ℕ} (i : Fin N) : ℝ :=
   ω (Sum.inr i)
 
-/-- The endpoint Sherrington--Kirkpatrick Hamiltonian `H_N`. -/
+/-- The endpoint Sherrington--Kirkpatrick Hamiltonian:
+$H_N(\sigma) = \dfrac{\beta}{\sqrt{2N}}
+\sum_{i,j=1}^N g_{ij}s_i(\sigma)s_j(\sigma)
++ h\sum_{i=1}^N s_i(\sigma)$. -/
 def H_N (N : ℕ) (β h : ℝ) (ω : GaussianSpace)
     (σ : Configuration N) : ℝ :=
   β / Real.sqrt (2 * (N : ℝ)) *
       ∑ i : Fin N, ∑ j : Fin N, g ω i j * spin σ i * spin σ j
     + h * ∑ i : Fin N, spin σ i
 
-/-- The smart-path Hamiltonian `H_{N,s}`. -/
+/-- The smart-path Hamiltonian:
+$H_{N,s}(\sigma) = \dfrac{\beta\sqrt s}{\sqrt{2N}}
+\sum_{i,j=1}^N g_{ij}s_i(\sigma)s_j(\sigma)
++ \sum_{i=1}^N\bigl(h+\beta\sqrt{(1-s)q}\,z_i\bigr)s_i(\sigma)$. -/
 def H_N_s (N : ℕ) (β h s : ℝ) (ω : GaussianSpace)
     (σ : Configuration N) : ℝ :=
   β * Real.sqrt s / Real.sqrt (2 * (N : ℝ)) *
@@ -129,11 +150,14 @@ theorem H_N_s_eq_smartPath (N : ℕ) (β h s : ℝ)
   rw [Real.sqrt_mul hs']
   ring
 
-/-- The partition function along the smart path. -/
+/-- The partition function along the smart path:
+$Z_{N,s}(\omega) = \sum_{\sigma\in\Sigma_N}e^{-H_{N,s}(\omega,\sigma)}$. -/
 def partitionFunction (N : ℕ) (β h s : ℝ) (ω : GaussianSpace) : ℝ :=
   ∑ σ : Configuration N, Real.exp (-H_N_s N β h s ω σ)
 
-/-- The Gibbs probability mass of one configuration. -/
+/-- The Gibbs probability mass of one configuration:
+$G_{N,s}^{\omega}(\sigma) =
+e^{-H_{N,s}(\omega,\sigma)}/Z_{N,s}(\omega)$. -/
 def gibbsWeight (N : ℕ) (β h s : ℝ) (ω : GaussianSpace)
     (σ : Configuration N) : ℝ :=
   Real.exp (-H_N_s N β h s ω σ) /
@@ -158,16 +182,21 @@ theorem gibbsWeight_eq_gibbs_pmf (N : ℕ) (β h s : ℝ)
     partitionFunction_eq_Z N β h s hs,
     H_N_s_eq_smartPath N β h s hs]
 
-/-- An indexed family of replicas. -/
+/-- An indexed family of replicas:
+$\boldsymbol\sigma=(\sigma^1,\ldots,\sigma^n)\in\Sigma_N^n$. -/
 abbrev ReplicaFamily (N n : ℕ) := Fin n → Configuration N
 
-/-- The product Gibbs bracket at fixed disorder. -/
+/-- The product Gibbs bracket at fixed disorder:
+$\langle F\rangle_{s,\omega} =
+\sum_{\boldsymbol\sigma\in\Sigma_N^n}
+F(\boldsymbol\sigma)\prod_{a=1}^nG_{N,s}^{\omega}(\sigma^a)$. -/
 def gibbsBracket {N n : ℕ} (β h s : ℝ) (ω : GaussianSpace)
     (F : ReplicaFamily N n → ℝ) : ℝ :=
   ∑ σs : ReplicaFamily N n,
     (∏ a : Fin n, gibbsWeight N β h s ω (σs a)) * F σs
 
-/-- The replica overlap `R_ab`. -/
+/-- The replica overlap:
+$R_{ab} = N^{-1}\sum_{i=1}^N s_i(\sigma^a)s_i(\sigma^b)$. -/
 def R_ab {N n : ℕ} (σs : ReplicaFamily N n) (a b : Fin n) : ℝ :=
   (1 / (N : ℝ)) * ∑ i : Fin N, spin (σs a) i * spin (σs b) i
 
@@ -176,7 +205,8 @@ theorem R_ab_eq_selectedReplicaOverlap {N n : ℕ}
     R_ab σs a b = selectedReplicaOverlap σs a b := by
   rfl
 
-/-- The disorder-averaged Gibbs expectation `ν_s`. -/
+/-- The disorder-averaged Gibbs expectation:
+$\nu_s(F) = \mathbb E\langle F\rangle_s$. -/
 def ν_s {N n : ℕ} (β h s : ℝ) (F : ReplicaFamily N n → ℝ) : ℝ :=
   ∫ ω, gibbsBracket β h s ω F ∂(volume : Measure GaussianSpace)
 
@@ -196,7 +226,8 @@ theorem ν_s_eq_disorderAveragedExpectation {N n : ℕ}
   intro a ha
   exact gibbsWeight_eq_gibbs_pmf N β h s hs ω (σs a)
 
-/-- The centered overlap `Q_ab = R_ab - q`. -/
+/-- The centered overlap:
+$Q_{ab} = R_{ab} - q(\beta,h)$. -/
 def Q_ab {N n : ℕ} (β h : ℝ) (σs : ReplicaFamily N n)
     (a b : Fin n) : ℝ :=
   R_ab σs a b - q β h
@@ -207,22 +238,23 @@ theorem Q_ab_eq_centeredReplicaOverlap {N n : ℕ} (β h : ℝ)
       centeredReplicaOverlap (canonicalOverlap β h) σs a b := by
   rfl
 
-/-- The smart-path free-energy density `φ_N(s)`. -/
+/-- The smart-path free-energy density:
+$\varphi_N(s) = N^{-1}\mathbb E[\log Z_{N,s}]$. -/
 def φ_N_s (N : ℕ) (β h s : ℝ) : ℝ :=
   (1 / (N : ℝ)) *
     ∫ ω, Real.log (partitionFunction N β h s ω)
       ∂(volume : Measure GaussianSpace)
 
-/-- `A_s = ν_s[Q_12²]`. -/
+/-- $A_s = \nu_s(Q_{12}^2)$. -/
 def A_s (N : ℕ) (β h s : ℝ) : ℝ :=
   ν_s (N := N) (n := 4) β h s (fun σs => Q_ab β h σs 0 1 ^ 2)
 
-/-- `B_s = ν_s[Q_12 Q_13]`. -/
+/-- $B_s = \nu_s(Q_{12}Q_{13})$. -/
 def B_s (N : ℕ) (β h s : ℝ) : ℝ :=
   ν_s (N := N) (n := 4) β h s
     (fun σs => Q_ab β h σs 0 1 * Q_ab β h σs 0 2)
 
-/-- `C_s = ν_s[Q_12 Q_34]`. -/
+/-- $C_s = \nu_s(Q_{12}Q_{34})$. -/
 def C_s (N : ℕ) (β h s : ℝ) : ℝ :=
   ν_s (N := N) (n := 4) β h s
     (fun σs => Q_ab β h σs 0 1 * Q_ab β h σs 2 3)
@@ -245,7 +277,8 @@ theorem C_s_eq_disjointReplicaMoment (N : ℕ) (β h s : ℝ)
   rw [C_s, ν_s_eq_disorderAveragedExpectation β h s hs]
   rfl
 
-/-- The endpoint expected free-energy density. -/
+/-- The endpoint expected free-energy density:
+$\varphi_N = \varphi_N(1) = N^{-1}\mathbb E[\log Z_{N,1}]$. -/
 def φ_N (N : ℕ) (β h : ℝ) : ℝ :=
   φ_N_s N β h 1
 
@@ -258,7 +291,10 @@ theorem φ_N_eq_finiteVolumeFreeEnergy (N : ℕ) (β h : ℝ) :
   rw [partitionFunction_eq_Z N β h 1 (by simp)]
   rfl
 
-/-- The replica-symmetric free energy. -/
+/-- The replica-symmetric free energy:
+$\operatorname{RS}(\beta,h) = \log 2
++ \mathbb E\!\left[\log\cosh\!\left(h+\beta\sqrt q\,Z\right)\right]
++ \dfrac{\beta^2}{4}(1-q)^2$. -/
 def replicaSymmetricFreeEnergy (β h : ℝ) : ℝ :=
   Real.log 2 + standardGaussianExpectation
       (fun x => Real.log (Real.cosh
@@ -273,7 +309,11 @@ theorem replicaSymmetricFreeEnergy_eq_backend (β h : ℝ) :
 /-! ## Quantitative strict-AT claim -/
 
 /-- The three conclusions of the principal theorem, in the order in which
-they occur in the paper. -/
+they occur in the paper. Uniformly on $K$, some $C_K \ge 0$ satisfies
+$N A_s \le C_K$ and
+$0 \le \operatorname{RS}(\beta,h)-\varphi_N(\beta,h) \le C_K/N$, while
+$N(A_s-2B_s+C_s) \to
+\alpha/[\beta^2(1-s\alpha)]$. -/
 structure MainClaim (K : Set (ℝ × ℝ)) : Prop where
   quantitativeBounds :
     ∃ C_K : ℝ, 0 ≤ C_K ∧
@@ -292,7 +332,8 @@ structure MainClaim (K : Set (ℝ × ℝ)) : Prop where
         α β h / (β ^ 2 * (1 - s * α β h))| < ε
 
 /-- The principal theorem as a proposition on every compact subset of the
-strict AT region. -/
+strict AT region:
+$\forall K\Subset\mathcal A_{\mathrm{strict}},\ \operatorname{MainClaim}(K)$. -/
 def QuantitativeStrictATClaim : Prop :=
   ∀ K : Set (ℝ × ℝ), IsCompact K → K ⊆ strictATRegion → MainClaim K
 
@@ -348,26 +389,31 @@ theorem quantitativeStrictATClaim : QuantitativeStrictATClaim := by
 
 /-! ## Overlap central limit claim -/
 
-/-- `κ = 1 - 4q + 3r`. -/
+/-- $\kappa(\beta,h) = 1 - 4q(\beta,h) + 3r(\beta,h)$. -/
 def κ (β h : ℝ) : ℝ :=
   1 - 4 * q β h + 3 * r β h
 
-/-- `ζ = 2q + q² - 3r`. -/
+/-- $\zeta(\beta,h) = 2q(\beta,h) + q(\beta,h)^2 - 3r(\beta,h)$. -/
 def ζ (β h : ℝ) : ℝ :=
   2 * q β h + q β h ^ 2 - 3 * r β h
 
-/-- The variance appearing in the overlap central limit theorem. -/
+/-- The variance appearing in the overlap central limit theorem:
+$v(\beta,h) = \dfrac{3(1-2q+r)}{1-\alpha}
+- \dfrac{2\kappa}{1-\beta^2\kappa}
+- \dfrac{\zeta}{(1-\beta^2\kappa)^2}$. -/
 def overlapVariance (β h : ℝ) : ℝ :=
   3 * (1 - 2 * q β h + r β h) / (1 - α β h)
     - 2 * κ β h / (1 - β ^ 2 * κ β h)
     - ζ β h / (1 - β ^ 2 * κ β h) ^ 2
 
-/-- Expectation of a test function of the scaled centered endpoint overlap. -/
+/-- Expectation of a test function of the scaled centered endpoint overlap:
+$\nu_1\!\left[f(\sqrt N\,Q_{12})\right]$. -/
 def scaledOverlapExpectation (N : ℕ) (β h : ℝ) (f : ℝ → ℝ) : ℝ :=
   ν_s (N := N) (n := 2) β h 1
     (fun σs => f (Real.sqrt (N : ℝ) * Q_ab β h σs 0 1))
 
-/-- The canonical concrete disorder through the CLT smart-path interface. -/
+/-- The canonical concrete disorder through the CLT smart-path interface,
+with replica-symmetric overlap parameter $q=q(\beta,h)$. -/
 def concreteRSSmartPathDisorder (N : ℕ) (β h : ℝ) :
     SpinGlass.AT.RSSmartPathDisorder GaussianSpace N β h
       (SpinGlass.AT.rsQ β h) := by
@@ -479,7 +525,10 @@ theorem integral_scaledOverlapLaw_eq_scaledOverlapExpectation
     SpinGlass.AT.replicaOverlap, canonicalOverlap, SpinGlass.AT.rsQ]
 
 /-- Weak convergence of the scaled overlap, stated against bounded continuous
-real-valued test functions. -/
+real-valued test functions:
+$\sqrt N\,(R_{12}-q) \Rightarrow \mathcal N(0,v)$, equivalently
+$\nu_1[f(\sqrt N\,Q_{12})] \to \mathbb E[f(\sqrt v\,Z)]$ for every
+bounded continuous $f:\mathbb R\to\mathbb R$. -/
 def OverlapCLTClaim (β h : ℝ) : Prop :=
   0 < β → 0 < h → α β h < 1 →
     0 < overlapVariance β h ∧
@@ -558,3 +607,6 @@ theorem overlapCLTClaim (β h : ℝ) : OverlapCLTClaim β h := by
 end
 
 end ConcreteMain
+
+#print axioms ConcreteMain.quantitativeStrictATClaim
+#print axioms ConcreteMain.overlapCLTClaim

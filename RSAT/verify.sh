@@ -7,8 +7,21 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 echo "Building QuantitativeStrictAT"
 lake build QuantitativeStrictAT
 
-echo "Checking Main.lean"
-lake env lean Main.lean
+echo "Checking Main.lean and the public ConcreteMain API"
+{
+  cat Main.lean
+  cat <<'LEAN'
+example (β : ℝ) {h : ℝ} (hh : 0 < h) :
+    ConcreteMain.ReplicaSymmetricFixedPointClaim β h :=
+  ConcreteMain.replicaSymmetricFixedPointClaim_of_pos_field β hh
+
+example : ConcreteMain.QuantitativeStrictATClaim :=
+  ConcreteMain.quantitativeStrictATClaim
+
+example (β h : ℝ) : ConcreteMain.OverlapCLTClaim β h :=
+  ConcreteMain.overlapCLTClaim β h
+LEAN
+} | lake env lean --stdin
 
 echo "Scanning project Lean sources for placeholders and local axioms"
 pattern='(^|[^[:alnum:]_])(sorry|admit|sorryAx|axiom)([^[:alnum:]_]|$)'
@@ -24,4 +37,4 @@ if (( found != 0 )); then
   exit 1
 fi
 
-echo "Verification succeeded: build, public endpoint, and source-integrity checks passed."
+echo "Verification succeeded: build, public endpoint, API, and source-integrity checks passed."
