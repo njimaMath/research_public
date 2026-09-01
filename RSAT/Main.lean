@@ -14,7 +14,7 @@ open scoped Topology
 
 set_option autoImplicit false
 
-namespace ConcreteMain
+namespace Main
 
 noncomputable section
 
@@ -606,7 +606,7 @@ theorem overlapCLTClaim (β h : ℝ) : OverlapCLTClaim β h := by
 
 end
 
-end ConcreteMain
+end Main
 
 #print axioms ConcreteMain.quantitativeStrictATClaim
 #print axioms ConcreteMain.overlapCLTClaim
