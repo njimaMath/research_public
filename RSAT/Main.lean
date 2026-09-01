@@ -1,13 +1,6 @@
 import Lemmas.Gaussian.ConcreteModel
 import Lemmas.CLT.CLT_Main
 
-/-!
-# Concrete statement of the strict Almeida--Thouless results
-
-This file introduces every model-specific object occurring in the two claims
-below.  It intentionally does not use the spin-glass definitions from the
-`Lemmas` directory.
--/
 
 open MeasureTheory ProbabilityTheory BigOperators Filter
 open scoped Topology
