@@ -1,24 +1,15 @@
 import Lemmas.Gaussian.ConcreteModel
 import Lemmas.CLT.CLT_Main
 
-/-!
-# Concrete statement of the strict Almeida--Thouless results
-
-This file introduces every model-specific object occurring in the two claims
-below.  It intentionally does not use the spin-glass definitions from the
-`Lemmas` directory.
--/
 
 open MeasureTheory ProbabilityTheory BigOperators Filter
 open scoped Topology
 
 set_option autoImplicit false
 
-namespace ConcreteMain
+namespace Main
 
 noncomputable section
-
-/-! ## Replica-symmetric parameters -/
 
 /-- Expectation with respect to a standard real Gaussian random variable:
 $\mathbb E[f(Z)] = \int_{\mathbb R} f(z)\,\varphi(z)\,dz$, where
@@ -32,14 +23,14 @@ def IsReplicaSymmetricFixedPoint (β h q : ℝ) : Prop :=
   q = standardGaussianExpectation
     (fun z => Real.tanh (h + β * Real.sqrt q * z) ^ 2)
 
-/-- The canonical replica-symmetric overlap:
+/-- The canonical replica-symmetric fixed point:
 $q(\beta,h) = \inf\{x \in [0,1] :
 x = \mathbb E[\tanh^2(h + \beta\sqrt x\,Z)]\}$. -/
 def q (β h : ℝ) : ℝ :=
   sInf {x : ℝ | x ∈ Set.Icc (0 : ℝ) 1 ∧
     IsReplicaSymmetricFixedPoint β h x}
 
-/-- The assertion that $q(\beta,h)$ is the unique interval-valued fixed point:
+/-- The proposition that $q(\beta,h)$ is the unique interval-valued fixed point:
 $q(\beta,h) \in [0,1]$, $q(\beta,h) = T_{\beta,h}(q(\beta,h))$, and
 $x \in [0,1] \land x = T_{\beta,h}(x) \Rightarrow x = q(\beta,h)$, where
 $T_{\beta,h}(x) = \mathbb E[\tanh^2(h + \beta\sqrt x\,Z)]$. -/
@@ -132,8 +123,7 @@ def H_N_s (N : ℕ) (β h s : ℝ) (ω : GaussianSpace)
     + ∑ i : Fin N,
         (h + β * Real.sqrt ((1 - s) * q β h) * z ω i) * spin σ i
 
-/-- The concrete Hamiltonian is the canonical smart path used by the proof
-backend. -/
+/-- The concrete Hamiltonian is the canonical smart path used in the proof. -/
 theorem H_N_s_eq_smartPath (N : ℕ) (β h s : ℝ)
     (hs : s ∈ Set.Icc (0 : ℝ) 1) (ω : GaussianSpace)
     (σ : Configuration N) :
@@ -182,7 +172,7 @@ theorem gibbsWeight_eq_gibbs_pmf (N : ℕ) (β h s : ℝ)
     partitionFunction_eq_Z N β h s hs,
     H_N_s_eq_smartPath N β h s hs]
 
-/-- An indexed family of replicas:
+/-- A family of replicas:
 $\boldsymbol\sigma=(\sigma^1,\ldots,\sigma^n)\in\Sigma_N^n$. -/
 abbrev ReplicaFamily (N n : ℕ) := Fin n → Configuration N
 
@@ -205,7 +195,7 @@ theorem R_ab_eq_selectedReplicaOverlap {N n : ℕ}
     R_ab σs a b = selectedReplicaOverlap σs a b := by
   rfl
 
-/-- The disorder-averaged Gibbs expectation:
+/-- The averaged Gibbs expectation:
 $\nu_s(F) = \mathbb E\langle F\rangle_s$. -/
 def ν_s {N n : ℕ} (β h s : ℝ) (F : ReplicaFamily N n → ℝ) : ℝ :=
   ∫ ω, gibbsBracket β h s ω F ∂(volume : Measure GaussianSpace)
@@ -331,7 +321,7 @@ structure MainClaim (K : Set (ℝ × ℝ)) : Prop where
       |(N : ℝ) * (A_s N β h s - 2 * B_s N β h s + C_s N β h s) -
         α β h / (β ^ 2 * (1 - s * α β h))| < ε
 
-/-- The principal theorem as a proposition on every compact subset of the
+/-- A compact subset of the
 strict AT region:
 $\forall K\Subset\mathcal A_{\mathrm{strict}},\ \operatorname{MainClaim}(K)$. -/
 def QuantitativeStrictATClaim : Prop :=
@@ -412,8 +402,7 @@ def scaledOverlapExpectation (N : ℕ) (β h : ℝ) (f : ℝ → ℝ) : ℝ :=
   ν_s (N := N) (n := 2) β h 1
     (fun σs => f (Real.sqrt (N : ℝ) * Q_ab β h σs 0 1))
 
-/-- The canonical concrete disorder through the CLT smart-path interface,
-with replica-symmetric overlap parameter $q=q(\beta,h)$. -/
+/-- The canonical disorder through the smart-path. -/
 def concreteRSSmartPathDisorder (N : ℕ) (β h : ℝ) :
     SpinGlass.AT.RSSmartPathDisorder GaussianSpace N β h
       (SpinGlass.AT.rsQ β h) := by
@@ -540,7 +529,7 @@ def OverlapCLTClaim (β h : ℝ) : Prop :=
           (nhds (standardGaussianExpectation
             (fun x => f (Real.sqrt (overlapVariance β h) * x))))
 
-/-- The scaled endpoint overlap converges against every bounded continuous
+/-- The scaled overlap converges against every bounded continuous
 test function to the stated centered Gaussian limit. -/
 theorem overlapCLTClaim (β h : ℝ) : OverlapCLTClaim β h := by
   intro hβ hh hAT
@@ -606,7 +595,7 @@ theorem overlapCLTClaim (β h : ℝ) : OverlapCLTClaim β h := by
 
 end
 
-end ConcreteMain
+end Main
 
 #print axioms ConcreteMain.quantitativeStrictATClaim
 #print axioms ConcreteMain.overlapCLTClaim
