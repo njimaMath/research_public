@@ -10,8 +10,18 @@ authors:
   - family-names: Nakajima
     given-names: Shuta
 repository-code: "https://github.com/njimaMath/research_public"
+url: "https://github.com/njimaMath/research_public/tree/main/RSAT"
 license: Apache-2.0
+keywords:
+  - formalized mathematics
+  - Lean
+  - spin glasses
+  - Sherrington-Kirkpatrick model
+  - de Almeida-Thouless region
+  - overlap central limit theorem
 identifiers:
+  - type: doi
+    value: "10.48550/arXiv.2608.23413"
   - type: other
     value: "arXiv:2608.23413v2"
     description: "Associated paper: A quantitative replica-symmetric bound for Sherrington--Kirkpatrick model in the entire de Almeida--Thouless region"

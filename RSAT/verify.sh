@@ -19,11 +19,11 @@ example (β : ℝ) {h : ℝ} (hh : 0 < h) :
     Main.ReplicaSymmetricFixedPointClaim β h :=
   Main.replicaSymmetricFixedPointClaim_of_pos_field β hh
 
-example : Main.QuantitativeStrictATClaim :=
-  Main.quantitativeStrictATClaim
+example : Main.StrictAT_main :=
+  Main.strictAT_main
 
 example (β h : ℝ) : Main.OverlapCLTClaim β h :=
-  Main.overlapCLTClaim β h
+  Main.strictAT_overlapCLT_weak β h
 LEAN
 lake env lean "$api_check"
 rm -f -- "$api_check"

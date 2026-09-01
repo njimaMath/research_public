@@ -1,4 +1,4 @@
-# RSAT: Quantitative Strict Almeida-Thouless Theorem and Overlap CLT
+# RSAT: Quantitative Strict de Almeida-Thouless Theorem and Overlap CLT
 
 This directory contains a Lean formalization of quantitative
 replica-symmetric results for the Sherrington-Kirkpatrick spin glass model in
@@ -12,18 +12,18 @@ defines the model directly in the notation of the paper and exports these
 principal results:
 
 - `replicaSymmetricFixedPointClaim_of_pos_field`
-- `quantitativeStrictATClaim`
-- `overlapCLTClaim`
+- `strictAT_main`
+- `strictAT_overlapCLT_weak`
 
 ## Correspondence with the paper
 
 | Paper statement | Lean declaration | File |
 | --- | --- | --- |
-| Replica-symmetric fixed-point characterization | `Main.replicaSymmetricFixedPointClaim_of_pos_field` | `Main.lean` |
-| Smart-path Hamiltonian $H_{N,s}$ | `Main.H_N_s` | `Main.lean` |
-| Identification with the proof backend | `Main.H_N_s_eq_smartPath` | `Main.lean` |
-| Theorem 1.1 | `Main.quantitativeStrictATClaim` | `Main.lean` |
-| Theorem 1.2 | `Main.overlapCLTClaim` | `Main.lean` |
+| Replica-symmetric fixed-point characterization | [`Main.replicaSymmetricFixedPointClaim_of_pos_field`](./Main.lean#L45) | `Main.lean` |
+| Smart-path Hamiltonian $H_{N,s}$ | [`Main.H_N_s`](./Main.lean#L119) | `Main.lean` |
+| Identification with the proof backend | [`Main.H_N_s_eq_smartPath`](./Main.lean#L127) | `Main.lean` |
+| Theorem 1.1 | [`Main.strictAT_main`](./Main.lean#L332) | `Main.lean` |
+| Theorem 1.2 | [`Main.strictAT_overlapCLT_weak`](./Main.lean#L534) | `Main.lean` |
 
 ## Concrete parameters and model
 
@@ -68,11 +68,12 @@ object with the corresponding implementation used by the proof library.
 
 ## Quantitative strict-AT theorem
 
-`QuantitativeStrictATClaim` states that every compact
-`K : Set (Real x Real)` contained in `strictATRegion` satisfies `MainClaim K`:
+`StrictAT_main` states that every compact
+`K : Set (Real x Real)` contained in `strictATRegion` satisfies
+`StrictATClaim K`:
 
 ```lean
-theorem quantitativeStrictATClaim : QuantitativeStrictATClaim
+theorem strictAT_main : StrictAT_main
 ```
 
 The `quantitativeBounds` field supplies one nonnegative constant $C_K$ for both
@@ -118,7 +119,7 @@ f(sqrt(N) (R_12 - q))
 at the endpoint of the smart path. The public theorem is
 
 ```lean
-theorem overlapCLTClaim (beta h : Real) : OverlapCLTClaim beta h
+theorem strictAT_overlapCLT_weak (beta h : Real) : OverlapCLTClaim beta h
 ```
 
 Under $beta>0$, $h>0$, and $alpha<1$, it proves that `overlapVariance` is
@@ -168,6 +169,7 @@ theorem to obtain weak convergence.
 ```text
 RSAT/
 |-- ARTIFACT.md               # standalone referee guide
+|-- AFM_SUBMISSION.md         # journal-submission checklist and cover note
 |-- CITATION.cff              # artifact citation metadata
 |-- Main.lean                 # concrete public statements and proofs
 |-- Lemmas/
@@ -184,6 +186,7 @@ RSAT/
 |-- lakefile.lean
 |-- lake-manifest.json
 |-- lean-toolchain
+|-- verify.ps1                # equivalent checks for Windows PowerShell
 `-- verify.sh                 # build, API, and source-integrity checks
 ```
 
@@ -209,6 +212,18 @@ For the complete project check, run:
 ./verify.sh
 ```
 
+On Windows PowerShell, run:
+
+```powershell
+./verify.ps1
+```
+
+If the local Windows execution policy blocks scripts, use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\verify.ps1
+```
+
 The script builds all modules under `Lemmas`, checks `Main.lean`, type-checks
 the public `Main` theorem contracts, and scans project Lean sources for
 placeholders and project-local axioms.
@@ -230,6 +245,18 @@ contracts should be reflected in this README and in the API smoke test in
 The `Lemmas` tree is kept dependency-driven: obsolete forwarding modules,
 unused internal declarations, and broad imports should be removed when the
 public proof paths continue to compile.
+
+## Trust boundary
+
+The project contains no `sorry`, `admit`, `sorryAx`, or explicit project-local
+`axiom` declarations. The principal theorems use Lean's standard `propext`,
+`Classical.choice`, and `Quot.sound` axioms. They also depend on axioms generated
+by `native_decide` for finite combinatorial computations. Consequently, these
+computations additionally trust Lean's native-code evaluation mechanism. There
+are 23 visible `native_decide` uses in four source files under `Lemmas/`.
+
+See [`ARTIFACT.md`](./ARTIFACT.md) for the referee-oriented audit guide and
+[`AFM_SUBMISSION.md`](./AFM_SUBMISSION.md) for the journal release checklist.
 
 ## License
 
