@@ -4,7 +4,8 @@ This directory contains a Lean formalization of quantitative
 replica-symmetric results for the Sherrington-Kirkpatrick spin glass model in
 the strict Almeida-Thouless region. It proves uniform finite-size estimates on
 compact parameter sets and a pointwise central limit theorem for the centered
-overlap.
+overlap. It tracks [arXiv:2608.23413v2](https://arxiv.org/abs/2608.23413v2),
+which adds the overlap central limit theorem.
 
 [`Main.lean`](./Main.lean) is the public endpoint. The `ConcreteMain` namespace
 defines the model directly in the notation of the paper and exports these
@@ -14,6 +15,9 @@ principal results:
 - `quantitativeStrictATClaim`
 - `overlapCLTClaim`
 
+The aliases `strictAT_main`, `StrictATClaim`, and
+`strictAT_overlapCLT_weak` preserve the declaration names cited in arXiv v2.
+
 ## Correspondence with the paper
 
 | Paper statement | Lean declaration | File |
@@ -21,8 +25,8 @@ principal results:
 | Replica-symmetric fixed-point characterization | `ConcreteMain.replicaSymmetricFixedPointClaim_of_pos_field` | `Main.lean` |
 | Smart-path Hamiltonian $H_{N,s}$ | `ConcreteMain.H_N_s` | `Main.lean` |
 | Identification with the proof backend | `ConcreteMain.H_N_s_eq_smartPath` | `Main.lean` |
-| Principal quantitative theorem (`thm:main`) | `ConcreteMain.quantitativeStrictATClaim` | `Main.lean` |
-| Overlap central limit theorem (`thm:overlap-clt-intro`) | `ConcreteMain.overlapCLTClaim` | `Main.lean` |
+| Theorem 1.1 | `ConcreteMain.strictAT_main` | `Main.lean` |
+| Theorem 1.2 | `ConcreteMain.strictAT_overlapCLT_weak` | `Main.lean` |
 
 ## Concrete parameters and model
 

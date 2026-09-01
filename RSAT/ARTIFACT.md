@@ -1,8 +1,8 @@
 # RSAT artifact guide
 
 - Artifact: RSAT: Quantitative Strict de Almeida-Thouless Theorem and Overlap CLT
-- Associated paper: “A quantitative replica-symmetric bound of Sherrington--Kirkpatrick model in the entire de Almeida--Thouless region”
-- arXiv: `2608.23413`
+- Associated paper: “A quantitative replica-symmetric bound for Sherrington--Kirkpatrick model in the entire de Almeida--Thouless region”
+- arXiv: [`2608.23413v2`](https://arxiv.org/abs/2608.23413v2)
 - Proof assistant: Lean `v4.32.1`
 - Library: Mathlib `v4.32.1`
 - License: Apache-2.0
@@ -14,12 +14,13 @@
 | --- | --- | --- |
 | Smart-path Hamiltonian defining $H_{N,s}$ | `H_N_s` | `Main.lean` |
 | Concrete-to-abstract smart-path identification | `H_N_s_eq_smartPath` | `Main.lean` |
-| Principal quantitative theorem (`thm:main`) | `strictAT_main` | `Main.lean` |
-| Overlap central limit theorem (`thm:overlap-clt-intro`) | `strictAT_overlapCLT_weak` | `Main.lean` |
+| Theorem 1.1 | `ConcreteMain.strictAT_main` | `Main.lean` |
+| Theorem 1.2 | `ConcreteMain.strictAT_overlapCLT_weak` | `Main.lean` |
 
 The conclusion `StrictATClaim` of `strictAT_main` consists of
-`overlapConcentration`, `freeEnergyCorrection`, and
-`repliconSusceptibility`.
+`quantitativeBounds` and `repliconSusceptibility`. The first field contains
+both the overlap-concentration estimate and the free-energy correction with a
+common compact-set constant, as stated in Theorem 1.1.
 
 ## Fresh build
 
