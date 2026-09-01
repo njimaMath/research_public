@@ -304,7 +304,7 @@ $N A_s \le C_K$ and
 $0 \le \operatorname{RS}(\beta,h)-\varphi_N(\beta,h) \le C_K/N$, while
 $N(A_s-2B_s+C_s) \to
 \alpha/[\beta^2(1-s\alpha)]$. -/
-structure MainClaim (K : Set (ℝ × ℝ)) : Prop where
+structure StrictATClaim (K : Set (ℝ × ℝ)) : Prop where
   quantitativeBounds :
     ∃ C_K : ℝ, 0 ≤ C_K ∧
       (∀ {N : ℕ}, 0 < N → ∀ {β h s : ℝ},
@@ -323,13 +323,13 @@ structure MainClaim (K : Set (ℝ × ℝ)) : Prop where
 
 /-- A compact subset of the
 strict AT region:
-$\forall K\Subset\mathcal A_{\mathrm{strict}},\ \operatorname{MainClaim}(K)$. -/
-def QuantitativeStrictATClaim : Prop :=
-  ∀ K : Set (ℝ × ℝ), IsCompact K → K ⊆ strictATRegion → MainClaim K
+$\forall K\Subset\mathcal A_{\mathrm{strict}},\ \operatorname{StrictATClaim}(K)$. -/
+def StrictAT_main : Prop :=
+  ∀ K : Set (ℝ × ℝ), IsCompact K → K ⊆ strictATRegion → StrictATClaim K
 
 /-- Quantitative concentration, free-energy control, and susceptibility on
 compact subsets of the strict AT region. -/
-theorem quantitativeStrictATClaim : QuantitativeStrictATClaim := by
+theorem strictAT_main : StrictAT_main := by
   intro K hKcompact hKsub
   have hKsub' : K ⊆ strictStabilityRegion := by
     intro p hp
@@ -531,7 +531,7 @@ def OverlapCLTClaim (β h : ℝ) : Prop :=
 
 /-- The scaled overlap converges against every bounded continuous
 test function to the stated centered Gaussian limit. -/
-theorem overlapCLTClaim (β h : ℝ) : OverlapCLTClaim β h := by
+theorem strictAT_overlapCLT_weak (β h : ℝ) : OverlapCLTClaim β h := by
   intro hβ hh hAT
   have hα : α β h = SpinGlass.AT.atParameter β h := by rfl
   have hAT' : SpinGlass.AT.atParameter β h < 1 := by
@@ -596,6 +596,3 @@ theorem overlapCLTClaim (β h : ℝ) : OverlapCLTClaim β h := by
 end
 
 end Main
-
-#print axioms ConcreteMain.quantitativeStrictATClaim
-#print axioms ConcreteMain.overlapCLTClaim

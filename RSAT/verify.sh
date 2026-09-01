@@ -7,7 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 echo "Building QuantitativeStrictAT"
 lake build QuantitativeStrictAT
 
-echo "Checking Main.lean and the public ConcreteMain API"
+echo "Checking Main.lean and the public Main API"
 lake env lean -o .lake/build/lib/lean/Main.olean Main.lean
 
 api_check="$(mktemp "${TMPDIR:-/tmp}/rsat-api-check.XXXXXX.lean")"
@@ -16,22 +16,14 @@ cat >"$api_check" <<'LEAN'
 import Main
 
 example (β : ℝ) {h : ℝ} (hh : 0 < h) :
-    ConcreteMain.ReplicaSymmetricFixedPointClaim β h :=
-  ConcreteMain.replicaSymmetricFixedPointClaim_of_pos_field β hh
+    Main.ReplicaSymmetricFixedPointClaim β h :=
+  Main.replicaSymmetricFixedPointClaim_of_pos_field β hh
 
-example : ConcreteMain.QuantitativeStrictATClaim :=
-  ConcreteMain.quantitativeStrictATClaim
+example : Main.QuantitativeStrictATClaim :=
+  Main.quantitativeStrictATClaim
 
-example (K : Set (ℝ × ℝ)) (hKcompact : IsCompact K)
-    (hKsub : K ⊆ ConcreteMain.strictATRegion) :
-    ConcreteMain.StrictATClaim K :=
-  ConcreteMain.strictAT_main K hKcompact hKsub
-
-example (β h : ℝ) : ConcreteMain.OverlapCLTClaim β h :=
-  ConcreteMain.overlapCLTClaim β h
-
-example (β h : ℝ) : ConcreteMain.OverlapCLTClaim β h :=
-  ConcreteMain.strictAT_overlapCLT_weak β h
+example (β h : ℝ) : Main.OverlapCLTClaim β h :=
+  Main.overlapCLTClaim β h
 LEAN
 lake env lean "$api_check"
 rm -f -- "$api_check"

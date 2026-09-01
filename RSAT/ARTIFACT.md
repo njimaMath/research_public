@@ -12,12 +12,12 @@
 
 | Paper statement | Lean declaration | File |
 | --- | --- | --- |
-| Smart-path Hamiltonian defining $H_{N,s}$ | `H_N_s` | `Main.lean` |
-| Concrete-to-abstract smart-path identification | `H_N_s_eq_smartPath` | `Main.lean` |
-| Theorem 1.1 | `ConcreteMain.strictAT_main` | `Main.lean` |
-| Theorem 1.2 | `ConcreteMain.strictAT_overlapCLT_weak` | `Main.lean` |
+| Smart-path Hamiltonian defining $H_{N,s}$ | `Main.H_N_s` | `Main.lean` |
+| Concrete-to-abstract smart-path identification | `Main.H_N_s_eq_smartPath` | `Main.lean` |
+| Theorem 1.1 | `Main.quantitativeStrictATClaim` | `Main.lean` |
+| Theorem 1.2 | `Main.overlapCLTClaim` | `Main.lean` |
 
-The conclusion `StrictATClaim` of `strictAT_main` consists of
+The conclusion `MainClaim` supplied by `quantitativeStrictATClaim` consists of
 `quantitativeBounds` and `repliconSusceptibility`. The first field contains
 both the overlap-concentration estimate and the free-energy correction with a
 common compact-set constant, as stated in Theorem 1.1.

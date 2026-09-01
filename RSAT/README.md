@@ -7,7 +7,7 @@ compact parameter sets and a pointwise central limit theorem for the centered
 overlap. It tracks [arXiv:2608.23413v2](https://arxiv.org/abs/2608.23413v2),
 which adds the overlap central limit theorem.
 
-[`Main.lean`](./Main.lean) is the public endpoint. The `ConcreteMain` namespace
+[`Main.lean`](./Main.lean) is the public endpoint. The `Main` namespace
 defines the model directly in the notation of the paper and exports these
 principal results:
 
@@ -15,18 +15,15 @@ principal results:
 - `quantitativeStrictATClaim`
 - `overlapCLTClaim`
 
-The aliases `strictAT_main`, `StrictATClaim`, and
-`strictAT_overlapCLT_weak` preserve the declaration names cited in arXiv v2.
-
 ## Correspondence with the paper
 
 | Paper statement | Lean declaration | File |
 | --- | --- | --- |
-| Replica-symmetric fixed-point characterization | `ConcreteMain.replicaSymmetricFixedPointClaim_of_pos_field` | `Main.lean` |
-| Smart-path Hamiltonian $H_{N,s}$ | `ConcreteMain.H_N_s` | `Main.lean` |
-| Identification with the proof backend | `ConcreteMain.H_N_s_eq_smartPath` | `Main.lean` |
-| Theorem 1.1 | `ConcreteMain.strictAT_main` | `Main.lean` |
-| Theorem 1.2 | `ConcreteMain.strictAT_overlapCLT_weak` | `Main.lean` |
+| Replica-symmetric fixed-point characterization | `Main.replicaSymmetricFixedPointClaim_of_pos_field` | `Main.lean` |
+| Smart-path Hamiltonian $H_{N,s}$ | `Main.H_N_s` | `Main.lean` |
+| Identification with the proof backend | `Main.H_N_s_eq_smartPath` | `Main.lean` |
+| Theorem 1.1 | `Main.quantitativeStrictATClaim` | `Main.lean` |
+| Theorem 1.2 | `Main.overlapCLTClaim` | `Main.lean` |
 
 ## Concrete parameters and model
 
@@ -213,7 +210,7 @@ For the complete project check, run:
 ```
 
 The script builds all modules under `Lemmas`, checks `Main.lean`, type-checks
-the public `ConcreteMain` theorem contracts, and scans project Lean sources for
+the public `Main` theorem contracts, and scans project Lean sources for
 placeholders and project-local axioms.
 
 Before a release or after dependency refactoring, a clean verification is:
